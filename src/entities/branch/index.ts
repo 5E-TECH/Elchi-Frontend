@@ -14,3 +14,4 @@ export { useBranchDetail } from "./api/useBranchDetail";
 export { useBranchEmployees } from "./api/useBranchEmployees";
 export { useBranchesWithSentBatches } from "./api/useBranchesWithSentBatches";
 export { useDispatchBranchNames } from "./api/useDispatchBranchNames";
+export { useHqBranch } from "./api/useHqBranch";

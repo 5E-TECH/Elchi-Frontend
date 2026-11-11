@@ -13,6 +13,11 @@ export type InlineAlertProps = {
   children?: ReactNode;
   /** O'ngdagi amal (masalan «Qayta urinish») — telefonda matn ostiga tushadi. */
   action?: ReactNode;
+  /**
+   * Amal joyi: `end` (sukut) — o'ngda, joy yetmasa ostida; `below` — har doim matn ostida, matn ustunining ichida
+   * (maketdagi `.el-alert-body` ichidagi tugma: «Kuryer qo'shish», «Kuryerni ochish» — matn butun enni egallaydi).
+   */
+  actionPlacement?: "end" | "below";
   /** Sukut — tonga qarab: `Info`, `CircleCheck`, `TriangleAlert`, `CircleX`. */
   icon?: LucideIcon;
   /** Sukut: `danger` → `alert`, qolganlari → `status`. */
@@ -38,7 +43,17 @@ const has = (node: ReactNode) => node !== undefined && node !== null && node !==
  * Integratsiyalar bo'limining barcha sahifalari (konsol panellari, katalog, usta) shu bitta
  * komponentdan foydalanadi — umumiy primitiv emas.
  */
-export const InlineAlert = ({ tone, title, children, action, icon, role, className, "data-testid": testId }: InlineAlertProps) => {
+export const InlineAlert = ({
+  tone,
+  title,
+  children,
+  action,
+  actionPlacement = "end",
+  icon,
+  role,
+  className,
+  "data-testid": testId,
+}: InlineAlertProps) => {
   const Icon = icon ?? DEFAULT_ICON[tone];
   return (
     <div
@@ -56,8 +71,11 @@ export const InlineAlert = ({ tone, title, children, action, icon, role, classNa
       <div className="flex min-w-0 flex-[1_1_200px] flex-col gap-1 text-text">
         {has(title) ? <div className="font-bold wrap-break-word">{title}</div> : null}
         {has(children) ? <div className="text-[13px] leading-[18px] wrap-break-word">{children}</div> : null}
+        {action && actionPlacement === "below" ? <div className="mt-1 flex flex-wrap items-center gap-2">{action}</div> : null}
       </div>
-      {action ? <div className="flex flex-wrap items-center gap-2 max-md:w-full max-md:pl-[30px]">{action}</div> : null}
+      {action && actionPlacement === "end" ? (
+        <div className="flex flex-wrap items-center gap-2 max-md:w-full max-md:pl-[30px]">{action}</div>
+      ) : null}
     </div>
   );
 };

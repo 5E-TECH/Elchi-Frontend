@@ -648,6 +648,17 @@ export const API_ENDPOINTS = {
     // Hamkordan kelgan posilkalar bog'lanishi (yupqa: status buyurtmada).
     SHIPMENTS: (id: string | number) => `admin/partners/${id}/shipments`, // GET
   },
+  // Carrier API akkauntlari (tashqi yetkazuvchi = bitta kuryer; SUPERADMIN, ADMIN). Javoblar `successRes` o'ramida.
+  // GET → [{ id, name, courier_user_id, ip_allowlist | null, is_active, createdAt, updatedAt }] (kalitsiz, id DESC).
+  // POST { name, courier_id, ip_allowlist? } → { …akkaunt, courier_name, api_key } — kalit FAQAT shu javobda;
+  // 400 (nom / IP / kuryer faol emas yoki kuryer emas), 404 «Kurier topilmadi», 409 kuryer band, 503 identity.
+  // O'chirish (DELETE) backendda YO'Q — to'xtatish `STATUS` orqali.
+  CARRIERS: {
+    BASE: "admin/carriers",
+    BY_ID: (id: string | number) => `admin/carriers/${id}`, // PATCH { name?, ip_allowlist? } (kuryer va kalit o'zgarmaydi)
+    ROTATE_KEY: (id: string | number) => `admin/carriers/${id}/rotate-key`, // POST → { id, api_key } (eski kalit darhol o'ladi)
+    STATUS: (id: string | number) => `admin/carriers/${id}/status`, // POST { is_active } → { id, is_active }
+  },
 
   // ── Ombor (vaqtinchalik ombor tizimi; yXC91RRx, backend hY7uacJu / Elchi-Backend#566) ──────────
   // Javoblar o'ramsiz: ro'yxat `{ data, total, page, limit, … }`. Yozish — SUPERADMIN, ADMIN; o'qish — + MANAGER (o'z

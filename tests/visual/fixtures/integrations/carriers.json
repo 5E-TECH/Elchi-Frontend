@@ -1,0 +1,38 @@
+{
+  "statusCode": 200,
+  "message": "carrier accounts",
+  "data": [
+    {
+      "id": "3",
+      "name": "FastPost Logistics",
+      "courier_user_id": "1055",
+      "ip_allowlist": [
+        "203.0.113.10",
+        "198.51.100.0/24"
+      ],
+      "is_active": true,
+      "createdAt": "2026-11-09T05:15:00.000Z",
+      "updatedAt": "2026-11-10T04:40:00.000Z"
+    },
+    {
+      "id": "2",
+      "name": "Samarqand Ekspress",
+      "courier_user_id": "1066",
+      "ip_allowlist": null,
+      "is_active": true,
+      "createdAt": "2026-11-06T10:40:00.000Z",
+      "updatedAt": "2026-11-06T10:40:00.000Z"
+    },
+    {
+      "id": "1",
+      "name": "Vodiy Kargo",
+      "courier_user_id": "1077",
+      "ip_allowlist": [
+        "203.0.113.0/24"
+      ],
+      "is_active": false,
+      "createdAt": "2026-11-03T06:20:00.000Z",
+      "updatedAt": "2026-11-03T06:20:00.000Z"
+    }
+  ]
+}

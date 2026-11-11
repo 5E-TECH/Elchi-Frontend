@@ -333,6 +333,13 @@ export const canReceiveExternalOrders: Predicate = anyOf(
 );
 
 /**
+ * Carrier API akkauntlari — «Tashqi yetkazuvchilar» tabi (`/integrations/connections?scope=carrier`) va katalog
+ * kartasi. Backend `admin/carriers` — faqat SUPERADMIN, ADMIN: konsolga kiradigan menejer va registratorda tab
+ * chizilmaydi va so'rov yuborilmaydi (aks holda 403).
+ */
+export const canManageCarrierAccounts: Predicate = hasRole("superadmin", "admin");
+
+/**
  * Investor kabineti (IN-1, vpKijXce): `/` da `InvestorDashboardPage` — faqat investor roli. Ma'lumot doirasi
  * backendda JWT'dan (`GET investors/me/*`, `@Roles(INVESTOR)`); superadmin/admin investorni `/investors-ops` da ko'radi.
  */

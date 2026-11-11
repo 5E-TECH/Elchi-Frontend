@@ -34,7 +34,9 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `/financial-balance`
 - G1: `/`, `/branch-dashboard`, `/all-users*` (+ `/new-orders/userDetail/:id`), `/branches*`, `/products*`, `/regions*`
   (umumiy `shared/ui/charts`, `widgets/region-detail`; dashboard bundle 418 KB ≤ 450)
-- G2: `/integrations/*` (konsol + 7 panel, katalog, usta; eski sahifalar «Eski sahifa» belgisi bilan), `/notifications*`
+- G2: `/integrations/*` (konsol + 7 panel, katalog, usta; eski sahifalar «Eski sahifa» belgisi bilan; 2026-11-10 —
+  konsolning 4-tabi «Tashqi yetkazuvchilar» `?scope=carrier`, Carrier API, faqat superadmin va admin, maketlar
+  `*-integrations-carrier-*`, backend `admin/carriers`), `/notifications*`
   (Telegram guruhini bir martalik havola bilan ulash), `/activity-logs` (`DataTable expandable`), `/ops` + 8 ta ops yo'li,
   `/profile`, `/settings`, `/inbox`; `/market-operators` — MO-1 da (2026-10-21) market uchun ochildi va v2 ga ko'chdi
 - G3: `/login` (+ «Sessiya tugadi» ekrani, sessiya banneri shell'ning `[data-shell-slot=banner]` slotida),
