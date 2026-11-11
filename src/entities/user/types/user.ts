@@ -83,10 +83,7 @@ export interface User {
   /** Market bo'yicha qo'shimcha xarajat (w2bDrE3i): yangi market — yopiq, eski marketlar — ochiq. */
   extra_cost_enabled?: boolean;
   extra_cost_requires_approval?: boolean;
-  /**
-   * Kassa qarzga ishlaydimi (sukut — o'chiq). Market: yoqilsa marketga qarzdan ortiq to'lash mumkin. Kuryer
-   * (2026-11-11): yoqilsa kuryerdan qoldig'idan ortiq (oldindan) pul qabul qilinadi — ortig'i avans.
-   */
+  /** Market kassasi qarzga ishlaydimi: yoqilsa marketga qarzdan ortiq to'lash mumkin (sukut — o'chiq). */
   cashbox_debt_enabled?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
@@ -324,11 +321,6 @@ export interface UpdateUserRequest {
   add_order?: boolean;
   can_add_extra_cost?: boolean;
   can_sell_cancel?: boolean;
-  /**
-   * Kuryer kassasi qarzga ishlaydi (2026-11-11) — faqat superadmin/admin va faqat kuryer yozuvida (menejer — 403,
-   * boshqa rol — 400). Market uchun alohida yo'l: `PATCH /admin/markets/:id` (`updateMarketCashboxDebt`).
-   */
-  cashbox_debt_enabled?: boolean;
   default_tariff?: "address" | "center";
   /**
    * NFiXfmq6: market AI buyurtma narxi (so'm, 1 ta buyurtma). `null` — global narx; 0 — bepul. Faqat

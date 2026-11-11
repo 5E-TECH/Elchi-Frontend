@@ -49,28 +49,6 @@ describe("SettlementRanks — marketlar va kuryerlar ro'yxati (IaMK2tf2)", () =>
     expect(prepaid).not.toHaveTextContent(formatMoneyLocalized(-150_000, { language: "uz" }));
   });
 
-  it("⭐ kuryer manfiy qoldig'i — avans («Kassa qarzga ishlaydi»): «−200 000» emas, «200 000 · avans»; pastda «avans …»", () => {
-    render(
-      { allMarketCashboxes: [] },
-      {
-        allCourierCashboxes: [
-          { id: "11", balance: 350_000, user: { name: "Sherzod" } },
-          { id: "12", balance: -200_000, user: { name: "Avansli kuryer" } },
-        ],
-        couriersTotalBalanse: 150_000,
-      },
-    );
-
-    const [regular, advance] = rowsOf(COURIERS);
-    expect(regular).toHaveTextContent(formatMoneyLocalized(350_000, { language: "uz" }));
-    expect(advance).toHaveTextContent("Avansli kuryer");
-    expect(advance).toHaveTextContent(formatMoneyLocalized(200_000, { language: "uz" }));
-    expect(advance).toHaveTextContent("avans");
-    expect(advance).not.toHaveTextContent(formatMoneyLocalized(-200_000, { language: "uz" }));
-    expect(screen.queryByText(/manfiy balans|qarzdor/)).not.toBeInTheDocument();
-    expect(screen.getByText(/avans 200/)).toBeInTheDocument();
-  });
-
   it("⭐ ro'yxat to'liq bo'lsa qatorlar yig'indisi karta pastidagi «Jami» bilan teng; «eng katta N tasi» izohi yo'q", () => {
     render({
       allMarketCashboxes: [

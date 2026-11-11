@@ -263,22 +263,6 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     });
   };
 
-  // Kuryer kassasi qarzga ishlaydi (2026-11-11): yoqilsa kuryerdan qoldig'idan ortiq (oldindan) pul qabul qilinadi.
-  // Faqat superadmin/admin — menejerga backend 403; marketniki boshqa yo'l (`updateMarketCashboxDebt`).
-  const showCourierCashboxDebt = isCourier && canManagePrivilegedToggles;
-  const courierCashboxDebtEnabled = user.cashbox_debt_enabled === true;
-
-  const handleToggleCourierCashboxDebt = async () => {
-    if (!showCourierCashboxDebt) return;
-    const nextValue = !courierCashboxDebtEnabled;
-    await runUserRequest({
-      t,
-      request: () => updateUser.mutateAsync({ id: user.id, data: { cashbox_debt_enabled: nextValue } }),
-      successMessage: nextValue ? t("courierCashboxDebtEnabled") : t("courierCashboxDebtDisabled"),
-      errorMessage: editError,
-    });
-  };
-
   const handleToggleMarketProof = async (condition: ExpenseProofCondition) => {
     if (!isMarket || !canManagePrivilegedToggles) return;
     const nextConditions = proofConditions.includes(condition)
@@ -366,7 +350,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const showExtraCost = canReceiveExtraCostPermission && canManagePrivilegedToggles;
   const showSellCancel = canReceiveSellCancelPermission && canManagePrivilegedToggles;
   const permissionsCard =
-    isMarket || showExtraCost || showSellCancel || showCourierCashboxDebt ? (
+    isMarket || showExtraCost || showSellCancel ? (
       <Card
         as="section"
         title={t("v2.detail.permissions")}
@@ -457,16 +441,6 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
             busy={updateUser.isPending}
             disabled={updateUser.isPending}
             onToggle={() => void handleToggleExtraCostPermission()}
-          />
-        ) : null}
-        {showCourierCashboxDebt ? (
-          <SettingSwitch
-            title={t("v2.detail.courierCashboxDebt")}
-            description={t("v2.detail.courierCashboxDebtHint")}
-            checked={courierCashboxDebtEnabled}
-            busy={updateUser.isPending}
-            disabled={updateUser.isPending}
-            onToggle={() => void handleToggleCourierCashboxDebt()}
           />
         ) : null}
         {showSellCancel ? (
