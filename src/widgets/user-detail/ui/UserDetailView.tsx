@@ -19,14 +19,17 @@ import { cx } from "../../../shared/lib/cx";
 import { formatDateLocalized, formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
+import { isCompleteUzbekistanPhone, toUzbekistanPhoneValue, UZBEKISTAN_PHONE_PREFIX } from "../../../shared/lib/phone";
 import {
   Badge,
   Button,
   Card,
   DataTable,
   EmptyState,
+  Field,
   PageHeader,
   Pressable,
+  TextInput,
   type DataTableColumn,
   type Tone,
 } from "../../../shared/ui/primitives";
@@ -87,6 +90,111 @@ const SettingSwitch = ({
         </span>
       </Pressable>
     </div>
+  );
+};
+
+type ProblemPhoneMutation = ReturnType<typeof useUser>["updateMarketProblemPhone"];
+
+/**
+ * (Dilshod 2026-11-12) Market «Qo'shimcha raqam» — chekdagi «Muammo bo'lsa» qatori.
+ *  - O'chiq (sukut) — chekda hozirgi raqam (viloyat logisti yoki umumiy raqam), hech narsa yuborilmaydi.
+ *  - Kalit yoqilsa raqam maydoni chiqadi; «Saqlash» — `PATCH admin/markets/:id`
+ *    `{ problem_phone_enabled: true, problem_phone: "+998…" }`. Shundan keyin shu marketning HAMMA chekida
+ *    «Muammo bo'lsa» qatorida shu raqam (backend `problem_contacts`, `source: "market"`).
+ *  - Yoqiq holatda raqamni almashtirish — o'sha maydon va «Saqlash».
+ *  - O'chirish — darhol `{ problem_phone_enabled: false }` (raqam backendda qoladi, qayta yoqilganda maydonda turadi).
+ * Faqat superadmin/admin (backend ham shunday — boshqasiga 403). Saqlangach `user` yangilanadi va komponent
+ * `key` bilan qayta tug'iladi — qoralama saqlangan qiymatdan boshlanadi.
+ */
+const MarketProblemPhoneSetting = ({ user, mutation }: { user: User; mutation: ProblemPhoneMutation }) => {
+  const { t } = useTranslation(["users", "common"]);
+  const enabled = user.problem_phone_enabled === true;
+  const savedPhone = user.problem_phone ?? "";
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(savedPhone || UZBEKISTAN_PHONE_PREFIX);
+  const [error, setError] = useState<string | null>(null);
+  const open = enabled || editing;
+  const unchanged = enabled && toUzbekistanPhoneValue(draft) === savedPhone;
+
+  const handleToggle = async () => {
+    setError(null);
+    if (!enabled) {
+      setEditing((value) => !value);
+      return;
+    }
+    await runUserRequest({
+      t,
+      request: () => mutation.mutateAsync({ id: user.id, problem_phone_enabled: false }),
+      successMessage: t("marketProblemPhoneDisabled"),
+      errorMessage: t("editUserError"),
+    });
+  };
+
+  const handleSave = async () => {
+    if (!isCompleteUzbekistanPhone(draft)) {
+      setError(t("v2.detail.marketProblemPhoneInvalid"));
+      return;
+    }
+    await runUserRequest({
+      t,
+      request: () =>
+        mutation.mutateAsync({
+          id: user.id,
+          problem_phone_enabled: true,
+          problem_phone: toUzbekistanPhoneValue(draft),
+        }),
+      successMessage: t("marketProblemPhoneSaved"),
+      errorMessage: t("editUserError"),
+    });
+  };
+
+  return (
+    <>
+      <SettingSwitch
+        title={t("v2.detail.marketProblemPhone")}
+        description={t("v2.detail.marketProblemPhoneHint")}
+        checked={open}
+        busy={mutation.isPending}
+        disabled={mutation.isPending}
+        onToggle={() => void handleToggle()}
+      />
+      {open ? (
+        <form
+          className="flex flex-wrap items-start gap-3 px-5 pb-4 max-md:px-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSave();
+          }}
+        >
+          <Field
+            label={t("v2.detail.marketProblemPhoneLabel")}
+            required
+            hint={t("v2.detail.marketProblemPhoneFieldHint")}
+            error={error ?? undefined}
+            className="min-w-0 flex-[1_1_240px] sm:max-w-xs"
+          >
+            <TextInput
+              mode="phone"
+              value={draft}
+              disabled={mutation.isPending}
+              onValueChange={(value) => {
+                setDraft(value);
+                setError(null);
+              }}
+            />
+          </Field>
+          <Button
+            type="submit"
+            variant="primary"
+            className="mt-6 max-md:mt-0"
+            loading={mutation.isPending}
+            disabled={mutation.isPending || unchanged}
+          >
+            {t("v2.detail.marketProblemPhoneSave")}
+          </Button>
+        </form>
+      ) : null}
+    </>
   );
 };
 
@@ -155,6 +263,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     updateMarketCancelledHandoverQr,
     updateMarketExtraCost,
     updateMarketCashboxDebt,
+    updateMarketProblemPhone,
   } = useUser();
   const currentRole = useSelector((state: RootState) => state.role.role);
   const viewerId = useSelector((state: RootState) => state.role.id);
@@ -407,6 +516,11 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
                   busy={updateMarketCashboxDebt.isPending}
                   disabled={updateMarketCashboxDebt.isPending}
                   onToggle={() => void handleToggleMarketCashboxDebt()}
+                />
+                <MarketProblemPhoneSetting
+                  key={`${user.id}:${user.problem_phone_enabled === true}:${user.problem_phone ?? ""}`}
+                  user={user}
+                  mutation={updateMarketProblemPhone}
                 />
                 <div className="flex flex-col gap-0.5 border-t border-border px-5 pb-1 pt-4 max-md:px-4">
                   <h3 className="m-0 text-xs font-semibold uppercase tracking-[.05em] text-text-muted">

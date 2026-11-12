@@ -405,6 +405,27 @@ export const useUser = () => {
     },
   });
 
+  /**
+   * (2026-11-12) Market «Qo'shimcha raqam» — chekdagi «Muammo bo'lsa». Yoqish raqam bilan birga
+   * (`problem_phone_enabled: true, problem_phone`), o'chirish — faqat `problem_phone_enabled: false`.
+   */
+  const updateMarketProblemPhone = useMutation({
+    mutationFn: ({
+      id,
+      ...setting
+    }: {
+      id: string;
+      problem_phone_enabled?: boolean;
+      problem_phone?: string | null;
+    }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.EXTRA_COST(id), setting)
+        .then((res: any) => res.data),
+    onSuccess: () => {
+      void invalidateUserLists();
+    },
+  });
+
   /** (w2bDrE3i) Market bo'yicha qo'shimcha xarajat: ochiq yoki yopiq va market tasdig'i. */
   const updateMarketExtraCost = useMutation({
     mutationFn: ({
@@ -508,6 +529,7 @@ export const useUser = () => {
     updateMarketCancelledHandoverQr,
     updateMarketExtraCost,
     updateMarketCashboxDebt,
+    updateMarketProblemPhone,
     updateMarketTelegramGroupPii,
     deleteUser,
   };

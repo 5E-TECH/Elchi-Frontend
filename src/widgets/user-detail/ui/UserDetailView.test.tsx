@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   updateMarketCancelledHandoverQr: vi.fn(),
   updateMarketExtraCost: vi.fn(),
   updateMarketCashboxDebt: vi.fn(),
+  updateMarketProblemPhone: vi.fn(),
   updateMarketTelegramGroupPii: vi.fn(),
 }));
 
@@ -30,6 +31,7 @@ vi.mock("../../../entities/user/api/userApi", () => ({
     updateMarketCancelledHandoverQr: { mutateAsync: mocks.updateMarketCancelledHandoverQr, isPending: false },
     updateMarketExtraCost: { mutateAsync: mocks.updateMarketExtraCost, isPending: false },
     updateMarketCashboxDebt: { mutateAsync: mocks.updateMarketCashboxDebt, isPending: false },
+    updateMarketProblemPhone: { mutateAsync: mocks.updateMarketProblemPhone, isPending: false },
     updateMarketTelegramGroupPii: { mutateAsync: mocks.updateMarketTelegramGroupPii, isPending: false },
     useGetUserById: () => ({ data: undefined, isLoading: false }),
     updateMyProfile: { mutateAsync: vi.fn(), isPending: false },
@@ -312,6 +314,82 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
     );
   });
 
+  it("market: «Qo'shimcha raqam» — sukut o'chiq, maydon yo'q; yoqilganda raqam bilan saqlanadi", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market"), "admin");
+
+    const toggle = screen.getByRole("switch", { name: "Qo'shimcha raqam" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(screen.queryByLabelText(/Telefon raqam/)).not.toBeInTheDocument();
+
+    // Yoqish so'rov yubormaydi — avval raqam kerak.
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect(mocks.updateMarketProblemPhone).not.toHaveBeenCalled();
+
+    const input = screen.getByLabelText(/Telefon raqam/);
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(await screen.findByText("To'liq raqam kiriting: +998 XX XXX XX XX")).toBeInTheDocument();
+    expect(mocks.updateMarketProblemPhone).not.toHaveBeenCalled();
+
+    await user.type(input, "935550011");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    await waitFor(() =>
+      expect(mocks.updateMarketProblemPhone).toHaveBeenCalledWith({
+        id: "201",
+        problem_phone_enabled: true,
+        problem_phone: "+998935550011",
+      }),
+    );
+    expect(
+      await screen.findByText("«Qo'shimcha raqam» saqlandi — chekdagi «Muammo bo'lsa» qatorida shu raqam chiqadi"),
+    ).toBeInTheDocument();
+  });
+
+  it("market: «Qo'shimcha raqam» — saqlanmagan yoqishni kalit bilan yopish so'rovsiz", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market"), "superadmin");
+
+    const toggle = screen.getByRole("switch", { name: "Qo'shimcha raqam" });
+    await user.click(toggle);
+    expect(screen.getByLabelText(/Telefon raqam/)).toBeInTheDocument();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(screen.queryByLabelText(/Telefon raqam/)).not.toBeInTheDocument();
+    expect(mocks.updateMarketProblemPhone).not.toHaveBeenCalled();
+  });
+
+  it("market: «Qo'shimcha raqam» yoqiq — raqam maydonda, almashtiriladi va o'chiriladi", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market", { problem_phone_enabled: true, problem_phone: "+998935550011" }), "admin");
+
+    const toggle = screen.getByRole("switch", { name: "Qo'shimcha raqam" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    const input = screen.getByLabelText(/Telefon raqam/);
+    expect(input).toHaveValue("93 555 00 11");
+    // O'zgarmagan raqam — «Saqlash» o'chiq.
+    expect(screen.getByRole("button", { name: "Saqlash" })).toBeDisabled();
+
+    await user.clear(input);
+    await user.type(input, "901112233");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    await waitFor(() =>
+      expect(mocks.updateMarketProblemPhone).toHaveBeenCalledWith({
+        id: "201",
+        problem_phone_enabled: true,
+        problem_phone: "+998901112233",
+      }),
+    );
+
+    await user.click(toggle);
+    await waitFor(() =>
+      expect(mocks.updateMarketProblemPhone).toHaveBeenLastCalledWith({ id: "201", problem_phone_enabled: false }),
+    );
+    expect(
+      await screen.findByText("«Qo'shimcha raqam» o'chirildi — chekda hozirgi raqam chiqadi"),
+    ).toBeInTheDocument();
+  });
+
   it("market: isbot shartlari — ro'yxatga qo'shadi va olib tashlaydi", async () => {
     const user = userEvent.setup();
     renderView(makeUser("market", { expense_proof_conditions: ["sell_any"] }), "superadmin");
@@ -372,6 +450,7 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
     expect(screen.queryByText("Rasm yoki video isbot")).not.toBeInTheDocument();
     expect(screen.queryByRole("switch", { name: "Qo'shimcha xarajat" })).not.toBeInTheDocument();
     expect(screen.queryByRole("switch", { name: "Kassa qarzga ishlaydi" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Qo'shimcha raqam" })).not.toBeInTheDocument();
   });
 
   it("2026-11-12: menejer o'zi yaratgan marketni ochadi — «Tahrirlash» yo'q (PATCH 403), sarlavhada menejer filiali emas, telefon", () => {

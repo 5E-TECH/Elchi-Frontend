@@ -85,6 +85,12 @@ export interface User {
   extra_cost_requires_approval?: boolean;
   /** Market kassasi qarzga ishlaydimi: yoqilsa marketga qarzdan ortiq to'lash mumkin (sukut — o'chiq). */
   cashbox_debt_enabled?: boolean;
+  /**
+   * (2026-11-12) Market «Qo'shimcha raqam»: yoqiq bo'lsa chekdagi «Muammo bo'lsa» qatorida `problem_phone`
+   * (`+998XXXXXXXXX`) chiqadi; o'chiq (sukut) — hozirgi raqam (viloyat logisti yoki umumiy raqam).
+   */
+  problem_phone_enabled?: boolean;
+  problem_phone?: string | null;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
    * Shaxsiy Telegram botga ulanganmi (td89SKXQ). Backend xom `telegram_id` ni
