@@ -25,6 +25,7 @@ import {
   Zap,
   PiggyBank,
   HandCoins,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import type { User } from "../../../entities/user/model/types";
@@ -100,6 +101,9 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/all-users", icon: Users, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
+    // F7PWp6cK / T2: «AI yordamchi» — «Moliya» guruhida «Balans» dan keyin (maket `roles.json`); faqat superadmin
+    // (ega qarori 1 — admin menyusida yo'q).
+    { to: "/ai-assistant", icon: Sparkles, label: "aiAssistant" },
     { to: "/regions", icon: MapIcon, label: "regions" },
     { to: "/notifications", icon: Send, label: "notifications" },
     { to: "/branches", icon: Building2, label: "branches" },
@@ -454,6 +458,7 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/payments": 'finance',
   "/cash-box": 'finance',
   "/financial-balance": 'finance',
+  "/ai-assistant": 'finance',
   // IN-1/IN-2: investor kabineti ro'yxatlari — Moliya guruhida (investor menyusi qisqa — guruh sarlavhasi chiqmaydi).
   "/investments": 'finance',
   "/profits": 'finance',

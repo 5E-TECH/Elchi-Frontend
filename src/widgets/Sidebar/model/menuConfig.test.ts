@@ -20,6 +20,7 @@ import {
   Scale,
   ScrollText,
   ShoppingBag,
+  Sparkles,
   Tag,
   Truck,
   Users,
@@ -334,6 +335,8 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     Repeat,
     // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — maketda lucide nomi bilan.
     Receipt,
+    // F7PWp6cK / T2: «AI yordamchi» (superadmin, «Moliya») — maketda lucide nomi bilan.
+    Sparkles,
   };
   type DesignItem = { key: string; icon: string };
   // Maketdagi, kodda hali yo'q bandlar (`route-map.json` → `plannedMenu`) chiqariladi.

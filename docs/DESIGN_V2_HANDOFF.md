@@ -322,6 +322,14 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   «Telegram boti» ustuni, hududlarda «Tumanlar», market telefon pastki menyusida «Menyu», sozlamalar izohi). Oldin
   `origin/dev` va PR head shu 44 sahnani lokalda bir xil chizgani tekshirildi (farq PR'dan emas). Shu PR'da investor e2e
   fiksturalari ham kun o'rtasiga surildi (`72cf337`) — CI brauzeri UTC'da yarim tun oldingi kunga chiqardi.
+- **AI moliyaviy yordamchi (jiR7XgYk, 2026-11-10, `feat/kassa-aichat`)** — `/ai-assistant` faqat suhbat, superadmin
+  (T2 ega qarori 1; AI tahlil tartibi — avval suhbat, keyin ogohlantirishlar). Qolgani — T2 backend'i bilan
+  (`ai/advisor/*` yo'q): Hisobotlar · Ogohlantirishlar · Tavsiyalar · Sarf tablari, `-tab-select`, «Chuqur tahlil»,
+  budjet, kesh, bloklar. Ega savollari: chiziladigan ikonkalar (`MessageSquarePlus`, `Database` registrda yo'q —
+  `Plus`, `FileText` ishlatildi), hisoblagich 1000 yoki 2000, «Manba» qatori va prompt 5-qoidasi (javobda ikki marta),
+  «To'xtatish» limitni tejamasligi, «Suhbat topilmadi» matni (90 kun saqlash yo'q), limit yaqin chegarasi 5. Backend:
+  403/429/503 tanasida `code`/`reset_at` yo'q (`public-error-fields.ts`) — FE holatni `access/me` dan oladi.
+  Route sanog'i (`AGENTS.md` «81 / 81») — +1, yangilash ega PR'ida.
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
 - Follow-up: `Switch`, `FilterChip`, `Checkbox` primitivlari, `TextInput` prefiks sloti (`CampaignPage` istisnosi).
 - **Chek (yorliq) dizayni — keyinga qoldirilgan** (ega, 2026-10-18). 5 ta taklif rad etilgan: «havodor» va eski

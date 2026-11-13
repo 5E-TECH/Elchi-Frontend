@@ -18,6 +18,7 @@ const routeImporters: Record<string, RouteImporter> = {
   "/cash-box": () => import("../../pages/payments/components/MyCashboxPage"),
   "/my-earnings": () => import("../../pages/my-earnings"),
   "/financial-balance": () => import("../../pages/financial-balance"),
+  "/ai-assistant": () => import("../../pages/ai-assistant"),
   "/investments": () => import("../../pages/investor/InvestmentsPage"),
   "/profits": () => import("../../pages/investor/ProfitsPage"),
   "/regions": () => import("../../pages/region/index"),

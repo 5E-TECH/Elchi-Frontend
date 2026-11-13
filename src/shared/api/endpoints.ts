@@ -633,6 +633,18 @@ export const API_ENDPOINTS = {
     STATUS: "ai/status",
   },
 
+  // ── AI moliyaviy yordamchi (api-gateway `AiAssistantGatewayController`, F7PWp6cK; FE — faqat superadmin) ──
+  AI_ASSISTANT: {
+    // POST {message 1..2000, conversation_id?} → SSE (fetch + ReadableStream, `features/ai-chat`)
+    MESSAGES: "ai/assistant/messages",
+    // GET ?limit(1..100)&offset → {items, total, limit, offset} — yangisi birinchi
+    CONVERSATIONS: "ai/assistant/conversations",
+    // GET → {id, title, …, messages[]}; begona/yo'q — 404
+    CONVERSATION: (id: string | number) => `ai/assistant/conversations/${id}`,
+    // GET → {allowed, reason, feature_enabled, daily_limit, used_today, remaining_today, reset_at}
+    ACCESS_ME: "ai/assistant/access/me",
+  },
+
   // ── Webhooks (public — provider inbound, no JWT) ─────────────────────────
   WEBHOOKS: {
     BY_SLUG: (slug: string | number) => `webhooks/${slug}`, // POST

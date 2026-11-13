@@ -9,6 +9,7 @@ import {
   canViewMails,
   canViewUsers,
   canViewFinancialBalance,
+  canViewAiAdvisor,
   canViewNotifications,
   canSendNotifications,
   canViewBranches,
@@ -160,6 +161,8 @@ const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const CancelReasonsPage = lazy(() => import("../../pages/orders/cancel-reasons"));
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
+// F7PWp6cK / T2: AI moliyaviy yordamchi — hozircha faqat suhbat (superadmin).
+const AiAssistantPage = lazy(() => import("../../pages/ai-assistant"));
 
 const Region = lazy(() => import("../../pages/region/index"));
 const RegionDistrictsPage = lazy(() => import("../../pages/region/pages/districts"));
@@ -1133,6 +1136,14 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewFinancialBalance}>
                   <FinancialBalance />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "ai-assistant",
+              element: (
+                <ProtectedRoute canActivate={canViewAiAdvisor}>
+                  <AiAssistantPage />
                 </ProtectedRoute>
               ),
             },

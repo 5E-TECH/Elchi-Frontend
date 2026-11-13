@@ -119,6 +119,12 @@ export const queryKeys = {
     all: ["batches"] as const,
     returns: (branchId: string | null, params: object) => ["batches", "returns", branchId, params] as const,
   },
+  /** AI moliyaviy yordamchi (`/ai-assistant`, F7PWp6cK) — o'z holati (limit), suhbatlar ro'yxati va suhbat. */
+  aiAssistant: {
+    accessMe: ["ai-assistant", "access-me"] as const,
+    conversations: ["ai-assistant", "conversations"] as const,
+    conversation: (id: string) => ["ai-assistant", "conversation", id] as const,
+  },
   /** Joriy foydalanuvchi profili (`GET auth/my-profile`) — yagona kesh: auth bootstrap, `useSettings`, `useGetMyProfile`. */
   myProfile: ["user", "profile"] as const,
 } as const;
