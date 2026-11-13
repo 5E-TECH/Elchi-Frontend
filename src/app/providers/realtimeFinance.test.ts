@@ -1,6 +1,7 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import i18n from "../../i18n";
+import { shiftReportKey } from "../../entities/payments";
 import { notify } from "../../shared/lib/notify";
 import { FINANCE_EVENTS, handleFinanceEvent, readClosedAt, readOpenedAt, refreshShiftQueries } from "./realtimeFinance";
 
@@ -18,13 +19,15 @@ describe("realtimeFinance", () => {
     ]);
   });
 
-  it("kassa kartasi o'zgardi — kassa qoldiqlari yangilanadi, smena holati qayta so'ralmaydi", async () => {
+  it("kassa kartasi o'zgardi — kassa qoldiqlari va yopish oynasining kartalari yangilanadi, smena holati so'ralmaydi", async () => {
     const client = new QueryClient();
     const invalidate = vi.spyOn(client, "invalidateQueries");
     handleFinanceEvent(client, i18n.t, "finance.cashbox.card_changed", { cashbox_id: "c-1" });
     await vi.waitFor(() => expect(invalidate).toHaveBeenCalled());
     const keys = invalidate.mock.calls.map(([filters]) => JSON.stringify(filters?.queryKey));
     expect(keys).toContain(JSON.stringify(["cashbox"]));
+    // BE-A: ochiq «Smenani yopish» oynasi yangi / o'chirilgan kartani ko'rsin (aks holda backend 400).
+    expect(keys).toContain(JSON.stringify(["shift", "check-settings"]));
     expect(keys).not.toContain(JSON.stringify(["shift"]));
   });
 
@@ -83,6 +86,32 @@ describe("realtimeFinance", () => {
     const keys = invalidate.mock.calls.map(([filters]) => JSON.stringify(filters?.queryKey));
     expect(keys).toContain(JSON.stringify(["shift"]));
     expect(keys).toContain(JSON.stringify(["cashbox"]));
+    info.mockRestore();
+  });
+
+  it("BE-B: karta rasmi keyin yuklandi (`late: true`) — ochiq smena hisoboti qayta o'qiladi, xabar yo'q", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const info = vi.spyOn(notify, "info");
+    const queryFn = vi.fn().mockResolvedValue({ shift: { id: "31" } });
+    const observer = new QueryObserver(client, { queryKey: shiftReportKey("31"), queryFn });
+    const unsubscribe = observer.subscribe(() => undefined);
+    // Birinchi o'qish tugasin (davom etayotgan birinchi so'rov qayta o'qishni yutib yuboradi).
+    await vi.waitFor(() => expect(observer.getCurrentResult().isSuccess).toBe(true));
+    expect(queryFn).toHaveBeenCalledTimes(1);
+
+    handleFinanceEvent(client, i18n.t, "finance.shift.account_checked", {
+      shift_id: "31",
+      cashbox_user_id: "0",
+      cashbox_type: "main",
+      branch_id: null,
+      card_id: "2",
+      ai_status: "pending",
+      checked_at: "2026-11-11T15:00:00.000Z",
+      late: true,
+    });
+    await vi.waitFor(() => expect(queryFn).toHaveBeenCalledTimes(2));
+    expect(info).not.toHaveBeenCalled();
+    unsubscribe();
     info.mockRestore();
   });
 

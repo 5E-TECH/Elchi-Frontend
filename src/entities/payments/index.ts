@@ -570,15 +570,16 @@ export const useCashBox = () => {
         // Bo'sh izoh yuborilmaydi — smena ochilgandagi izohni o'chirib yubormasin.
         ...(comment ? { comment } : {}),
       };
-      // kiZgTybn: kartalar bilan — AI `pending` bo'lsa backend 30 s gacha kutadi (gateway 45 s).
-      const request = accounts?.length
-        ? api.post<ShiftMutationResponse>(
-            API_ENDPOINTS.CASHBOX.SHIFT_CLOSE,
-            { ...body, accounts },
-            { timeout: SHIFT_CLOSE_TIMEOUT_MS },
-          )
-        : api.post<ShiftMutationResponse>(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, body);
-      return request.then((res) => res.data);
+      // kiZgTybn / BE-A: HAR yopish uzoq kutadi — kartalar bilan AI `pending` bo'lsa backend ~15 s kutadi (gateway
+      // 45 s); kartalarsiz ham MAIN da backend «Asosiy karta»ni o'zi yaratib tekshiradi. `accounts` — oyna kartalar
+      // rejimida bo'lsa (bo'sh massiv ham) yuboriladi.
+      return api
+        .post<ShiftMutationResponse>(
+          API_ENDPOINTS.CASHBOX.SHIFT_CLOSE,
+          accounts ? { ...body, accounts } : body,
+          { timeout: SHIFT_CLOSE_TIMEOUT_MS },
+        )
+        .then((res) => res.data);
     },
     onSuccess: async () => {
       setCurrentShift(null);

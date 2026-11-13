@@ -98,7 +98,7 @@ describe("useCashBox — shift hooks (kfdfYDik)", () => {
       // Nol — haqiqiy sanalgan summa (yuboriladi), «Sanalmadi» emas.
       closing_balance_card: 0,
       comment: "Naqd yetishmadi",
-    });
+    }, { timeout: 60_000 });
     expect(normalizeCashboxShift((response as { data: unknown }).data)?.discrepancy_cash).toBe(-150_000);
   });
 
@@ -109,7 +109,8 @@ describe("useCashBox — shift hooks (kfdfYDik)", () => {
       result.current.closeShift.mutateAsync({ shift_id: "12", closing_balance_cash: 0, closing_balance_card: null, comment: "" }),
     );
 
-    expect(apiMock.post).toHaveBeenCalledWith(SHIFT_CLOSE_URL, { shift_id: "12", closing_balance_cash: 0 });
+    // BE-A: kartalarsiz yopish ham uzoq kutadi (MAIN da backend «Asosiy karta»ni o'zi tekshiradi).
+    expect(apiMock.post).toHaveBeenCalledWith(SHIFT_CLOSE_URL, { shift_id: "12", closing_balance_cash: 0 }, { timeout: 60_000 });
   });
 
   it("open and close refetch the current-shift query before resolving", async () => {

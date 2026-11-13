@@ -32,6 +32,14 @@ import type { CloseShiftAccount } from "../../../entities/payments";
  * raqamlar» bo'limi (`ShiftAccountsSection`): har karta qoldig'i majburiy, rasm majburiy kartada skrinshot, farq /
  * AI «Mos kelmadi» / kiritilgan ≠ rasm — izoh majburiy (backend 400 qoidalari). Yuborishda `accounts[]` va sanalgan
  * karta = Σ kiritilgan. O'chiq bo'lsa (yoki sozlama o'qilmasa) — oyna avvalgidek.
+ *
+ * BE-A (2026-11-10): asosiy kassada tasdiqlash sukut yoqiq. Rasm majburiy kartada skrinshot yuklanmaguncha «Smenani
+ * yopish» O'CHIQ, sababi tugmalar ustida (`role="status"`, tugmaga `aria-describedby`; telefonda pastki varaqada ham
+ * ko'rinadi). Qoldiq / izoh xatolari avvalgidek bosilganda. AI `pending` to'smaydi. Yopish 400 bo'lsa (matn — backenddan,
+ * aynan) oyna ochiq qoladi va `applyCloseError` kartalarni qayta o'qiydi («Har karta qoldig'ini tasdiqlang: …» — yangi
+ * karta qator bo'lib chiqadi). Maket `…-shift-dialog-accounts` o'chiq holatni chizmagan — eng yaqini o'sha oyna va
+ * `SellModal` dagi tugmalar ustidagi sabab qatori. Kartalar rejimida oyna maketdagidek 760 px va izohi «Naqdni sanang,
+ * har bir karta qoldig'ini kiriting va skrinshot yuklang».
  */
 
 export type CloseShiftPayload = {
@@ -93,8 +101,25 @@ const CloseShiftPopup = ({
   const idBase = useId();
   const cashDiffId = `${idBase}-cash-diff`;
   const cardDiffId = `${idBase}-card-diff`;
+  const blockReasonId = `${idBase}-block-reason`;
   const accountsForm = useShiftAccountsForm({ open: isOpen, shiftId });
   const accountMode = accountsForm.enabled;
+  // Rasm majburiy kartada skrinshot yo'q — yopib bo'lmaydi (smena ID si yo'q bo'lsa yuklab ham bo'lmaydi — backend hal
+  // qiladi, tugma to'silmaydi).
+  const missingPhotos = accountMode && accountsForm.canUpload ? accountsForm.missingPhotos : [];
+  const photoBlocked = missingPhotos.length > 0;
+  // Kartalar rejimida sarlavha izohi maketdagidek (skrinshot so'raladigan karta bo'lmasa — «skrinshot yuklang»siz).
+  const dialogDescription = accountMode
+    ? accountsForm.rows.some((row) => row.photoRequired)
+      ? t("shiftCheck.accounts.dialogSubtitle")
+      : t("shiftCheck.accounts.dialogSubtitleNoPhoto")
+    : t("v2MainCashbox.shift.close.subtitle");
+  const blockReason = photoBlocked
+    ? t("shiftCheck.accounts.missingPhotos", {
+        count: missingPhotos.length,
+        cards: missingPhotos.map((card) => card.name).join(", "),
+      })
+    : null;
 
   const countedCash = parseOptionalAmountInput(cashInput);
   const countedCard = parseOptionalAmountInput(cardInput);
@@ -124,20 +149,19 @@ const CloseShiftPopup = ({
   };
 
   const handleConfirm = () => {
-    if (isLoading || accountsForm.settingsLoading || accountsForm.isUploading) return;
+    if (isLoading || accountsForm.settingsLoading || accountsForm.isUploading || photoBlocked) return;
     setSubmitted(true);
     if (countedCash === null || (hasDiff && !commentText)) return;
     const accounts = accountsForm.buildPayload();
-    if (accounts) {
-      if (accountsForm.hasErrors) return;
-      void Promise.resolve(
-        onConfirm({ countedCash, countedCard: accounts.countedCard, comment: commentText, accounts: accounts.accounts }),
-      ).then((result) => {
-        if (result?.error) accountsForm.applyCloseError(result.error);
-      });
-      return;
-    }
-    onConfirm({ countedCash, countedCard, comment: commentText });
+    if (accounts && accountsForm.hasErrors) return;
+    const payload: CloseShiftPayload = accounts
+      ? { countedCash, countedCard: accounts.countedCard, comment: commentText, accounts: accounts.accounts }
+      : { countedCash, countedCard, comment: commentText };
+    // 400 (kartalar tekshiruvi) — oyna ochiq qoladi: karta ajratiladi yoki kartalar ro'yxati qayta o'qiladi (tasdiqlash
+    // shu orada yoqilgan bo'lsa — oyna kartalar rejimiga o'tadi).
+    void Promise.resolve(onConfirm(payload)).then((result) => {
+      if (result?.error) accountsForm.applyCloseError(result.error);
+    });
   };
 
   const openedAtText = openedAt ? formatDateTimeLocalized(openedAt, { language }) : "";
@@ -180,24 +204,43 @@ const CloseShiftPopup = ({
       onExited={reset}
       busy={isLoading}
       size="lg"
+      // Kartalar rejimi (BE-A dan beri asosiy kassada sukut) — maketdagi 760 px: karta · qoldiq · skrinshot ustunlari
+      // qisqarmaydi (560 da bank / ··1234 va «Skrinshot yuklash» kesilardi). Telefonda pastki varaqa — o'zgarmaydi.
+      className={accountMode ? "md:max-w-[760px]" : undefined}
       icon={Timer}
       title={t("v2MainCashbox.shift.close.title")}
-      description={t("v2MainCashbox.shift.close.subtitle")}
+      description={dialogDescription}
       footer={
-        <>
-          <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
-            {t("v2MainCashbox.shift.cancel")}
-          </Button>
-          <Button
-            leftIcon={Timer}
-            onClick={handleConfirm}
-            loading={isLoading}
-            disabled={accountsForm.settingsLoading || accountsForm.isUploading}
-            loadingText={t("v2MainCashbox.shift.close.closing")}
-          >
-            {t("v2MainCashbox.shift.close.submit")}
-          </Button>
-        </>
+        // Bitta o'ram: sabab tugmalar yonida (uzun bo'lsa o'z ustunida bir necha qatorga o'raladi; telefonda — o'z
+        // qatorida, tugmalar ustida). Tugmalar alohida guruh — sabab uzun bo'lsa ham bir-biridan ajralib ketmaydi;
+        // telefonda teng enli.
+        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-x-4 gap-y-2">
+          {blockReason ? (
+            <p
+              id={blockReasonId}
+              role="status"
+              data-testid="close-shift-block-reason"
+              className="m-0 min-w-0 flex-1 basis-60 text-[13px] text-text-muted max-md:basis-full max-md:text-center"
+            >
+              {blockReason}
+            </p>
+          ) : null}
+          <div className="flex shrink-0 gap-2 max-md:w-full max-md:[&>button]:flex-1">
+            <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
+              {t("v2MainCashbox.shift.cancel")}
+            </Button>
+            <Button
+              leftIcon={Timer}
+              onClick={handleConfirm}
+              loading={isLoading}
+              disabled={accountsForm.settingsLoading || accountsForm.isUploading || photoBlocked}
+              aria-describedby={blockReason ? blockReasonId : undefined}
+              loadingText={t("v2MainCashbox.shift.close.closing")}
+            >
+              {t("v2MainCashbox.shift.close.submit")}
+            </Button>
+          </div>
+        </div>
       }
     >
       <ShiftSummaryList

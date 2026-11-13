@@ -72,7 +72,7 @@ const AiLine = ({ row }: { row: ShiftAccountRow }) => {
     line = { tone: "neutral", icon: ScanLine, text: t("shiftCheck.ai.line.waitingPhoto") };
     badge = null;
   } else if (row.aiTimedOut) {
-    // 3 daqiqadan beri `pending` — so'rov to'xtadi; backend yopishda baribir 30 s kutadi, keyin yopadi.
+    // 3 daqiqadan beri `pending` — so'rov to'xtadi; backend yopishda ~15 s kutadi, keyin baribir yopadi.
     line = { tone: "warning", icon: Clock, text: t("shiftCheck.ai.line.timedOut") };
     badge = <AiTimedOutBadge />;
   } else if (row.aiStatus === "pending" || row.aiStatus === "not_required") {
@@ -253,11 +253,15 @@ const AccountRow = ({
       ? t("shiftCheck.accounts.errors.photoType")
       : row.photoError === "size"
         ? t("shiftCheck.accounts.errors.photoSize")
-        : row.photoError === "upload"
-          ? row.uploadMessage || t("shiftCheck.accounts.errors.upload")
-          : show("photo")
-            ? t("shiftCheck.accounts.errors.photo")
-            : undefined;
+        : row.photoError === "heic"
+          ? t("shiftCheck.accounts.errors.photoHeic")
+          : row.photoError === "decode"
+            ? t("shiftCheck.accounts.errors.photoDecode")
+            : row.photoError === "upload"
+              ? row.uploadMessage || t("shiftCheck.accounts.errors.upload")
+              : show("photo")
+                ? t("shiftCheck.accounts.errors.photo")
+                : undefined;
 
   return (
     <li

@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-shift-report
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -8,6 +8,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  ImagePlus,
   Info,
   Scale,
   Send,
@@ -55,6 +56,9 @@ import {
 } from "../../../shared/ui/primitives";
 import { AiStatusBadge, AiTimedOutBadge, EnteredMismatchBadge } from "../components/shiftCheck/aiStatus";
 import { cardSubtitle } from "../components/shiftCheck/aiStatusMeta";
+import LatePhotoDialog from "./LatePhotoDialog";
+import { LateUploadedBadge, PhotoStatusBadge } from "./PhotoStatus";
+import { useLateDeadlineText } from "./photoStatusMeta";
 import ReportDeliveries from "./ReportDeliveries";
 
 /**
@@ -66,6 +70,13 @@ import ReportDeliveries from "./ReportDeliveries";
  * gWI4gYkw (faqat superadmin): sarlavhada hisobot fayli (PDF / Excel, imzolangan havola) va «Hisobotni qayta
  * yuborish» (tasdiq bilan, `POST finance/shift/:id/report/resend`), «Hisobot kimlarga yuborildi» kartasi
  * (`ReportDeliveries`). Maketdagi «Vaqt chizig'i» — backend bermaydi, chizilmaydi.
+ *
+ * BE-B (ega qarori 2026-11-10): «Rasm» ustunida (telefonda — karta ichida) har karta rasmi holati `photo_status` —
+ * «Yuklangan» · «Rasm kutilmoqda» + «… gacha» (`late_upload_deadline`) · «Rasm yuklanmagan» · «Talab qilinmagan»,
+ * kech yuklanganda «Keyin yuklandi». `can_upload_late` (avto-yopilgan ASOSIY smena, 24 soat ichida, superadmin / admin)
+ * bo'lsa — «Rasm yuklash» (ikkinchi darajali tugma) → `LatePhotoDialog`. Menejer / registrator — faqat holat va muddat.
+ * Eski backend (`photo_status` yo'q) — ustun avvalgidek. Maket yo'q — eng yaqini shu sahifa va
+ * `superadmin-payments-main-cashbox-shift-dialog-accounts`.
  */
 
 const sum = (...values: Array<number | null | undefined>) =>
@@ -102,8 +113,17 @@ const AutoClosedBanner = ({ report }: { report: ShiftReport }) => {
   );
 };
 
-const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliveries: boolean }) => {
+const ReportBody = ({
+  report,
+  showDeliveries,
+  onUploadLate,
+}: {
+  report: ShiftReport;
+  showDeliveries: boolean;
+  onUploadLate: (row: ShiftAccountCheck) => void;
+}) => {
   const { t, i18n } = useTranslation("payments");
+  const untilText = useLateDeadlineText();
   const language = i18n.resolvedLanguage ?? i18n.language;
   const currency = CURRENCY_LABEL[resolveMoneyLanguage(language)];
   const money = (value: number | null) => (value === null ? "—" : formatMoneyLocalized(value, { language }));
@@ -138,9 +158,11 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
 
   const aiDetail = (row: ShiftAccountCheck) => {
     if (!row.has_photo) {
-      return row.ai_enabled_snap === false && row.photo_required_snap === false
-        ? t("shiftCheck.report.accounts.settingOff")
-        : t("shiftCheck.report.accounts.noPhoto");
+      if (row.ai_enabled_snap === false && row.photo_required_snap === false) {
+        return t("shiftCheck.report.accounts.settingOff");
+      }
+      // BE-B: rasm holati «Rasm» ustunida — bu yerda takrorlanmaydi.
+      return row.photo_status ? null : t("shiftCheck.report.accounts.noPhoto");
     }
     if (aiTimedOut.has(row.card_id)) return t("shiftCheck.ai.line.timedOut");
     if (row.ai_read_balance === null) return null;
@@ -159,7 +181,7 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
     </span>
   );
 
-  const photoCell = (row: ShiftAccountCheck) =>
+  const photoLink = (row: ShiftAccountCheck) =>
     row.photo_url ? (
       <a
         href={row.photo_url}
@@ -170,9 +192,48 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
         <ExternalLink aria-hidden="true" size={16} />
         {t("shiftCheck.report.accounts.photoOpen")}
       </a>
-    ) : (
-      <span className="text-text-muted">{t("shiftCheck.report.accounts.photoMissing")}</span>
+    ) : null;
+
+  const photoCell = (row: ShiftAccountCheck) =>
+    photoLink(row) ?? <span className="text-text-muted">{t("shiftCheck.report.accounts.photoMissing")}</span>;
+
+  // BE-B: muddat — faqat kutilayotgan rasmda (hamma rollarga); boshqa qatorlarda takrorlanmaydi.
+  const deadlineOf = (row: ShiftAccountCheck) =>
+    row.photo_status === "pending" ? untilText(row.late_upload_deadline) : null;
+
+  const uploadButton = (row: ShiftAccountCheck, className?: string) => {
+    if (!row.can_upload_late) return null;
+    const action = row.has_photo ? t("shiftCheck.report.late.reupload") : t("shiftCheck.report.late.upload");
+    return (
+      <Button
+        variant="secondary"
+        size="sm"
+        leftIcon={ImagePlus}
+        className={className}
+        aria-label={t("shiftCheck.report.late.uploadFor", { action, card: row.card?.name ?? `#${row.card_id}` })}
+        onClick={() => onUploadLate(row)}
+      >
+        {action}
+      </Button>
     );
+  };
+
+  /** BE-B: holat belgisi, «Keyin yuklandi», muddat, rasm havolasi va «Rasm yuklash» (eski backend — `photoCell`). */
+  const photoStatusCell = (row: ShiftAccountCheck) => {
+    if (!row.photo_status) return photoCell(row);
+    const deadline = deadlineOf(row);
+    return (
+      <span className="flex flex-col items-start gap-1.5" data-testid={`shift-photo-status-${row.card_id}`}>
+        <span className="inline-flex flex-wrap gap-1.5">
+          <PhotoStatusBadge status={row.photo_status} />
+          {row.late_uploaded ? <LateUploadedBadge /> : null}
+        </span>
+        {deadline ? <span className="text-[13px] text-text-muted">{deadline}</span> : null}
+        {photoLink(row)}
+        {uploadButton(row)}
+      </span>
+    );
+  };
 
   const commentCell = (row: ShiftAccountCheck) =>
     row.comment ? (
@@ -209,7 +270,7 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
           <span className="whitespace-nowrap font-semibold">{money(row.entered_balance)}</span>
         ),
     },
-    { id: "photo", header: t("shiftCheck.report.accounts.photo"), cell: photoCell },
+    { id: "photo", header: t("shiftCheck.report.accounts.photo"), cell: photoStatusCell },
     { id: "ai", header: t("shiftCheck.report.accounts.ai"), cell: aiCell },
     {
       id: "diff",
@@ -238,10 +299,25 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
         <dt className="text-text-muted">{t("shiftCheck.report.accounts.diff")}</dt>
         <dd className={cx("m-0 text-right font-semibold", diffTone(row.difference))}>{signed(row.difference)}</dd>
       </dl>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
-        {photoCell(row)}
-        {aiDetail(row) ? <span className="text-text-muted">{aiDetail(row)}</span> : null}
-      </div>
+      {row.photo_status ? (
+        <div className="flex flex-col gap-2 text-[13px]" data-testid={`shift-photo-status-${row.card_id}`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="inline-flex flex-wrap gap-1.5">
+              <PhotoStatusBadge status={row.photo_status} />
+              {row.late_uploaded ? <LateUploadedBadge /> : null}
+            </span>
+            {photoLink(row)}
+          </div>
+          {deadlineOf(row) ? <span className="text-text-muted">{deadlineOf(row)}</span> : null}
+          {aiDetail(row) ? <span className="text-text-muted">{aiDetail(row)}</span> : null}
+          {uploadButton(row, "w-full")}
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
+          {photoCell(row)}
+          {aiDetail(row) ? <span className="text-text-muted">{aiDetail(row)}</span> : null}
+        </div>
+      )}
       {row.ai_entered_ok === false ? <EnteredMismatchBadge /> : null}
       {row.comment || row.comment_required ? <div className="text-[13px]">{commentCell(row)}</div> : null}
     </div>
@@ -390,6 +466,9 @@ const ReportBody = ({ report, showDeliveries }: { report: ShiftReport; showDeliv
             rows={accounts}
             columns={columns}
             getRowKey={(row) => row.card_id}
+            // BE-B: «Rasm» ustunida belgi + muddat + «Rasm yuklash» — ustun kengayadi; amallar ustunli jadval kabi zich
+            // (ichki katak 8 px), aks holda planshet va sidebar'li 1024 da «Farq» skroll ortiga o'tib ketardi.
+            density={accounts.some((row) => row.photo_status) ? "tight" : "default"}
             label={t("shiftCheck.report.accounts.label")}
             renderCard={renderAccountCard}
             cardsLabel={t("shiftCheck.report.accounts.label")}
@@ -480,6 +559,17 @@ const ShiftReportPage = () => {
   const canResend = isSuperadmin && report?.shift.status === "closed";
   const fileUrl = isSuperadmin ? (report?.report?.file_url ?? null) : null;
   const fileIsExcel = report?.report?.file_format === "xlsx";
+  // BE-B: «Rasm yuklash» oynasi. Qator hisobotdan jonli o'qiladi (409 dan keyin `can_upload_late` yangilanadi);
+  // yopilish harakati tugaguncha oxirgi qator saqlanadi.
+  const [lateCardId, setLateCardId] = useState<string | null>(null);
+  const [lateOpen, setLateOpen] = useState(false);
+  const [lateLast, setLateLast] = useState<ShiftAccountCheck | null>(null);
+  const lateRow = (lateCardId && report?.accounts.find((row) => row.card_id === lateCardId)) || lateLast;
+  const openLatePhoto = (row: ShiftAccountCheck) => {
+    setLateCardId(row.card_id);
+    setLateLast(row);
+    setLateOpen(true);
+  };
 
   const handleResend = async () => {
     if (!shiftId || resend.isPending) return;
@@ -552,7 +642,7 @@ const ShiftReportPage = () => {
           {(data) =>
             // `normalizeShiftReport` smena qatorisiz javobda `null` qaytaradi.
             (data as ShiftReport | null) ? (
-              <ReportBody report={data} showDeliveries={isSuperadmin} />
+              <ReportBody report={data} showDeliveries={isSuperadmin} onUploadLate={openLatePhoto} />
             ) : (
               <EmptyState icon={Info} title={t("shiftCheck.report.notFound")} />
             )
@@ -561,6 +651,18 @@ const ShiftReportPage = () => {
       ) : (
         <EmptyState icon={Info} title={t("shiftCheck.report.notFound")} />
       )}
+      {shiftId ? (
+        <LatePhotoDialog
+          open={lateOpen}
+          shiftId={shiftId}
+          row={lateRow}
+          onClose={() => setLateOpen(false)}
+          onExited={() => {
+            setLateCardId(null);
+            setLateLast(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 };

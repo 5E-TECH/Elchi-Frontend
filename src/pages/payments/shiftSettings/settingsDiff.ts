@@ -11,12 +11,22 @@ import {
 } from "../../../entities/payments";
 
 /**
- * Smena sozlamalari formasi (kiZgTybn; gWI4gYkw): qoralama va `PATCH finance/shift/settings` uchun faqat o'zgargan
+ * Asosiy kassa kaliti: `main_account_check_enabled` (BE-A), bo'lmasa (eski backend) `account_check_enabled` — sahifa
+ * superadmin uchun sukut kassani (`'0'`, asosiy) o'qiydi, ikkalasi bir xil.
+ */
+export const mainAccountCheck = (settings: ShiftCheckSettings): boolean =>
+  settings.main_account_check_enabled ?? settings.account_check_enabled;
+
+/**
+ * Smena sozlamalari formasi (kiZgTybn; gWI4gYkw; BE-A): qoralama va `PATCH finance/shift/settings` uchun faqat o'zgargan
  * kalitlar. `report` — backend javobida bo'lsa (aks holda `null`, blok chizilmaydi va so'rovga kirmaydi). Smena jadvali
  * (`auto_open`, `auto_close`, `late_alert`) — Ops → «Kun tartibi» (`pages/daily-schedule`), bu formaga kirmaydi.
  */
 export type Draft = {
+  /** ASOSIY kassa kaliti (BE-A; eski backendda — barcha kassalar). */
   account_check_enabled: boolean;
+  /** BE-A: filiallar kaliti; eski backend bermasa `null` — kalit chizilmaydi va so'rovga kirmaydi. */
+  branch_account_check_enabled: boolean | null;
   photo_required: boolean;
   ai_check_enabled: boolean;
   cards: Record<string, { require_photo_on_shift_close: boolean; ai_check_enabled: boolean }>;
@@ -34,7 +44,8 @@ const cloneReport = (report: ShiftReportSendSettings | null): ShiftReportSendSet
     : null;
 
 export const toDraft = (settings: ShiftCheckSettings): Draft => ({
-  account_check_enabled: settings.account_check_enabled,
+  account_check_enabled: mainAccountCheck(settings),
+  branch_account_check_enabled: settings.branch_account_check_enabled,
   photo_required: settings.photo_required,
   ai_check_enabled: settings.ai_check_enabled,
   cards: Object.fromEntries(
@@ -46,10 +57,90 @@ export const toDraft = (settings: ShiftCheckSettings): Draft => ({
   report: cloneReport(settings.report),
 });
 
+/** Foydalanuvchi o'zgartirmagan qiymat (`edited === before`) — serverdagi yangisi, aks holda foydalanuvchiniki. */
+const keepEdit = <T>(edited: T, before: T, next: T): T => (Object.is(edited, before) ? next : edited);
+
+const rebaseReport = (
+  before: ShiftReportSendSettings | null,
+  fresh: ShiftReportSendSettings | null,
+  draft: ShiftReportSendSettings | null,
+): ShiftReportSendSettings | null => {
+  if (!fresh || !before || !draft) return fresh;
+  return {
+    format: keepEdit(draft.format, before.format, fresh.format),
+    recipients: Object.fromEntries(
+      SHIFT_REPORT_RECIPIENT_GROUPS.map((group) => {
+        const edited = draft.recipients[group];
+        const old = before.recipients[group];
+        const value = fresh.recipients[group];
+        return [
+          group,
+          {
+            telegram: keepEdit(edited.telegram, old.telegram, value.telegram),
+            in_app: keepEdit(edited.in_app, old.in_app, value.in_app),
+          },
+        ];
+      }),
+    ) as ShiftReportSendSettings["recipients"],
+  };
+};
+
+/**
+ * Sozlama serverdan qayta o'qilganda (realtime `finance.cashbox.card_changed`, boshqa superadmin, o'zimizning
+ * «Saqlash»dan keyin) qoralamani yangi qiymatlar ustiga ko'chiradi: foydalanuvchi o'zgartirgan kalitlar saqlanadi
+ * (saqlanmagan o'zgarish yo'qolmaydi), qolgani — serverdan; yangi karta qatori server qiymati bilan qo'shiladi,
+ * o'chirilgani tushib qoladi. AI faqat rasm talab qilingan kartada (backend 400 qoidasi).
+ */
+export const rebaseDraft = (previous: ShiftCheckSettings, next: ShiftCheckSettings, draft: Draft): Draft => {
+  const before = toDraft(previous);
+  const fresh = toDraft(next);
+  const cards = Object.fromEntries(
+    Object.entries(fresh.cards).map(([cardId, card]) => {
+      const old = before.cards[cardId];
+      const edited = draft.cards[cardId];
+      if (!old || !edited) return [cardId, card];
+      const photo = keepEdit(
+        edited.require_photo_on_shift_close,
+        old.require_photo_on_shift_close,
+        card.require_photo_on_shift_close,
+      );
+      const ai = keepEdit(edited.ai_check_enabled, old.ai_check_enabled, card.ai_check_enabled);
+      return [cardId, { require_photo_on_shift_close: photo, ai_check_enabled: photo && ai }];
+    }),
+  );
+  const report = rebaseReport(before.report, fresh.report, draft.report);
+  return {
+    account_check_enabled: keepEdit(
+      draft.account_check_enabled,
+      before.account_check_enabled,
+      fresh.account_check_enabled,
+    ),
+    branch_account_check_enabled:
+      fresh.branch_account_check_enabled === null
+        ? null
+        : keepEdit(
+            draft.branch_account_check_enabled,
+            before.branch_account_check_enabled,
+            fresh.branch_account_check_enabled,
+          ),
+    photo_required: keepEdit(draft.photo_required, before.photo_required, fresh.photo_required),
+    ai_check_enabled: keepEdit(draft.ai_check_enabled, before.ai_check_enabled, fresh.ai_check_enabled),
+    cards,
+    report,
+  };
+};
+
 /** Faqat o'zgargan kalitlar (bo'sh — o'zgarish yo'q). */
 export const diffShiftSettings = (base: ShiftCheckSettings, draft: Draft): UpdateShiftSettingsRequest => {
   const body: UpdateShiftSettingsRequest = {};
-  if (draft.account_check_enabled !== base.account_check_enabled) body.account_check_enabled = draft.account_check_enabled;
+  if (draft.account_check_enabled !== mainAccountCheck(base)) body.account_check_enabled = draft.account_check_enabled;
+  if (
+    base.branch_account_check_enabled !== null &&
+    draft.branch_account_check_enabled !== null &&
+    draft.branch_account_check_enabled !== base.branch_account_check_enabled
+  ) {
+    body.branch_account_check_enabled = draft.branch_account_check_enabled;
+  }
   if (draft.photo_required !== base.photo_required) body.photo_required = draft.photo_required;
   if (draft.ai_check_enabled !== base.ai_check_enabled) body.ai_check_enabled = draft.ai_check_enabled;
   const cards = base.cards
@@ -65,7 +156,6 @@ export const diffShiftSettings = (base: ShiftCheckSettings, draft: Draft): Updat
     })
     .filter((patch): patch is NonNullable<typeof patch> => patch !== null);
   if (cards.length) body.cards = cards;
-
 
   if (base.report && draft.report) {
     const before = base.report;

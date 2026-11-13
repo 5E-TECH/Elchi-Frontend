@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   deriveEnteredOk,
+  effectiveShiftCardFlags,
   evaluateShiftAccountRow,
   isAccountCommentRequired,
+  normalizeShiftAccountCheck,
   normalizeShiftCheckSettings,
   normalizeShiftReport,
+  readShiftLatePhotoError,
   validateShiftPhoto,
 } from "./shiftAccountCheck";
 
@@ -85,5 +88,139 @@ describe("shift account check rules (kiZgTybn)", () => {
     expect(report?.accounts[0]).toMatchObject({ expected_balance: 2_140_000, ai_status: "not_required" });
     expect(report?.operations[0]).toEqual({ operation_type: "income", payment_method: "cash", count: 3, total: 1500 });
     expect(normalizeShiftReport({ data: {} })).toBeNull();
+  });
+
+  it("BE-A: both account-check switches, cashbox type and server-computed card requirement are read", () => {
+    const settings = normalizeShiftCheckSettings({
+      data: {
+        account_check_enabled: true,
+        main_account_check_enabled: true,
+        branch_account_check_enabled: false,
+        photo_required: true,
+        ai_check_enabled: true,
+        cashbox_user_id: "0",
+        cashbox_type: "main",
+        cards: [
+          // Server hisoblagani ustun: karta bayrog'i yoqiq, lekin hisoblangan `false` — `false`.
+          { card_id: "1", name: "Asosiy karta", require_photo_on_shift_close: true, ai_check_enabled: true, photo_required: false, ai_enabled: false },
+          { card_id: "2", name: "Humo", require_photo_on_shift_close: true, ai_check_enabled: true, photo_required: true, ai_enabled: true },
+        ],
+      },
+    });
+    expect(settings).toMatchObject({
+      account_check_enabled: true,
+      main_account_check_enabled: true,
+      branch_account_check_enabled: false,
+      cashbox_type: "main",
+    });
+    expect(settings.cards.map((card) => [card.photo_required, card.ai_enabled])).toEqual([
+      [false, false],
+      [true, true],
+    ]);
+  });
+
+  it("BE-A, old backend: new switches are null and the card requirement falls back to master && card flag", () => {
+    const settings = normalizeShiftCheckSettings({
+      data: {
+        account_check_enabled: true,
+        photo_required: true,
+        ai_check_enabled: false,
+        cards: [
+          { card_id: "1", name: "Asosiy karta", require_photo_on_shift_close: true, ai_check_enabled: true },
+          { card_id: "2", name: "Hisob raqam", require_photo_on_shift_close: false, ai_check_enabled: false },
+        ],
+      },
+    });
+    expect(settings.main_account_check_enabled).toBeNull();
+    expect(settings.branch_account_check_enabled).toBeNull();
+    expect(settings.cashbox_type).toBeNull();
+    // Rasm: master yoqiq && karta; AI: master o'chiq — hech qaysi kartada yo'q.
+    expect(settings.cards.map((card) => [card.photo_required, card.ai_enabled])).toEqual([
+      [true, false],
+      [false, false],
+    ]);
+    expect(effectiveShiftCardFlags({ require_photo_on_shift_close: true }, { photo_required: false, ai_check_enabled: true })).toEqual({
+      photo_required: false,
+      ai_enabled: false,
+    });
+    expect(effectiveShiftCardFlags({ photo_required: "true", ai_enabled: "false" }, { photo_required: false, ai_check_enabled: false })).toEqual({
+      photo_required: true,
+      ai_enabled: false,
+    });
+  });
+});
+
+/** BE-B — avto-yopilgan smenaga rasmni keyin yuklash: hisobot qatori maydonlari va xato o'quvchisi. */
+describe("shift late photo (BE-B)", () => {
+  const base = { card_id: "2", expected_balance: "1850000.00" };
+
+  it("reads photo_status, late_upload_deadline, late_uploaded and can_upload_late", () => {
+    expect(
+      normalizeShiftAccountCheck({
+        ...base,
+        photo_status: "pending",
+        late_upload_deadline: "2026-11-12T13:00:00.000Z",
+        late_uploaded: false,
+        can_upload_late: true,
+      }),
+    ).toMatchObject({
+      photo_status: "pending",
+      late_upload_deadline: "2026-11-12T13:00:00.000Z",
+      late_uploaded: false,
+      can_upload_late: true,
+    });
+    expect(normalizeShiftAccountCheck({ ...base, photo_status: "UPLOADED", late_uploaded: true })).toMatchObject({
+      photo_status: "uploaded",
+      late_uploaded: true,
+      can_upload_late: false,
+    });
+  });
+
+  it("older backend (fields missing) or an unknown status: photo_status null, no button", () => {
+    expect(normalizeShiftAccountCheck(base)).toMatchObject({
+      photo_status: null,
+      late_upload_deadline: null,
+      late_uploaded: false,
+      can_upload_late: false,
+    });
+    expect(normalizeShiftAccountCheck({ ...base, photo_status: "lost" })?.photo_status).toBeNull();
+  });
+
+  const httpError = (status: number, data: Record<string, unknown>) => ({ response: { status, data } });
+
+  it("error reader: code, verbatim message, deadline and whether a retry can help", () => {
+    expect(
+      readShiftLatePhotoError(
+        httpError(409, {
+          statusCode: 409,
+          code: "SHIFT_LATE_PHOTO_EXPIRED",
+          message: "Rasmni keyin yuklash muddati tugagan (smena yopilganidan 24 soat o'tdi)",
+          deadline: "2026-11-11T13:00:00.000Z",
+        }),
+      ),
+    ).toEqual({
+      status: 409,
+      code: "SHIFT_LATE_PHOTO_EXPIRED",
+      message: "Rasmni keyin yuklash muddati tugagan (smena yopilganidan 24 soat o'tdi)",
+      deadline: "2026-11-11T13:00:00.000Z",
+      terminal: true,
+      commentRequired: false,
+    });
+    expect(
+      readShiftLatePhotoError(httpError(404, { code: "SHIFT_LATE_PHOTO_CARD_NOT_IN_SHIFT", message: "Bu karta shu smena hisobotida yo'q" })),
+    ).toMatchObject({ code: "SHIFT_LATE_PHOTO_CARD_NOT_IN_SHIFT", terminal: true });
+    expect(
+      readShiftLatePhotoError(
+        httpError(400, { message: "«Humo»: farq bor yoki AI natijasi mos emas — izoh majburiy" }),
+      ),
+    ).toMatchObject({ code: null, terminal: false, commentRequired: true });
+    expect(readShiftLatePhotoError(httpError(403, { message: "Forbidden resource" }))).toMatchObject({ terminal: true });
+    // Tarmoq xatosi — matn yo'q (UI o'z matnini ko'rsatadi), qayta urinish mumkin.
+    expect(readShiftLatePhotoError(new Error("Network Error"))).toMatchObject({
+      status: null,
+      code: null,
+      message: null,
+      terminal: false,
+    });
   });
 });

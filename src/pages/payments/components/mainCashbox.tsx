@@ -79,6 +79,7 @@ import { EXPENSE_CATEGORIES_TAB, opsTabPath } from "../../ops/tabs";
 import CashboxFormPopup, { type CashboxFormPayload, type CashboxFormResult } from "./CashboxFormPopup";
 import { CashboxCardsDialog } from "./cashboxCards/CashboxCardsDialog";
 import CloseShiftPopup, { type CloseShiftPayload, type CloseShiftResult } from "./CloseShiftPopup";
+import { isShiftCardsOutdatedError } from "./shiftCheck/useShiftAccountsForm";
 import ExpenseCategoryBadge from "./ExpenseCategoryBadge";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import { ReceiptRowBadge } from "./receipt/ReceiptStatusBadge";
@@ -778,9 +779,13 @@ const MainCashbox = () => {
         closed = normalizeCashboxShift(asRecord(response).data);
       } catch (error) {
         // kiZgTybn: kartalar tekshiruvining 400 xabari karta nomi bilan keladi («Humo: izoh majburiy») — kassir nimani
-        // tuzatishini bilishi uchun shu matn ko'rsatiladi; boshqa xatolar — umumiy matn (avvalgidek).
+        // tuzatishini bilishi uchun shu matn AYNAN ko'rsatiladi; boshqa xatolar — umumiy matn (avvalgidek). BE-A: oyna
+        // kartalar rejimida bo'lmasa ham (sozlama eskirgan — tasdiqlash shu orada yoqilgan) «Har karta qoldig'ini
+        // tasdiqlang: …» ko'rsatiladi va oynaga qaytadi — oyna sozlamani qayta o'qib kartalar rejimiga o'tadi.
         const status = (error as { response?: { status?: number } } | null)?.response?.status;
-        const accountMessage = accounts?.length && status === 400 ? getApiErrorMessage(error) : "";
+        const backendMessage = status === 400 ? getApiErrorMessage(error) : "";
+        const accountMessage =
+          backendMessage && (accounts !== undefined || isShiftCardsOutdatedError(backendMessage)) ? backendMessage : "";
         notify.error(t("common:error"), { description: accountMessage || t("closeShiftError") });
         // Smena boshqa xodim tomonidan yopilgan bo'lishi mumkin — holat qayta o'qiladi.
         refetchShift();

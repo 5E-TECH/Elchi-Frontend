@@ -291,6 +291,12 @@ export const API_ENDPOINTS = {
     SHIFT_REPORT: (id: string | number) => `finance/shift/${id}/report`,
     /** gWI4gYkw — smena hisobotini qayta yuborish (faqat superadmin, yangi raund). */
     SHIFT_REPORT_RESEND: (id: string | number) => `finance/shift/${id}/report/resend`,
+    /**
+     * BE-B (ega qarori 2026-11-10) — avtomatik yopilgan ASOSIY kassa smenasiga karta qoldig'i rasmini 24 soat ichida
+     * keyin yuklash (faqat superadmin / admin; multipart `photo`, `entered_balance`, `comment?`).
+     */
+    SHIFT_ACCOUNT_LATE_PHOTO: (shiftId: string | number, cardId: string | number) =>
+      `finance/shift/${shiftId}/accounts/${cardId}/late-photo`,
     // Zv3MLn0a — kassa kartalari (jonli qoldiq har karta bo'yicha; superadmin/admin — asosiy, menejer — o'z filiali).
     CARDS: "finance/cashbox/cards",
     // cards1111 — kartalarni boshqarish (yozish — faqat superadmin/admin; menejer — o'qish va ko'chirma). Pul

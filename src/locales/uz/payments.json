@@ -1008,15 +1008,20 @@
       "commentOptionalPlaceholder": "Ixtiyoriy — masalan, qoldiq haqida eslatma",
       "empty": "Bu kassada faol karta yo'q — faqat naqd sanaladi.",
       "loadError": "Kartalar ro'yxati yuklanmadi — yopishda backend tekshiradi.",
-      "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 30 soniyagacha kutadi.",
+      "note": "Rasmlar va AI natijasi smena hisobotida saqlanadi. AI hali tekshirayotgan bo'lsa, yopish 15 soniyagacha kutadi.",
       "alert": "{{count}} ta kartada farq bor — izoh majburiy",
       "pending": "{{count}} ta karta rasmi hali tekshirilmoqda.",
+      "dialogSubtitle": "Naqdni sanang, har bir karta qoldig'ini kiriting va skrinshot yuklang",
+      "dialogSubtitleNoPhoto": "Naqdni sanang va har bir karta qoldig'ini kiriting",
+      "missingPhotos": "{{count}} ta kartada skrinshot yo'q: {{cards}} — yuklamaguncha smenani yopib bo'lmaydi",
       "errors": {
         "entered": "Ilovadagi qoldiqni kiriting",
         "photo": "Skrinshot majburiy — avval rasm yuklang",
         "comment": "Farq bor yoki AI natijasi mos emas — izoh yozing",
         "photoType": "Faqat jpeg, png yoki webp rasm yuklang",
         "photoSize": "Rasm hajmi 5 MB dan oshmasin",
+        "photoHeic": "HEIC rasmni o'qib bo'lmadi — JPG yoki PNG yuklang",
+        "photoDecode": "Rasmni o'qib bo'lmadi — boshqa rasm tanlang",
         "upload": "Rasm yuklanmadi"
       }
     },
@@ -1097,6 +1102,35 @@
         "emptyTitle": "Kartalar tekshirilmagan",
         "emptyText": "Bu smenada karta qoldig'i tasdiqlanmagan (sozlama o'chiq bo'lgan)."
       },
+      "photoStatus": {
+        "uploaded": "Yuklangan",
+        "pending": "Rasm kutilmoqda",
+        "missing": "Rasm yuklanmagan",
+        "not_required": "Talab qilinmagan",
+        "lateUploaded": "Keyin yuklandi",
+        "until": "{{time}} gacha"
+      },
+      "late": {
+        "upload": "Rasm yuklash",
+        "reupload": "Qayta yuklash",
+        "uploadFor": "{{action}}: {{card}}",
+        "title": "Rasmni keyin yuklash",
+        "summary": "Karta qoldig'i",
+        "expected": "Tizim bo'yicha (smena yopilganda)",
+        "deadline": "Muddat",
+        "choose": "Skrinshot tanlash",
+        "preparing": "Tayyorlanmoqda…",
+        "previewAlt": "{{card}} skrinshoti",
+        "needBoth": "Skrinshot tanlang va ilovadagi qoldiqni kiriting",
+        "needPhoto": "Skrinshot tanlang",
+        "needBalance": "Ilovadagi qoldiqni kiriting",
+        "needComment": "Farq sababini izohga yozing",
+        "commentHint": "Qoldiq tizimdagidan farq qiladi — izoh majburiy",
+        "commentError": "Farq bor — sababini izohga yozing",
+        "submit": "Yuklash",
+        "deadlineWas": "Muddat: {{time}}",
+        "note": "Rasm shu hisobotga qo'shiladi; Telegram va PDF hisobot o'zi qayta yuborilmaydi."
+      },
       "ops": {
         "title": "Operatsiyalar xulosasi",
         "subtitle": "{{count}} ta operatsiya",
@@ -1164,7 +1198,7 @@
     },
     "settings": {
       "title": "Kassa smenasi sozlamalari",
-      "subtitle": "Barcha kassalar uchun · faqat superadmin o'zgartiradi",
+      "subtitle": "Asosiy kassa va filiallar · faqat superadmin o'zgartiradi",
       "back": "Asosiy kassa",
       "save": "Saqlash",
       "saving": "Saqlanmoqda…",
@@ -1174,12 +1208,16 @@
       "sectionHint": "Smena yopilganda har bir karta va hisob raqam uchun so'raladi",
       "accountCheck": "Smena yopishda har karta qoldig'i majburiy",
       "accountCheckHint": "Kassir har karta uchun bank ilovasidagi qoldiqni kiritmaguncha smena yopilmaydi",
+      "mainAccountCheck": "Asosiy kassa — qoldiq tasdiqlash",
+      "mainAccountCheckHint": "Asosiy kassa smenasini yopishda kassir har karta uchun bank ilovasidagi qoldiqni kiritadi — kiritmaguncha smena yopilmaydi",
+      "branchAccountCheck": "Filiallar — qoldiq tasdiqlash",
+      "branchAccountCheckHint": "Filial kassalarida ham har karta qoldig'i majburiy. O'chiq bo'lsa, filial smenasi avvalgidek yopiladi",
       "photo": "Rasm talab qilish",
       "photoHint": "Har karta uchun bank ilovasidan skrinshot yuklash so'raladi",
       "ai": "AI tekshiruvi",
       "aiHint": "AI rasmdagi qoldiqni o'qiydi, kiritilgan va tizimdagi summa bilan solishtiradi. Farq bo'lsa izoh majburiy",
       "perCard": "Har karta bo'yicha",
-      "perCardHint": "Umumiy kalit o'chiq bo'lsa, karta kalitlari ishlamaydi. AI faqat rasm talab qilingan kartada ishlaydi.",
+      "perCardHint": "Asosiy kassa kartalari. Umumiy kalit o'chiq bo'lsa, karta kalitlari ishlamaydi. AI faqat rasm talab qilingan kartada ishlaydi.",
       "perCardLabel": "Kartalar bo'yicha smena kalitlari",
       "card": "Karta",
       "result": "Natija",
@@ -1446,7 +1484,7 @@
       "groups": {
         "manual_expense": {
           "title": "Qo'lda chiqim",
-          "hint": "Asosiy va filial kassalaridan xarajat",
+          "hint": "Asosiy va filial kassalaridan — faqat «Karta (Click)» chiqimida",
           "offDescription": "Qo'lda chiqimda chek rasmi so'ralmaydi. O'zgarish «Saqlash» bosilganda kuchga kiradi.",
           "offField": "Formada «Chek rasmi» maydoni ko'rinmaydi, xarajat cheksiz saqlanadi"
         },

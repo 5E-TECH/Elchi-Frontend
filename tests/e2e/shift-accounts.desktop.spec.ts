@@ -2,9 +2,10 @@ import { expect, test } from "@playwright/test";
 import { mockShiftAccounts, PNG_1X1 } from "./support/shiftAccounts";
 
 /**
- * kiZgTybn (1440): smena yopish oynasida kartalar qoldig'i — rasm majburiy kartada skrinshot yuklanmaguncha yopilmaydi,
- * rasm yuklangach AI «Mos keldi», AI o'chiq karta qo'lda tasdiqlanadi; yuborishda `accounts[]` va Σ karta;
- * natija oynasidan «Smena hisoboti» → hisobot sahifasi (kartalar, AI holati, rasm havolasi).
+ * kiZgTybn (1440): smena yopish oynasida kartalar qoldig'i — rasm majburiy kartada skrinshot yuklanmaguncha «Smenani
+ * yopish» o'chiq va sababi tugmalar ustida (BE-A), rasm yuklangach AI «Mos keldi», AI o'chiq karta qo'lda
+ * tasdiqlanadi; yuborishda `accounts[]` va Σ karta; natija oynasidan «Smena hisoboti» → hisobot sahifasi (kartalar,
+ * AI holati, rasm havolasi).
  */
 test("superadmin: kartalar qoldig'i, skrinshot, AI holati → yopish → smena hisoboti", async ({ page }) => {
   const mock = await mockShiftAccounts(page);
@@ -24,8 +25,12 @@ test("superadmin: kartalar qoldig'i, skrinshot, AI holati → yopish → smena h
   await dialog.getByLabel(/^Sanalgan naqd/).fill("18240000");
   await main.getByLabel(/^Ilovadagi qoldiq/).fill("2140000");
   await account.getByLabel(/^Ilovadagi qoldiq/).fill("1450000");
-  await dialog.getByRole("button", { name: "Smenani yopish" }).click();
-  await expect(main).toContainText("Skrinshot majburiy — avval rasm yuklang");
+  // BE-A: skrinshot yuklanmaguncha tugma o'chiq, sababi tugmalar ustida (bosib xato kutilmaydi).
+  const submit = dialog.getByRole("button", { name: "Smenani yopish" });
+  const reason = dialog.getByTestId("close-shift-block-reason");
+  await expect(reason).toHaveText("1 ta kartada skrinshot yo'q: Asosiy karta — yuklamaguncha smenani yopib bo'lmaydi");
+  await expect(submit).toBeDisabled();
+  await expect(submit).toHaveAttribute("aria-describedby", (await reason.getAttribute("id")) ?? "");
   expect(mock.closes).toEqual([]);
 
   await dialog.getByTestId("shift-photo-input-1").setInputFiles({ name: "IMG_2210.png", mimeType: "image/png", buffer: PNG_1X1 });
@@ -33,8 +38,12 @@ test("superadmin: kartalar qoldig'i, skrinshot, AI holati → yopish → smena h
   await expect(main).toContainText(/AI rasmdan 2\s140\s000 so'm o'qidi/);
   await expect(main.getByText("Mos keldi")).toBeVisible();
   expect(mock.uploads).toBe(1);
+  // Brauzerda kichraytirilgan — serverga JPEG ketdi.
+  expect(mock.photoTypes).toEqual(["image/jpeg"]);
+  await expect(reason).toHaveCount(0);
+  await expect(submit).toBeEnabled();
 
-  await dialog.getByRole("button", { name: "Smenani yopish" }).click();
+  await submit.click();
   const result = page.getByRole("dialog", { name: "Smena yopildi" });
   await expect(result).toBeVisible();
   expect(mock.closes).toEqual([
