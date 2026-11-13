@@ -22,6 +22,7 @@ import {
   getWarehouseStock,
   inventoryWarehouse,
   pauseWarehouse,
+  removeWarehouseStock,
   resolveOrderSource,
   resumeWarehouse,
   setMarketWarehouseOrder,
@@ -162,6 +163,20 @@ export const useInventory = () => {
   return useMutation({
     mutationFn: ({ id, body, idempotencyKey }: { id: string; body: InventoryRequest; idempotencyKey: string }) =>
       inventoryWarehouse(id, body, idempotencyKey),
+    retry: 0,
+    onSettled: invalidate,
+  });
+};
+
+/**
+ * 2026-11-13: mahsulotni ombordan o'chirish. `retry: 0`; xato bo'lsa ham kesh yangilanadi (server o'chirgan bo'lishi
+ * mumkin — takror so'rov 404 beradi).
+ */
+export const useRemoveWarehouseStock = () => {
+  const invalidate = useInvalidateWarehouses();
+  return useMutation({
+    mutationFn: ({ id, productId, reason }: { id: string; productId: string; reason?: string }) =>
+      removeWarehouseStock(id, productId, reason),
     retry: 0,
     onSettled: invalidate,
   });

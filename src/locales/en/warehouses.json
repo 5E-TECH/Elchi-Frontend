@@ -201,6 +201,7 @@
       "marketPositions_one": "{{value}} item",
       "marketPositions_other": "{{value}} items",
       "columns": {
+        "actions": "Actions",
         "product": "Product",
         "code": "Code",
         "codeTitle": "Factory barcode (EAN-13) or Elchi QR code (ELC-P-…)",
@@ -224,6 +225,8 @@
       "thresholdShort": "threshold {{value}}",
       "thresholdEditTitle": "Change threshold",
       "thresholdEditAria": "{{name}} — change the low stock threshold ({{value}})",
+      "removeAria": "Remove «{{name}}» from the warehouse",
+      "remove": "Remove from warehouse",
       "positions_one": "{{value}} item",
       "positions_other": "{{value}} items",
       "summary": "{{positions}} · {{pcs}}",
@@ -461,6 +464,21 @@
       "taken": "This barcode is already linked to another product of this shop.",
       "invalid": "Invalid barcode (check digit doesn't match)."
     }
+  },
+  "removeStock": {
+    "title": "Remove product from warehouse",
+    "body": "«{{name}}» will be removed from the warehouse list. Stock does not have to be 0.",
+    "writeOff": "{{pcs}} in stock will be written off — the «Movements» log keeps it as «Removed from warehouse».",
+    "empty": "No stock — the product is only removed from the list.",
+    "reservedTitle": "Cannot remove",
+    "reserved": "{{pcs}} reserved for active orders. Cancel them or hand them to a courier first.",
+    "reason": "Reason",
+    "reasonPlaceholder": "For example: the market took the product back",
+    "submit": "Remove",
+    "success": "Product removed from warehouse",
+    "successText": "{{name}} · {{pcs}} written off",
+    "successTextEmpty": "{{name}}",
+    "reservedError": "The product is reserved for active orders — cancel them or hand them to a courier first."
   },
   "threshold": {
     "title": "Low stock threshold",

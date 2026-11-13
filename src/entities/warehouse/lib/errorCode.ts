@@ -7,6 +7,8 @@ import { getErrorStatus } from "../../../shared/lib/errorKind";
 export const WAREHOUSE_ERROR_CODES = {
   paused: "WAREHOUSE_PAUSED",
   stockForbidden: "WAREHOUSE_STOCK_FORBIDDEN",
+  /** 2026-11-13: ombordan o'chirib bo'lmaydi — dona faol buyurtmalarda band (409). */
+  stockReserved: "WAREHOUSE_STOCK_RESERVED",
 } as const;
 
 type Raw = Record<string, unknown>;
@@ -43,6 +45,10 @@ export const getApiErrorCode = (error: unknown): string | null => {
 /** `POST /warehouses/:id/stock-in` → 409 `WAREHOUSE_PAUSED` (to'xtatilgan omborga kirim qilinmaydi). */
 export const isWarehousePausedError = (error: unknown): boolean =>
   getErrorStatus(error) === 409 && getApiErrorCode(error) === WAREHOUSE_ERROR_CODES.paused;
+
+/** `DELETE /warehouses/:id/stock/:productId` → 409 `WAREHOUSE_STOCK_RESERVED` (band dona bor — o'chirilmaydi). */
+export const isWarehouseStockReservedError = (error: unknown): boolean =>
+  getErrorStatus(error) === 409 && getApiErrorCode(error) === WAREHOUSE_ERROR_CODES.stockReserved;
 
 /**
  * `GET /market/warehouse-stock` → 403: market operatoriga kalit yoqilmagan (`WAREHOUSE_STOCK_FORBIDDEN`). Kodsiz 403

@@ -20,6 +20,7 @@ import {
   type OrderSourcePreview,
   type ProductCode,
   type ProductCodeFormat,
+  type RemoveStockResult,
   type ResolveSourceRequest,
   SOURCE_REASONS,
   type SourceLine,
@@ -632,6 +633,26 @@ export const setStockThreshold = async (
     productId: idOf(payload.product_id) ?? productId,
     lowStockThreshold: numberOrNull(payload.low_stock_threshold),
     effectiveThreshold: numberOf(payload.effective_threshold),
+  };
+};
+
+/**
+ * 2026-11-13: mahsulotni ombordan o'chirish — qoldiq 0 bo'lishi shart emas (qolgan dona jurnalga «Ombordan
+ * o'chirildi» bo'lib yoziladi). Sabab ixtiyoriy. Faol buyurtmada band bo'lsa — 409 `WAREHOUSE_STOCK_RESERVED`.
+ */
+export const removeWarehouseStock = async (
+  id: string,
+  productId: string,
+  reason?: string,
+): Promise<RemoveStockResult> => {
+  const trimmed = reason?.trim();
+  const response = await api.delete(API_ENDPOINTS.WAREHOUSES.STOCK_REMOVE(id, productId), {
+    data: trimmed ? { reason: trimmed } : {},
+  });
+  const payload = payloadOf(response.data) ?? {};
+  return {
+    productId: idOf(payload.product_id) ?? productId,
+    writtenOff: numberOf(payload.written_off),
   };
 };
 

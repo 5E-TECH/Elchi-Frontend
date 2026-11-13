@@ -15,6 +15,7 @@ import {
   normalizeWarehouseMovements,
   normalizeWarehouseStock,
   pauseWarehouse,
+  removeWarehouseStock,
   resumeWarehouse,
   setMarketWarehouseOrder,
   setStockThreshold,
@@ -23,10 +24,10 @@ import {
 import { rawProduct, rawWarehouse } from "../../../test/warehouseFixtures";
 import { hqFirst } from "../lib/hqFirst";
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), saveBlob: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), saveBlob: vi.fn() }));
 
 vi.mock("../../../shared/api/api", () => ({
-  api: { get: mocks.get, post: mocks.post, patch: mocks.patch, put: vi.fn(), delete: vi.fn() },
+  api: { get: mocks.get, post: mocks.post, patch: mocks.patch, put: vi.fn(), delete: mocks.delete },
   API_TIMEOUT_MS: 20_000,
   LONG_REQUEST_TIMEOUT_MS: 120_000,
 }));
@@ -40,6 +41,7 @@ beforeEach(() => {
   mocks.get.mockReset();
   mocks.post.mockReset();
   mocks.patch.mockReset();
+  mocks.delete.mockReset();
   mocks.saveBlob.mockReset();
 });
 
@@ -347,6 +349,18 @@ describe("so'rovlar", () => {
     mocks.patch.mockResolvedValueOnce({ data: { statusCode: 200, data: { id: "121", can_order_from_warehouse: true } } });
     await expect(setMarketWarehouseOrder("121", true)).resolves.toBe(true);
     expect(mocks.patch).toHaveBeenLastCalledWith("markets/121/warehouse-order", { can_order_from_warehouse: true });
+  });
+
+  it("2026-11-13 ombordan o'chirish — DELETE, sabab faqat berilsa (bo'shliqlar kesiladi); javob o'raladi", async () => {
+    mocks.delete.mockResolvedValueOnce({
+      data: { statusCode: 200, data: { warehouse_id: "3", product_id: "142", removed: true, written_off: 7, movement_id: "901" } },
+    });
+    await expect(removeWarehouseStock("3", "142", "  Market olib ketdi  ")).resolves.toEqual({ productId: "142", writtenOff: 7 });
+    expect(mocks.delete).toHaveBeenLastCalledWith("warehouses/3/stock/142", { data: { reason: "Market olib ketdi" } });
+
+    mocks.delete.mockResolvedValueOnce({ data: { product_id: "143", written_off: 0, movement_id: null } });
+    await expect(removeWarehouseStock("3", "143", "   ")).resolves.toEqual({ productId: "143", writtenOff: 0 });
+    expect(mocks.delete).toHaveBeenLastCalledWith("warehouses/3/stock/143", { data: {} });
   });
 
   it("market qoldig'i — `low_only` faqat yoqilganda", async () => {

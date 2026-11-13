@@ -22,6 +22,7 @@ export {
   normalizeWarehouseProduct,
   normalizeWarehouseStock,
   pauseWarehouse,
+  removeWarehouseStock,
   resolveOrderSource,
   resumeWarehouse,
   setMarketWarehouseOrder,
@@ -34,6 +35,7 @@ export {
   useInventory,
   useMarketWarehouseStock,
   useOrderSourcePreview,
+  useRemoveWarehouseStock,
   useSetMarketWarehouseOrder,
   useSetStockThreshold,
   useSetWarehousePaused,
@@ -51,6 +53,7 @@ export {
   getApiErrorCode,
   isWarehousePausedError,
   isWarehouseStockForbidden,
+  isWarehouseStockReservedError,
   WAREHOUSE_ERROR_CODES,
 } from "./lib/errorCode";
 export { classifyScanCode, isScanCode, normalizeScanCode, splitElchiCode, type ScanCodeKind } from "./lib/scanCode";

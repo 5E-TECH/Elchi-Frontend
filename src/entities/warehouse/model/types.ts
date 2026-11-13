@@ -285,6 +285,12 @@ export type ThresholdResult = {
   effectiveThreshold: number;
 };
 
+/** `DELETE /warehouses/:id/stock/:productId` javobi: o'chirilgan paytdagi qoldiq (jurnalga yozilgan dona). */
+export type RemoveStockResult = {
+  productId: string;
+  writtenOff: number;
+};
+
 export type MarketStockWarehouse = {
   id: string;
   name: string;

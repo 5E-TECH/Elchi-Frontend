@@ -15,10 +15,10 @@ beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
 });
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), saveBlob: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), saveBlob: vi.fn() }));
 
 vi.mock("../../../shared/api/api", () => ({
-  api: { get: mocks.get, post: mocks.post, patch: mocks.patch, put: vi.fn(), delete: vi.fn() },
+  api: { get: mocks.get, post: mocks.post, patch: mocks.patch, put: vi.fn(), delete: mocks.delete },
   API_TIMEOUT_MS: 20_000,
   LONG_REQUEST_TIMEOUT_MS: 120_000,
 }));
@@ -73,6 +73,7 @@ beforeEach(() => {
   });
   mocks.post.mockReset().mockResolvedValue({ data: rawWarehouse({ status: "PAUSED" }) });
   mocks.patch.mockReset().mockResolvedValue({ data: { warehouse_id: "3", product_id: "142", low_stock_threshold: 7, effective_threshold: 7 } });
+  mocks.delete.mockReset();
   mocks.saveBlob.mockReset();
 });
 
@@ -201,6 +202,23 @@ describe("Ombor tafsiloti — superadmin, admin", () => {
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledWith("warehouses/3/stock/142", { low_stock_threshold: 7 }));
   });
 
+  it("2026-11-13 «Ombordan o'chirish» — har qatorda; qoldiq 4 (band 1) — o'chiq ogohlantirish, qoldiq 0 — DELETE", async () => {
+    const user = userEvent.setup();
+    mocks.delete.mockResolvedValue({ data: { data: { product_id: "142", written_off: 0, removed: true } } });
+    renderAs("superadmin");
+    await user.click(await screen.findByRole("button", { name: "«Kir yuvish mashinasi 7 kg» ni ombordan o'chirish" }));
+    let dialog = await screen.findByRole("dialog", { name: "Mahsulotni ombordan o'chirish" });
+    expect(dialog).toHaveTextContent("1 dona faol buyurtmalarda band");
+    expect(within(dialog).getByRole("button", { name: "O'chirish" })).toBeDisabled();
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Mahsulotni ombordan o'chirish" })).not.toBeInTheDocument());
+
+    await user.click(screen.getByRole("button", { name: "«Simsiz quloqchin» ni ombordan o'chirish" }));
+    dialog = await screen.findByRole("dialog", { name: "Mahsulotni ombordan o'chirish" });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    await waitFor(() => expect(mocks.delete).toHaveBeenCalledWith("warehouses/3/stock/142", { data: {} }));
+  });
+
   it("«Harakatlar» tabi — to'liq jurnal, «Turi» filtri", async () => {
     const user = userEvent.setup();
     renderAs("superadmin");
@@ -284,6 +302,7 @@ describe("Ombor tafsiloti — filial menejeri (faqat ko'rish)", () => {
     expect(screen.queryByRole("button", { name: /Ombor amallari/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Excelga yuklash" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /kam qoldiq chegarasini o'zgartirish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /ombordan o'chirish/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Omborlar/ })).not.toBeInTheDocument();
   });
 });
@@ -299,6 +318,7 @@ describe("Ombor tafsiloti — registrator (XtcEyQjb, faqat ko'rish)", () => {
     expect(screen.queryByRole("button", { name: "Mahsulot qo'shish" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Ombor amallari/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /kam qoldiq chegarasini o'zgartirish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /ombordan o'chirish/ })).not.toBeInTheDocument();
     // Menejer kartasi registratorda yo'q.
     expect(screen.queryByRole("heading", { name: "Ombordan ketadigan buyurtmalar" })).not.toBeInTheDocument();
   });

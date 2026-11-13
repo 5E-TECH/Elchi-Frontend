@@ -38,6 +38,7 @@ import { MovementsPanel } from "./ui/MovementsPanel";
 import { RecentMovementsCard } from "./ui/RecentMovementsCard";
 import { StockInDialog } from "./ui/StockInDialog";
 import { StockPanel, type StockFilters } from "./ui/StockPanel";
+import { RemoveStockDialog } from "./ui/RemoveStockDialog";
 import { ThresholdDialog } from "./ui/ThresholdDialog";
 import { WarehouseActionsMenu } from "./ui/WarehouseActionsMenu";
 import { WarehouseKpis } from "./ui/WarehouseKpis";
@@ -101,6 +102,7 @@ const WarehouseDetailPage = () => {
   const [stockInOpen, setStockInOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [thresholdRow, setThresholdRow] = useState<WarehouseStockRow | null>(null);
+  const [removeRow, setRemoveRow] = useState<WarehouseStockRow | null>(null);
   const [exporting, setExporting] = useState(false);
   const stockFilters = useRef<StockFilters>({ search: "", marketId: "", level: "" });
 
@@ -306,6 +308,7 @@ const WarehouseDetailPage = () => {
                   addStockDisabled={paused}
                   onHandTotal={warehouse.summary.onHand}
                   onEditThreshold={setThresholdRow}
+                  onRemove={setRemoveRow}
                   onAddStock={() => setStockInOpen(true)}
                   onFiltersChange={(filters) => {
                     stockFilters.current = filters;
@@ -331,6 +334,9 @@ const WarehouseDetailPage = () => {
               row={thresholdRow}
               onClose={() => setThresholdRow(null)}
             />
+          ) : null}
+          {warehouse ? (
+            <RemoveStockDialog warehouseId={warehouse.id} row={removeRow} onClose={() => setRemoveRow(null)} />
           ) : null}
         </>
       ) : null}

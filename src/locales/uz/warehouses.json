@@ -201,6 +201,7 @@
       "marketPositions_one": "{{value}} ta pozitsiya",
       "marketPositions_other": "{{value}} ta pozitsiya",
       "columns": {
+        "actions": "Amallar",
         "product": "Mahsulot",
         "code": "Kod",
         "codeTitle": "Zavod shtrix kodi (EAN-13) yoki Elchi QR kodi (ELC-P-…)",
@@ -224,6 +225,8 @@
       "thresholdShort": "chegara {{value}}",
       "thresholdEditTitle": "Chegarani o'zgartirish",
       "thresholdEditAria": "{{name}} — kam qoldiq chegarasini o'zgartirish ({{value}})",
+      "removeAria": "«{{name}}» ni ombordan o'chirish",
+      "remove": "Ombordan o'chirish",
       "positions_one": "{{value}} ta pozitsiya",
       "positions_other": "{{value}} ta pozitsiya",
       "summary": "{{positions}} · {{pcs}}",
@@ -461,6 +464,21 @@
       "taken": "Bu shtrix kod shu marketning boshqa mahsulotiga bog'langan.",
       "invalid": "Shtrix kod noto'g'ri (nazorat raqami mos emas)."
     }
+  },
+  "removeStock": {
+    "title": "Mahsulotni ombordan o'chirish",
+    "body": "«{{name}}» ombor ro'yxatidan o'chiriladi. Qoldiq 0 bo'lishi shart emas.",
+    "writeOff": "Qoldiqdagi {{pcs}} ombordan chiqariladi — «Harakatlar» jurnalida «Ombordan o'chirildi» bo'lib qoladi.",
+    "empty": "Qoldiq yo'q — mahsulot faqat ro'yxatdan olinadi.",
+    "reservedTitle": "O'chirib bo'lmaydi",
+    "reserved": "{{pcs}} faol buyurtmalarda band. Avval ular bekor qilinsin yoki kuryerga berilsin.",
+    "reason": "Sabab",
+    "reasonPlaceholder": "Masalan: market mahsulotni olib ketdi",
+    "submit": "O'chirish",
+    "success": "Mahsulot ombordan o'chirildi",
+    "successText": "{{name}} · {{pcs}} chiqarildi",
+    "successTextEmpty": "{{name}}",
+    "reservedError": "Mahsulot faol buyurtmalarda band — avval ular bekor qilinsin yoki kuryerga berilsin."
   },
   "threshold": {
     "title": "Kam qoldiq chegarasi",

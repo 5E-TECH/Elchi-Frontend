@@ -689,6 +689,9 @@ export const API_ENDPOINTS = {
     STOCK: (id: string | number) => `warehouses/${id}/stock`, // GET ?market_id&level=ok,low,out&search&page&limit → { data, facets }
     STOCK_THRESHOLD: (id: string | number, productId: string | number) =>
       `warehouses/${id}/stock/${productId}`, // PATCH { low_stock_threshold: number | null }
+    // 2026-11-13: mahsulotni ombordan o'chirish (qoldiq 0 bo'lishi shart emas; band bo'lsa — 409 WAREHOUSE_STOCK_RESERVED)
+    STOCK_REMOVE: (id: string | number, productId: string | number) =>
+      `warehouses/${id}/stock/${productId}`, // DELETE { reason? } → { removed, written_off, movement_id }
     MOVEMENTS: (id: string | number) => `warehouses/${id}/movements`, // GET ?type&product_id&market_id&ref_type&ref_id&from&to&page&limit
     LOOKUP: (id: string | number) => `warehouses/${id}/lookup`, // GET ?code&market_id → { matched_by, data: [{ product, market, stock }] }
     STOCK_IN: (id: string | number) => `warehouses/${id}/stock-in`, // POST { lines: [{ product_id | code, qty }], market_id?, note? }

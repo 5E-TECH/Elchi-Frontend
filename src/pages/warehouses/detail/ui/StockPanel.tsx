@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-warehouse-detail, admin-warehouse-detail, manager-warehouse-detail
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, PackagePlus, SearchX, Tag } from "lucide-react";
+import { ArrowUp, PackagePlus, SearchX, Tag, Trash2 } from "lucide-react";
 import {
   ProductCodeTag,
   StockLevelBadge,
@@ -16,6 +16,7 @@ import {
   EmptyState,
   ErrorState,
   Field,
+  IconButton,
   Pagination,
   Pressable,
   QueryBoundary,
@@ -42,6 +43,8 @@ export type StockPanelProps = {
   /** Ombordagi jami dona (bitta sahifali xulosa uchun: «5 ta pozitsiya · 96 dona»). */
   onHandTotal: number | undefined;
   onEditThreshold: (row: WarehouseStockRow) => void;
+  /** 2026-11-13: superadmin / admin — qatorni ombordan o'chirish (qoldiq 0 bo'lishi shart emas). */
+  onRemove?: (row: WarehouseStockRow) => void;
   onAddStock: () => void;
   /** XtcEyQjb: to'xtatilgan ombor — bo'sh holatdagi «Mahsulot qo'shish» ham o'chiq. */
   addStockDisabled?: boolean;
@@ -55,12 +58,14 @@ export type StockPanelProps = {
  * Kod · Market · Qoldiq · Band · Mavjud ↑ · Chegara · Hisob vazni · Holat» (saralash — server: mavjud o'sishi
  * bo'yicha; planshetda kod, market, band, chegara, hisob vazni yashirin — market · kod nom ostida), telefonda
  * kartalar. Superadmin/admin uchun «Chegara» bosiladi — `ThresholdDialog` (maketda tugma ko'rinmaydi — qo'shimcha).
+ * 2026-11-13: superadmin/admin uchun oxirgi ustunda (telefonda — karta ostida) «Ombordan o'chirish» — `RemoveStockDialog`.
  */
 export const StockPanel = ({
   warehouseId,
   canManage,
   onHandTotal,
   onEditThreshold,
+  onRemove,
   onAddStock,
   addStockDisabled = false,
   onFiltersChange,
@@ -250,6 +255,25 @@ export const StockPanel = ({
       header: t("detail.stock.columns.level"),
       cell: (row) => <StockLevelBadge level={row.level} />,
     },
+    ...(canManage && onRemove
+      ? [
+          {
+            id: "actions",
+            header: <span className="sr-only">{t("detail.stock.columns.actions")}</span>,
+            align: "end",
+            cell: (row) => (
+              <IconButton
+                size="sm"
+                variant="danger"
+                icon={Trash2}
+                label={t("detail.stock.removeAria", { name: row.product.name })}
+                aria-haspopup="dialog"
+                onClick={() => onRemove(row)}
+              />
+            ),
+          } satisfies DataTableColumn<WarehouseStockRow>,
+        ]
+      : []),
   ];
 
   const renderCard = (row: WarehouseStockRow) => {
@@ -291,6 +315,19 @@ export const StockPanel = ({
               <span className={cx("font-semibold", AVAILABLE_TONE[row.level])}>{text.number(row.available)}</span>
             </span>
           </span>
+          {canManage && onRemove ? (
+            <Button
+              variant="link"
+              size="sm"
+              leftIcon={Trash2}
+              aria-haspopup="dialog"
+              aria-label={t("detail.stock.removeAria", { name: row.product.name })}
+              className="self-start text-danger-fg max-md:min-h-11"
+              onClick={() => onRemove(row)}
+            >
+              {t("detail.stock.remove")}
+            </Button>
+          ) : null}
         </span>
       </div>
     );
