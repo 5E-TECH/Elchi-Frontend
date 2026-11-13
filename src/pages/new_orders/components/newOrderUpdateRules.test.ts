@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  areOrderProductsLocked,
+  productsLockReasonOf,
   buildAddressUpdatePayload,
   buildCustomerUpdatePayload,
   buildOrderUpdatePayload,
@@ -250,4 +252,22 @@ describe("new order update rules", () => {
     })).toEqual({});
   });
 
+  it("2026-11-13: ombor buyurtmasi `new` bo'lsa ham summa/mahsulot qulf (omborda band); oddiy `new` — ochiq", () => {
+    expect(areOrderProductsLocked({ status: "new", fulfillment_source: "WAREHOUSE" })).toBe(true);
+    expect(areOrderProductsLocked({ status: "new", fulfillment_source: "warehouse" })).toBe(true);
+    expect(areOrderProductsLocked({ status: "new", fulfillment_source: "HQ" })).toBe(false);
+    expect(areOrderProductsLocked({ status: "new" })).toBe(false);
+    expect(areOrderProductsLocked({ status: "received", fulfillment_source: "HQ" })).toBe(true);
+    expect(areOrderProductsLocked(null)).toBe(false);
+
+    expect(productsLockReasonOf({ status: "new", fulfillment_source: "WAREHOUSE" })).toBe("warehouse");
+    expect(productsLockReasonOf({ status: "new", fulfillment_source: "WAREHOUSE", warehouse: { kind: "HQ" } })).toBe(
+      "warehouse",
+    );
+    expect(productsLockReasonOf({ status: "received", fulfillment_source: "WAREHOUSE", warehouse: { kind: "HQ" } })).toBe(
+      "hq",
+    );
+    expect(productsLockReasonOf({ status: "received", fulfillment_source: "WAREHOUSE" })).toBe("warehouse");
+    expect(productsLockReasonOf({ status: "received" })).toBe("hq");
+  });
 });

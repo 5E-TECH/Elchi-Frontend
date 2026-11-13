@@ -1090,6 +1090,7 @@
       "legend": "Order source",
       "auto": "Picked automatically",
       "warehouseHint": "Everything is in stock · no HQ or mail, straight to a courier",
+      "warehouseHintNew": "Everything is in stock · created as «New», ships from the warehouse once received",
       "hq": "Tashkent HQ",
       "hqHint": "Usual route: HQ intake, mail, branch, courier",
       "reserveNote": "On creation {{pcs}} is reserved at the warehouse and leaves stock when handed to a courier. If cancelled or returned, it goes back to this warehouse.",

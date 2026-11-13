@@ -1082,6 +1082,7 @@
       "legend": "Buyurtma manbasi",
       "auto": "Avtomatik tanlandi",
       "warehouseHint": "Hamma mahsulot yetarli · HQ va pochtasiz, darhol kuryerga",
+      "warehouseHintNew": "Hamma mahsulot yetarli · «Yangi» bo'lib yaratiladi, qabul qilingach ombordan ketadi",
       "hq": "Toshkent HQ",
       "hqHint": "Odatiy oqim: HQ qabuli, pochta, filial, kuryer",
       "reserveNote": "Yaratilganda {{pcs}} omborda band qilinadi, kuryerga berilganda qoldiqdan chiqadi. Bekor qilinsa yoki qaytsa — shu omborga qaytadi.",

@@ -9,7 +9,7 @@ import { cx } from "../../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { Badge, Button, Card, Skeleton } from "../../../../shared/ui/primitives";
 import { toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
-import { useCanChooseOrderSource, useOrderSource } from "../model/useOrderSource";
+import { useCanChooseOrderSource, useOrderSource, useWarehouseOrderStartsNew } from "../model/useOrderSource";
 import { CreateAlert } from "./CreateAlert";
 import { useOrderCatalog } from "./useOrderCatalog";
 
@@ -100,6 +100,7 @@ const OrderSourceCard = () => {
   const number = (value: number) => formatNumberLocalized(value, { language });
   const { control, setValue } = useFormContext<OrderCreateFormValues>();
   const enabled = useCanChooseOrderSource();
+  const warehouseStartsNew = useWarehouseOrderStartsNew();
   const { state, pending } = useOrderSource(control, enabled);
   const fulfillment = useWatch({ control, name: "fulfillment" });
   const items = useWatch({ control, name: "details.items" });
@@ -190,7 +191,7 @@ const OrderSourceCard = () => {
                 checked={auto}
                 title={warehouse.name}
                 badge={auto ? <Badge tone="info">{t("fulfillment.source.auto")}</Badge> : undefined}
-                hint={t("fulfillment.source.warehouseHint")}
+                hint={t(warehouseStartsNew ? "fulfillment.source.warehouseHintNew" : "fulfillment.source.warehouseHint")}
                 hintId={warehouseHintId}
                 icon={Warehouse}
                 onSelect={() => choose("auto")}

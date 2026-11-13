@@ -6,10 +6,11 @@ import { useOrders } from "../../../../entities/orders";
 import { Button, Dialog, Field, Select, TextInput, type SelectOption } from "../../../../shared/ui/primitives";
 import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../../orders/lib/orderAmountInput";
 import {
+  areOrderProductsLocked,
   buildOrderUpdatePayload,
-  isOrderReceivedOrLater,
   isOrderSentToBranch,
   parseOrderTotalPrice,
+  productsLockReasonOf,
 } from "../newOrderUpdateRules";
 import {
   formatDialogSubtitle,
@@ -32,7 +33,8 @@ import { useEditDialogSession } from "./useEditDialogSession";
  *
  * «Mahsulotlar» (son − / +, olib tashlash) → «Yetkazish turi» + «Umumiy summa *» (yonma-yon, tor joyda
  * ustma-ust) → «Izoh». Saqlash — `PATCH /orders/:id/full`, faqat o'zgargan va qulflanmagan maydonlar
- * (`buildOrderUpdatePayload`): HQ qabul qilgan buyurtmada mahsulot va summa, filialga jo'natilganda
+ * (`buildOrderUpdatePayload`): HQ qabul qilgan buyurtmada va ombor buyurtmasida (`new` bo'lsa ham — omborda band)
+ * mahsulot va summa, filialga jo'natilganda
  * yetkazish turi yuborilmaydi va maydoni qulf (sababi ostida).
  *
  * Mahsulot qo'shiladi (`AddOrderItemPicker`, shu market katalogi) va istalgani — oxirgisi ham — olib tashlanadi;
@@ -72,7 +74,11 @@ const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
   const [amountHint, setAmountHint] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
   const totalRef = useRef<HTMLInputElement>(null);
-  const productsLocked = isOrderReceivedOrLater(order.status ?? "");
+  // Ombor buyurtmasi `new` bo'lsa ham qulf (2026-11-13: band tarkibi o'zgarmaydi).
+  const productsLocked = areOrderProductsLocked(order);
+  const productsLockHint = t(
+    productsLockReasonOf(order) === "warehouse" ? "productsLockReasonWarehouse" : "productsLockReason",
+  );
   const destinationLocked = isOrderSentToBranch(order);
   const subtitle = formatDialogSubtitle(order.id, order.customer?.name);
   const hasItems = (order.items ?? []).length > 0;
@@ -223,7 +229,7 @@ const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
           required={!productsLocked}
           error={totalError}
           disabled={productsLocked}
-          hint={productsLocked ? t("productsLockReason") : amountHint}
+          hint={productsLocked ? productsLockHint : amountHint}
           hintLive
         >
           <TextInput

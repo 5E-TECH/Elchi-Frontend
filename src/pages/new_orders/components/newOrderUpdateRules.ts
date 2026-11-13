@@ -1,3 +1,4 @@
+import { readFulfillmentSource } from "../../../entities/order";
 import { normalizePersonName } from "../../../shared/lib/personName";
 import { toUzbekistanPhoneValue } from "../../../shared/lib/phone";
 
@@ -90,6 +91,27 @@ export const canRunCourierAction = (
 
 export const isOrderReceivedOrLater = (status: string) =>
   RECEIVED_OR_LATER.has(normalizeOrderStatus(status));
+
+/** Qulf qoidalari o'qiydigan maydonlar (`warehouse.kind` — Markaziy ombor). */
+type LockableOrder = { status?: string | null; fulfillment_source?: unknown; warehouse?: unknown };
+
+/**
+ * Summa va mahsulotlar qulfmi: HQ qabul qilgan (yoki keyingi) buyurtma, yoki ombor buyurtmasi. Ombor buyurtmasi
+ * yaratilishidanoq omborda band qilingan — ega 2026-11-13 dan HQ xodimi yaratgani `new` bo'lsa ham band tarkibi
+ * o'zgarmaydi (backend 400 «Mahsulotlar omborda band qilingan …»).
+ */
+export const areOrderProductsLocked = (order: LockableOrder | null | undefined) =>
+  Boolean(order) && (isOrderReceivedOrLater(order?.status ?? "") || readFulfillmentSource(order).fromWarehouse);
+
+/**
+ * Qulf sababi (matn uchun): `warehouse` — «omborda band qilingan» (viloyat ombori, yoki hali qabul qilinmagan har
+ * qanday ombor buyurtmasi); `hq` — «HQ qabul qilgandan keyin …» (Markaziy ombor buyurtmasi qabuldan keyin ham shu).
+ */
+export const productsLockReasonOf = (order: LockableOrder | null | undefined): "hq" | "warehouse" => {
+  const { fromWarehouse, warehouseKind } = readFulfillmentSource(order);
+  if (!fromWarehouse) return "hq";
+  return warehouseKind !== "HQ" || !isOrderReceivedOrLater(order?.status ?? "") ? "warehouse" : "hq";
+};
 
 export const isOrderSentToBranch = (order: EditableOrderSnapshot) => {
   if (SENT_TO_BRANCH_STATUSES.has(normalizeOrderStatus(order.status))) return true;

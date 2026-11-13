@@ -5,10 +5,11 @@ import { canRollbackOrderStatus } from "../../../../entities/orders/rollbackTarg
 import { canInitiateReturn, canMarkReturnedToMarket } from "../../../../features/order-return";
 import { isMarketSideRole } from "../../../../entities/user/lib/role";
 import {
+  areOrderProductsLocked,
   canRunCourierAction,
-  isOrderReceivedOrLater,
   isOrderSentToBranch,
   normalizeOrderStatus,
+  productsLockReasonOf,
 } from "../newOrderUpdateRules";
 import type { OrderDetail } from "./orderDetailModel";
 
@@ -21,6 +22,7 @@ import type { OrderDetail } from "./orderDetailModel";
  *  - HQ qabul qilgach mahsulot va summa qulflanadi; filialga jo'natilgach mijoz va manzil ham;
  *    viloyat ombori buyurtmasi (hfkhYrGk №4) HQ'dan o'tmaydi — u yaratilishidanoq (RECEIVED) qulf, sababi «omborda
  *    band qilingan» (`productsLockReason: "warehouse"`); Markaziy ombor (`warehouse.kind: HQ`) — HQ'da qabul, «hq»;
+ *    ega 2026-11-13: HQ xodimi ombordan yaratgani `new` — u ham yaratilishidanoq qulf, sababi «omborda band qilingan»;
  *  - sotish / bekor qilish / qaytarish — faqat REGIONAL · HYBRID menejeri VA uning per-menejer
  *    `can_sell_cancel` bayrog'i yoqilgan bo'lsa (ro'yxatdagi `canUseManagerTableActions` bilan
  *    AYNI qoida; backend sotish/bekorni baribir 403 bilan to'sadi).
@@ -133,12 +135,6 @@ const isDeletableWarehouseOrder = (order: OrderDetail | null): boolean =>
   normalizeOrderStatus(order?.status ?? "") === "received" &&
   String(order?.holder_type ?? "").toUpperCase() !== "COURIER";
 
-/** Viloyat ombori buyurtmasi (Markaziy ombor — faqat `warehouse.kind: HQ`). */
-const getProductsLockReason = (order: OrderDetail | null): ProductsLockReason => {
-  const { fromWarehouse, warehouseKind } = readFulfillmentSource(order);
-  return fromWarehouse && warehouseKind !== "HQ" ? "warehouse" : "hq";
-};
-
 export const getOrderDetailAccess = ({
   role: rawRole,
   branchType,
@@ -166,8 +162,8 @@ export const getOrderDetailAccess = ({
     canEditOrderFull,
     customerEdit: canEditCustomer ? "button" : role === "registrator" ? "disabled" : "hidden",
     showCustomerLockHint: role === "registrator" || role === "manager",
-    productsLocked: Boolean(order && isOrderReceivedOrLater(order.status)),
-    productsLockReason: getProductsLockReason(order),
+    productsLocked: areOrderProductsLocked(order),
+    productsLockReason: productsLockReasonOf(order),
     destinationLocked: Boolean(order && isOrderSentToBranch(order)),
     isRegionalManager,
     canUseCourierActions,

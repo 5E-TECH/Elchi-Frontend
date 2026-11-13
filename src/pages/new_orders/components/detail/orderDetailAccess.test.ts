@@ -157,6 +157,20 @@ describe("getOrderDetailAccess — ombor buyurtmasi (hfkhYrGk №4, №6)", () =
     expect(getOrderDetailAccess({ role: "superadmin", branchType: null, order: warehouseOrder() }).productsLocked).toBe(true);
   });
 
+  it("2026-11-13: HQ xodimi yaratgan `new` ombor buyurtmasi ham qulf (omborda band), sababi doim «warehouse»", () => {
+    const accessOf = (value: ReturnType<typeof order>) =>
+      getOrderDetailAccess({ role: "superadmin", branchType: null, order: value });
+    const regionalNew = warehouseOrder({ status: "new", holder_type: "HQ" });
+    const centralNew = warehouseOrder({ status: "new", holder_type: "HQ", warehouse: { id: "1", kind: "HQ" } });
+    expect(accessOf(regionalNew)).toMatchObject({ productsLocked: true, productsLockReason: "warehouse" });
+    // Markaziy ombor: qabulgacha «omborda band», qabuldan keyin — avvalgidek «hq».
+    expect(accessOf(centralNew)).toMatchObject({ productsLocked: true, productsLockReason: "warehouse" });
+    expect(accessOf(warehouseOrder({ warehouse: { id: "1", kind: "HQ" } })).productsLockReason).toBe("hq");
+    // Oddiy `new` buyurtma — avvalgidek ochiq.
+    expect(accessOf(order({ status: "new", fulfillment_source: "HQ" })).productsLocked).toBe(false);
+    expect(accessOf(order({ status: "new" })).productsLocked).toBe(false);
+  });
+
   it("№6: «O'chirish» — faqat superadmin, `received` ombor buyurtmasi, kuryerda emas", () => {
     const canDelete = (role: string, value: ReturnType<typeof order>) =>
       getOrderDetailAccess({ role, branchType: "REGIONAL", canSellCancel: true, order: value }).canDelete;

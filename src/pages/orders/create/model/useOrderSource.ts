@@ -19,6 +19,15 @@ export const useCanChooseOrderSource = (): boolean => {
   return role === "superadmin" || role === "admin" || role === "registrator" || (role === "market" && canOrderFromWarehouse);
 };
 
+/**
+ * Ega 2026-11-13: HQ xodimi (superadmin, admin, registrator) ombordan yaratgan buyurtma oddiy buyurtma kabi «Yangi»
+ * bo'ladi va «Qabul qilish» dan keyin ombordan ketadi. Market yaratgani — avvalgidek darhol qabul qilingan.
+ */
+export const useWarehouseOrderStartsNew = (): boolean => {
+  const role = useSelector((state: RootState) => state.role.role);
+  return role === "superadmin" || role === "admin" || role === "registrator";
+};
+
 export type OrderSourceState =
   /** Blok ko'rinmaydi (rol). */
   | { kind: "off" }
