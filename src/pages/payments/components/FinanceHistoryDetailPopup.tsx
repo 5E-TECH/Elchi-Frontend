@@ -72,6 +72,11 @@ import ReceiptSection from "./receipt/ReceiptSection";
  * To'lov turi, To'lov sanasi; «Izoh»; «Bog'langan buyurtma» (Market, Holat, Tuman, Manzil, Mijoz telefoni + uch
  * summa); pastda «Yopish».
  *
+ * 2026-11-14 (Dilshod; maket yo'q — eng yaqini: shu oynaning «Qayerdan» qatori): «Filialdan HQ'ga o'tkazma»
+ * kirimida «Qayerdan» — filial (`source_branch`, «Filial kassasi» belgisi), yozuvni kiritgan xodim emas; «Kim o'tkazdi» —
+ * o'tkazma manbasi (`transfer_source_user`); karta to'lovida «Qaysi kartaga» / «Qaysi kartadan» — karta nomi va
+ * ostida bank · tizim · •••• oxirgi 4 raqam · egasi (`card`). Kalitlar kelmasa (eski backend) — qatorlar chiqmaydi.
+ *
  * Ma'lumot: xulosa qatordan darhol, qolgani `GET /finance/history/:id` dan (yuklanishda skelet, xatoda «Qayta
  * urinish»). Raqamli bo'lmagan ID (virtual «HQ'ga berilishi kerak» qatori, ID siz qator) so'ralmaydi — backend
  * uni 400 bilan qaytarardi. Mos kelmaslik himoyasi: tafsilot kassasi qator kassasidan farq qilsa (boshqa kassa
@@ -142,6 +147,8 @@ const toFiniteNumber = (value: unknown) => {
 };
 
 const hasValue = (value: unknown) => value !== undefined && value !== null && value !== "";
+
+const normalizeKey = (value?: string | null) => (value ?? "").trim().toLowerCase();
 
 /** `.el-kv` — atama: qiymat (maket: chap ustun 110 px … 32%). */
 const KV = "m-0 grid grid-cols-[minmax(110px,32%)_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-sm";
@@ -287,9 +294,34 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
     ? t(isIncome ? "v2HistoryDetail.incomeTitle" : "v2HistoryDetail.expenseTitle")
     : t("v2HistoryDetail.operationTitle");
 
-  const partyName = getPaymentActorName(party) || (party?.id != null ? `#${party.id}` : "");
-  const partyRole = roleLabel(party?.role) ?? roleLabel(display.cashbox_type);
-  const partyPhone = party?.phone_number?.trim() || party?.phone?.trim() || "";
+  // «Filialdan HQ'ga o'tkazma» kirimi (asosiy kassa): pul FILIALdan keldi — backend `source_branch` beradi
+  // (2026-11-14). Ilgari bu yerda yozuvni kiritgan xodim chiqardi. Filial kassasidagi chiqim oyog'ida filialning
+  // o'zi — u yerda avvalgidek. Eski backend (kalit yo'q) — avvalgidek.
+  const sourceBranch =
+    normalizeKey(display.source_type) === "branch_to_main" && normalizeKey(display.cashbox_type) === "main"
+      ? (detail?.source_branch ?? null)
+      : null;
+  const partyName = sourceBranch
+    ? sourceBranch.name?.trim() || `#${sourceBranch.id}`
+    : getPaymentActorName(party) || (party?.id != null ? `#${party.id}` : "");
+  const partyRole = sourceBranch ? t("v2Common.roles.branch") : (roleLabel(party?.role) ?? roleLabel(display.cashbox_type));
+  const partyPhone = sourceBranch ? "" : party?.phone_number?.trim() || party?.phone?.trim() || "";
+  // O'tkazma manbasi — kartaga kim o'tkazgan (faqat karta to'lovida). «Qayerdan» dagi odamning o'zi bo'lsa — takrorlanmaydi.
+  const transferUser = detail?.transfer_source_user ?? null;
+  const transferUserName =
+    transferUser && (sourceBranch || String(transferUser.id ?? "") !== String(party?.id ?? ""))
+      ? getPaymentActorName(transferUser) || (transferUser.id != null ? `#${transferUser.id}` : "")
+      : "";
+  const transferUserRole = roleLabel(transferUser?.role);
+  const transferUserPhone = transferUser?.phone_number?.trim() || transferUser?.phone?.trim() || "";
+  // Karta to'lovi: pul qaysi kartaga tushdi / qaysi kartadan chiqdi (MAIN / BRANCH kassa, backend `card`).
+  const card = detail?.card ?? null;
+  const cardName = card ? (card.is_default ? t("mainCard") : card.name?.trim() || `#${card.id ?? ""}`) : "";
+  const cardMeta = card
+    ? [card.bank_name?.trim(), card.card_network?.trim(), card.last4 ? `•••• ${card.last4}` : null, card.holder_name?.trim()]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
   // C6: teskari yozuvda backend `comment` ga sababni yozadi — blokdagi «Sabab» bilan bir xil bo'lsa «Izoh» chiqmaydi.
   const rawComment = display.comment?.trim();
   const comment =
@@ -416,7 +448,34 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
               </>,
             )
           : null}
+        {transferUserName
+          ? kvRow(
+              t("v2HistoryDetail.transferredBy"),
+              <span data-history-transfer-user="">
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <span>{transferUserName}</span>
+                  {transferUserRole ? <Badge>{transferUserRole}</Badge> : null}
+                </span>
+                {transferUserPhone ? (
+                  <span className="block whitespace-nowrap text-[13px] font-normal text-text-muted">
+                    {formatPhone(transferUserPhone)}
+                  </span>
+                ) : null}
+              </span>,
+            )
+          : null}
         {kvRow(t("v2HistoryDetail.paymentType"), getPaymentMethodLabel(display.payment_method, t))}
+        {cardName
+          ? kvRow(
+              t(direction === "expense" ? "v2HistoryDetail.fromCard" : "v2HistoryDetail.toCard"),
+              <span data-history-card="">
+                <span className="block">{cardName}</span>
+                {cardMeta ? (
+                  <span className="block text-[13px] font-normal text-text-muted">{cardMeta}</span>
+                ) : null}
+              </span>,
+            )
+          : null}
         {kvRow(t("v2HistoryDetail.paymentDate"), dateText)}
         {paymentAck !== undefined
           ? kvRow(

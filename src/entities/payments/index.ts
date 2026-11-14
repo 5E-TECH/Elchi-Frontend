@@ -112,6 +112,24 @@ export interface FinanceHistoryDetail {
   correction?: PaymentCorrection | null;
   /** T6 — faqat superadmin tafsilotida (N2); boshqa rollarda kalit yo'q. */
   correctable?: PaymentCorrectable | null;
+  /** `branch_to_main` qatorida pulni topshirgan filial (boshqa turda `null`; eski backendda kalit yo'q). */
+  source_branch?: { id: string; name: string | null } | null;
+  /** O'tkazma manbasi — kartaga kim o'tkazgan (faqat karta to'lovida, bo'lmasa `null`). */
+  transfer_source_user?: FinanceHistoryActor | null;
+  /** Karta to'lovida pul tushgan / chiqqan karta (MAIN / BRANCH kassada; `id: null` — Asosiy karta yozuvsiz). */
+  card?: FinanceHistoryCard | null;
+}
+
+/** Tarix tafsilotidagi karta — faqat ko'rsatish maydonlari (oxirgi 4 raqam, to'liq raqam yo'q). */
+export interface FinanceHistoryCard {
+  id: string | null;
+  name: string;
+  is_default: boolean;
+  kind?: string | null;
+  bank_name?: string | null;
+  card_network?: string | null;
+  last4?: string | null;
+  holder_name?: string | null;
 }
 
 export interface FinanceHistoryDetailResponse {

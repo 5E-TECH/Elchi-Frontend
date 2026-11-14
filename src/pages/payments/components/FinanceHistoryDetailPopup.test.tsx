@@ -692,3 +692,127 @@ describe("FinanceHistoryDetailPopup — to'lov tuzatish (T6)", () => {
     });
   });
 });
+
+describe("FinanceHistoryDetailPopup — «Qayerdan» filial va karta (2026-11-14)", () => {
+  const branchRow: PaymentRow = {
+    id: "293",
+    amount: 5_000_000,
+    balance_after: 7_096_000,
+    operation_type: "income",
+    cashbox_id: "1",
+    cashbox_type: "main",
+    source_type: "branch_to_main",
+    payment_method: "cash",
+    payment_date: "2026-11-11T15:57:00.000Z",
+  };
+  const branchDetail = (extra: Record<string, unknown> = {}) => ({
+    data: {
+      id: "293",
+      amount: 5_000_000,
+      cashbox_id: "1",
+      cashbox: { id: "1", cashbox_type: "main" },
+      source_type: "branch_to_main",
+      created_by_user: { id: "1", name: "Super Admin", phone_number: "+998900000000", role: "superadmin" },
+      source_branch: { id: "15", name: "Samarqand filiali" },
+      transfer_source_user: null,
+      card: null,
+      ...extra,
+    },
+  });
+
+  it("⭐ naqd filial → HQ kirimi: «Qayerdan» — filial, kiritgan xodim emas; karta va «Kim o'tkazdi» yo'q", async () => {
+    detailState.result = { data: branchDetail(), isLoading: false, isError: false };
+    open(branchRow);
+
+    const dialog = await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+    const party = valueOf(dialog, "Qayerdan");
+    expect(party).toHaveTextContent("Samarqand filiali");
+    expect(within(party).getByText("Filial kassasi")).toBeInTheDocument();
+    expect(party).not.toHaveTextContent("Super Admin");
+    expect(party).not.toHaveTextContent("+998");
+    expect(within(dialog).queryByText("Kim o'tkazdi", { selector: "dt" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Qaysi kartaga", { selector: "dt" })).not.toBeInTheDocument();
+  });
+
+  it("⭐ karta (Click) bilan: «Kim o'tkazdi» va «Qaysi kartaga» — nom, bank · tizim · •••• 4821 · egasi", async () => {
+    detailState.result = {
+      data: branchDetail({
+        payment_method: "click",
+        transfer_source_user: { id: "25", name: "Aziz Menejer", phone_number: "+998901234567", role: "manager" },
+        card: {
+          id: "7",
+          name: "Humo biznes",
+          is_default: false,
+          bank_name: "Kapitalbank",
+          card_network: "Humo",
+          last4: "4821",
+          holder_name: "Elchi MCHJ",
+        },
+      }),
+      isLoading: false,
+      isError: false,
+    };
+    open({ ...branchRow, payment_method: "click" });
+
+    const dialog = await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+    expect(valueOf(dialog, "Qayerdan")).toHaveTextContent("Samarqand filiali");
+    const transferredBy = valueOf(dialog, "Kim o'tkazdi");
+    expect(transferredBy).toHaveTextContent("Aziz Menejer");
+    expect(within(transferredBy).getByText("Menejer")).toBeInTheDocument();
+    expect(within(transferredBy).getByText("+998 90 123 45 67")).toBeInTheDocument();
+    const card = valueOf(dialog, "Qaysi kartaga");
+    expect(card).toHaveTextContent("Humo biznes");
+    expect(card).toHaveTextContent("Kapitalbank · Humo · •••• 4821 · Elchi MCHJ");
+  });
+
+  it("Asosiy karta — tarjima qilingan nom; chiqimda «Qaysi kartadan»", async () => {
+    detailState.result = {
+      data: {
+        data: {
+          id: "502",
+          amount: 1_500_000,
+          cashbox_id: "1",
+          source_user: { id: "3", name: "Baraka Shop", role: "market" },
+          card: { id: "3", name: "Asosiy karta", is_default: true, last4: null },
+        },
+      },
+      isLoading: false,
+      isError: false,
+    };
+    open({
+      id: "502",
+      amount: 1_500_000,
+      operation_type: "expense",
+      source_type: "market_payment",
+      cashbox_id: "1",
+      cashbox_type: "main",
+      payment_method: "click",
+    });
+
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(valueOf(dialog, "Qayerga")).toHaveTextContent("Baraka Shop");
+    expect(valueOf(dialog, "Qaysi kartadan")).toHaveTextContent("Asosiy karta");
+    expect(within(dialog).queryByText("Qaysi kartaga", { selector: "dt" })).not.toBeInTheDocument();
+  });
+
+  it("eski backend (source_branch yo'q) — «Qayerdan» avvalgidek; filial kassasidagi chiqim oyog'iga filial qo'yilmaydi", async () => {
+    detailState.result = {
+      data: { data: { ...branchDetail().data, source_branch: undefined } },
+      isLoading: false,
+      isError: false,
+    };
+    const first = open(branchRow);
+    let dialog = await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+    expect(valueOf(dialog, "Qayerdan")).toHaveTextContent("Super Admin");
+    first.unmount();
+
+    detailState.result = {
+      data: branchDetail({ cashbox_id: "20", cashbox: { id: "20", cashbox_type: "branch" } }),
+      isLoading: false,
+      isError: false,
+    };
+    open({ ...branchRow, operation_type: "expense", cashbox_id: "20", cashbox_type: "branch" });
+    dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(valueOf(dialog, "Qayerga")).not.toHaveTextContent("Samarqand filiali");
+  });
+});
