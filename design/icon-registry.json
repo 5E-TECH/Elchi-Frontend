@@ -654,6 +654,12 @@
      "replaces": []
     },
     {
+     "concept": "Yangi suhbat",
+     "icon": "MessageSquarePlus",
+     "usage": "AI yordamchidagi «Yangi suhbat» tugmasi: sahifa sarlavhasi, suhbatlar ustuni va «Suhbatlar» varag'i; boshqa narsa yaratish uchun Plus (ega qarori, 2026-11-14)",
+     "replaces": []
+    },
+    {
      "concept": "Telefon",
      "icon": "Phone",
      "usage": "Mijoz va market telefon raqami, telefonda «Qo'ng'iroq qilish» tugmasi",
@@ -987,6 +993,12 @@
      "replaces": [
       "DatabaseZap"
      ]
+    },
+    {
+     "concept": "Bilim bazasi, ma'lumot manbasi",
+     "icon": "Database",
+     "usage": "AI yordamchi sozlamalaridagi «Bilim bazasi» (ega qarori, 2026-11-14); AI javobi va tavsiyadagi «Manba» qatori — javob qaysi ma'lumotdan olingani (maketdagidek)",
+     "replaces": []
     },
     {
      "concept": "Faoliyat jurnali",

@@ -18,21 +18,21 @@ Qoidalar: [`AGENTS.md`](../AGENTS.md) va [`docs/DESIGN_SYSTEM.md`](../docs/DESIG
 
 | Yo'l | Nima |
 |---|---|
-| `fragments/<rol>--<viewId>.html` + `.json` | 725 ta maket fragmenti: ekranning kontent qismi (shell'siz), `el-*` kit klasslari bilan. `.json`: `kind` (`page` = ilova shell'i ichida, `screen` = shell'siz to'liq ekran, masalan skaner; `standalone` = taxta yoki kirish sahifasi), `height`, ixtiyoriy `dialog`, `devices` |
-| `kit/views.json` | 854 ta ekran: `role`, `viewId`, `menuKey` (menyu bo'limi), `title`, `fragment`, `kind` (`page` / `dialog` / `standalone`) |
+| `fragments/<rol>--<viewId>.html` + `.json` | 734 ta maket fragmenti: ekranning kontent qismi (shell'siz), `el-*` kit klasslari bilan. `.json`: `kind` (`page` = ilova shell'i ichida, `screen` = shell'siz to'liq ekran, masalan skaner; `standalone` = taxta yoki kirish sahifasi), `height`, ixtiyoriy `dialog`, `devices` |
+| `kit/views.json` | 863 ta ekran: `role`, `viewId`, `menuKey` (menyu bo'limi), `title`, `fragment`, `kind` (`page` / `dialog` / `standalone`) |
 | `kit/roles.json` | rollar: menyu, persona (ism, filial), pastki menyu, ikonkalar |
 | `kit/helmet.html` | maket kiti: tokenlar (kunduzgi/tungi) va barcha `el-*` klasslari. Kodga to'g'ridan-to'g'ri o'tmaydi, tarjimasi [`CODE-MAP.md`](CODE-MAP.md) da |
 | `kit/AUTHORING.md` | maketlar qanday chizilgan: qoidalar, matn standarti, holat → ton, grafik qoidalari (v3–v6 bo'limlari) |
 | `kit/heights.json` | yig'ilgan artboard o'lchamlari (build uchun) |
 | `kit/route-map.json` | route → sahifa fayllari, rol → maket bog'lanishi (qo'lda yuritiladi). `SCREENS.md` shundan yaratiladi |
-| `icon-registry.json` | kanonik `lucide-react` ikonkalari (140 ta, 13 guruh) va eski sinonimlarning o'rnini bosuvchilari |
+| `icon-registry.json` | kanonik `lucide-react` ikonkalari (145 ta, 13 guruh) va eski sinonimlarning o'rnini bosuvchilari |
 | `assets/_blob/` | maketdagi logotiplar |
 | `tools/*.mjs` | `build` (yig'ish), `shoot` (skrinshot), `preview` (brauzerda ro'yxat), `serve` (statik server), `screens` (`SCREENS.md` ni yaratish va tekshirish; `screens.test.mjs` shu tekshiruvni `npm test` da yuradi) |
 | [`SCREENS.md`](SCREENS.md) | route / sahifa fayli → maket ekrani jadvali (avtomatik: `npm run design:screens`, qo'lda tahrirlanmaydi) |
 | [`CODE-MAP.md`](CODE-MAP.md) | maket klassi → Tailwind v4 + tokenlar → mavjud komponent → 1-bosqich primitivi |
 | `.build/`, `shots/` | lokal natijalar, git'ga kirmaydi |
 
-Rollar (ekranlar soni): `superadmin` 336 · `admin` 191 · `manager` 94 · `registrator` 54 · `market` 42 ·
+Rollar (ekranlar soni): `superadmin` 345 · `admin` 191 · `manager` 94 · `registrator` 54 · `market` 42 ·
 `market_operator` 5 · `courier` 67 · `logist` 10 · `investor` 13 · `common` 20 (umumiy: kirish, bildirishnomalar, profil…) ·
 `tizim` 22 (dizayn tizimi taxtalari). `market_operator`, `logist`, `investor` — ega 2026-10-19 da tasdiqlagan yangi rollar,
 kodda hali yo'q (menyulari — `kit/route-map.json` → `plannedMenu`; marketning yangi pastki menyusi — `plannedBottomNav`;

@@ -459,6 +459,34 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - `/dispatch` telefonda bitta yopishqoq panel «Biriktirish — K ta» (skaner 2-bosqichida «Kamera N ta» olindi —
     kamera markaziy «Skaner» orqali);
   - `/courier-bulk` menejerda kuryer maketi; «Faqat bekorlarni qo'llash» olib tashlandi.
+- **2026-11-14 (T2 — AI maslahatchi, ega T2 maketlarini tasdiqladi; `/ai-assistant` izohi — `design/kit/route-map.json`):**
+  - jiddiylik sukuti: R2 «Kuryer qarzi o'smoqda», R6 «Zarar», R7 «Chek yoki karta farqi» — «Jiddiy»; R1, R3, R4, R5,
+    R8 — «Diqqat»;
+  - R7 Telegram'ga yuborilmaydi: ro'yxatda «Jiddiy» (qizil), bildirishnomalar qutisi va kunlik hisobotda bor; qolgan
+    «Jiddiy» qoidalar — quti + Telegram, bir marta (`tizim-ai-advisor-messages` va sozlamalar oynasi shunga moslandi);
+  - budjet maketdagidek (oyiga 100 $, 80% ogohlantirish, oshirish oyiga ≤ 50 $, chuqur tahlil oyiga 10 ta) + backend
+    kunlik xavfsizlik chegarasi (yordamchi 5 $ va kuniga 100 savol, umumiy AI 50 $) — yangi holat
+    `superadmin-ai-assistant-daily-cap`. Ziddiyat (ochiq): sarf va sozlamalar maketlaridagi tahrirlanadigan «Kunlik
+    chegara 128 000 so'm (10 $)» (TZ B5 `daily_usd`) server kunlik xavfsizlik chegarasidan (yordamchi 5 $ = 64 000 so'm,
+    `ai-assistant-daily-cap`) katta — amalda 5 $ ishlaydi. Tavsiya: kod `daily_usd` ni 5 $ dan oshirmaydi va maydon
+    izohida «server chegarasi 5 $» ko'rsatadi; maketlar ega tasdiqlaguncha o'zgarmaydi. Qaror 3 dagi umumiy 50 $
+    yordamchiga ham tegadi — TZ B5 dagi «global $50 ga tushmaydi» qatori shu bilan almashadi;
+  - «Hisobotlarga o'tish» tugmalari maketda qoladi, kod ularni «Hisobotlar» tabi chiqquncha yashiradi;
+  - «Suhbatlar 90 kun saqlanadi» maketda qoladi, kod backend 90 kunlik saqlashni qilguncha yashiradi;
+  - savol uzunligi 1 000 belgi (maketdagidek);
+  - ikonkalar: `MessageSquarePlus` («Yangi suhbat») va `Database` («Bilim bazasi»; «Manba» qatori — maketdagidek) —
+    `design/icon-registry.json` ga qo'shildi;
+  - admin «Kirish huquqi» oynasi ishlatilmaydi (eski maket qoladi, yangisi chizilmaydi).
+  - Yangi maketlar (`design/T2-gaps`): qoida oynalari R2–R6, R8 (`superadmin-ai-assistant-alert-dialog-courier-debt`,
+    `-expense`, `-market-payout`, `-hq-transfer`, `-loss`, `-corrections`; R1 — `-alert-dialog`, R7 — `-receipt`),
+    telefon filtr varag'i `-alerts-filters-mobile`, suhbatlar ro'yxati (< 1024: planshetda markazdagi oyna, telefonda
+    pastki varaq) `-conversations-sheet`, kunlik chegara `-daily-cap`. Ogohlantirishlar ro'yxatidagi har qator o'z
+    qoidasi oynasiga ochiladi; oynalar «Ko'rildi» holatida chizilgan, yopilgan holat (belgi, izoh, «Yopish») — R1 va R6
+    «Boshqa holatlar»ida, R8 — «Ahamiyatsiz». Har oynaning «Hal qilindi» tasdig'i R1 matni bilan chizilgan (prototip
+    cheklovi).
+  - Ko'rib chiqishdan keyin: suhbat maketlarida `SendHorizontal` → `Send` (reestr); `ThumbsUp` / `ThumbsDown`
+    («Foydali / Foydasiz») reestrda yo'q — ochiq savol, ega reestrga qo'shishi kerak (kod ularni backend chiqquncha
+    chizmaydi); R3 dagi MAD — «Mediana og'ishi» (sozlamalar oynasida ham).
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;

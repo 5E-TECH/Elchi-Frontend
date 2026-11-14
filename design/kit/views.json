@@ -7405,6 +7405,15 @@
   },
   {
    "role": "superadmin",
+   "viewId": "ai-assistant-daily-cap",
+   "menuKey": "aiAssistant",
+   "title": "Suhbat — bugungi AI chegarasi tugadi (kunlik xavfsizlik chegarasi)",
+   "fragment": "superadmin--ai-assistant-daily-cap",
+   "order": 72.155,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
    "viewId": "ai-assistant-unavailable",
    "menuKey": "aiAssistant",
    "title": "Suhbat — AI o'chiq va xato holatlari",
@@ -7420,6 +7429,15 @@
    "fragment": "superadmin--ai-assistant-offline",
    "order": 72.17,
    "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-conversations-sheet",
+   "menuKey": "aiAssistant",
+   "title": "Suhbatlar ro'yxati — oyna / pastki varaq (planshet, telefon)",
+   "fragment": "superadmin--ai-assistant-conversations-sheet",
+   "order": 72.18,
+   "kind": "dialog"
   },
   {
    "role": "superadmin",
@@ -7477,11 +7495,74 @@
   },
   {
    "role": "superadmin",
+   "viewId": "ai-assistant-alerts-filters-mobile",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirishlar — filtr paneli (telefon)",
+   "fragment": "superadmin--ai-assistant-alerts-filters-mobile",
+   "order": 72.405,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
    "viewId": "ai-assistant-alert-dialog",
    "menuKey": "aiAssistant",
    "title": "Ogohlantirish — smena kamomadi (oyna)",
    "fragment": "superadmin--ai-assistant-alert-dialog",
    "order": 72.41,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-dialog-courier-debt",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirish — kuryer qarzi o'smoqda (oyna)",
+   "fragment": "superadmin--ai-assistant-alert-dialog-courier-debt",
+   "order": 72.411,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-dialog-expense",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirish — g'ayrioddiy xarajat (oyna)",
+   "fragment": "superadmin--ai-assistant-alert-dialog-expense",
+   "order": 72.412,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-dialog-market-payout",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirish — market to'lovi kechikmoqda (oyna)",
+   "fragment": "superadmin--ai-assistant-alert-dialog-market-payout",
+   "order": 72.413,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-dialog-hq-transfer",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirish — HQ'ga o'tkazma kechikmoqda (oyna)",
+   "fragment": "superadmin--ai-assistant-alert-dialog-hq-transfer",
+   "order": 72.414,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-dialog-loss",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirish — zarar (oyna)",
+   "fragment": "superadmin--ai-assistant-alert-dialog-loss",
+   "order": 72.415,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ai-assistant-alert-dialog-corrections",
+   "menuKey": "aiAssistant",
+   "title": "Ogohlantirish — tuzatishlar ko'paydi (oyna)",
+   "fragment": "superadmin--ai-assistant-alert-dialog-corrections",
+   "order": 72.416,
    "kind": "dialog"
   },
   {
