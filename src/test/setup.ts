@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach, vi } from "vitest";
+import { afterAll, afterEach, vi } from "vitest";
 import { cleanup, configure } from "@testing-library/react";
 import { toastStore } from "../shared/lib/notify";
 import { getConfirmSnapshot, removeConfirm } from "../shared/ui/primitives/dialog/confirmStore";
@@ -69,4 +69,19 @@ afterEach(() => {
     const list = realRequests.splice(0).join(", ");
     throw new Error(`Unit testda haqiqiy tarmoq so'rovi: ${list} — so'rovni mock qiling (masalan vi.spyOn(api, "get"))`);
   }
+});
+
+// react-query obunachilarga xabarni darhol emas, `setTimeout(0)` bilan to'plab yuboradi (`notifyManager`). Sinxron test
+// so'rovli komponentni chizsa va mock javob microtask'da kelsa, React obunasining (`useSyncExternalStore`) chaqiruvi shu
+// taymerda navbatda qoladi — `cleanup()` komponentni o'chirgandan keyin ham u baribir ishlaydi. Sinxron testlar orasida
+// voqealar sikli aylanmaydi, shuning uchun fayl oxirida bunday taymerlar to'planib qoladi (o'lchov: 851 fayldan 33 tasida,
+// AiPreviewCard.test.tsx da 13 ta).
+// Odatda ular keyingi aylanishda ishlaydi, lekin kafolat yo'q: vitest («stop») jsdom muhitini ulardan oldin yopib
+// ulgursa, React `window.event` ni o'qiydi → «ReferenceError: window is not defined» (deploy 43466544508, 1-urinish).
+// Shuning uchun muhit yopilishidan oldin bitta makrotask kutamiz: bu taymer navbatdagilardan keyin turadi, demak ular
+// (oyna hali bor paytda) undan oldin ishlaydi. Soxta taymerda (`vi.useFakeTimers` qaytarilmagan) kutish osilib qoladi —
+// u holda react-query taymerlari ham soxta va muhitdan keyin ishga tushmaydi.
+afterAll(async () => {
+  if (vi.isFakeTimers()) return;
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
 });
