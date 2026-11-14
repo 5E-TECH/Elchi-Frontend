@@ -33,12 +33,17 @@ import { accountState, initialsOf, type CourierInfo } from "./carrierModel";
 import { carrierDocsUrl, carrierPublicBaseUrl } from "./carrierLinks";
 import { useCourierName } from "./carrierFormat";
 import { CarrierStateBadge, CourierStatusBadge } from "./carrierParts";
+import { CarrierRollbackToggle } from "./CarrierRollbackToggle";
 import { useCourierReceivable } from "./useCarrierCouriers";
 
 /**
  * TANLANGAN AKKAUNT (maket `*-carrier-console`, ikkinchi karta): sarlavha + «Tahrirlash», kuryer holati
  * ogohlantirishi (bloklangan / o'chirilgan), 2×2 bo'limlar — «Bog'langan kuryer», «IP cheklovi», «API kalit»,
- * «Ulanish holati» — «Kompaniya dasturchisi uchun» va pastki qator (ID, sanalar, «Faoliyat jurnali»).
+ * «Ulanish holati» (+ ichki «Rollback ruxsati» kaliti — maketda yo'q, ega 2026-11-14, `CarrierRollbackToggle`) —
+ * «Kompaniya dasturchisi uchun» va pastki qator (ID, sanalar, «Faoliyat jurnali»).
+ *
+ * «Kompaniya dasturchisi uchun» bloki kompaniyaga beriladigan ma'lumot: unda rollback YO'Q (ega qarori 2026-11-14 —
+ * kompaniyaga hozircha aytilmaydi; `carrierRollback.test.tsx` qo'riqlaydi).
  *
  * Har qiymat haqiqiy manbadan: akkaunt — `admin/carriers`; kuryer — `users/:id`; «Qabul qilinishi kerak» — kuryer
  * kassasining `olinishi_kerak` i («Kuryer kassasi» sahifasidagi son; olinmasa «—»); HQ — `branches/hq`; manzil —
@@ -436,6 +441,8 @@ export const CarrierAccountDetail = ({
               {t(account.is_active ? "carrier.detail.stop" : "carrier.detail.enable")}
             </Button>
           </div>
+          {/* Ichki kalit — kompaniyaga ko'rsatilmaydi; `key` — akkaunt almashsa oyna holati qolmasin. */}
+          <CarrierRollbackToggle key={account.id} account={account} info={info} />
         </Section>
       </div>
 

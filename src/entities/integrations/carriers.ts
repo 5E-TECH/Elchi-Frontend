@@ -26,6 +26,13 @@ export type CarrierAccount = {
   ip_allowlist: string[] | null;
   /** `false` — kompaniya so'rovlari 403 «Carrier akkaunt faol emas». */
   is_active: boolean;
+  /**
+   * ROLLBACK RUXSATI (ega qarori 2026-11-14, sukut `false`): `false` — kompaniya yuborgan `status: "rollback"`
+   * noma'lum holat qiymati kabi 400 bilan rad etiladi, xato natijani Elchi operatori tuzatadi; `true` — rollback
+   * odatdagidek ishlaydi. Kompaniyaga ko'rsatilmaydi (Swagger, hujjat, «Kompaniya dasturchisi uchun» bloki).
+   * `null` — backend maydonni bermadi (eski versiya): o'chiq deb ko'rsatiladi, kalit o'chirilgan.
+   */
+  rollback_enabled: boolean | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -36,10 +43,14 @@ export type CreateCarrierAccountDto = {
   ip_allowlist?: string[];
 };
 
-/** `PATCH` — faqat o'zgargan maydon; `ip_allowlist: []` — cheklov olib tashlanadi. */
+/**
+ * `PATCH` — faqat o'zgargan maydon; `ip_allowlist: []` — cheklov olib tashlanadi. `rollback_enabled` — alohida
+ * kalit (`setRollback`); yaratishda yuborilmaydi (backend rad etadi: yangi akkaunt doim `false`).
+ */
 export type UpdateCarrierAccountDto = {
   name?: string;
   ip_allowlist?: string[];
+  rollback_enabled?: boolean;
 };
 
 /** Yaratish javobi: akkaunt + `courier_name` + BIR MARTALIK `api_key`. */
@@ -71,6 +82,8 @@ const toAccount = (row: Record<string, unknown>): CarrierAccount => ({
   courier_user_id: text(row.courier_user_id),
   ip_allowlist: Array.isArray(row.ip_allowlist) ? row.ip_allowlist.map(text).filter(Boolean) : null,
   is_active: row.is_active === true,
+  // Faqat haqiqiy boolean: maydon yo'q yoki boshqa tur — eski backend (kalit o'chirilgan, «o'chiq» ko'rinadi).
+  rollback_enabled: typeof row.rollback_enabled === "boolean" ? row.rollback_enabled : null,
   createdAt: text(row.createdAt),
   updatedAt: text(row.updatedAt),
 });
@@ -178,6 +191,30 @@ export const useCarrierAccountActions = () => {
     onSettled: invalidate,
   });
 
+  /**
+   * ROLLBACK RUXSATI — `PATCH admin/carriers/:id { rollback_enabled }` (faqat shu maydon). Javobdagi saqlangan
+   * akkaunt ro'yxat keshiga DARHOL yoziladi va ro'yxat qayta so'ralmaydi (kalit holati javobdan — ortiqcha GET yo'q).
+   * Javob so'ralgan qiymatni tasdiqlamasa (o'qilmadi yoki maydon boshqa) va xatoda (natija noma'lum bo'lishi mumkin:
+   * 504, tarmoq; 409 / 404 da ro'yxat eskirgan) — ro'yxat serverdan qayta o'qiladi: kalit taxminni emas, bazani
+   * ko'rsatsin. Optimistik yangilanish yo'q — pulga ta'sir qiladigan kalit tasdiqlangan qiymatdan boshqasini ko'rsatmaydi.
+   */
+  const setRollback = useMutation({
+    mutationFn: ({ id, rollback_enabled }: { id: string; rollback_enabled: boolean }) =>
+      api
+        .patch(API_ENDPOINTS.CARRIERS.BY_ID(id), { rollback_enabled })
+        .then((res) => readUpdatedCarrier(res.data)),
+    onSuccess: (saved, { rollback_enabled }) => {
+      if (!saved || saved.rollback_enabled !== rollback_enabled) {
+        invalidate();
+        return;
+      }
+      client.setQueryData<CarrierAccount[]>(queryKeys.carrierAccounts.all, (list) =>
+        list?.map((row) => (row.id === saved.id ? saved : row)),
+      );
+    },
+    onError: invalidate,
+  });
+
   const rotateKey = useMutation({
     mutationFn: (id: string) =>
       api
@@ -201,5 +238,5 @@ export const useCarrierAccountActions = () => {
     onSettled: invalidate,
   });
 
-  return { create, update, rotateKey, setActive };
+  return { create, update, setRollback, rotateKey, setActive };
 };

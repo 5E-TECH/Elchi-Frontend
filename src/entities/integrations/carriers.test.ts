@@ -15,6 +15,7 @@ describe("Carrier API akkauntlari — javob o'quvchilari", () => {
     courier_user_id: "55",
     ip_allowlist: ["203.0.113.10", "198.51.100.0/24"],
     is_active: true,
+    rollback_enabled: false,
     createdAt: "2026-11-09T10:15:00.000Z",
     updatedAt: "2026-11-10T09:40:00.000Z",
   };
@@ -28,6 +29,26 @@ describe("Carrier API akkauntlari — javob o'quvchilari", () => {
     expect(list).toHaveLength(2);
     expect(list[0]).toEqual(row);
     expect(list[1]).toMatchObject({ id: "1", ip_allowlist: null, is_active: false });
+  });
+
+  it("rollback_enabled: boolean — o'zi; maydon yo'q yoki boshqa tur (eski backend) — null (kalit o'chirilgan)", () => {
+    const list = readCarrierAccounts({
+      statusCode: 200,
+      data: [
+        { ...row, rollback_enabled: true },
+        { ...row, id: "2", rollback_enabled: false },
+        { ...row, id: "1", rollback_enabled: undefined },
+        { ...row, id: "0", rollback_enabled: "true" },
+      ],
+    });
+    expect(list.map((account) => account.rollback_enabled)).toEqual([true, false, null, null]);
+    const { rollback_enabled: _omitted, ...withoutFlag } = row;
+    void _omitted;
+    expect(readUpdatedCarrier({ statusCode: 200, data: withoutFlag })?.rollback_enabled).toBeNull();
+    expect(
+      readUpdatedCarrier({ statusCode: 200, data: { ...row, rollback_enabled: true } })
+        ?.rollback_enabled,
+    ).toBe(true);
   });
 
   it("kutilmagan shakl — xato (bo'sh ro'yxat «hali yo'q» deb yolg'on ko'rsatilmaydi)", () => {

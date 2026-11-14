@@ -21,6 +21,7 @@ const account = (patch: Partial<CarrierAccount> = {}): CarrierAccount => ({
   courier_user_id: "55",
   ip_allowlist: null,
   is_active: true,
+  rollback_enabled: false,
   createdAt: "2026-11-09T10:15:00.000Z",
   updatedAt: "2026-11-10T09:40:00.000Z",
   ...patch,
