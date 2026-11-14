@@ -7,6 +7,8 @@ import {
   formatPercentLocalized,
   formatSignedMoneyLocalized,
   formatUsdLocalized,
+  formatCurrencyAmountLocalized,
+  isUzsCurrencyLabel,
   MINUS_SIGN,
   resolveMoneyLanguage,
 } from "./formatMoney";
@@ -231,5 +233,31 @@ describe("formatNumberLocalized — minFractionDigits (og'irlik: «7,0 kg»)", (
   it("berilmasa — avvalgidek (ortiqcha nollarsiz)", () => {
     expect(formatNumberLocalized(7, { language: "uz", fractionDigits: 2 })).toBe("7");
     expect(formatNumberLocalized(-0.04, { language: "uz", fractionDigits: 1, minFractionDigits: 1 })).toBe("0,0");
+  });
+});
+
+describe("boshqa valyuta — `formatCurrencyAmountLocalized` / `isUzsCurrencyLabel` (AI chek, `currency_not_uzs`)", () => {
+  it.each(["UZS", "uzs", " Uzs ", "so'm", "SO'M", "som", "so‘m", "soʻm", "SUM", "сум", "СУМ", "сўм"])("%j — so'm", (value) => {
+    expect(isUzsCurrencyLabel(value)).toBe(true);
+  });
+
+  it.each(["USD", "eur", "RUB", "$", "", "  ", null, undefined])("%j — so'm emas", (value) => {
+    expect(isUzsCurrencyLabel(value)).toBe(false);
+  });
+
+  it("son + ISO kodi (katta harf), 2 xonagacha kasr, ortiqcha nolsiz, ajratkich tildan", () => {
+    expect(formatCurrencyAmountLocalized(100, "USD", { language: "uz" })).toBe("100 USD");
+    expect(formatCurrencyAmountLocalized(1250.5, "eur", { language: "uz" })).toBe("1 250,5 EUR");
+    expect(formatCurrencyAmountLocalized(1250.5, "EUR", { language: "ru" })).toBe("1 250,5 EUR");
+    expect(formatCurrencyAmountLocalized(1250.5, "EUR", { language: "en" })).toBe("1,250.5 EUR");
+    expect(formatCurrencyAmountLocalized(12.345, "USD", { language: "uz" })).toBe("12,35 USD");
+    expect(formatCurrencyAmountLocalized(-3, "USD", { language: "uz" })).toBe(`${MINUS_SIGN}3 USD`);
+  });
+
+  it("so'm yozuvi — oddiy so'm formati; kod yo'q — faqat son (so'm deb ko'rsatilmaydi)", () => {
+    expect(formatCurrencyAmountLocalized(145000, "UZS", { language: "uz" })).toBe("145 000 so'm");
+    expect(formatCurrencyAmountLocalized(145000, "сум", { language: "en" })).toBe("145,000 UZS");
+    expect(formatCurrencyAmountLocalized(100, null, { language: "uz" })).toBe("100");
+    expect(formatCurrencyAmountLocalized(100, " ", { language: "uz" })).toBe("100");
   });
 });

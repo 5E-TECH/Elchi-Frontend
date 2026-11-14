@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { API_ENDPOINTS } from "../../shared/api";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { prepareImage, type PreparedImage } from "../../shared/lib/downscaleImage";
+import { isUzsCurrencyLabel } from "../../shared/lib/formatMoney";
 
 /**
  * KASSA CHEKI (QlLf33Ma, backend `docs/frontend/FRONTEND_CHANGELOG.md` «T3», 2026-10-30): qo'lda chiqim va HQ'ga
@@ -160,6 +161,32 @@ export type ReceiptDetail = {
   ai_stale: boolean;
   can_reanalyze: boolean;
   ai: ReceiptAiResult | null;
+};
+
+/**
+ * Backend `error_reason`: chek so'mda emas (PR-4) — holat `mismatch` qoladi, `difference: null`, `currency` to'la
+ * (`USD` …), farq yig'indisiga kirmaydi.
+ */
+export const RECEIPT_CURRENCY_NOT_UZS = "currency_not_uzs";
+
+/**
+ * Chek valyutasi so'mmi: so'm yozuvlari (`isUzsCurrencyLabel`, registrsiz — backend `sanitizeCurrency` bilan bir xil),
+ * `null` / bo'sh — mahalliy (backend `deriveReceiptOutcome` kabi).
+ */
+export const isUzsCurrency = (currency: string | null | undefined): boolean =>
+  !currency?.trim() || isUzsCurrencyLabel(currency);
+
+/**
+ * Chek boshqa valyutada: `{ code }` — ISO kodi katta harfda (`USD`), noma'lum bo'lsa `null`. So'mda yoki valyuta
+ * ko'rsatilmagan — `null`. Bugungi backend (`currency: "USD"`, `difference: 0`) va PR-4 (`error_reason:
+ * "currency_not_uzs"`, `difference: null`) — ikkalasi ham.
+ */
+export const receiptForeignCurrency = (
+  ai: Pick<ReceiptAiResult, "currency" | "error_reason"> | null | undefined,
+): { code: string | null } | null => {
+  if (!ai) return null;
+  if (!isUzsCurrency(ai.currency)) return { code: String(ai.currency).trim().toUpperCase() };
+  return ai.error_reason === RECEIPT_CURRENCY_NOT_UZS ? { code: null } : null;
 };
 
 const num = (value: unknown): number | null => {
