@@ -557,6 +557,11 @@ export const API_ENDPOINTS = {
     POST_DISPATCH: (postId: string | number) => `branches/posts/${postId}/dispatch`,
     // POST {destination_branch_id} — jo'natilgan, hali qabul qilinmagan pochta boshqa filialga (superadmin/admin)
     POST_REASSIGN: (postId: string | number) => `branches/posts/${postId}/reassign`,
+    // Pochta → HQ kuryeri (ega qarori 2026-11-15; superadmin/admin/HQ registratori): GET — pochta viloyatiga xizmat
+    // qiladigan faol HQ kuryerlari (`region_match`, tashqi yetkazuvchi belgisi); POST {courier_id, order_ids} —
+    // tanlanganlar kuryerning bugungi pochtasiga o'tadi (filialga bormaydi).
+    POST_COURIER_DESTINATIONS: (postId: string | number) => `branches/posts/${postId}/courier-destinations`,
+    POST_DISPATCH_TO_COURIER: (postId: string | number) => `branches/posts/${postId}/dispatch-to-courier`,
     // Pochta jo'natish oynasi uchun manzil filiallar (superadmin/admin/HQ registratori)
     DISPATCH_DESTINATIONS: "branches/dispatch-destinations",
     // Markaziy ombor (Pa1KaXmj): HQ filiali — «Ombor ochish» oynasi uchun (SUPERADMIN/ADMIN, pul maydonlarisiz;

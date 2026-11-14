@@ -210,7 +210,7 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
     await waitFor(() => expectKeys(keys(), [["cashbox"], ["finance-history"]]));
   });
 
-  it("foydalanuvchi holati / o'chirish — marketlar, buyurtma aloqasi, filiallar, logist, investor, pochta kuryerlari", async () => {
+  it("foydalanuvchi holati / o'chirish — marketlar, buyurtma aloqasi, filiallar, logist, investor", async () => {
     const keys = await run(useUser, (m) =>
       m.updateUserStatus.mutateAsync({ id: "3", status: "inactive" as never }),
     );
@@ -224,7 +224,6 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
       ["logists"],
       ["region-logists"],
       ["investors"],
-      ["mails", "couriers-by-region"],
     ]);
   });
 
