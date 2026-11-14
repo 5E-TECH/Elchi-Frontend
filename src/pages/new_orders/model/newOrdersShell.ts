@@ -20,6 +20,7 @@ export type NewOrdersShellMode = "bare" | "hosted";
 export const NEW_ORDERS_RESERVED_SEGMENTS = [
   "create",
   "incoming",
+  "sites",
   "branches",
   "cancelled",
   "external",
@@ -46,6 +47,9 @@ export const resolveNewOrdersShellMode = (
       return "bare";
     case "incoming":
       // `/new-orders/incoming` — manba tanlash (tablar ostida); `/incoming/:marketId` — skaner, o'z sarlavhasi.
+      return second === undefined ? "hosted" : "bare";
+    case "sites":
+      // `/new-orders/sites` — «Tashqi saytlar» (tablar ostida); `/sites/:integrationId` — sayt skani, o'z sarlavhasi.
       return second === undefined ? "hosted" : "bare";
     case "branches":
       // `/branches` — filiallar ro'yxati (tablar ostida); `/branches/:id`, `/branches/:id/batches/:b` — o'z sarlavhasi.
@@ -75,7 +79,14 @@ export const resolveNewOrdersShellMode = (
 };
 
 /** Qobiq tablari (rolga qarab ko'rinadiganlari `resolveNewOrdersTabKeys` da). */
-export type NewOrdersTabKey = "markets" | "incoming" | "branches" | "cancelled" | "marketNew" | "marketCancelled";
+export type NewOrdersTabKey =
+  | "markets"
+  | "incoming"
+  | "sites"
+  | "branches"
+  | "cancelled"
+  | "marketNew"
+  | "marketCancelled";
 
 /**
  * Ko'rinadigan tablar:
@@ -83,7 +94,9 @@ export type NewOrdersTabKey = "markets" | "incoming" | "branches" | "cancelled" 
  *  - xodim: «Marketlar» doim; «Kiruvchi posilkalar» — posilka qabul qiladigan hamma xodimga
  *    (`canReceiveIncoming` = `canReceiveExternalOrders`, route guard bilan bir xil: superadmin, admin, registrator,
  *    `intake` li menejer — HQ · PICKUP · HYBRID; ega qarori S1, 2026-10-19); «Filial paketlari» — faqat
- *    superadmin/admin; «Bekor qilinganlar» — `canHandoverCancelledToMarket` (superadmin/admin va HQ registratori).
+ *    superadmin/admin; «Tashqi saytlar» — `canUseSites` (`canUseExternalSites`: superadmin/admin — saytlar ro'yxati
+ *    `GET /integrations` faqat ularda); «Bekor qilinganlar» — `canHandoverCancelledToMarket` (superadmin/admin va HQ
+ *    registratori).
  * Natija: menejer va registrator — «Marketlar · Kiruvchi posilkalar», HQ registratorida yana «Bekor qilinganlar».
  * Qobiqqa kiradigan har xodimda (`canCreateOrders` — registrator va `intake` li menejer) tablar ikkita va undan ko'p.
  */
@@ -92,17 +105,20 @@ export const resolveNewOrdersTabKeys = ({
   roleId,
   canReceiveIncoming,
   canSeeCancelled,
+  canUseSites = false,
 }: {
   role: string | null | undefined;
   roleId: string | null | undefined;
   canReceiveIncoming: boolean;
   canSeeCancelled: boolean;
+  canUseSites?: boolean;
 }): NewOrdersTabKey[] => {
   if (role === "market") return roleId ? ["marketNew", "marketCancelled"] : ["marketNew"];
 
   const isAdmin = role === "superadmin" || role === "admin";
   const keys: NewOrdersTabKey[] = ["markets"];
   if (canReceiveIncoming) keys.push("incoming");
+  if (canUseSites) keys.push("sites");
   if (isAdmin) keys.push("branches");
   if (canSeeCancelled) keys.push("cancelled");
   return keys;
@@ -115,6 +131,7 @@ export const resolveNewOrdersActiveTab = (pathname: string, role: string | null 
   if (first === "cancelled") return isMarket ? "marketCancelled" : "cancelled";
   if (!isMarket && first === "branches") return "branches";
   if (!isMarket && first === "incoming") return "incoming";
+  if (!isMarket && first === "sites") return "sites";
   return isMarket ? "marketNew" : "markets";
 };
 

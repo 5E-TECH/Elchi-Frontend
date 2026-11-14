@@ -20,6 +20,7 @@ import {
   canViewReturnsPage,
   canCreateOrders,
   canReceiveExternalOrders,
+  canUseExternalSites,
   canViewPaymentsPage,
   canManageShiftSettings,
   canHandoverCancelledToMarket,
@@ -147,6 +148,8 @@ const IncomingOrdersPage = lazy(
 const IncomingSourcePicker = lazy(
   () => import("../../pages/incoming-orders/SourcePicker"),
 );
+const ExternalSitesPage = lazy(() => import("../../pages/new_orders/sites"));
+const SiteScanPage = lazy(() => import("../../pages/new_orders/sites/scan"));
 const IntegrationsPage = lazy(() => import("../../pages/integrations"));
 const ConnectionsPage = lazy(
   () => import("../../pages/integrations/ConnectionsPage"),
@@ -903,6 +906,27 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
                       <IncomingOrdersPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * «TASHQI SAYTLAR» — sayt tanlash (tablar ostida). Sayt bizga buyurtma yubormaydi: posilkadagi
+                   * saytning QR'i skanerlanadi va buyurtma saytdan olinadi (BeePost «Tashqi buyurtmalar»).
+                   */
+                  path: "sites",
+                  element: (
+                    <ProtectedRoute canActivate={canUseExternalSites}>
+                      <ExternalSitesPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /** Tanlangan saytning QR skani → ro'yxat → «Qabul qilish». `:integrationId` — ulanish. */
+                  path: "sites/:integrationId",
+                  element: (
+                    <ProtectedRoute canActivate={canUseExternalSites}>
+                      <SiteScanPage />
                     </ProtectedRoute>
                   ),
                 },

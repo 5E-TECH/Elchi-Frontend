@@ -25,6 +25,12 @@ describe("resolveNewOrdersShellMode — qobiq rejimi", () => {
     expect(resolveNewOrdersShellMode("/new-orders/incoming/121", "admin")).toBe("bare");
   });
 
+  it("tashqi saytlar: sayt tanlash — hosted, sayt skani — bare", () => {
+    expect(resolveNewOrdersShellMode("/new-orders/sites", "admin")).toBe("hosted");
+    expect(resolveNewOrdersShellMode("/new-orders/sites/", "superadmin")).toBe("hosted");
+    expect(resolveNewOrdersShellMode("/new-orders/sites/7", "admin")).toBe("bare");
+  });
+
   it("market buyurtmalari: xodimda bare, market rolida hosted (o'z tabi)", () => {
     for (const role of STAFF) expect(resolveNewOrdersShellMode("/new-orders/121", role)).toBe("bare");
     expect(resolveNewOrdersShellMode("/new-orders/121", "market")).toBe("hosted");
@@ -91,6 +97,18 @@ describe("resolveNewOrdersTabKeys — ko'rinadigan tablar", () => {
     }
   });
 
+  it("⭐ «Tashqi saytlar» — «Kiruvchi posilkalar» dan keyin, faqat ruxsat bo'lsa (superadmin, admin)", () => {
+    expect(
+      resolveNewOrdersTabKeys({ role: "admin", roleId: "1", canReceiveIncoming: true, canSeeCancelled: true, canUseSites: true }),
+    ).toEqual(["markets", "incoming", "sites", "branches", "cancelled"]);
+    expect(
+      resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canReceiveIncoming: true, canSeeCancelled: false, canUseSites: false }),
+    ).toEqual(["markets", "incoming"]);
+    expect(
+      resolveNewOrdersTabKeys({ role: "market", roleId: "121", canReceiveIncoming: false, canSeeCancelled: false, canUseSites: true }),
+    ).toEqual(["marketNew", "marketCancelled"]);
+  });
+
   it("⭐ qabul qiladigan menejer (HQ · PICKUP · HYBRID) — «Marketlar · Kiruvchi posilkalar» (ega S1)", () => {
     expect(
       resolveNewOrdersTabKeys({ role: "manager", roleId: "2", canReceiveIncoming: true, canSeeCancelled: false }),
@@ -132,6 +150,8 @@ describe("resolveNewOrdersActiveTab", () => {
     expect(resolveNewOrdersActiveTab("/new-orders/branches/4", "admin")).toBe("branches");
     expect(resolveNewOrdersActiveTab("/new-orders/cancelled/121", "registrator")).toBe("cancelled");
     expect(resolveNewOrdersActiveTab("/new-orders/incoming", "manager")).toBe("incoming");
+    expect(resolveNewOrdersActiveTab("/new-orders/sites", "admin")).toBe("sites");
+    expect(resolveNewOrdersActiveTab("/new-orders/sites/7", "superadmin")).toBe("sites");
     expect(resolveNewOrdersActiveTab("/new-orders/userDetail/9", "admin")).toBe("markets");
   });
 

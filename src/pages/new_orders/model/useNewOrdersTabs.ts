@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
-import { canHandoverCancelledToMarket, canReceiveExternalOrders } from "../../../app/lib/access";
+import { canHandoverCancelledToMarket, canReceiveExternalOrders, canUseExternalSites } from "../../../app/lib/access";
 import { useBranchesWithSentBatches } from "../../../entities/branch";
 import { useIncomingSources } from "../../../entities/incoming-orders";
 import { useOrders } from "../../../entities/orders";
@@ -24,9 +24,11 @@ export const useNewOrdersTabKeys = (): NewOrdersTabKey[] => {
   const canSeeCancelled = useSelector(canHandoverCancelledToMarket);
   // Route guard (`/new-orders/incoming*`) bilan bir xil predikat — tab bor joyda sahifa ham ochiladi.
   const canReceiveIncoming = useSelector(canReceiveExternalOrders);
+  // «Tashqi saytlar» — `/new-orders/sites*` route guard bilan bir xil.
+  const canUseSites = useSelector(canUseExternalSites);
   return useMemo(
-    () => resolveNewOrdersTabKeys({ role, roleId, canReceiveIncoming, canSeeCancelled }),
-    [canReceiveIncoming, canSeeCancelled, role, roleId],
+    () => resolveNewOrdersTabKeys({ role, roleId, canReceiveIncoming, canSeeCancelled, canUseSites }),
+    [canReceiveIncoming, canSeeCancelled, canUseSites, role, roleId],
   );
 };
 
@@ -42,6 +44,7 @@ const countOf = <T>(query: { status: string; data?: T }, count: (data: T) => num
  * o'tganda qayta yuklanmaydi) va faqat tab ko'rinsa so'raladi:
  *  - «Marketlar» — marketlar soni (`orders/markets/new`);
  *  - «Kiruvchi posilkalar» — kutayotgan posilkalar (manbalar `orders_count` yig'indisi);
+ *  - «Tashqi saytlar» — son yo'q (saytda nechta posilka kutayotgani bizga noma'lum: buyurtma skanda olinadi);
  *  - «Filial paketlari» — paket yuborgan filiallar soni;
  *  - «Bekor qilinganlar» — marketlar soni; market rolida — o'z buyurtmalari soni;
  *  - market «Yangi buyurtmalar» — bugungi yangi buyurtmalar soni.
@@ -69,6 +72,7 @@ export const useNewOrdersTabs = (): { items: TabItem<NewOrdersTabKey>[]; active:
     incoming: countOf(incomingQuery, (sources) =>
       sources.reduce((sum, source) => sum + (Number(source.orders_count) || 0), 0),
     ),
+    sites: undefined,
     branches: countOf(branchesQuery, (rows) => rows.length),
     cancelled: countOf(cancelledQuery, (data) => extractCancelledMarkets(data).length),
     marketNew: countOf(marketNewQuery, (data) => listOf(data).length),
@@ -78,6 +82,7 @@ export const useNewOrdersTabs = (): { items: TabItem<NewOrdersTabKey>[]; active:
   const labels: Record<NewOrdersTabKey, string> = {
     markets: t("marketsTab"),
     incoming: t("shell.incomingTab"),
+    sites: t("shell.sitesTab"),
     branches: t("branchesTab"),
     cancelled: t("cancelledTab"),
     marketNew: t("newOrdersTab"),
@@ -87,6 +92,7 @@ export const useNewOrdersTabs = (): { items: TabItem<NewOrdersTabKey>[]; active:
   const links: Record<NewOrdersTabKey, string> = {
     markets: "/new-orders",
     incoming: "/new-orders/incoming",
+    sites: "/new-orders/sites",
     branches: "/new-orders/branches",
     cancelled: "/new-orders/cancelled",
     marketNew: roleId ? `/new-orders/${roleId}` : "/new-orders",
