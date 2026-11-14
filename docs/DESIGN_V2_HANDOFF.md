@@ -54,7 +54,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   MO-1 dan keyin: 2 (`SalaryPaymentPopup`, `PrintModeSelect`).
 - design-guard `named-colour` + `V2_SCOPES` (papkalar ro'yxati — `scripts/design-guard.mjs`, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
   `OUTPUT_FORMAT_FILES` 4; `design/guard-baseline.json` faqat kamaydi (87 → 17 fayl yozuvi).
-- Vizual snapshotlar: 23 sahna × kunduzgi/tungi × 1440/390 = 92 (`tests/visual/`, mock API), CI «Visual»
+- Vizual snapshotlar: 24 sahna × kunduzgi/tungi × 1440/390 = 96 (`tests/visual/`, mock API), CI «Visual»
   (`.github/workflows/visual.yml`); baseline'lar `shodiyor` da (bot commit `a107f5e`, `616bc03` da yaratilgan;
   `47bcb53` gacha bironta sahna o'zgarmagani lokal A/B chizish bilan tasdiqlangan), `dev` da hali yo'q.
 - Bosqich B integratsiyasida iste'molchisi qolmagan 61 v1 fayl o'chirildi (testlari bilan): `PhoneInput`,

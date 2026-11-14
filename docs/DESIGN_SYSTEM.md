@@ -2,7 +2,7 @@
 
 > Holat (2026-10-19): **0–5 bosqichlar tayyor.** 4 (sahifalar): 77 route'dan 76 tasi v2 — G1, G2, G3 birlashtirildi,
 > `/scan` skaner 1-bosqichida (`design/SCREENS.md`); 5 (qo'riqchilar, §12): ESLint `design-v2/*` butun `src` da xato,
-> `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual», 23 sahna). Kamera ishi (skaner 1–4-bosqich) tayyor.
+> `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual», 24 sahna). Kamera ishi (skaner 1–4-bosqich) tayyor.
 > Qolgan ish (§14): v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5). `/market-operators` — MO-1 da v2 (77 / 77).
 > Trello: «Dizayn v2» kartalari.
 
@@ -569,8 +569,8 @@ Eski brend ranglari tekshiruvlari (`index.css`, `AntdThemeProvider.tsx`, `var(--
 ### 12.5 Vizual snapshotlar (CI «Visual»)
 
 **Matritsa:** 4 loyiha — `desktop-light`, `desktop-dark` (1440 × 900), `phone-light`, `phone-dark` (390 × 844,
-`isMobile`, `hasTouch`), DPR 1. Planshet 768 va ru/en matritsada yo'q (`app:shot` va e2e qoplaydi). **23 sahna × 4
-= 92 snapshot.** Rollar: superadmin 8, admin 3, menejer 3, registrator 3, kuryer 3, market 2, mehmon 1.
+`isMobile`, `hasTouch`), DPR 1. Planshet 768 va ru/en matritsada yo'q (`app:shot` va e2e qoplaydi). **24 sahna × 4
+= 96 snapshot.** Rollar: superadmin 9, admin 3, menejer 3, registrator 3, kuryer 3, market 2, mehmon 1.
 
 | id | rol (filial turi) | route | maket | fayl |
 |---|---|---|---|---|
@@ -586,6 +586,7 @@ Eski brend ranglari tekshiruvlari (`index.css`, `AntdThemeProvider.tsx`, `var(--
 | `cancelled-handover` | superadmin | `/new-orders/cancelled/31` | `superadmin-neworders-cancelled-handover` | `intake.visual.ts` |
 | `mails-today` | manager (HYBRID) | `/mails/today` | `manager-mails-today` | `mails.visual.ts` |
 | `mail-detail` | courier (REGIONAL) | `/mails/78` | `courier-mails-detail-receive` | `mails.visual.ts` |
+| `mail-send-dialog` | superadmin | `/mails/74` → «Barchasini tanlash» → «Pochtani jo'natish» → «HQ kuryeriga» tabi, tashqi yetkazuvchili kuryer tanlangan (telefonda pastki varaqa; ega qarori 2026-11-15, maket yo'q) | `superadmin-mails-detail-send-dialog`, `registrator-dispatch-courier-select-dialog` | `mails.visual.ts` |
 | `payments` | superadmin | `/payments?cashbox_type=main` | `superadmin-payments-overview` | `finance.visual.ts` |
 | `main-cashbox` | admin | `/payments/main-cashbox` | `admin-payments-main-cashbox` | `finance.visual.ts` |
 | `cash-box` | market | `/cash-box` | `market-cashbox-my` | `finance.visual.ts` |
@@ -740,7 +741,7 @@ karta yo'q · kunduzgi / tungi / 390px skrinshot · to'liq `npm test` + `npm run
 | `RAW_CONTROL_RATCHET` / `UI_IMPORT_RATCHET` | 3 / 0 (`MAX_RAW = 3`, `MAX_UI = 0`; `ScannerCameraModal` o'chirildi) | `scripts/eslint-design-v2.mjs` |
 | `design-v2` bitta qator istisnolari | 1 (`CampaignPage` prefiksli maydon; bekorlardagi kamera tugmasi olindi) | `src/**` |
 | `STAGE_A_PENDING` | 0 (bo'sh bo'lishi shart) | `scripts/eslint-design-v2.mjs` |
-| Vizual sahnalar | 23 × 4 = 92 snapshot | `tests/visual/scenes/` |
+| Vizual sahnalar | 24 × 4 = 96 snapshot | `tests/visual/scenes/` |
 | Commit qilingan vizual baseline'lar | 0 — §12.5 0- va 2-qadamdan keyin 92 | `tests/visual/__screenshots__/` |
 
 **Qolgan ish:**
