@@ -284,13 +284,31 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
 
   it("holat (access/me) vaqt chegarasi — «Server javob bermadi», «internet» deyilmaydi", async () => {
     mocks.getAiAccessMe.mockRejectedValueOnce(
-      Object.assign(new Error("timeout of 60000ms exceeded"), { isAxiosError: true, code: "ECONNABORTED", request: {} }),
+      Object.assign(new Error("So'rov vaqti tugadi"), { isAxiosError: true, code: "ECONNABORTED", request: {} }),
     );
     renderPage();
     const state = (await screen.findByText("AI yordamchini ochib bo'lmadi")).closest("[data-error-kind]");
     expect(state).toHaveAttribute("data-error-kind", "timeout");
     expect(state).toHaveTextContent("Server javob bermadi. Birozdan keyin qayta urinib ko'ring.");
     expect(screen.queryByText(/Internet/)).toBeNull();
+  });
+
+  it("holat (access/me) 429 — xom backend matni emas, umumiy izoh", async () => {
+    mocks.getAiAccessMe.mockRejectedValueOnce(httpError(429));
+    renderPage();
+    const state = (await screen.findByText("AI yordamchini ochib bo'lmadi")).closest("[data-error-kind]");
+    expect(state).toHaveAttribute("data-error-kind", "generic");
+    expect(state).toHaveTextContent("Holatni yuklab bo'lmadi. Birozdan keyin qayta urinib ko'ring.");
+    expect(screen.queryByText(/Internet|Too Many|Throttler/)).toBeNull();
+  });
+
+  it("holat (access/me) 403 — rol izohi («sahifaning qolgan qismi» deyilmaydi)", async () => {
+    mocks.getAiAccessMe.mockRejectedValueOnce(httpError(403));
+    renderPage();
+    const state = (await screen.findByText("AI yordamchini ochib bo'lmadi")).closest("[data-error-kind]");
+    expect(state).toHaveAttribute("data-error-kind", "forbidden");
+    expect(state).toHaveTextContent("AI yordamchi faqat superadmin uchun");
+    expect(screen.queryByText(/qolgan qismidan/)).toBeNull();
   });
 
   it("holat (access/me) — javobsiz so'rov (tarmoq): internet matni qoladi", async () => {

@@ -1,5 +1,6 @@
 // dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type FocusEvent, type ReactNode } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Compass, History, Plus, Power, RefreshCw } from "lucide-react";
@@ -12,7 +13,7 @@ import {
   Skeleton,
   SkeletonLines,
 } from "../../shared/ui/primitives";
-import { getErrorKind, getErrorStatus } from "../../shared/lib/errorKind";
+import { getErrorKind, getErrorStatus, type ErrorKind } from "../../shared/lib/errorKind";
 import { formatNumberLocalized } from "../../shared/lib/formatMoney";
 import {
   isConversationId,
@@ -294,7 +295,7 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
               description={
                 <>
                   {t("unavailable.text")}
-                  <span className="mt-1 block text-xs text-text-muted">{t(`unavailable.reasons.${unavailableReason}`)}</span>
+                  <span className="mt-1 block text-xs">{t(`unavailable.reasons.${unavailableReason}`)}</span>
                 </>
               }
               action={
@@ -356,6 +357,18 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
   );
 };
 
+/**
+ * access/me yuklanmagandagi izoh: internet matni faqat tarmoq xatosida; server (5xx, 504 gateway) va vaqt chegarasi —
+ * `ErrorState` ning o'z izohi; 403 — rol izohi; qolgan 4xx (masalan 429 «Too Many Requests») — xom backend matni emas,
+ * sahifaning umumiy izohi.
+ */
+const accessErrorText = (kind: ErrorKind, t: TFunction<"aiAdvisor">): string | undefined => {
+  if (kind === "offline") return t("access.errorText");
+  if (kind === "forbidden") return t("errors.codes.role_forbidden");
+  if (kind === "generic") return t("access.errorGeneric");
+  return undefined;
+};
+
 const AiAssistantPage = () => {
   const { t } = useTranslation("aiAdvisor");
   const access = useAiAccessMe();
@@ -378,8 +391,7 @@ const AiAssistantPage = () => {
             framed
             error={error}
             title={t("access.errorTitle")}
-            // Internet matni faqat tarmoq xatosida; server (5xx, 504 gateway) va vaqt chegarasi — `ErrorState` izohi.
-            description={getErrorKind(error) === "offline" ? t("access.errorText") : undefined}
+            description={accessErrorText(getErrorKind(error), t)}
             onRetry={retry}
             retrying={access.isRefetching}
           />

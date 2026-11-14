@@ -82,7 +82,8 @@
   },
   "access": {
     "errorTitle": "AI yordamchini ochib bo'lmadi",
-    "errorText": "Holatni yuklab bo'lmadi. Internet aloqasini tekshirib, qayta urining."
+    "errorText": "Holatni yuklab bo'lmadi. Internet aloqasini tekshirib, qayta urining.",
+    "errorGeneric": "Holatni yuklab bo'lmadi. Birozdan keyin qayta urinib ko'ring."
   },
   "limit": {
     "title": "Bugungi limit",
