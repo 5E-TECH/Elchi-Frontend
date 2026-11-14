@@ -128,13 +128,15 @@ describe("«Chek» bo'limi (QlLf33Ma)", () => {
       const term = within(within(box).getByRole("group", { name: "Summalar solishtiruvi" })).getByText(label);
       return term.nextElementSibling as HTMLElement;
     };
-    const REASON = "Chek boshqa valyutada (USD) — so'mdagi summa bilan solishtirib bo'lmadi.";
+    const REASON = "Chek boshqa valyutada (USD) — so'mdagi summa bilan solishtirib bo'lmadi. Summani rasmdan tekshiring.";
+    const REASON_NO_CODE = "Chek boshqa valyutada — so'mdagi summa bilan solishtirib bo'lmadi. Summani rasmdan tekshiring.";
+    const compareBox = (box: HTMLElement) => within(box).getByRole("group", { name: "Summalar solishtiruvi" });
 
     afterEach(async () => {
       await i18n.changeLanguage("uz");
     });
 
-    it("PR-4: «100 USD» (so'msiz), farq «—» qizilsiz, izoh qatori; holat belgisi backenddagidek", async () => {
+    it("PR-4: «100 USD» (so'msiz), farq «—» qizilsiz, quti neytral, izoh qatori; holat belgisi backenddagidek", async () => {
       current = receipt({
         ai: ai({ amount: 100, difference: null, currency: "USD", error_reason: "currency_not_uzs" }),
       });
@@ -147,6 +149,8 @@ describe("«Chek» bo'limi (QlLf33Ma)", () => {
       expect(row(box, "Kiritilgan")).toHaveTextContent(/^145 000 so'm$/);
       expect(row(box, "Farq")).toHaveTextContent(/^—$/);
       expect(row(box, "Farq").querySelector(".text-danger-fg")).toBeNull();
+      expect(compareBox(box)).toHaveClass("bg-sunken", "border-border");
+      expect(compareBox(box)).not.toHaveClass("bg-danger-soft");
       expect(within(box).getByText(REASON)).toBeInTheDocument();
       expect(within(box).queryByText(/^[+−-]?0 so'm$/)).not.toBeInTheDocument();
       // AI maydonlari va qayta tahlil o'zgarmaydi.
@@ -154,15 +158,33 @@ describe("«Chek» bo'limi (QlLf33Ma)", () => {
       expect(within(box).getByRole("button", { name: "Qayta tahlil" })).toBeEnabled();
     });
 
-    it("bugungi backend (`difference: 0`, `error_reason` yo'q, kichik harf) — ham «—», «0 so'm» emas", async () => {
-      current = receipt({ ai: ai({ amount: 12.5, difference: 0, currency: "usd", error_reason: null }) });
+    it("bugungi backend (PR #643 gacha: `error_reason` yo'q, `difference = amount − entered` aralash birlikda, kichik harf) — «—», ma'nosiz farq chiqmaydi", async () => {
+      current = receipt({
+        entered_amount: 1250000,
+        ai: ai({ amount: 100, difference: -1249900, currency: "usd", error_reason: null }),
+      });
       open();
       const box = await section();
 
       await within(box).findByText("Farq bor");
-      expect(row(box, "Chekda")).toHaveTextContent(/^12,5 USD$/);
+      expect(row(box, "Chekda")).toHaveTextContent(/^100 USD$/);
+      expect(row(box, "Kiritilgan")).toHaveTextContent(/^1 250 000 so'm$/);
       expect(row(box, "Farq")).toHaveTextContent(/^—$/);
+      expect(box).not.toHaveTextContent("1 249 900");
+      expect(compareBox(box)).not.toHaveClass("bg-danger-soft");
       expect(within(box).getByText(REASON)).toBeInTheDocument();
+    });
+
+    it("noma'lum yozuv (`$`, kod emas) + haqiqiy farq, `error_reason` yo'q — backend farqiga ishoniladi", async () => {
+      current = receipt({ ai: ai({ currency: "$", difference: 5000, error_reason: null }) });
+      open();
+      const box = await section();
+
+      await within(box).findByText("Farq bor");
+      expect(row(box, "Chekda")).toHaveTextContent(/^150 000 so'm$/);
+      expect(row(box, "Farq")).toHaveTextContent(/^\+5 000 so'm$/);
+      expect(compareBox(box)).toHaveClass("bg-danger-soft");
+      expect(within(box).queryByText(/boshqa valyutada/)).not.toBeInTheDocument();
     });
 
     it("kodi noma'lum (`error_reason` bor, `currency` yo'q) — son so'msiz, izoh qavssiz", async () => {
@@ -173,7 +195,7 @@ describe("«Chek» bo'limi (QlLf33Ma)", () => {
       await within(box).findByText("Farq bor");
       expect(row(box, "Chekda")).toHaveTextContent(/^100$/);
       expect(row(box, "Farq")).toHaveTextContent(/^—$/);
-      expect(within(box).getByText("Chek boshqa valyutada — so'mdagi summa bilan solishtirib bo'lmadi.")).toBeInTheDocument();
+      expect(within(box).getByText(REASON_NO_CODE)).toBeInTheDocument();
     });
 
     it("ru / en — kod saqlanadi, izoh tarjimada", async () => {
@@ -183,7 +205,9 @@ describe("«Chek» bo'limi (QlLf33Ma)", () => {
       await i18n.changeLanguage("ru");
       const first = open();
       const box = await section();
-      expect(await within(box).findByText("Чек в другой валюте (EUR) — сравнить с суммой в сумах нельзя.")).toBeInTheDocument();
+      expect(
+        await within(box).findByText("Чек в другой валюте (EUR) — сравнить с суммой в сумах нельзя. Проверьте сумму по фото."),
+      ).toBeInTheDocument();
       expect(within(box).getByText("1 250,5 EUR")).toBeInTheDocument();
       expect(within(box).getByText("145 000 сум")).toBeInTheDocument();
       first.unmount();
@@ -192,7 +216,9 @@ describe("«Chek» bo'limi (QlLf33Ma)", () => {
       open();
       const next = await section();
       expect(
-        await within(next).findByText("The receipt is in another currency (EUR) — it can't be compared with the amount in UZS."),
+        await within(next).findByText(
+          "The receipt is in another currency (EUR) — it can't be compared with the amount in UZS. Check the amount on the photo.",
+        ),
       ).toBeInTheDocument();
       expect(within(next).getByText("1,250.5 EUR")).toBeInTheDocument();
     });
@@ -213,14 +239,17 @@ describe("«Chek» bo'limi (QlLf33Ma)", () => {
     );
   });
 
-  it.each(["match", "mismatch"])("`difference: null` (%s, so'mda) — «Farq —», hech qachon «0 so'm» emas", async (status) => {
+  it.each([
+    ["match", "0 so'm"],
+    ["mismatch", "—"],
+  ])("`difference: null` (%s, so'mda) — «Farq %s» (maket «Mos keldi» — 0; farq bor — 0 deb ko'rsatilmaydi)", async (status, shown) => {
     current = receipt({ ai_status: status, ai: ai({ difference: null }) });
     open();
     const box = await section();
 
     const compare = await within(box).findByRole("group", { name: "Summalar solishtiruvi" });
-    expect(compare).toHaveTextContent("Farq—");
-    expect(compare).not.toHaveTextContent("Farq0");
+    expect(compare).toHaveTextContent(`Farq${shown}`);
+    if (status === "mismatch") expect(compare).not.toHaveTextContent("Farq0");
     expect(compare.querySelector(".text-danger-fg")).toBeNull();
     expect(within(box).queryByText(/boshqa valyutada/)).not.toBeInTheDocument();
   });

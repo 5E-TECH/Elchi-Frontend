@@ -164,29 +164,47 @@ export type ReceiptDetail = {
 };
 
 /**
- * Backend `error_reason`: chek so'mda emas (PR-4) — holat `mismatch` qoladi, `difference: null`, `currency` to'la
+ * Backend `error_reason`: chek so'mda emas (PR-4, #643) — holat `mismatch` qoladi, `difference: null`, `currency` to'la
  * (`USD` …), farq yig'indisiga kirmaydi.
  */
 export const RECEIPT_CURRENCY_NOT_UZS = "currency_not_uzs";
 
 /**
- * Chek valyutasi so'mmi: so'm yozuvlari (`isUzsCurrencyLabel`, registrsiz — backend `sanitizeCurrency` bilan bir xil),
+ * Chek valyutasi so'mmi: so'm yozuvlari (`isUzsCurrencyLabel`, registrsiz) — backend `sanitizeCurrency` so'm deb
+ * oladigan yozuvlarni (`UZS`, `so'm`, `SOM`, `SUM`, `СУМ`) qamraydi va undan kengroq (egri apostrof, `сўм`);
  * `null` / bo'sh — mahalliy (backend `deriveReceiptOutcome` kabi).
  */
 export const isUzsCurrency = (currency: string | null | undefined): boolean =>
   !currency?.trim() || isUzsCurrencyLabel(currency);
 
+/** Aniq boshqa valyuta: 3 lotin harfli ISO kodi (backend `sanitizeCurrency` faqat shunday kod yoki `UZS` qaytaradi). */
+const FOREIGN_ISO_CODE = /^[A-Z]{3}$/;
+
 /**
- * Chek boshqa valyutada: `{ code }` — ISO kodi katta harfda (`USD`), noma'lum bo'lsa `null`. So'mda yoki valyuta
- * ko'rsatilmagan — `null`. Bugungi backend (`currency: "USD"`, `difference: 0`) va PR-4 (`error_reason:
- * "currency_not_uzs"`, `difference: null`) — ikkalasi ham.
+ * Chek boshqa valyutada: `{ code }` — kodi katta harfda (`USD`), noma'lum bo'lsa `null`; so'mda — `null`.
+ * Tartib (birinchi mos kelgani):
+ *
+ * 1. `error_reason: "currency_not_uzs"` (PR-4: `mismatch`, `difference: null`) — hal qiluvchi, boshqa valyuta; kod —
+ *    `currency` dan (bo'sh yoki so'm yozuvi bo'lsa — `null`).
+ * 2. `currency` — aniq ISO kodi, `UZS` emas (`USD`, `EUR` …) — `difference` dan qat'i nazar boshqa valyuta. Sabab:
+ *    bugungi backend (PR #643 gacha) `error_reason` siz ham `difference = amount − entered` ni aralash birlikda
+ *    hisoblaydi (100 USD − 1 250 000 so'm = −1 249 900) — bu farq ma'nosiz, ko'rsatilmaydi. Backend versiyasini FE
+ *    bilmaydi, shuning uchun xavfsizroq yo'l: aniq kodga ishonamiz.
+ * 3. `currency` — so'm emas, kod ham emas (`$` kabi), va ishlatsa bo'ladigan farq yo'q (`difference: null`) — boshqa
+ *    valyuta.
+ * 4. Qolgani — so'mda: valyuta bo'sh (mahalliy) yoki noma'lum yozuv bilan backend haqiqiy `difference` bergan
+ *    (summani so'm deb solishtirgan) — backend farqiga ishonamiz.
  */
 export const receiptForeignCurrency = (
-  ai: Pick<ReceiptAiResult, "currency" | "error_reason"> | null | undefined,
+  ai: Pick<ReceiptAiResult, "currency" | "error_reason" | "difference"> | null | undefined,
 ): { code: string | null } | null => {
   if (!ai) return null;
-  if (!isUzsCurrency(ai.currency)) return { code: String(ai.currency).trim().toUpperCase() };
-  return ai.error_reason === RECEIPT_CURRENCY_NOT_UZS ? { code: null } : null;
+  const label = ai.currency?.trim().toUpperCase() ?? "";
+  const soM = isUzsCurrency(label);
+  if (ai.error_reason === RECEIPT_CURRENCY_NOT_UZS) return { code: soM ? null : label };
+  if (soM) return null;
+  if (FOREIGN_ISO_CODE.test(label)) return { code: label };
+  return ai.difference === null ? { code: label } : null;
 };
 
 const num = (value: unknown): number | null => {

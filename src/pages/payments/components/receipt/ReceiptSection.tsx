@@ -34,11 +34,12 @@ import { ReceiptStatusBadge } from "./ReceiptStatusBadge";
  * (`useReceipt`). «Qayta tahlil» — `can_reanalyze` bo'yicha, tasdiq oynasi bilan; xato oyna ichida (kod bo'yicha matn).
  * Menejer faqat ko'radi. Karta raqami chiqmaydi: backend faqat oxirgi 4 ta raqamni beradi.
  *
- * Chek boshqa valyutada (`ai.currency` ≠ UZS yoki `error_reason: "currency_not_uzs"`; maket yo'q — eng yaqini
- * `superadmin-payments-history-detail-receipt-states`): «Chekda» — son + ISO kodi («100 USD», so'msiz), «Farq» — «—»
- * (qizilsiz), izoh qatori «Chek boshqa valyutada (USD) …». Holat belgisi backenddagidek (`mismatch` — «Farq bor»):
- * ro'yxat belgisi va «Chek holati» filtri bilan bir xil qoladi, sababni izoh qatori aytadi. `difference: null` hech
- * qayerda «0» bo'lib chiqmaydi.
+ * Chek boshqa valyutada (`receiptForeignCurrency`: `error_reason: "currency_not_uzs"` yoki `ai.currency` ISO kodi ≠
+ * UZS; maket yo'q — eng yaqini `superadmin-payments-history-detail-dialog-receipt`): «Chekda» — son + ISO kodi
+ * («100 USD», so'msiz), «Farq» — «—» (qizilsiz), solishtiruv qutisi neytral (qizil emas), izoh qatori «Chek boshqa
+ * valyutada (USD) … Summani rasmdan tekshiring.». Holat belgisi backenddagidek (`mismatch` — «Farq bor»): ro'yxat
+ * belgisi va «Chek holati» filtri bilan bir xil qoladi, sababni izoh qatori aytadi. So'mdagi `difference: null` —
+ * `mismatch` da «—», `match` da «0 so'm» (maket «Mos keldi» — 0).
  */
 
 const KV = "m-0 grid grid-cols-[minmax(110px,36%)_1fr] gap-x-4 gap-y-2 text-sm";
@@ -157,11 +158,13 @@ const ReceiptBody = ({ receipt, operation, onReload }: { receipt: ReceiptDetail;
                 }
               : null;
 
-  // Boshqa valyutadagi summa — son + ISO kodi (so'm emas); farq hisoblanmaydi (bugungi backend `0` bersa ham).
+  // Boshqa valyutadagi summa — son + ISO kodi (so'm emas); farq ko'rsatilmaydi: bugungi backend (PR #643 gacha)
+  // `amount − entered` ni aralash birlikda beradi (100 USD − 1 250 000 so'm = −1 249 900) — ma'nosiz.
   const amount = ai?.amount ?? null;
   const readAmount =
     foreign && amount !== null ? formatCurrencyAmountLocalized(amount, foreign.code, { language }) : money(amount);
-  const difference = foreign ? null : (ai?.difference ?? null);
+  // `match` da farq kelmasa — 0 (maket «Mos keldi»); `mismatch` da kelmasa — «—» (0 deb ko'rsatilmaydi).
+  const difference = foreign ? null : (ai?.difference ?? (status === "match" ? 0 : null));
   const compare: Array<[string, ReactNode]> = [
     [t("receipt.section.onReceipt"), readAmount],
     [t("receipt.section.entered"), money(receipt.entered_amount)],
@@ -263,7 +266,11 @@ const ReceiptBody = ({ receipt, operation, onReload }: { receipt: ReceiptDetail;
               aria-label={t("receipt.section.compare")}
               className={cx(
                 "m-0 flex flex-col divide-y divide-border rounded-[10px] px-3 py-0.5",
-                status === "mismatch" ? "bg-danger-soft" : "bg-success-soft",
+                status === "mismatch" && !foreign
+                  ? "bg-danger-soft"
+                  : foreign
+                    ? "border border-border bg-sunken"
+                    : "bg-success-soft",
               )}
             >
               {compare.map(([label, value]) => (

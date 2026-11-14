@@ -158,12 +158,16 @@ export const formatPercentLocalized = (
   return lang === "ru" ? `${number}${NO_BREAK_SPACE}%` : `${number}%`;
 };
 
-/** So'm yozuvlari (backend `sanitizeCurrency` bilan bir xil: `UZS`, `so'm`, `SUM`, `сум`), katta harfga keltirib. */
+/**
+ * So'm yozuvlari, katta harfga keltirib: backend `sanitizeCurrency` so'm deb oladiganlarning hammasi (`UZS`, `SO'M`,
+ * `SOM`, `SUM`, `СУМ`) va undan kengroq — egri apostroflar (`so‘m`, `soʻm`), `СЎМ`.
+ */
 const UZS_CURRENCY = /^(?:UZS|SO['‘’ʻʼ`]?M|SUM|СУМ|СЎМ)$/u;
 
 /**
  * Tashqi valyuta yozuvi so'mmi (AI chekdan o'qigan `currency` kabi): `"UZS"`, `"uzs"`, `"so'm"`, `"сум"`, `"SUM"` →
  * `true`; `"USD"` → `false`; bo'sh / `null` → `false` (valyuta noma'lum — qanday tushunishni chaqiruvchi hal qiladi).
+ * Backend `sanitizeCurrency` ning so'm yozuvlarini qamraydi, lekin undan kengroq (bir xil emas).
  */
 export const isUzsCurrencyLabel = (value: string | null | undefined): boolean =>
   typeof value === "string" && UZS_CURRENCY.test(value.trim().toUpperCase());
