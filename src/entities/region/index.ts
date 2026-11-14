@@ -3,6 +3,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
+export { extractRegionOptions, useRegionOptions, type RegionOption } from "./api/regionOptions";
 export {
   pendingOf,
   regionsOfLogist,

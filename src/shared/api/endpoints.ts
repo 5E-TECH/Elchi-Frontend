@@ -111,6 +111,9 @@ export const API_ENDPOINTS = {
     // (pul, qo'ldagi buyurtma, qaytarilmagan pochta), keyin o'tkazish.
     TRANSFER_CHECK: (id: string | number) => `couriers/${id}/transfer-check`, // GET
     BRANCH: (id: string | number) => `couriers/${id}/branch`, // PATCH { branch_id }
+    // «Xizmat viloyatlari» (super-kuryer, hEjjuJaT; superadmin/admin): GET — bayroqlar + viloyatlar (tarif bilan);
+    // PUT { is_super_courier, serves_all_regions, regions: [{ region_id, tariff_home, tariff_center }] } — to'liq almashtiradi.
+    REGIONS: (id: string | number) => `couriers/${id}/regions`,
   },
 
   // ── Logistics: Regions / Districts (admin/registrator; superadmin delete) ─

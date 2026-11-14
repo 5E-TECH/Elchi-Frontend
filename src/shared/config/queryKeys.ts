@@ -67,6 +67,11 @@ export const queryKeys = {
      */
     options: ["regions", "options"] as const,
   },
+  /** Kuryerning «Xizmat viloyatlari» (`GET couriers/:id/regions`; super-kuryer bayroqlari, viloyatlar va tariflari). */
+  courierRegions: {
+    all: ["courier-regions"] as const,
+    detail: (courierId: string) => ["courier-regions", courierId] as const,
+  },
   courierTransfer: {
     all: ["courier-transfer"] as const,
     check: (courierId: string) => ["courier-transfer", "check", courierId] as const,

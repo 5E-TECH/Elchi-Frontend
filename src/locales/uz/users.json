@@ -641,6 +641,23 @@
     "piiSaveError": "Saqlanmadi",
     "piiSaveErrorText": "Sozlamani saqlab bo'lmadi. Qayta urinib ko'ring."
   },
+  "courierRegions": {
+    "title": "Xizmat viloyatlari",
+    "empty": "Faqat o'z viloyati",
+    "edit": "O'zgartirish",
+    "dialogTitle": "Xizmat viloyatlari",
+    "hint": "HQ kuryeri shu viloyatlar pochtasida «HQ kuryeriga» ro'yxatida chiqadi",
+    "dialogHint": "Belgilangan viloyatning tarifi saqlanadi; yangi viloyatda kuryerning umumiy tarifi amal qiladi.",
+    "listLabel": "Viloyatlar",
+    "allRegions": "Barcha viloyatlar",
+    "allRegionsHint": "Kuryer har viloyat pochtasida chiqadi — ro'yxatdan qat'i nazar.",
+    "regionFallback": "Viloyat #{{id}}",
+    "save": "Saqlash",
+    "success": "Viloyatlar saqlandi",
+    "saveError": "Viloyatlarni saqlab bo'lmadi",
+    "loadError": "Xizmat viloyatlarini yuklab bo'lmadi",
+    "regionsLoadError": "Viloyatlar ro'yxatini yuklab bo'lmadi"
+  },
   "tgBot": {
     "column": "Telegram boti",
     "columnHint": "Shaxsiy Elchi boti ulanishi",
