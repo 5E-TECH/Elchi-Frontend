@@ -74,7 +74,11 @@
   "unavailable": {
     "title": "AI yordamchi hozir ishlamayapti",
     "text": "Xizmat vaqtincha o'chiq. Suhbatlar tarixi ochiq.",
-    "retry": "Qayta urinish"
+    "retry": "Qayta urinish",
+    "reasons": {
+      "feature_disabled": "Sabab: AI yordamchi serverda yoqilmagan.",
+      "ai_disabled": "Sabab: AI xizmati ulanmagan — kalit kiritilmagan yoki xizmat o'chirilgan."
+    }
   },
   "access": {
     "errorTitle": "AI yordamchini ochib bo'lmadi",

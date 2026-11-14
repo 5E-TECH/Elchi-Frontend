@@ -14,7 +14,8 @@ import type { StreamOutcome } from "../../features/ai-chat";
 /**
  * `/ai-assistant` (F7PWp6cK, maketlar superadmin-ai-assistant, -empty, -answering, -limit-reached, -unavailable,
  * -offline): bo'sh holat va tavsiya kartalari, suhbat (markdown, «Manba», javobsiz qator), yozilmoqda va
- * «To'xtatish», AI o'chiq, limit tugadi, suhbat topilmadi, ro'yxat xatosi, holat yuklanmadi.
+ * «To'xtatish», AI o'chiq (sabab qatori bilan), limit tugadi, suhbat topilmadi, ro'yxat xatosi, holat yuklanmadi (xato
+ * turi bo'yicha izoh).
  */
 
 type FakeStream = {
@@ -203,6 +204,10 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     // Limit ma'lumoti ma'noli (maket `-unavailable`: planshetda ham «38 / 100 savol») — ikkala o'lchamda bir xil.
     expect(screen.getAllByRole("meter", { name: "Bugungi limit: 100 savoldan 38 tasi ishlatilgan" })).toHaveLength(2);
     expect(screen.getByText("Xizmat vaqtincha o'chiq. Suhbatlar tarixi ochiq.")).toBeInTheDocument();
+    // Sabab qatori — funksiya serverda yoqilmagan (muhit o'zgaruvchisi nomi ko'rsatilmaydi).
+    expect(screen.getByText("Sabab: AI yordamchi serverda yoqilmagan.")).toBeInTheDocument();
+    expect(screen.queryByText(/kalit kiritilmagan/)).toBeNull();
+    expect(screen.queryByText(/AI_ASSISTANT_ENABLED/)).toBeNull();
     expect(screen.getByRole("textbox", { name: "Savolingiz" })).toHaveAttribute("placeholder", "AI o'chiq");
     expect(screen.getByRole("textbox", { name: "Savolingiz" })).toBeDisabled();
     expect(await screen.findByRole("link", { name: /Marketlarga to'lanmagan summa/ })).toBeInTheDocument();
@@ -211,6 +216,16 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     mocks.access = { ...ACCESS };
     await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
     await waitFor(() => expect(screen.queryByText("AI yordamchi hozir ishlamayapti")).toBeNull());
+  });
+
+  it("AI o'chiq (ai_disabled): o'sha holat, sabab qatori — AI xizmati ulanmagan (kalit)", async () => {
+    mocks.access = { ...ACCESS, allowed: false, reason: "ai_disabled", featureEnabled: true };
+    renderPage();
+    expect(await screen.findByText("AI yordamchi hozir ishlamayapti")).toBeInTheDocument();
+    expect(screen.getByText("Xizmat vaqtincha o'chiq. Suhbatlar tarixi ochiq.")).toBeInTheDocument();
+    expect(screen.getByText("Sabab: AI xizmati ulanmagan — kalit kiritilmagan yoki xizmat o'chirilgan.")).toBeInTheDocument();
+    expect(screen.queryByText("Sabab: AI yordamchi serverda yoqilmagan.")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Savolingiz" })).toBeDisabled();
   });
 
   it("limit tugadi: ogohlantirish, kiritish o'chiq, yon ustunda «Limit tugadi …»", async () => {
@@ -254,6 +269,38 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     mocks.getAiAccessMe.mockRejectedValueOnce(httpError(504));
     renderPage();
     expect(await screen.findByText("AI yordamchini ochib bo'lmadi")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByRole("textbox", { name: "Savolingiz" })).toBeInTheDocument();
+  });
+
+  it.each([500, 504])("holat (access/me) %i — server xatosi, «internet» deyilmaydi", async (status) => {
+    mocks.getAiAccessMe.mockRejectedValueOnce(httpError(status));
+    renderPage();
+    const state = (await screen.findByText("AI yordamchini ochib bo'lmadi")).closest("[data-error-kind]");
+    expect(state).toHaveAttribute("data-error-kind", "server");
+    expect(state).toHaveTextContent(`Server xatosi (${status}). Birozdan keyin qayta urinib ko'ring.`);
+    expect(screen.queryByText(/Internet/)).toBeNull();
+  });
+
+  it("holat (access/me) vaqt chegarasi — «Server javob bermadi», «internet» deyilmaydi", async () => {
+    mocks.getAiAccessMe.mockRejectedValueOnce(
+      Object.assign(new Error("timeout of 60000ms exceeded"), { isAxiosError: true, code: "ECONNABORTED", request: {} }),
+    );
+    renderPage();
+    const state = (await screen.findByText("AI yordamchini ochib bo'lmadi")).closest("[data-error-kind]");
+    expect(state).toHaveAttribute("data-error-kind", "timeout");
+    expect(state).toHaveTextContent("Server javob bermadi. Birozdan keyin qayta urinib ko'ring.");
+    expect(screen.queryByText(/Internet/)).toBeNull();
+  });
+
+  it("holat (access/me) — javobsiz so'rov (tarmoq): internet matni qoladi", async () => {
+    mocks.getAiAccessMe.mockRejectedValueOnce(
+      Object.assign(new Error("Network Error"), { isAxiosError: true, code: "ERR_NETWORK", request: {} }),
+    );
+    renderPage();
+    const state = (await screen.findByText("AI yordamchini ochib bo'lmadi")).closest("[data-error-kind]");
+    expect(state).toHaveAttribute("data-error-kind", "offline");
+    expect(state).toHaveTextContent("Holatni yuklab bo'lmadi. Internet aloqasini tekshirib, qayta urining.");
     await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(await screen.findByRole("textbox", { name: "Savolingiz" })).toBeInTheDocument();
   });

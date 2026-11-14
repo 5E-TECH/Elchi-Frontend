@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-budget-exceeded
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type FocusEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -12,7 +12,7 @@ import {
   Skeleton,
   SkeletonLines,
 } from "../../shared/ui/primitives";
-import { getErrorStatus } from "../../shared/lib/errorKind";
+import { getErrorKind, getErrorStatus } from "../../shared/lib/errorKind";
 import { formatNumberLocalized } from "../../shared/lib/formatMoney";
 import {
   isConversationId,
@@ -43,8 +43,12 @@ import { EmptyChat, SuggestionChips } from "./ui/Suggestions";
  *  Tuzilma (maket): ustun `flex-[1_1_560px]` (suhbat, tavsiyalar, kiritish) + yon ustun `flex-[0_1_320px]`
  *  (suhbatlar, limit; < 1024 yashirin — o'rnida «Suhbatlar N» tugmasi + ingichka limit qatori, ro'yxat — pastki
  *  varaqada). Suhbat — `?conversation=<id>` (birinchi savolda `meta` dan keyin `replace` bilan yoziladi).
- *  Funksiya o'chiq (`feature_disabled` / `ai_disabled`, 503) — «AI yordamchi hozir ishlamayapti», tarix ochiq.
- *  Xarajat shifti — sahifa ustida ogohlantirish (`-budget-exceeded`), «Yangi suhbat» dan keyin ham.
+ *  Funksiya o'chiq (`feature_disabled` / `ai_disabled`, 503) — «AI yordamchi hozir ishlamayapti», tarix ochiq; izoh
+ *  ostida sabab qatori (maket yo'q — eng yaqini `-unavailable`): `feature_disabled` — serverda yoqilmagan,
+ *  `ai_disabled` — AI xizmati ulanmagan (kalit yo'q yoki o'chiq). Muhit o'zgaruvchilari nomi ko'rsatilmaydi.
+ *  Holat (`access/me`) yuklanmasa — izoh xato turidan (`ErrorState`): server / vaqt chegarasi «internet» deyilmaydi.
+ *  Xarajat shifti — sahifa ustida ogohlantirish (maket yo'q — eng yaqini `-budget-exceeded`), «Yangi suhbat» dan
+ *  keyin ham.
  *
  *  Fokus: savol yuborilganda / to'xtatilganda bosilgan boshqaruv (tugma, tavsiya, «Qayta yuborish») yo'qolsa yoki
  *  o'chsa, fokus `<body>` ga tushmaydi — jonli javobda «To'xtatish» ga, aks holda matn maydoniga o'tadi (sensorli
@@ -132,7 +136,10 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
     onFieldError: setFieldError,
   });
 
-  const unavailable = !access.allowed && (access.reason === "feature_disabled" || access.reason === "ai_disabled");
+  // AI o'chiq — sababi bilan (egasi qaysi sozlamani tekshirishni bilsin).
+  const unavailableReason =
+    !access.allowed && (access.reason === "feature_disabled" || access.reason === "ai_disabled") ? access.reason : null;
+  const unavailable = unavailableReason !== null;
   // Rol yoki ruxsat yo'q (superadmin uchun kutilmaydi — backend sozlamasi o'zgarsa): yozish yopiq, tarix — backend 403.
   const denied = !access.allowed && !unavailable;
   const limitReached = access.allowed && access.remainingToday <= 0;
@@ -279,12 +286,17 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess }: { access: AiAc
             {showLimit ? <LimitRow access={access} /> : null}
           </div>
 
-          {unavailable ? (
+          {unavailableReason ? (
             <EmptyState
               framed
               icon={Power}
               title={t("unavailable.title")}
-              description={t("unavailable.text")}
+              description={
+                <>
+                  {t("unavailable.text")}
+                  <span className="mt-1 block text-xs text-text-muted">{t(`unavailable.reasons.${unavailableReason}`)}</span>
+                </>
+              }
               action={
                 <Button variant="secondary" leftIcon={RefreshCw} loading={retryingAccess} onClick={onRetryAccess}>
                   {t("unavailable.retry")}
@@ -366,7 +378,8 @@ const AiAssistantPage = () => {
             framed
             error={error}
             title={t("access.errorTitle")}
-            description={t("access.errorText")}
+            // Internet matni faqat tarmoq xatosida; server (5xx, 504 gateway) va vaqt chegarasi — `ErrorState` izohi.
+            description={getErrorKind(error) === "offline" ? t("access.errorText") : undefined}
             onRetry={retry}
             retrying={access.isRefetching}
           />

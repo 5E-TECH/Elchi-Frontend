@@ -74,7 +74,11 @@
   "unavailable": {
     "title": "The AI assistant is not working right now",
     "text": "The service is temporarily off. Chat history is available.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "reasons": {
+      "feature_disabled": "Reason: the AI assistant is not enabled on the server.",
+      "ai_disabled": "Reason: the AI service is not connected — the key is missing or the service is turned off."
+    }
   },
   "access": {
     "errorTitle": "Could not open the AI assistant",
