@@ -1011,6 +1011,24 @@
   },
   {
    "role": "superadmin",
+   "viewId": "regions-coverage-warning",
+   "menuKey": "regions",
+   "title": "Hududlar — tumanlar ma'lumotnomasi to'liq emas (eslatma)",
+   "fragment": "superadmin--regions-coverage-warning",
+   "order": 85.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-coverage-dialog",
+   "menuKey": "regions",
+   "title": "Hududlar — avtomatik qo'shilgan tumanlar (tasdiqlash oynasi)",
+   "fragment": "superadmin--regions-coverage-dialog",
+   "order": 85.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
    "viewId": "regions-districts",
    "menuKey": "regions",
    "title": "Tumanlar boshqaruvi",
@@ -1839,6 +1857,15 @@
   },
   {
    "role": "admin",
+   "viewId": "orders-detail-ai-trace-dialog",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsiloti — «AI izi» oynasi",
+   "fragment": "superadmin--orders-detail-ai-trace-dialog",
+   "order": 141.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
    "viewId": "neworders-markets",
    "menuKey": "newOrders",
    "title": "Qabul — Marketlar tabi",
@@ -2060,6 +2087,15 @@
    "title": "Buyurtma yaratish — AI bilan",
    "fragment": "admin--neworders-create-ai",
    "order": 160,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "neworders-create-ai-checks",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — AI bilan: tuman va narx tasdig'i, eslatmalar",
+   "fragment": "superadmin--neworders-create-ai-preview-checks",
+   "order": 160.1,
    "kind": "page"
   },
   {
@@ -2564,6 +2600,24 @@
    "title": "Viloyat ma'lumotlari oynasi",
    "fragment": "admin--regions-region-detail-dialog",
    "order": 204,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-coverage-warning",
+   "menuKey": "regions",
+   "title": "Hududlar — tumanlar ma'lumotnomasi to'liq emas (eslatma)",
+   "fragment": "admin--regions-coverage-warning",
+   "order": 203.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-coverage-dialog",
+   "menuKey": "regions",
+   "title": "Hududlar — avtomatik qo'shilgan tumanlar (tasdiqlash oynasi)",
+   "fragment": "admin--regions-coverage-dialog",
+   "order": 203.2,
    "kind": "dialog"
   },
   {
@@ -3221,6 +3275,15 @@
    "title": "Buyurtma yaratish — AI bilan",
    "fragment": "manager--new-orders-create-ai",
    "order": 246,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "new-orders-create-ai-checks",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — AI bilan: tuman va narx tasdig'i, eslatmalar",
+   "fragment": "superadmin--neworders-create-ai-preview-checks",
+   "order": 246.1,
    "kind": "page"
   },
   {
@@ -4008,6 +4071,15 @@
   },
   {
    "role": "registrator",
+   "viewId": "new-orders-create-ai-checks",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — AI rejimi: tuman va narx tasdig'i, eslatmalar",
+   "fragment": "superadmin--neworders-create-ai-preview-checks",
+   "order": 309.1,
+   "kind": "page"
+  },
+  {
+   "role": "registrator",
    "viewId": "new-orders-create-ai-confirm-dialog",
    "menuKey": "newOrders",
    "title": "AI buyurtmalarni tasdiqlash",
@@ -4301,6 +4373,15 @@
    "title": "Buyurtma yaratish · AI natijalari",
    "fragment": "market--new-orders-create-ai-preview",
    "order": 334,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "new-orders-create-ai-preview-checks",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish · AI natijalari: tuman va narx tasdig'i, eslatmalar",
+   "fragment": "market--new-orders-create-ai-preview-checks",
+   "order": 334.1,
    "kind": "page"
   },
   {
@@ -6910,6 +6991,15 @@
   },
   {
    "role": "superadmin",
+   "viewId": "neworders-create-ai-preview-checks",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — AI natijalari: tuman va narx tasdig'i, eslatmalar",
+   "fragment": "superadmin--neworders-create-ai-preview-checks",
+   "order": 30.2,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
    "viewId": "orders-detail-special-categories-dialog",
    "menuKey": "orders",
    "title": "Buyurtma tafsilotlari — «Maxsus belgilar» oynasi",
@@ -6924,6 +7014,15 @@
    "title": "«Maxsus belgilar» oynasi — holat qulflandi (409)",
    "fragment": "superadmin--orders-detail-special-categories-locked",
    "order": 17.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "orders-detail-ai-trace-dialog",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — «AI izi» oynasi",
+   "fragment": "superadmin--orders-detail-ai-trace-dialog",
+   "order": 17.5,
    "kind": "dialog"
   },
   {
