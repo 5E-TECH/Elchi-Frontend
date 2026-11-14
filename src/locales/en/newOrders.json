@@ -647,7 +647,8 @@
       "blocked": "5 wrong attempts — the market must generate a new QR",
       "expired": "The code has expired — the market must generate a new QR",
       "notFound": "The market has no active QR — ask them to reopen the QR window",
-      "error": "Could not check the code"
+      "error": "Could not check the code",
+      "scanned": "The scanned code is not a PIN — type the 6 digits by hand"
     },
     "camera": {
       "qrTitle": "Scan market QR",
