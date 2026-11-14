@@ -468,8 +468,8 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     kunlik xavfsizlik chegarasi (yordamchi 5 $ va kuniga 100 savol, umumiy AI 50 $) — yangi holat
     `superadmin-ai-assistant-daily-cap`. Ziddiyat (ochiq): sarf va sozlamalar maketlaridagi tahrirlanadigan «Kunlik
     chegara 128 000 so'm (10 $)» (TZ B5 `daily_usd`) server kunlik xavfsizlik chegarasidan (yordamchi 5 $ = 64 000 so'm,
-    `ai-assistant-daily-cap`) katta — amalda 5 $ ishlaydi. Tavsiya: kod `daily_usd` ni 5 $ dan oshirmaydi va maydon
-    izohida «server chegarasi 5 $» ko'rsatadi; maketlar ega tasdiqlaguncha o'zgarmaydi. Qaror 3 dagi umumiy 50 $
+    `ai-assistant-daily-cap`) katta edi. Ega qarori 2026-11-14: maydon ishlaydi — backend yordamchining kunlik chegarasini superadmin
+    sozlamasidan o'qiydi (server maksimumi bilan cheklanadi), qat'iy 5 $ o'rniga; maketlar o'zgarmaydi. Qaror 3 dagi umumiy 50 $
     yordamchiga ham tegadi — TZ B5 dagi «global $50 ga tushmaydi» qatori shu bilan almashadi;
   - «Hisobotlarga o'tish» tugmalari maketda qoladi, kod ularni «Hisobotlar» tabi chiqquncha yashiradi;
   - «Suhbatlar 90 kun saqlanadi» maketda qoladi, kod backend 90 kunlik saqlashni qilguncha yashiradi;
@@ -483,7 +483,7 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     pastki varaq) `-conversations-sheet`, kunlik chegara `-daily-cap`. Ogohlantirishlar ro'yxatidagi har qator o'z
     qoidasi oynasiga ochiladi; oynalar «Ko'rildi» holatida chizilgan, yopilgan holat (belgi, izoh, «Yopish») — R1 va R6
     «Boshqa holatlar»ida, R8 — «Ahamiyatsiz». Har oynaning «Hal qilindi» tasdig'i R1 matni bilan chizilgan (prototip
-    cheklovi).
+    cheklovi). Ega yangi 9 ekranni 2026-11-14 da tasdiqladi.
   - Ko'rib chiqishdan keyin: suhbat maketlarida `SendHorizontal` → `Send` (reestr); `ThumbsUp` / `ThumbsDown`
     («Foydali / Foydasiz») reestrda yo'q — ochiq savol, ega reestrga qo'shishi kerak (kod ularni backend chiqquncha
     chizmaydi); R3 dagi MAD — «Mediana og'ishi» (sozlamalar oynasida ham).
