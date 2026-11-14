@@ -935,7 +935,13 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   o'qish», chop etish menyusi + bitta asosiy «Pochtani jo'natish / qabul qilish — N ta»; kuryer telefonida pastki
   menyu ustidagi panelda), `StatCard`lar (`MailStatCards`), buyurtmalar kartasi `ui/OrdersTable.tsx` (`DataTable`,
   telefonda `OrderRow`, «USB skaner tayyor», `SelectionRegion`, qatorni bosish — tanlov), jo'natish oynasi
-  `SendPostModal` (`Dialog`), pochtadan o'chirish `DeleteFromPostDialog` (`Dialog`, `alertdialog`, sabab majburiy).
+  `SendPostModal` (`Dialog` «Manzilni tanlang»; ega qarori 2026-11-15 — filial HAM, HQ kuryeri HAM: «Filialga · n» /
+  «HQ kuryeriga · n» `SegmentedControl lg` tablari (`Building2` / `Truck`), turlar rangsiz — neytral `Badge`
+  («HQ kuryeri», «Tashqi: «X»» `Globe` bilan), kuryer panelida `warning` ogohlantirish, asosiy tugma turga qarab
+  («Filialga jo'natish — n ta» / «Kuryerga berish — n ta»), kuryer yo'li shu oynaning ichidagi tasdiq bosqichi bilan
+  («Orqaga» · «Ha, kuryerga berish»); ro'yxatlar faqat bosilganda, har biri o'z xato / bo'sh holati bilan; maket yo'q —
+  eng yaqini `superadmin-mails-detail-send-dialog` + `registrator-dispatch-courier-select-dialog`), pochtadan o'chirish
+  `DeleteFromPostDialog` (`Dialog`, `alertdialog`, sabab majburiy).
   Yuborish/qabul/o'chirish so'rovlari, USB skaner (takror/topilmadi), chop etish rejimlari (brauzer / PDF 100×60)
   o'zgarmagan. v1 `MailGridCard`, `MailDetailHeader`, `PrintOnlyOrders`, `Checkbox`, `lib/helpers.ts` va o'lik
   `mails` kalitlari o'chirildi.

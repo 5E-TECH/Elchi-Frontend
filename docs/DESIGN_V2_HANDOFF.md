@@ -521,6 +521,18 @@ Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
     backend — Elchi-Backend PR #656: `GET /region/district-coverage`, `POST /region/district/:id/confirm-assignment`.
     «N ta rasmiy tuman bazada yo'q» qatori faqat superadmin (SATO preview adminga 403);
   - ochiq: A izohidagi ega savoli — summa «Matnda» qiymatlaridan biriga tahrirlansa `price_check` belgisi kerakmi.
+- **2026-11-15 (Pochta → HQ kuryeri, Carrier API faqat HQ kuryeri; izohlar — `design/kit/route-map.json`
+  `/mails/:id`, `/integrations/connections`, `/all-users/:id`):**
+  - pochtani jo'natishda filial bilan birga HQ kuryeri ham: viloyat HQ viloyati bo'lsa — barcha faol HQ kuryerlari,
+    boshqa viloyatda — «Xizmat viloyatlari»da shu viloyat belgilangan (yoki «Barcha viloyatlar») HQ kuryeri. Bu ega
+    qarori 6 dan istisno — FAQAT Pochta yo'lida (`/dispatch` va skan-biriktirish qoidalari o'zgarmagan);
+  - adashmaslik uchun turlar rangsiz (neytral badge — §8): tablar, ikonkalar (`Building2` / `Truck`), yorliqlar,
+    turli asosiy tugma matni va kuryer yo'lida oyna ichidagi tasdiq bosqichi; yangi maket chizilmaydi — «Maket yo'q —
+    eng yaqini …» (`SendPostModal`, `CourierRegionsCard`);
+  - Carrier API yangi akkaunti — faqat HQ'da ochilgan kuryer (maketdagi «Davom etish mumkin, lekin tavsiya: HQ»
+    ziddiyati shu qaror bilan hal qilindi, maket fayllari tegilmadi); HQ'dagi bog'langan kuryerni HQ'dan boshqa
+    filialga o'tkazish backendda rad etiladi (409 `courier_carrier_linked`);
+  - kuryer tafsilotida (superadmin, admin) «Xizmat viloyatlari» kartasi va tahrirlash oynasi (`PUT couriers/:id/regions`).
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;
