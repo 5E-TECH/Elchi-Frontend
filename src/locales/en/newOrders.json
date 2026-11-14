@@ -307,6 +307,7 @@
         "actions": "Actions"
       },
       "ordersCell": "{{value}}",
+      "regionsCount": "{{value}} regions",
       "ordersSub_one": "{{value}} order",
       "ordersSub_other": "{{value}} orders",
       "tableLabel": "Batches",

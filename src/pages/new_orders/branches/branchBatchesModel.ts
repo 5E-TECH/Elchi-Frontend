@@ -1,4 +1,4 @@
-import type { Batch, BatchBranch, BatchOrder } from "../../../entities/batch";
+import { batchRegionNames, formatBatchRegions, type Batch, type BatchBranch, type BatchOrder } from "../../../entities/batch";
 import type { useBranchesWithSentBatches } from "../../../entities/branch";
 import type { SourceListRow } from "../ui/SourceListCard";
 
@@ -36,9 +36,14 @@ const known = (value: string | null | undefined): string | null => {
   return text && text !== "—" ? text : null;
 };
 
-/** Paket boradigan viloyat: `to_branch.region`, bo'lmasa filial nomi (v1 dagidek). */
-export const readBatchRegion = (batch: Pick<Batch, "to_branch">): string | null =>
-  known(batch.to_branch.region) ?? known(batch.to_branch.name);
+/**
+ * Paket viloyati: bitta — nomi; umumiy filial paketi (bir necha viloyat, 2026-11-14 dan) — `many(soni)`
+ * («5 ta viloyat»), berilmasa nomlar vergul bilan; viloyat noma'lum — filial nomi (v1 dagidek).
+ */
+export const readBatchRegion = (
+  batch: Pick<Batch, "to_branch" | "regions">,
+  many?: (count: number) => string,
+): string | null => formatBatchRegions(batch, many) ?? known(batch.to_branch.name);
 
 /**
  * Paketlar qidiruvi (mijoz tomonida, v1 dagidek): paket id, QR token, viloyat va manzil filial nomi.
@@ -48,7 +53,7 @@ export const matchesBatchSearch = (batch: Batch, query: string): boolean => {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
   const plain = needle.replace(/^b-/, "");
-  return [batch.id, batch.token, batch.to_branch.region ?? "", batch.to_branch.name ?? ""].some((value) => {
+  return [batch.id, batch.token, ...batchRegionNames(batch), batch.to_branch.name ?? ""].some((value) => {
     const text = String(value).toLowerCase();
     return text.includes(needle) || (plain !== needle && text.includes(plain));
   });

@@ -62,6 +62,41 @@ describe("fetchTransferBatchesPage", () => {
   });
 });
 
+describe("umumiy filial paketi — barcha viloyatlar bitta paketda (2026-11-14)", () => {
+  it("`regions[]` → nomlar; `region: null` — `to_branch.region` yo'q, bitta viloyatli paket — o'zgarmagan", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: {
+          items: [
+            {
+              ...raw(36, "PENDING"),
+              target_region_id: null,
+              region: null,
+              regions: [
+                { id: "8", name: "Jizzax" },
+                { id: "12", name: "Toshkent shahri" },
+                { id: "8", name: "Jizzax" },
+              ],
+            },
+            { ...raw(20, "PENDING"), target_region_id: "8", region: { id: "8", name: "Jizzax" }, regions: [{ id: "8", name: "Jizzax" }] },
+            raw(19),
+          ],
+          meta: { page: 1, limit: 20, total: 3, totalPages: 1 },
+        },
+      },
+    });
+
+    const response = await fetchTransferBatchesPage({ status: "new", direction: "forward" });
+
+    expect(response.data.map((batch) => [batch.id, batch.regions, batch.to_branch.region])).toEqual([
+      ["36", ["Jizzax", "Toshkent shahri"], undefined],
+      ["20", ["Jizzax"], "Jizzax"],
+      ["19", undefined, undefined],
+    ]);
+  });
+});
+
 describe("fetchAllTransferBatches", () => {
   it("holatsiz: total ishonchsiz — bo'sh sahifagacha, har doim limit=100, filtrlar har sahifada bir xil", async () => {
     // Backend PENDING yig'ishi: `total` = sahifadagi qatorlar soni, `totalPages` = 1 — ularga ishonilmaydi.

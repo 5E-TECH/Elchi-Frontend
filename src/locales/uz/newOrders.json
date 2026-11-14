@@ -301,6 +301,7 @@
       },
       "ordersCell": "{{value}} ta",
       "ordersSub": "{{value}} ta buyurtma",
+      "regionsCount": "{{value}} ta viloyat",
       "tableLabel": "Paketlar",
       "loading": "Paketlar yuklanmoqda",
       "emptyTitle": "Qabul kutayotgan paket yo'q",

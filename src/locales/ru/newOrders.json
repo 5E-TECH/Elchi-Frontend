@@ -326,6 +326,7 @@
         "actions": "Действия"
       },
       "ordersCell": "{{value}} шт.",
+      "regionsCount": "Регионов: {{value}}",
       "ordersSub_one": "{{value}} заказ",
       "ordersSub_few": "{{value}} заказа",
       "ordersSub_many": "{{value}} заказов",

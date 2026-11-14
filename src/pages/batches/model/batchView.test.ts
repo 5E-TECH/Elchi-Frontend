@@ -57,6 +57,15 @@ describe("batchView — nomlar", () => {
     expect(readBatchRegion({ to_branch: { id: "1", name: "Toshkent HQ", region: "Samarqand" } })).toBe("Samarqand");
     expect(readBatchRegion({ to_branch: { id: "1", name: "Toshkent HQ" } })).toBeNull();
   });
+
+  it("umumiy filial paketi (bir necha viloyat) — «N ta viloyat», berilmasa nomlar; bitta — nomi", () => {
+    const hq = { id: "1", name: "Toshkent HQ" };
+    const many = (count: number) => `${count} ta viloyat`;
+    expect(readBatchRegion({ to_branch: hq, regions: ["Jizzax", "Buxoro", "—"] }, many)).toBe("2 ta viloyat");
+    expect(readBatchRegion({ to_branch: hq, regions: ["Jizzax", "Buxoro"] })).toBe("Jizzax, Buxoro");
+    expect(readBatchRegion({ to_branch: hq, regions: ["Jizzax"] }, many)).toBe("Jizzax");
+    expect(readBatchRegion({ to_branch: { ...hq, region: "Samarqand" }, regions: [] }, many)).toBe("Samarqand");
+  });
 });
 
 describe("batchView — tafsilotdan orqaga (D20)", () => {

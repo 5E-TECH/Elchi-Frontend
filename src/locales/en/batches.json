@@ -21,6 +21,7 @@
     "open": "Open"
   },
   "qty": "{{value}}",
+  "regionsCount": "{{value}} regions",
   "ordersSub_one": "{{value}} order",
   "ordersSub_other": "{{value}} orders",
   "open": "Open batch {{id}}",

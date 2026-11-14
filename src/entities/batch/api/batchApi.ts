@@ -133,6 +133,15 @@ const normalizeBranch = (value: any, fallback = "—"): BatchBranch => {
   };
 };
 
+/** Javobdagi `regions[]` (`{ id, name }`) → takrorsiz nomlar; bo'sh bo'lsa `undefined`. */
+const normalizeRegionNames = (value: any): string[] | undefined => {
+  if (!Array.isArray(value)) return undefined;
+  const names = Array.from(
+    new Set(value.map((region: any) => toText(region?.name ?? region, "").trim()).filter(Boolean)),
+  );
+  return names.length ? names : undefined;
+};
+
 const normalizeOrder = (order: any, index: number): BatchOrder => ({
   // Paket bandi `{ id, order_id, order }`: `id` — bandning o'z id'si. Buyurtma boyitilmasa
   // (branch-service `order: null` qaytaradi) `order_id` olinadi — aks holda qabulga band id'si ketadi.
@@ -271,6 +280,7 @@ const normalizeBatch = (raw: any): Batch => ({
   vehicle_plate: raw?.vehicle_plate ? toText(raw.vehicle_plate, "") : undefined,
   request_key: raw?.request_key ? toText(raw.request_key, "") : undefined,
   created_at: toText(raw?.created_at ?? raw?.createdAt, new Date().toISOString()),
+  regions: normalizeRegionNames(raw?.regions),
 });
 
 const normalizeBatchWithRegion = (raw: any): Batch => {

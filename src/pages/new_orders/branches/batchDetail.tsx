@@ -373,7 +373,10 @@ const BranchBatchDetailPage = () => {
   );
 
   const isLoaded = data !== undefined;
-  const region = data ? readBatchRegion(data) : null;
+  // Umumiy filial paketi (bir necha viloyat) — «5 ta viloyat buyurtmalari».
+  const region = data
+    ? readBatchRegion(data, (value) => t("branchBatches.batches.regionsCount", { value: count(value) }))
+    : null;
   const totalSum = sumBatchOrdersTotal(orders);
   const selectedOrders = orders.filter((order) => selectedOrderIds.has(order.id));
   const displayId = formatBatchDisplayId(known(data?.id) ?? batchId);

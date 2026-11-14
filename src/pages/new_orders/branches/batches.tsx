@@ -201,7 +201,14 @@ const BranchSentBatchesPage = () => {
     () =>
       selectedForCamera.map((batch) => ({
         key: batch.id,
-        title: [formatBatchDisplayId(batch.id), readBatchRegion(batch)].filter(Boolean).join(" · "),
+        title: [
+          formatBatchDisplayId(batch.id),
+          readBatchRegion(batch, (value) =>
+            t("branchBatches.batches.regionsCount", { value: formatNumberLocalized(value, { language }) }),
+          ),
+        ]
+          .filter(Boolean)
+          .join(" · "),
         subtitle: [
           t("branchBatches.batches.ordersSub", { count: batch.orders_count, value: formatNumberLocalized(batch.orders_count, { language }) }),
           formatMoneyLocalized(batch.total_price, { language }),
@@ -235,6 +242,11 @@ const BranchSentBatchesPage = () => {
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
   const money = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
   const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+  // Umumiy filial paketi (bir necha viloyat) — «5 ta viloyat».
+  const manyRegions = useCallback(
+    (value: number) => t("branchBatches.batches.regionsCount", { value: count(value) }),
+    [count, t],
+  );
   const dateTime = useCallback((value: string) => formatDateTimeLocalized(value, { language }), [language]);
   const batchHref = useCallback((batch: Batch) => `/new-orders/branches/${branchId}/batches/${batch.id}`, [branchId]);
 
@@ -293,7 +305,7 @@ const BranchSentBatchesPage = () => {
       {
         id: "region",
         header: t("branchBatches.batches.columns.region"),
-        cell: (batch) => readBatchRegion(batch) ?? "—",
+        cell: (batch) => readBatchRegion(batch, manyRegions) ?? "—",
       },
       {
         id: "orders",
@@ -327,13 +339,13 @@ const BranchSentBatchesPage = () => {
         },
       },
     ],
-    [batchHref, count, dateTime, money, statusBadge, t],
+    [batchHref, count, dateTime, manyRegions, money, statusBadge, t],
   );
 
   // Telefon kartasi: chapda belgi (DataTable, 48 px), o'ngda butun karta — paket tafsilotiga havola.
   const renderCard = useCallback(
     (batch: Batch) => {
-      const region = readBatchRegion(batch);
+      const region = readBatchRegion(batch, manyRegions);
       return (
         <Link to={batchHref(batch)} className="flex min-w-0 flex-col gap-1 py-3 pl-12 pr-4 text-sm text-text">
           <span className="flex min-w-0 justify-between gap-2">
@@ -352,7 +364,7 @@ const BranchSentBatchesPage = () => {
         </Link>
       );
     },
-    [batchHref, count, dateTime, money, statusBadge, t],
+    [batchHref, count, dateTime, manyRegions, money, statusBadge, t],
   );
 
   const isLoaded = data !== undefined;

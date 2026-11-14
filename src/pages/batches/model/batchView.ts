@@ -1,4 +1,4 @@
-import type { Batch, BatchDirection, BatchStatus } from "../../../entities/batch";
+import { formatBatchRegions, type Batch, type BatchDirection, type BatchStatus } from "../../../entities/batch";
 
 /**
  * «PAKETLAR» (`/batches`, `/batches/:id`) va «QAYTARISHLAR» (`/returns`) — sof yordamchilar.
@@ -40,8 +40,14 @@ export const knownText = (value: string | null | undefined): string | null => {
 export const isPlaceholderBranchName = (name: string | null | undefined): boolean =>
   knownText(name) === null || /^Filial #\S+$/i.test(String(name).trim());
 
-/** Paket boradigan viloyat (`to_branch.region`); noma'lum bo'lsa `null`. */
-export const readBatchRegion = (batch: Pick<Batch, "to_branch">): string | null => knownText(batch.to_branch.region);
+/**
+ * Paket viloyati: bitta — nomi; umumiy filial paketi (bir necha viloyat, 2026-11-14 dan) — `many(soni)`
+ * («5 ta viloyat»), berilmasa nomlar vergul bilan; noma'lum — `null`.
+ */
+export const readBatchRegion = (
+  batch: Pick<Batch, "to_branch" | "regions">,
+  many?: (count: number) => string,
+): string | null => formatBatchRegions(batch, many);
 
 /** Paket tafsilotiga qaysi sahifadan kelingan (orqaga havola shunga qarab). */
 export type BatchDetailFrom = "batches" | "returns" | "mails-old";

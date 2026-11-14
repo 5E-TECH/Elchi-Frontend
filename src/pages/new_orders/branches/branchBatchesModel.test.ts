@@ -75,6 +75,14 @@ describe("matchesBatchSearch — v1 dagidek: id, token, viloyat, manzil filial n
     expect(matchesBatchSearch(row, "toshkent")).toBe(true);
     expect(matchesBatchSearch(row, "Namangan")).toBe(false);
   });
+
+  it("umumiy filial paketi — har viloyat nomi bo'yicha topiladi; yorliq «N ta viloyat»", () => {
+    const shared = batch({ to_branch: { id: "1", name: "Toshkent HQ" }, regions: ["Jizzax", "Buxoro"] });
+    expect(matchesBatchSearch(shared, "buxoro")).toBe(true);
+    expect(matchesBatchSearch(shared, "jizz")).toBe(true);
+    expect(matchesBatchSearch(shared, "Namangan")).toBe(false);
+    expect(readBatchRegion(shared, (count) => `${count} ta viloyat`)).toBe("2 ta viloyat");
+  });
 });
 
 describe("yig'indilar, skaner va buyurtma maydonlari", () => {

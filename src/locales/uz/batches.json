@@ -19,6 +19,7 @@
     "open": "Ochish"
   },
   "qty": "{{value}} ta",
+  "regionsCount": "{{value}} ta viloyat",
   "ordersSub": "{{value}} ta buyurtma",
   "open": "{{id}} paketini ochish",
   "pagination": "{{from}}–{{to}} / {{total}} ta paket",

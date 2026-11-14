@@ -52,6 +52,12 @@ export interface Batch {
   vehicle_plate?: string;
   request_key?: string;
   created_at: string;
+  /**
+   * Paketning barcha viloyatlari (nomlari, javobdagi `regions[]`). Filial paketi 2026-11-14 dan umumiy — bitta
+   * yo'nalishga bitta paket, ichida bir necha viloyat; `to_branch.region` faqat bitta viloyatli paketda.
+   * Javobda bo'lmasa `undefined`.
+   */
+  regions?: string[];
 }
 
 export interface BatchDetail extends Batch {

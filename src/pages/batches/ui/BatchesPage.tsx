@@ -145,6 +145,8 @@ const BatchesPage = () => {
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
   const money = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
   const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+  // Umumiy filial paketi (bir necha viloyat) — «5 ta viloyat».
+  const manyRegions = useCallback((value: number) => t("regionsCount", { value: count(value) }), [count, t]);
   const dateTime = useCallback((value: string) => formatDateTimeLocalized(value, { language }), [language]);
 
   const linkState = useMemo<BatchDetailLocationState>(
@@ -191,7 +193,7 @@ const BatchesPage = () => {
         cell: (batch) => {
           const from = knownText(batch.from_branch.name);
           const to = knownText(batch.to_branch.name);
-          const region = readBatchRegion(batch);
+          const region = readBatchRegion(batch, manyRegions);
           return (
             <>
               <RouteLine from={from} to={to} className="max-lg:hidden" />
@@ -219,7 +221,7 @@ const BatchesPage = () => {
         id: "region",
         header: t("columns.region"),
         hideBelow: "lg",
-        cell: (batch) => readBatchRegion(batch) ?? "—",
+        cell: (batch) => readBatchRegion(batch, manyRegions) ?? "—",
       },
       {
         id: "status",
@@ -259,7 +261,7 @@ const BatchesPage = () => {
         },
       },
     ],
-    [batchHref, count, dateTime, linkState, money, ordersSub, statusBadge, t],
+    [batchHref, count, dateTime, linkState, manyRegions, money, ordersSub, statusBadge, t],
   );
 
   // Telefon kartasi: butun karta — paket tafsilotiga havola, o'ngda «›».
@@ -267,7 +269,7 @@ const BatchesPage = () => {
     (batch: Batch) => {
       const from = knownText(batch.from_branch.name);
       const to = knownText(batch.to_branch.name);
-      const region = readBatchRegion(batch);
+      const region = readBatchRegion(batch, manyRegions);
       return (
         <Link
           to={batchHref(batch)}
@@ -298,7 +300,7 @@ const BatchesPage = () => {
         </Link>
       );
     },
-    [batchHref, dateTime, linkState, money, ordersSub, statusBadge, t],
+    [batchHref, dateTime, linkState, manyRegions, money, ordersSub, statusBadge, t],
   );
 
   const tabItems: TabItem<BatchTabKey>[] = BATCH_TAB_KEYS.map((key) => ({
