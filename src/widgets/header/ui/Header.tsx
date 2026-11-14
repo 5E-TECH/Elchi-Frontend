@@ -10,9 +10,11 @@ import { getUserRoleLabelKey, roleHasGlobalSearch, roleHasScanner } from "../../
 import { openScanner } from "../../../shared/lib/scanner/scannerHost";
 import { useActiveScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import { preloadScannerCamera } from "../../../shared/ui/camera/loadScannerCamera";
+import { scannerKeyTime } from "../../../shared/lib/useKeyboardScanner";
 import { useLogout } from "../../../shared/lib/useLogout";
 import { Button, IconButton } from "../../../shared/ui/primitives";
 import { useMobileMenu } from "../../Sidebar/model/shellNav";
+import { createHeaderShortcutState, nextHeaderShortcut } from "../model/headerShortcuts";
 import { useHeaderSearch } from "../model/useHeaderSearch";
 import { DESKTOP_QUERY, matchesMedia, useMediaQuery } from "../model/useMediaQuery";
 import {
@@ -42,6 +44,8 @@ import UserMenu from "./UserMenu";
  * ko'chguncha global qidiruvga yagona yo'l, shuning uchun saqlangan.
  *
  * Klaviatura: Ctrl/⌘ + K — qidiruv, `?` — tezkor tugmalar, G → O — buyurtmalar, G → B — paketlar (menejer).
+ * Harfli tugmalar skaner tezligida kelgan belgilarga javob bermaydi (`model/headerShortcuts.ts`): aks holda market
+ * QR skani («…g…o…») sahifani `/orders` ga otib yuborardi.
  *
  * Rol personasi (`entities/user/lib/role.ts`, maket `roles.json` → `persona`): «Skanerlash» faqat
  * `roleHasScanner` rollarida (market, market operatori, logist, investorda yo'q); qidiruv (maydon, telefondagi
@@ -53,8 +57,6 @@ interface HeaderProps {
   /** Shell (dashboardLayout) beradi; bo'lmasa — `useMobileMenu().open`. */
   onMenuClick?: () => void;
 }
-
-const GO_SHORTCUT_WINDOW_MS = 900;
 
 const isEditableTarget = (target: EventTarget | null) => {
   const element = target as HTMLElement | null;
@@ -83,7 +85,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const [searchScreenOpen, setSearchScreenOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const goShortcutRef = useRef(0);
+  const shortcutRef = useRef(createHeaderShortcutState());
 
   const role = (profile as { role?: string } | null)?.role || roleState.role;
   const name = readDisplayName(profile, roleState.name) ?? t("header.profile.profile");
@@ -134,33 +136,19 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         return;
       }
 
-      const now = Date.now();
-      if (event.key === "?") {
-        event.preventDefault();
-        setShortcutsOpen(true);
-        return;
-      }
-      if (key === "g") {
-        goShortcutRef.current = now;
-        return;
-      }
-      if (goShortcutRef.current && now - goShortcutRef.current <= GO_SHORTCUT_WINDOW_MS) {
-        if (key === "o" && canOpenOrdersShortcut) {
-          event.preventDefault();
-          goShortcutRef.current = 0;
-          navigate("/orders");
-          return;
-        }
-        if (key === "b" && canOpenBatchesShortcut) {
-          event.preventDefault();
-          goShortcutRef.current = 0;
-          navigate("/batches");
-          return;
-        }
-      }
-      if (goShortcutRef.current && now - goShortcutRef.current > GO_SHORTCUT_WINDOW_MS) {
-        goShortcutRef.current = 0;
-      }
+      // Faqat bitta belgili tugma (harf, raqam, belgi): Shift, CapsLock, Enter tezlik va ketma-ketlikka kirmaydi.
+      if (event.key.length !== 1) return;
+      const shortcut = nextHeaderShortcut(
+        shortcutRef.current,
+        event.key,
+        scannerKeyTime(event),
+        { orders: canOpenOrdersShortcut, batches: canOpenBatchesShortcut },
+        event.repeat,
+      );
+      if (!shortcut) return;
+      event.preventDefault();
+      if (shortcut === "help") setShortcutsOpen(true);
+      else navigate(shortcut === "orders" ? "/orders" : "/batches");
     };
 
     window.addEventListener("keydown", onKeyDown);

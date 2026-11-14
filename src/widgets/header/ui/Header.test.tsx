@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,7 @@ import { RECENT_SEARCHES_KEY } from "../model/recentSearches";
 import { isScannerOverlayOpen, resetScannerHost } from "../../../shared/lib/scanner/scannerHost";
 import { resetScanTargets, useScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import Header from "./Header";
+import { SCANNER_KEY_GAP_MS } from "../../../shared/lib/useKeyboardScanner";
 
 /**
  * Yuqori panel (dizayn v2, 2-bosqich): maket `.el-topbar`, taxta `tizim-states-navigation` (02, 06),
@@ -678,6 +679,20 @@ describe("Header global search", () => {
   });
 });
 
+/**
+ * Harfli tezkor tugmalar skaner tezligidagi belgilarga javob bermaydi (`model/headerShortcuts.ts`): testda
+ * odam kabi bosiladi — tugmalar orasida `SCANNER_KEY_GAP_MS` dan ko'p.
+ */
+const HUMAN_KEY_MS = SCANNER_KEY_GAP_MS + 40;
+const humanUser = () => userEvent.setup({ delay: HUMAN_KEY_MS });
+const pause = () => act(() => new Promise<void>((resolve) => setTimeout(resolve, HUMAN_KEY_MS)));
+
+/** Skaner: belgilar bir zumda (bir xil millisekund), oxirida Enter — `fireEvent` bilan. */
+const scannerTypes = (value: string) => {
+  for (const key of value) fireEvent.keyDown(window, { key, code: /[a-z]/i.test(key) ? `Key${key.toUpperCase()}` : "" });
+  fireEvent.keyDown(window, { key: "Enter", code: "Enter" });
+};
+
 describe("Header keyboard shortcuts", () => {
   it("opens the shortcuts list with «?» outside of fields", async () => {
     const user = userEvent.setup();
@@ -694,24 +709,61 @@ describe("Header keyboard shortcuts", () => {
   });
 
   it("goes to orders with G → O", async () => {
-    const user = userEvent.setup();
-    renderHeader();
+    const user = humanUser();
+    renderHeader({ route: "/" });
     await user.keyboard("go");
-    expect(screen.getByTestId("path")).toHaveTextContent("/orders");
+    expect(screen.getByTestId("path")).toHaveTextContent(/^\/orders$/);
+    await act(async () => undefined);
+  });
+
+  it("G ni bosib turib (avtotakror), keyin O — buyurtmalar", async () => {
+    renderHeader({ route: "/" });
+    fireEvent.keyDown(window, { key: "g", code: "KeyG" });
+    for (let index = 0; index < 5; index += 1) fireEvent.keyDown(window, { key: "g", code: "KeyG", repeat: true });
+    await pause();
+    fireEvent.keyDown(window, { key: "o", code: "KeyO" });
+    expect(screen.getByTestId("path")).toHaveTextContent(/^\/orders$/);
     await act(async () => undefined);
   });
 
   it.each([
     ["manager", "/batches", true],
-    ["courier", "/orders", false],
+    ["courier", "/", false],
   ])("G → B for %s goes to %s (batches shortcut listed: %s)", async (role, path, listed) => {
-    const user = userEvent.setup();
-    renderHeader({ role });
+    const user = humanUser();
+    renderHeader({ role, route: "/" });
     await user.keyboard("gb");
-    expect(screen.getByTestId("path")).toHaveTextContent(path);
+    expect(screen.getByTestId("path")).toHaveTextContent(new RegExp(`^${path}$`));
+    await pause();
     await user.keyboard("?");
     const dialog = screen.getByRole("dialog", { name: /Tezkor tugmalar/ });
     expect(within(dialog).queryByText("Paketlarga o'tish") !== null).toBe(listed);
+  });
+
+  it("⭐ skaner yozgan market QR («…g…o…», «…g…b…») — sahifa o'zgarmaydi, ro'yxat ochilmaydi", async () => {
+    renderHeader({ role: "manager", route: "/new-orders/cancelled/5" });
+    scannerTypes("MCR-Jx3gQo9_kGb2Vt-ogG7oq4Lw0zgOaY1sNcE8hRuFb5d");
+    scannerTypes("https://admin.elchipochta.uz/scan?token=go");
+    await act(async () => undefined);
+    expect(screen.getByTestId("path")).toHaveTextContent("/new-orders/cancelled/5");
+    expect(screen.queryByRole("dialog", { name: /Tezkor tugmalar/ })).not.toBeInTheDocument();
+  });
+
+  it("G dan keyin boshqa harf — G → O emas (ketma-ketlik uziladi)", async () => {
+    const user = humanUser();
+    renderHeader({ route: "/" });
+    await user.keyboard("gxo");
+    expect(screen.getByTestId("path")).toHaveTextContent(/^\/$/);
+  });
+
+  it("skandan keyin odam bosgan G → O ishlaydi", async () => {
+    const user = humanUser();
+    renderHeader({ route: "/new-orders/cancelled/5" });
+    scannerTypes("MCR-abcgo");
+    await pause();
+    await user.keyboard("go");
+    expect(screen.getByTestId("path")).toHaveTextContent("/orders");
+    await act(async () => undefined);
   });
 });
 
@@ -745,12 +797,13 @@ describe("Header — rol personasi (ROL-0, maket roles.json → persona)", () =>
   });
 
   it("investor: Ctrl K qidiruv ekranini ochmaydi, G → O buyurtmalarga o'tkazmaydi; tezkor tugmalarda ikkalasi yo'q", async () => {
-    const user = userEvent.setup();
+    const user = humanUser();
     renderHeader({ role: "investor", device: "tablet", route: "/" });
     await user.keyboard("{Control>}k{/Control}");
     expect(screen.queryByRole("dialog", { name: "Global qidiruv" })).not.toBeInTheDocument();
     await user.keyboard("go");
     expect(screen.getByTestId("path")).toHaveTextContent(/^\/$/);
+    await pause();
     await user.keyboard("?");
     const dialog = screen.getByRole("dialog", { name: /Tezkor tugmalar/ });
     expect(within(dialog).queryByText("Qidiruvga o'tish")).not.toBeInTheDocument();
@@ -759,7 +812,7 @@ describe("Header — rol personasi (ROL-0, maket roles.json → persona)", () =>
   });
 
   it("G → O faqat buyurtmalar ochiladigan rolda (logist — LG-4 gacha yo'q), kuryerda bor", async () => {
-    const user = userEvent.setup();
+    const user = humanUser();
     const view = renderHeader({ role: "logist", route: "/" });
     await user.keyboard("go");
     expect(screen.getByTestId("path")).toHaveTextContent(/^\/$/);

@@ -1,7 +1,13 @@
 // dizayn-v2: superadmin-neworders-cancelled-pin-dialog
-import { useRef, type ReactNode } from "react";
+import { useRef, type KeyboardEvent, type ReactNode } from "react";
 import { CircleCheck, KeyRound, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import {
+  SCANNER_ENTER_GAP_MS,
+  SCANNER_KEY_GAP_MS,
+  readScannerKey,
+  scannerKeyTime,
+} from "../../../../shared/lib/useKeyboardScanner";
 import { Button, Dialog, Field, TextInput } from "../../../../shared/ui/primitives";
 import { DetailAlert } from "../../components/detail/DetailAlert";
 
@@ -15,7 +21,23 @@ import { DetailAlert } from "../../components/detail/DetailAlert";
  * Enter USB skaner deb olinmaydi
  * (sahifa skaneri ham oyna ochiq paytda to'xtatiladi). Xato (noto'g'ri kod va qolgan urinishlar, blok, muddat)
  * — maydon ostida. Maketdagi «Taklif · backend kerak» belgisi olib tashlandi (backend tayyor).
+ *
+ * ⚠️ Oyna ochiq paytda USB skaner bilan QR skanerlansa: maydon harflarni tashlab, raqamlarni qoldirardi va skaner
+ * Enter'i shu tasodifiy «kod»ni yuborardi — har skan 5 urinishdan birini yerdi (5-sida sessiya bloklanadi, QR ham
+ * ishlamay qoladi). Endi skaner tezligida kelgan belgilar (`SCANNER_KEY_GAP_MS`) alohida yig'iladi: ular PIN
+ * bo'lmasa (raqam, bo'shliq, «-» dan boshqa belgi yoki 6 dan ko'p raqam) Enter formani yubormaydi — matn
+ * `onScan` ga beriladi (sahifa: market QR'i → QR skani kabi tekshiriladi, boshqasi — maydon ostida xato).
+ * Odam yozgan kod (belgilar orasi sekinroq) va skanerlangan 6 raqam — avvalgidek yuboriladi.
+ * Kuzatuv butun oynada (`onKeyDownCapture`): noto'g'ri koddan keyin fokus «Tasdiqlash» tugmasida qolsa ham skaner
+ * Enter'i o'sha kodni qayta yubormaydi. Bosib turilgan tugmaning avtotakrori (`repeat`, ~30 ms) — odam, skan emas.
  */
+
+type ScanRun = { text: string; lastAt: number };
+
+const emptyRun = (): ScanRun => ({ text: "", lastAt: Number.NEGATIVE_INFINITY });
+
+/** Skan matni PIN emas: raqam, bo'shliq va «-» dan boshqa belgi bor yoki raqami 6 dan ko'p. */
+const isNotPinScan = (text: string) => text !== "" && !/^\d{0,6}$/.test(text.replace(/[\s-]/g, ""));
 
 type MarketPinDialogProps = {
   open: boolean;
@@ -27,6 +49,8 @@ type MarketPinDialogProps = {
   error: ReactNode;
   pending: boolean;
   onSubmit: () => void;
+  /** Maydonga USB skaner yozgan, PIN bo'lmagan matn (market QR'i, buyurtma QR'i …) — forma yuborilmaydi. */
+  onScan: (rawValue: string) => void;
   onClose: () => void;
 };
 
@@ -38,10 +62,38 @@ export const MarketPinDialog = ({
   error,
   pending,
   onSubmit,
+  onScan,
   onClose,
 }: MarketPinDialogProps) => {
   const { t } = useTranslation("newOrders");
   const inputRef = useRef<HTMLInputElement>(null);
+  const scanRunRef = useRef<ScanRun>(emptyRun());
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    const native = event.nativeEvent;
+    const at = scannerKeyTime(native);
+    const run = scanRunRef.current;
+
+    if (event.key === "Enter") {
+      scanRunRef.current = emptyRun();
+      // Kamida 2 ta tez belgi va Enter ular ortidan darhol — skaner; aks holda odam yozgani.
+      const scanned = run.text.length > 1 && at - run.lastAt <= SCANNER_ENTER_GAP_MS ? run.text : "";
+      if (!isNotPinScan(scanned)) return;
+      event.preventDefault();
+      if (!pending) onScan(scanned);
+      return;
+    }
+
+    if (native.repeat) {
+      scanRunRef.current = emptyRun();
+      return;
+    }
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    const char = readScannerKey(native);
+    if (char === null) return;
+    run.text = at - run.lastAt > SCANNER_KEY_GAP_MS ? char : run.text + char;
+    run.lastAt = at;
+  };
 
   return (
     <Dialog
@@ -54,6 +106,7 @@ export const MarketPinDialog = ({
       initialFocus={inputRef}
       busy={pending}
       data-scanner-ignore=""
+      onKeyDownCapture={handleKeyDown}
       formProps={{ noValidate: true }}
       onSubmit={(event) => {
         event.preventDefault();

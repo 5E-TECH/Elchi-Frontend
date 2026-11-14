@@ -89,7 +89,8 @@ import { MarketQrDialog } from "./ui/MarketQrDialog";
  *    kiritish» → `MarketPinDialog` — market QR oynasidagi 6 xonali kod `POST scan/market-cancelled { market_id, pin }`
  *    ga; muvaffaqiyat QR skani bilan AYNAN bir xil (`applyAuthorization`: token, taymer, hamma bekorlar tanlanadi),
  *    topshirilganlarda usul «Parol orqali» (`pin`). Oyna ochiq paytda sahifa skaneri to'xtatiladi — 6 raqam + Enter
- *    buyurtma skani deb olinmasin.
+ *    buyurtma skani deb olinmasin; maydonga skaner yozgan market QR'i esa kod deb yuborilmaydi — QR skani bo'ladi
+ *    (`scanInPinDialog`), boshqa skan — maydon ostida xato (urinish yeyilmaydi).
  *  - Market (qobiq `hosted`): karta «Yangi buyurtmalar / Bekor qilinganlar» tablari bilan; «Bekor qilingan
  *    buyurtmalarni pochtaga topshirish» bloki («Qabul qilish» → QR oynasi) va o'z ro'yxati.
  *
@@ -385,6 +386,22 @@ const CancelledMarketDetail = () => {
     setPinValue("");
     setPinError(null);
   }, [applyAuthorization, language, marketId, pinValue, t, verifyMarketCancelledPin]);
+
+  /**
+   * Kod oynasi ochiq paytda maydonga USB skaner PIN bo'lmagan matn yozdi (`MarketPinDialog`): market QR'i bo'lsa —
+   * oyna yopiladi va QR skani bilan aynan bir yo'l (urinish yeyilmaydi); boshqa kod — maydon ostida xato.
+   */
+  const scanInPinDialog = useCallback((rawValue: string) => {
+    if (verifyMarketCancelledPin.isPending) return;
+    setPinValue("");
+    if (extractMarketCancelledQrToken(rawValue)) {
+      setPinError(null);
+      setIsPinOpen(false);
+      void verifyHandoverQr(rawValue);
+      return;
+    }
+    setPinError(t("cancelled.pin.scanned"));
+  }, [t, verifyHandoverQr, verifyMarketCancelledPin.isPending]);
 
   const handleMissingOrder = useCallback((rawValue?: string) => {
     if (rawValue && extractMarketCancelledQrToken(rawValue)) {
@@ -941,6 +958,7 @@ const CancelledMarketDetail = () => {
         error={pinError}
         pending={verifyMarketCancelledPin.isPending}
         onSubmit={() => void submitPin()}
+        onScan={scanInPinDialog}
         onClose={closePinDialog}
       />
     </div>

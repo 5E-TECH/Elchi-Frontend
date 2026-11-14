@@ -623,7 +623,8 @@
       "blocked": "5 marta xato kiritildi — market yangi QR chiqarsin",
       "expired": "Kod muddati tugagan — market yangi QR chiqarsin",
       "notFound": "Marketda faol QR yo'q — market QR oynasini qayta ochsin",
-      "error": "Kodni tekshirib bo'lmadi"
+      "error": "Kodni tekshirib bo'lmadi",
+      "scanned": "Skanerlangan kod PIN emas — 6 xonali kodni qo'lda yozing"
     },
     "camera": {
       "qrTitle": "Market QR skanerlash",
