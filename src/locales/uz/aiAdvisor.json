@@ -158,5 +158,191 @@
       "network": "AI bilan aloqa uzildi — qayta urinib ko'ring",
       "ai_error": "AI xatosi — keyinroq urinib ko'ring"
     }
+  },
+  "alerts": {
+    "severity": {
+      "critical": "Jiddiy",
+      "warning": "Diqqat"
+    },
+    "status": {
+      "new": "Yangi",
+      "seen": "Ko'rildi",
+      "resolved": "Hal qilindi",
+      "dismissed": "Ahamiyatsiz"
+    },
+    "subject": {
+      "system": "Butun tizim"
+    },
+    "subline": {
+      "system": "butun tizim"
+    },
+    "place": {
+      "branchCashbox": "{{name}} kassasida",
+      "cashbox": "{{name}}da"
+    },
+    "operation": {
+      "expense": "{{category}} xarajati",
+      "manualExpense": "qo'lda chiqim",
+      "courierToHq": "kuryer topshirig'i",
+      "branchToHq": "HQ'ga o'tkazma"
+    },
+    "units": {
+      "days_one": "{{count}} kun",
+      "days_other": "{{count}} kun",
+      "daysOver_one": "{{count}} kun",
+      "daysOver_other": "{{count}} kun",
+      "shifts_one": "{{count}} smena",
+      "shifts_other": "{{count}} smena",
+      "corrections_one": "{{count}} ta tuzatish",
+      "corrections_other": "{{count}} ta tuzatish"
+    },
+    "months": {
+      "1": "yanvar",
+      "2": "fevral",
+      "3": "mart",
+      "4": "aprel",
+      "5": "may",
+      "6": "iyun",
+      "7": "iyul",
+      "8": "avgust",
+      "9": "sentyabr",
+      "10": "oktabr",
+      "11": "noyabr",
+      "12": "dekabr"
+    },
+    "range": {
+      "sameMonth": "{{from}}–{{to}} {{month}}",
+      "crossMonth": "{{from}} {{fromMonth}} – {{to}} {{toMonth}}"
+    }
+  },
+  "rules": {
+    "other": "Boshqa qoida",
+    "otherInline": "ogohlantirish",
+    "R1": {
+      "name": "Smena kamomadi",
+      "short": "Smena kamomadi",
+      "inline": "smena kamomadi",
+      "description": "Smenadagi kamomad chegaradan katta yoki bir kassada ketma-ket manfiy smenalar",
+      "condition": "Bir smenada {{shortage}}dan ko'p yoki {{shifts}} ketma-ket kamomad",
+      "titles": {
+        "listSingle": "{{place}} smena kamomadi: {{amount}}",
+        "listConsecutive": "{{place}} {{shifts}} ketma-ket kamomad: {{amount}}",
+        "dialogSingle": "{{place}} smena kamomadi",
+        "dialogConsecutive": "{{place}} {{shifts}} ketma-ket kamomad"
+      },
+      "fields": {
+        "shortage_uzs": "Bir smenadagi kamomad",
+        "consecutive_negative": "Ketma-ket manfiy smenalar"
+      }
+    },
+    "R2": {
+      "name": "Kuryer qarzi o'smoqda",
+      "short": "Kuryer qarzi o'smoqda",
+      "inline": "kuryer qarzi o'smoqda",
+      "description": "Kuryer kassasi kun sayin o'sib chegaradan oshsa yoki pul uzoq topshirilmasa",
+      "condition": "{{growthDays}} ketma-ket o'sib {{balance}}dan oshsa yoki {{daysOver}}dan ortiq topshirilmasa",
+      "titles": {
+        "handover": "{{courier}} kassasida {{amount}} — {{days}}dan beri topshirilmagan",
+        "notHanded": "{{courier}} kassasida {{amount}} topshirilmagan",
+        "growth": "{{courier}} kassasida {{amount}} — {{days}} ketma-ket o'smoqda"
+      },
+      "fields": {
+        "balance_uzs": "Qarz chegarasi",
+        "growth_days": "O'sish kunlari",
+        "no_handover_days": "Topshirilmagan kunlar"
+      }
+    },
+    "R3": {
+      "name": "G'ayrioddiy xarajat",
+      "short": "G'ayrioddiy xarajat",
+      "inline": "g'ayrioddiy xarajat",
+      "description": "Xarajat shu kategoriyaning 30 kunlik odatdagi summasidan ancha katta",
+      "condition": "30 kunlik mediana + {{multiplier}} × mediana og'ishidan ko'p",
+      "titles": {
+        "list": "{{place}}: {{category}} xarajati {{amount}} — odatdagidan {{ratio}} barobar",
+        "dialog": "{{place}}: {{category}} xarajati odatdagidan {{ratio}} barobar ko'p"
+      },
+      "fields": {
+        "mad_multiplier": "Odatdagidan oshish"
+      },
+      "hints": {
+        "mad_multiplier": "Mediana + {{value}} × mediana og'ishi"
+      }
+    },
+    "R4": {
+      "name": "Market to'lovi kechikmoqda",
+      "short": "Market to'lovi kechikmoqda",
+      "inline": "market to'lovi kechikmoqda",
+      "description": "Marketga to'lov uzoq vaqt qilinmagan, qarz bor",
+      "condition": "{{daysOver}}dan ortiq to'lov yo'q va qarz bor",
+      "titles": {
+        "list": "{{market}} — {{days}}dan beri to'lov yo'q, qarz {{amount}}",
+        "dialog": "{{market}} — {{days}}dan beri to'lov yo'q"
+      },
+      "fields": {
+        "days_without_payout": "To'lovsiz kunlar"
+      },
+      "hints": {
+        "days_without_payout": "Qarz bo'lsa"
+      }
+    },
+    "R5": {
+      "name": "HQ'ga o'tkazma kechikmoqda",
+      "short": "HQ'ga o'tkazma kechikmoqda",
+      "inline": "HQ'ga o'tkazma kechikmoqda",
+      "description": "Filial kassasida pul to'planib, HQ'ga o'tkazilmagan",
+      "condition": "{{balance}}dan ko'p va {{daysOver}}dan ortiq o'tkazma yo'q",
+      "titles": {
+        "list": "{{branch}} kassasida {{amount}} — HQ'ga {{days}}dan beri o'tkazma yo'q",
+        "dialog": "{{branch}} {{days}}dan beri HQ'ga pul o'tkazmagan"
+      },
+      "fields": {
+        "balance_uzs": "Filial kassasi",
+        "days_without_transfer": "O'tkazmasiz kunlar"
+      }
+    },
+    "R6": {
+      "name": "Zarar",
+      "short": "Zarar",
+      "inline": "zarar",
+      "description": "Kunlik yoki haftalik sof foyda 0 dan past",
+      "condition": "Kunlik yoki haftalik sof foyda 0 dan past",
+      "titles": {
+        "listDay": "{{date}} kuni sof foyda {{amount}}",
+        "listWeek": "{{range}} haftasida sof foyda {{amount}}",
+        "dialogDay": "{{date}} kuni zarar: sof foyda {{amount}}",
+        "dialogWeek": "{{range}} haftasida zarar: sof foyda {{amount}}"
+      }
+    },
+    "R7": {
+      "name": "Chek yoki karta farqi",
+      "short": "Chekda farq bor",
+      "shortCard": "Karta qoldig'ida farq",
+      "inline": "chekda farq bor",
+      "inlineCard": "karta qoldig'ida farq",
+      "description": "Smena karta tekshiruvi yoki chek AI tekshiruvida «Farq bor»",
+      "condition": "Smena karta tekshiruvi yoki chek AI tekshiruvida «Farq bor»",
+      "what": "{{place}} {{operation}}",
+      "titles": {
+        "receiptAmount": "Chekda farq bor — {{what}}",
+        "receiptAmountCard": "Chekda farq bor — {{what}}, karta mos emas",
+        "receiptCard": "Karta mos emas — {{what}}",
+        "cardBalance": "Karta qoldig'ida farq — {{cashbox}}"
+      }
+    },
+    "R8": {
+      "name": "Tuzatishlar ko'paydi",
+      "short": "Tuzatishlar ko'paydi",
+      "inline": "tuzatishlar ko'paydi",
+      "description": "Tuzatishlar 30 kunlik o'rtachadan {{ratio}} barobar ko'p",
+      "condition": "30 kunlik o'rtachadan {{ratio}} barobar va undan ko'p",
+      "titles": {
+        "list": "{{range}} haftasida {{corrections}} — 30 kunlik o'rtachadan {{ratio}} barobar",
+        "dialog": "{{range}} haftasida {{corrections}} — odatdagidan {{ratio}} barobar ko'p"
+      },
+      "fields": {
+        "ratio": "Nisbat"
+      }
+    }
   }
 }

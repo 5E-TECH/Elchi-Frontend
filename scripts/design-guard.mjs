@@ -118,6 +118,8 @@ export const V2_SCOPES = Object.freeze([
   "src/entities/warehouse",
   // F7PWp6cK: AI suhbati — SSE oqimi va holat mashinasi (rangsiz).
   "src/features/ai-chat",
+  // 60PWUbgC: AI maslahatchi ogohlantirishlari — amallar (PATCH, explain, sozlamalar).
+  "src/features/ai-alerts",
   "src/features/app-update",
   "src/features/auth",
   "src/features/branch",

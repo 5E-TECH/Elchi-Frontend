@@ -125,6 +125,19 @@ export const queryKeys = {
     conversations: ["ai-assistant", "conversations"] as const,
     conversation: (id: string) => ["ai-assistant", "conversation", id] as const,
   },
+  /**
+   * AI maslahatchi (`/ai-assistant?tab=alerts`, 60PWUbgC) — bitta ildiz `"ai-advisor"` (`AI_ADVISOR.*`). `overview` —
+   * mavjudlik zondi ham (natija ittifoq: `available | unavailable`). Ro'yxatlar va sanoq (`alertCount`) `alertLists`
+   * prefiksi ostida — ogohlantirish PATCH'i ikkalasini ham eskirtiradi. `all` ataylab yo'q.
+   */
+  aiAdvisor: {
+    overview: ["ai-advisor", "overview"] as const,
+    alertLists: ["ai-advisor", "alerts"] as const,
+    alertList: (params: object) => ["ai-advisor", "alerts", params] as const,
+    alertCount: (params: object) => ["ai-advisor", "alerts", "count", params] as const,
+    alert: (id: string) => ["ai-advisor", "alert", id] as const,
+    settings: ["ai-advisor", "settings"] as const,
+  },
   /** Joriy foydalanuvchi profili (`GET auth/my-profile`) — yagona kesh: auth bootstrap, `useSettings`, `useGetMyProfile`. */
   myProfile: ["user", "profile"] as const,
 } as const;

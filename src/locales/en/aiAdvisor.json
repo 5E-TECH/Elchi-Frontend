@@ -158,5 +158,191 @@
       "network": "The connection to AI was lost — try again",
       "ai_error": "AI error — try again later"
     }
+  },
+  "alerts": {
+    "severity": {
+      "critical": "Critical",
+      "warning": "Warning"
+    },
+    "status": {
+      "new": "New",
+      "seen": "Seen",
+      "resolved": "Resolved",
+      "dismissed": "Dismissed"
+    },
+    "subject": {
+      "system": "Whole system"
+    },
+    "subline": {
+      "system": "whole system"
+    },
+    "place": {
+      "branchCashbox": "at {{name}} cash desk",
+      "cashbox": "at {{name}}"
+    },
+    "operation": {
+      "expense": "{{category}} expense",
+      "manualExpense": "manual expense",
+      "courierToHq": "courier handover",
+      "branchToHq": "transfer to HQ"
+    },
+    "units": {
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "daysOver_one": "{{count}} day",
+      "daysOver_other": "{{count}} days",
+      "shifts_one": "{{count}} shift",
+      "shifts_other": "{{count}} shifts",
+      "corrections_one": "{{count}} correction",
+      "corrections_other": "{{count}} corrections"
+    },
+    "months": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
+    },
+    "range": {
+      "sameMonth": "{{month}} {{from}}–{{to}}",
+      "crossMonth": "{{fromMonth}} {{from}} – {{toMonth}} {{to}}"
+    }
+  },
+  "rules": {
+    "other": "Other rule",
+    "otherInline": "alert",
+    "R1": {
+      "name": "Shift shortage",
+      "short": "Shift shortage",
+      "inline": "shift shortage",
+      "description": "A shift shortage above the threshold or several short shifts in a row at one cash desk",
+      "condition": "Shortage over {{shortage}} in one shift or {{shifts}} in a row short",
+      "titles": {
+        "listSingle": "Shift shortage {{place}}: {{amount}}",
+        "listConsecutive": "{{shifts}} in a row short {{place}}: {{amount}}",
+        "dialogSingle": "Shift shortage {{place}}",
+        "dialogConsecutive": "{{shifts}} in a row short {{place}}"
+      },
+      "fields": {
+        "shortage_uzs": "Shortage per shift",
+        "consecutive_negative": "Short shifts in a row"
+      }
+    },
+    "R2": {
+      "name": "Courier debt growing",
+      "short": "Courier debt growing",
+      "inline": "courier debt growing",
+      "description": "A courier's cash grows day by day above the threshold or money is not handed over for long",
+      "condition": "Grows {{growthDays}} in a row above {{balance}} or not handed over for more than {{daysOver}}",
+      "titles": {
+        "handover": "{{courier}} holds {{amount}} — not handed over for {{days}}",
+        "notHanded": "{{courier}} holds {{amount}} not handed over",
+        "growth": "{{courier}} holds {{amount}} — growing for {{days}} in a row"
+      },
+      "fields": {
+        "balance_uzs": "Debt threshold",
+        "growth_days": "Growth days",
+        "no_handover_days": "Days without handover"
+      }
+    },
+    "R3": {
+      "name": "Unusual expense",
+      "short": "Unusual expense",
+      "inline": "unusual expense",
+      "description": "An expense far above this category's usual 30-day amount",
+      "condition": "Above the 30-day median + {{multiplier}} × median deviation",
+      "titles": {
+        "list": "{{place}}: {{category}} expense {{amount}} — {{ratio}}× the usual",
+        "dialog": "{{place}}: {{category}} expense {{ratio}}× the usual"
+      },
+      "fields": {
+        "mad_multiplier": "Above usual"
+      },
+      "hints": {
+        "mad_multiplier": "Median + {{value}} × median deviation"
+      }
+    },
+    "R4": {
+      "name": "Market payout delayed",
+      "short": "Market payout delayed",
+      "inline": "market payout delayed",
+      "description": "A market has not been paid for a long time and is owed money",
+      "condition": "No payout for more than {{daysOver}} and money is owed",
+      "titles": {
+        "list": "{{market}} — no payout for {{days}}, owed {{amount}}",
+        "dialog": "{{market}} — no payout for {{days}}"
+      },
+      "fields": {
+        "days_without_payout": "Days without payout"
+      },
+      "hints": {
+        "days_without_payout": "If money is owed"
+      }
+    },
+    "R5": {
+      "name": "HQ transfer delayed",
+      "short": "HQ transfer delayed",
+      "inline": "HQ transfer delayed",
+      "description": "Cash piles up at a branch and is not transferred to HQ",
+      "condition": "Over {{balance}} and no transfer for more than {{daysOver}}",
+      "titles": {
+        "list": "{{branch}} holds {{amount}} — no transfer to HQ for {{days}}",
+        "dialog": "{{branch}} has not sent money to HQ for {{days}}"
+      },
+      "fields": {
+        "balance_uzs": "Branch cash desk",
+        "days_without_transfer": "Days without transfer"
+      }
+    },
+    "R6": {
+      "name": "Loss",
+      "short": "Loss",
+      "inline": "loss",
+      "description": "Daily or weekly net profit below 0",
+      "condition": "Daily or weekly net profit below 0",
+      "titles": {
+        "listDay": "Net profit on {{date}}: {{amount}}",
+        "listWeek": "Net profit for the week of {{range}}: {{amount}}",
+        "dialogDay": "Loss on {{date}}: net profit {{amount}}",
+        "dialogWeek": "Loss for the week of {{range}}: net profit {{amount}}"
+      }
+    },
+    "R7": {
+      "name": "Receipt or card mismatch",
+      "short": "Receipt mismatch",
+      "shortCard": "Card balance mismatch",
+      "inline": "receipt mismatch",
+      "inlineCard": "card balance mismatch",
+      "description": "The shift card check or the AI receipt check found a mismatch",
+      "condition": "The shift card check or the AI receipt check found a mismatch",
+      "what": "{{place}} {{operation}}",
+      "titles": {
+        "receiptAmount": "Receipt mismatch — {{what}}",
+        "receiptAmountCard": "Receipt mismatch — {{what}}, card does not match",
+        "receiptCard": "Card does not match — {{what}}",
+        "cardBalance": "Card balance mismatch — {{cashbox}}"
+      }
+    },
+    "R8": {
+      "name": "More corrections",
+      "short": "More corrections",
+      "inline": "more corrections",
+      "description": "Corrections are {{ratio}}× the 30-day average",
+      "condition": "{{ratio}}× the 30-day average or more",
+      "titles": {
+        "list": "Week of {{range}}: {{corrections}} — {{ratio}}× the 30-day average",
+        "dialog": "Week of {{range}}: {{corrections}} — {{ratio}}× the usual"
+      },
+      "fields": {
+        "ratio": "Ratio"
+      }
+    }
   }
 }

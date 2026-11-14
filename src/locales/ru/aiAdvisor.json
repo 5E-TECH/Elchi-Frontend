@@ -162,5 +162,199 @@
       "network": "Связь с AI прервалась — попробуйте снова",
       "ai_error": "Ошибка AI — попробуйте позже"
     }
+  },
+  "alerts": {
+    "severity": {
+      "critical": "Критично",
+      "warning": "Внимание"
+    },
+    "status": {
+      "new": "Новое",
+      "seen": "Просмотрено",
+      "resolved": "Решено",
+      "dismissed": "Неважно"
+    },
+    "subject": {
+      "system": "Вся система"
+    },
+    "subline": {
+      "system": "вся система"
+    },
+    "place": {
+      "branchCashbox": "в кассе «{{name}}»",
+      "cashbox": "в «{{name}}»"
+    },
+    "operation": {
+      "expense": "расход «{{category}}»",
+      "manualExpense": "ручной расход",
+      "courierToHq": "сдача курьера",
+      "branchToHq": "перевод в HQ"
+    },
+    "units": {
+      "days_one": "{{count}} день",
+      "days_few": "{{count}} дня",
+      "days_many": "{{count}} дней",
+      "days_other": "{{count}} дня",
+      "daysOver_one": "{{count}} дня",
+      "daysOver_few": "{{count}} дней",
+      "daysOver_many": "{{count}} дней",
+      "daysOver_other": "{{count}} дня",
+      "shifts_one": "{{count}} смена",
+      "shifts_few": "{{count}} смены",
+      "shifts_many": "{{count}} смен",
+      "shifts_other": "{{count}} смены",
+      "corrections_one": "{{count}} исправление",
+      "corrections_few": "{{count}} исправления",
+      "corrections_many": "{{count}} исправлений",
+      "corrections_other": "{{count}} исправления"
+    },
+    "months": {
+      "1": "января",
+      "2": "февраля",
+      "3": "марта",
+      "4": "апреля",
+      "5": "мая",
+      "6": "июня",
+      "7": "июля",
+      "8": "августа",
+      "9": "сентября",
+      "10": "октября",
+      "11": "ноября",
+      "12": "декабря"
+    },
+    "range": {
+      "sameMonth": "{{from}}–{{to}} {{month}}",
+      "crossMonth": "{{from}} {{fromMonth}} – {{to}} {{toMonth}}"
+    }
+  },
+  "rules": {
+    "other": "Другое правило",
+    "otherInline": "предупреждение",
+    "R1": {
+      "name": "Недостача в смене",
+      "short": "Недостача в смене",
+      "inline": "недостача в смене",
+      "description": "Недостача в смене выше порога или несколько смен подряд с минусом в одной кассе",
+      "condition": "Недостача за смену больше {{shortage}} или {{shifts}} подряд с недостачей",
+      "titles": {
+        "listSingle": "Недостача за смену {{place}}: {{amount}}",
+        "listConsecutive": "Недостача {{shifts}} подряд {{place}}: {{amount}}",
+        "dialogSingle": "Недостача за смену {{place}}",
+        "dialogConsecutive": "Недостача {{shifts}} подряд {{place}}"
+      },
+      "fields": {
+        "shortage_uzs": "Недостача за смену",
+        "consecutive_negative": "Смен подряд с недостачей"
+      }
+    },
+    "R2": {
+      "name": "Растёт долг курьера",
+      "short": "Растёт долг курьера",
+      "inline": "растёт долг курьера",
+      "description": "Касса курьера растёт день за днём и превышает порог или деньги долго не сдаются",
+      "condition": "Касса растёт {{growthDays}} подряд и превышает {{balance}} или деньги не сдаются более {{daysOver}}",
+      "titles": {
+        "handover": "У {{courier}} в кассе {{amount}} — не сдаёт {{days}}",
+        "notHanded": "У {{courier}} в кассе {{amount}} не сдано",
+        "growth": "У {{courier}} в кассе {{amount}} — растёт {{days}} подряд"
+      },
+      "fields": {
+        "balance_uzs": "Порог долга",
+        "growth_days": "Дней роста",
+        "no_handover_days": "Дней без сдачи"
+      }
+    },
+    "R3": {
+      "name": "Необычный расход",
+      "short": "Необычный расход",
+      "inline": "необычный расход",
+      "description": "Расход намного больше обычной суммы этой категории за 30 дней",
+      "condition": "Больше 30-дневной медианы + {{multiplier}} × медианное отклонение",
+      "titles": {
+        "list": "{{place}}: расход «{{category}}» {{amount}} — в {{ratio}} раза больше обычного",
+        "dialog": "{{place}}: расход «{{category}}» в {{ratio}} раза больше обычного"
+      },
+      "fields": {
+        "mad_multiplier": "Превышение обычного"
+      },
+      "hints": {
+        "mad_multiplier": "Медиана + {{value}} × медианное отклонение"
+      }
+    },
+    "R4": {
+      "name": "Задержка выплаты маркету",
+      "short": "Задержка выплаты маркету",
+      "inline": "задержка выплаты маркету",
+      "description": "Маркету давно не платили, есть долг",
+      "condition": "Нет выплаты более {{daysOver}} и есть долг",
+      "titles": {
+        "list": "{{market}} — без выплаты {{days}}, долг {{amount}}",
+        "dialog": "{{market}} — без выплаты {{days}}"
+      },
+      "fields": {
+        "days_without_payout": "Дней без выплаты"
+      },
+      "hints": {
+        "days_without_payout": "Если есть долг"
+      }
+    },
+    "R5": {
+      "name": "Задержка перевода в HQ",
+      "short": "Задержка перевода в HQ",
+      "inline": "задержка перевода в HQ",
+      "description": "В кассе филиала накопились деньги, но не переведены в HQ",
+      "condition": "Больше {{balance}} и нет перевода более {{daysOver}}",
+      "titles": {
+        "list": "В кассе «{{branch}}» {{amount}} — нет перевода в HQ {{days}}",
+        "dialog": "«{{branch}}» не переводит деньги в HQ {{days}}"
+      },
+      "fields": {
+        "balance_uzs": "Касса филиала",
+        "days_without_transfer": "Дней без перевода"
+      }
+    },
+    "R6": {
+      "name": "Убыток",
+      "short": "Убыток",
+      "inline": "убыток",
+      "description": "Дневная или недельная чистая прибыль ниже 0",
+      "condition": "Дневная или недельная чистая прибыль ниже 0",
+      "titles": {
+        "listDay": "Чистая прибыль за {{date}}: {{amount}}",
+        "listWeek": "Чистая прибыль за неделю {{range}}: {{amount}}",
+        "dialogDay": "Убыток за {{date}}: чистая прибыль {{amount}}",
+        "dialogWeek": "Убыток за неделю {{range}}: чистая прибыль {{amount}}"
+      }
+    },
+    "R7": {
+      "name": "Расхождение по чеку или карте",
+      "short": "Расхождение по чеку",
+      "shortCard": "Расхождение в остатке карты",
+      "inline": "расхождение по чеку",
+      "inlineCard": "расхождение в остатке карты",
+      "description": "Проверка карты в смене или AI-проверка чека показала «Есть расхождение»",
+      "condition": "Проверка карты в смене или AI-проверка чека показала «Есть расхождение»",
+      "what": "{{place}}, {{operation}}",
+      "titles": {
+        "receiptAmount": "Расхождение по чеку — {{what}}",
+        "receiptAmountCard": "Расхождение по чеку — {{what}}, карта не совпадает",
+        "receiptCard": "Карта не совпадает — {{what}}",
+        "cardBalance": "Расхождение в остатке карты — {{cashbox}}"
+      }
+    },
+    "R8": {
+      "name": "Больше исправлений",
+      "short": "Больше исправлений",
+      "inline": "больше исправлений",
+      "description": "Исправлений в {{ratio}} раза больше 30-дневного среднего",
+      "condition": "В {{ratio}} раза и более выше 30-дневного среднего",
+      "titles": {
+        "list": "Неделя {{range}}: {{corrections}} — в {{ratio}} раза больше 30-дневного среднего",
+        "dialog": "Неделя {{range}}: {{corrections}} — в {{ratio}} раза больше обычного"
+      },
+      "fields": {
+        "ratio": "Коэффициент"
+      }
+    }
   }
 }

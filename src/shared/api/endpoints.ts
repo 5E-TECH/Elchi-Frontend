@@ -644,6 +644,23 @@ export const API_ENDPOINTS = {
     // GET → {allowed, reason, feature_enabled, daily_limit, used_today, remaining_today, reset_at}
     ACCESS_ME: "ai/assistant/access/me",
   },
+  // AI maslahatchi — ogohlantirishlar R1–R8 va qoidalar (shartnoma v0.3, backend #644; FAQAT superadmin, admin — 403).
+  // Backend hali hamma muhitda yo'q: sahifa `OVERVIEW` ni bir marta so'rab mavjudligini aniqlaydi (404/501 — yo'q).
+  AI_ADVISOR: {
+    // GET → {alerts{new, open, critical, critical_open, critical_rule_keys[], critical_open_rule_keys[]},
+    //        recommendations | null, budget | null, usd_uzs_rate | null, generated_at}
+    OVERVIEW: "ai/advisor/overview",
+    // GET ?status&severity&rule_key&page&limit → {items, meta{page, limit, total, totalPages}, counts{by_status}}
+    ALERTS: "ai/advisor/alerts",
+    // GET → tafsilot (⚠️ ochilganda new → seen; prefetch/hover'da so'ralmaydi);
+    // PATCH {status: resolved | dismissed, note?} → tafsilot; 400 NOTE_INVALID, 409 ALERT_CLOSED
+    ALERT: (id: string | number) => `ai/advisor/alerts/${id}`,
+    // POST {} → 202 {explanation_status: pending | ready, poll_after_ms, …}; 429 BUDGET_EXCEEDED {scope, period}, 503, 409
+    ALERT_EXPLAIN: (id: string | number) => `ai/advisor/alerts/${id}/explain`,
+    // GET → {version, rules{R1..R8}, limits{rules}, telegram, budget, schedule, updated_at, updated_by};
+    // PATCH {version, rules} (severity/telegram/budget/schedule — 400) → to'liq sozlamalar; 409 SETTINGS_CONFLICT
+    SETTINGS: "ai/advisor/settings",
+  },
 
   // ── Webhooks (public — provider inbound, no JWT) ─────────────────────────
   WEBHOOKS: {
