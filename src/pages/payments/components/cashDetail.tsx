@@ -1391,8 +1391,12 @@ const CashDetail = () => {
         : type === "market" && isCurrentManagerRole
           ? t("v2CashDetail.settlement.counterparty", { name: joinParts(cashboxLabel("branch"), ownBranchName) })
           : t("v2CashDetail.settlement.counterparty", { name: cashboxLabel("main") });
+  // Superadmin/admin filial kassasida faqat «Qabul qilinishi kerak» (Dilshod, 2026-11-14): filialning o'z kassasidagi
+  // pul («Kassadagi summa», naqd / o'tkazma bo'linmasi) HQ'ga kerak emas — HQ menejerdan qancha olishini ko'radi.
   const hasCashboxAmount =
-    !isManagerBranchView && (detailEntry?.kassadagi_summa !== undefined || cashbox?.balance !== undefined);
+    !isManagerBranchView &&
+    !isHqBranchView &&
+    (detailEntry?.kassadagi_summa !== undefined || cashbox?.balance !== undefined);
   const cashboxSplit = {
     cash: toOptionalNumber(cashbox?.balance_cash),
     card: toOptionalNumber(cashbox?.balance_card),
@@ -1863,6 +1867,9 @@ const CashDetail = () => {
             continuous={historyTab === "all"}
             summary={dailySummary}
             truncated={movementRows.length >= HISTORY_PAGE_LIMIT}
+            // Superadmin/admin filial kassasida «Hozir» (filial kassasidagi joriy qoldiq) yo'q (Dilshod, 2026-11-14) —
+            // «Kassadagi summa» kabi; «Davr boshida», Kirim / Chiqim va grafik qoladi.
+            hideNow={isHqBranchView}
           />
         ) : null}
       </div>
@@ -2129,6 +2136,7 @@ const BalanceMovement = ({
   continuous = true,
   summary = null,
   truncated = false,
+  hideNow = false,
 }: {
   rows: PaymentRow[];
   type: CashDetailType;
@@ -2138,6 +2146,8 @@ const BalanceMovement = ({
   continuous?: boolean;
   summary?: MovementSummary | null;
   truncated?: boolean;
+  /** «Hozir» (joriy qoldiq) ko'rsatkichi chizilmaydi — superadmin/admin filial kassasi. */
+  hideNow?: boolean;
 }) => {
   const { t, i18n } = useTranslation("payments");
   const language = resolveMoneyLanguage(i18n.resolvedLanguage ?? i18n.language);
@@ -2243,7 +2253,7 @@ const BalanceMovement = ({
     ? [
         { key: "start", label: t("v2CashDetail.movement.start"), value: shown(start), tone: "text-text" },
         ...flowStats,
-        { key: "now", label: t("v2CashDetail.movement.now"), value: shown(now), tone: "text-text" },
+        ...(hideNow ? [] : [{ key: "now", label: t("v2CashDetail.movement.now"), value: shown(now), tone: "text-text" }]),
       ]
     : flowStats;
 

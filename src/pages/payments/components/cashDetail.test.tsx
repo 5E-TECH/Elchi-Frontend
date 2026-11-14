@@ -1074,6 +1074,98 @@ describe("CashDetail — dizayn v2", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
+  // Dilshod, 2026-11-14: HQ (superadmin/admin) menejerdan pul qabul qilganda filialning o'z kassasidagi pul kerak emas —
+  // «Hisob-kitob holati» da faqat «Qabul qilinishi kerak». Forma va uning izohi o'zgarmaydi.
+  it.each([
+    ["superadmin", superadmin],
+    ["admin", { role: { id: "2", role: "admin", region: null, name: "Admin" } } as never],
+  ])("%s filial kassasi: faqat «Qabul qilinishi kerak» — «Kassadagi summa», naqd / o'tkazma bo'linmasi va «Hozir» yo'q", (_role, viewer) => {
+    cashboxState.response = {
+      data: {
+        cashbox: { id: "30", cashbox_type: "branch", user_id: "10", balance: 306111, balance_cash: 306111, balance_card: 0 },
+        kassadagi_summa: 306111,
+        history: [],
+      },
+    };
+    // Filialning o'z kassasi qatorlari (cashbox 30) — «Balans harakati» chiziladi.
+    historyState.data = {
+      data: {
+        items: [
+          {
+            id: "21",
+            cashbox_id: "30",
+            source_type: "sell",
+            source_id: "414",
+            operation_type: "income",
+            amount: 125000,
+            balance_after: 306111,
+            payment_method: "cash",
+            createdAt: "2026-11-14T11:51:00.000Z",
+          },
+          {
+            id: "20",
+            cashbox_id: "30",
+            source_type: "sell",
+            source_id: "415",
+            operation_type: "income",
+            amount: 181111,
+            balance_after: 181111,
+            payment_method: "cash",
+            createdAt: "2026-11-13T10:20:00.000Z",
+          },
+        ],
+      },
+    };
+    renderWithProviders(
+      <Routes>
+        <Route path="/payments/cash-detail/:id" element={<CashDetail />} />
+      </Routes>,
+      {
+        route: {
+          pathname: "/payments/cash-detail/10",
+          search: "?type=branch",
+          state: {
+            type: "branch",
+            entity: { id: "10", name: "Shodiyor Ergashev", branch_name: "Toshkent shahar", role: "branch", amount: 266111 },
+          },
+        },
+        preloadedState: viewer,
+      },
+    );
+
+    const settlement = screen.getByRole("heading", { name: "Hisob-kitob holati" }).closest("section") ?? document.body;
+    expect(within(settlement as HTMLElement).getByText("Qabul qilinishi kerak")).toBeInTheDocument();
+    expect(within(settlement as HTMLElement).getByText(moneyText(266111))).toBeInTheDocument();
+    expect(screen.queryByText("Kassadagi summa")).not.toBeInTheDocument();
+    expect(screen.queryByText(moneyText(306111))).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: /naqd .* o'tkazma/ })).not.toBeInTheDocument();
+    // «Balans harakati»: «Davr boshida», Kirim / Chiqim qoladi, «Hozir» (joriy qoldiq) yo'q.
+    const movement = screen.getByRole("region", { name: "Balans harakati" });
+    expect(within(movement).getAllByRole("term").map((term) => term.textContent)).toEqual([
+      "Davr boshida",
+      "Kirim",
+      "Chiqim",
+    ]);
+    expect(movement).toHaveTextContent(/Kirim\s*\+306\D111 so'm/);
+    // «Filialdan qabul qilish» formasi va izohi o'zgarmagan.
+    expect(screen.getByRole("heading", { name: "Filialdan qabul qilish" })).toBeInTheDocument();
+    expect(screen.getByText(/^Qabul qilinishi kerak: 266\D111 so'm$/)).toBeInTheDocument();
+  });
+
+  it("market kassasi (superadmin): «Kassadagi summa» va bo'linma qoladi — o'zgarish faqat filial kassasida", () => {
+    cashboxState.response = {
+      data: {
+        cashbox: { id: "40", cashbox_type: "markets", user_id: "3", balance: 500000, balance_cash: 200000, balance_card: 300000 },
+        user: { name: "Market" },
+        history: [],
+      },
+    };
+    openWithoutState("/payments/cash-detail/3?type=market");
+
+    expect(screen.getByText("Kassadagi summa")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /naqd 200\D000 so'm \(40%\), o'tkazma 300\D000 so'm \(60%\)/ })).toBeInTheDocument();
+  });
+
   it("superadmin filial sahifasi: filial nomi sarlavhada, menejer izohda, «Kuryer: …» qatori, tasdiqda filial → asosiy kassa", async () => {
     cashboxState.response = { data: { cashbox: { id: "30", cashbox_type: "branch", user_id: "15", balance: 400000 }, history: [] } };
     historyState.data = {
