@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **854 ta maket** (503 sahifa, 329 oyna, 22 tizim taxtasi; 725 ta fragment fayli) · kodda yo'q: **129** · qisman: **177** · v2 ga ko'chirilgan route: **85 / 86**
+**88 ta route** (+ qobiq) · **854 ta maket** (503 sahifa, 329 oyna, 22 tizim taxtasi; 725 ta fragment fayli) · kodda yo'q: **129** · qisman: **177** · v2 ga ko'chirilgan route: **87 / 88**
 
 ## Qanday ishlatiladi
 
@@ -63,6 +63,8 @@
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 43 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
 | `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 21 | v2 |
+| `/new-orders/sites` | Qabul va yaratish | `src/pages/new_orders/sites/index.tsx` | superadmin, admin | 0 | v2 |
+| `/new-orders/sites/:integrationId` | Qabul va yaratish | `src/pages/new_orders/sites/scan.tsx` | superadmin, admin | 0 | v2 |
 | `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | v2 |
 | `/new-orders/branches/:branchId` | Qabul va yaratish | `src/pages/new_orders/branches/batches.tsx` | superadmin, admin | 2 | v2 |
 | `/new-orders/branches/:branchId/batches/:batchId` | Qabul va yaratish | `src/pages/new_orders/branches/batchDetail.tsx` | superadmin, admin | 5 | v2 |
@@ -565,6 +567,34 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html](fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/manager--new-orders-incoming-scan-undo.html](fragments/manager--new-orders-incoming-scan-undo.html) | sahifa | qisman |
 | `/new-orders/incoming/:marketId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
+
+#### `/new-orders/sites` — Tashqi saytlar — sayt tanlash (QR bo'yicha buyurtma olinadigan ulanishlar)
+
+- **Fayllar:** `src/pages/new_orders/sites/index.tsx` · `src/pages/new_orders/sites/model/externalSites.ts`
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canUseExternalSites` (access.ts → canUseExternalSites)
+- **Rollar:** superadmin, admin
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** «Qabul va yaratish» qobig'idagi «Tashqi saytlar» tabi (BeePost «Bugungi buyurtmalar → Tashqi buyurtmalar» naqshi). Ro'yxat — GET /integrations (faol, marketga bog'langan, to'lov tizimi emas); backendda faqat SUPERADMIN, ADMIN — registrator va menejerda tab yo'q (ular uchun backendda alohida ro'yxat kerak). Maket so'raladi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/new-orders/sites` | superadmin | — Maket yo'q — eng yaqini: superadmin-neworders-incoming-sources | — | — | v2 |
+| `/new-orders/sites` | admin | — Maket yo'q — eng yaqini: admin-neworders-incoming-sources | — | — | v2 |
+
+#### `/new-orders/sites/:integrationId` — Tashqi sayt — QR skan, skanerlangan buyurtmalar va qabul
+
+- **Fayllar:** `src/pages/new_orders/sites/scan.tsx` · `src/pages/new_orders/sites/ui/SiteOrdersTable.tsx` · `src/pages/new_orders/sites/model/siteOrder.ts` · `src/entities/integrations/siteIntake.ts`
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canUseExternalSites` (access.ts → canUseExternalSites)
+- **Rollar:** superadmin, admin
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** Skan faqat ko'rsatadi: POST integrations/:slug/search-by-qr (endpoint sozlanmagan bo'lsa /qrorder/find). «Qabul qilish» (tasdiq bilan): POST orders/external/receive (10 talab) → POST orders/external/receive-by-scan (QR). O'tmagan qator sababi bilan qoladi. Kamera — markaziy «Skaner» tugmasi (useScanTarget).
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/new-orders/sites/:integrationId` | superadmin | — Maket yo'q — eng yaqini: superadmin-integrations-legacy-source-detail (skan + «Skanerlangan buyurtmalar») va superadmin-neworders-incoming-scan | — | — | v2 |
+| `/new-orders/sites/:integrationId` | admin | — Maket yo'q — eng yaqini: admin-neworders-incoming-scan | — | — | v2 |
 
 #### `/new-orders/branches` — Filial paketlari — filiallar
 
@@ -3183,6 +3213,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/entities/delivery-pricing/ui/DeliveryQuoteList.tsx` | `/products`, `/products/create-product/:id`, `/delivery-tariffs` |
 | `src/entities/delivery-pricing/ui/MeasureWeights.tsx` | `/products`, `/products/create-product/:id`, `/delivery-tariffs` |
 | `src/entities/delivery-pricing/ui/VolumetricSwitch.tsx` | `/products`, `/products/create-product/:id`, `/delivery-tariffs` |
+| `src/entities/integrations/siteIntake.ts` | `/new-orders/sites/:integrationId` |
 | `src/entities/notification-campaign/ui/AudienceBuilder.tsx` | `/notifications/send` |
 | `src/entities/notification-campaign/ui/AudienceSampleDialog.tsx` | `/notifications/send` |
 | `src/entities/notification-campaign/ui/AudienceSummary.tsx` | `/notifications/send` |
@@ -3499,6 +3530,11 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/new_orders/external_orders/index.tsx` | `/integrations/sources` |
 | `src/pages/new_orders/index.tsx` | `/new-orders` |
 | `src/pages/new_orders/markets/index.tsx` | `/new-orders` |
+| `src/pages/new_orders/sites/index.tsx` | `/new-orders/sites` |
+| `src/pages/new_orders/sites/model/externalSites.ts` | `/new-orders/sites` |
+| `src/pages/new_orders/sites/model/siteOrder.ts` | `/new-orders/sites/:integrationId` |
+| `src/pages/new_orders/sites/scan.tsx` | `/new-orders/sites/:integrationId` |
+| `src/pages/new_orders/sites/ui/SiteOrdersTable.tsx` | `/new-orders/sites/:integrationId` |
 | `src/pages/new_orders/ui/NewOrdersHeader.tsx` | `/new-orders` |
 | `src/pages/new_orders/ui/NewOrdersTabs.tsx` | `/new-orders` |
 | `src/pages/new_orders/ui/SourceListCard.tsx` | `/new-orders/branches`, `/new-orders/cancelled` |

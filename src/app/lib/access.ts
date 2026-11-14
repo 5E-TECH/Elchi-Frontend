@@ -340,6 +340,13 @@ export const canReceiveExternalOrders: Predicate = anyOf(
 );
 
 /**
+ * «Tashqi saytlar» — «Qabul va yaratish» tabi (`/new-orders/sites*`): sayt tanlanadi, posilka QR'i bo'yicha buyurtma
+ * saytdan olinadi va qabul qilinadi (BeePost «Tashqi buyurtmalar» naqshi). Saytlar ro'yxati (`GET /integrations`)
+ * backendda faqat SUPERADMIN, ADMIN — registrator va menejerda tab chizilmaydi (aks holda ro'yxat 403 berardi).
+ */
+export const canUseExternalSites: Predicate = hasRole("superadmin", "admin");
+
+/**
  * Carrier API akkauntlari — «Tashqi yetkazuvchilar» tabi (`/integrations/connections?scope=carrier`) va katalog
  * kartasi. Backend `admin/carriers` — faqat SUPERADMIN, ADMIN: konsolga kiradigan menejer va registratorda tab
  * chizilmaydi va so'rov yuborilmaydi (aks holda 403).

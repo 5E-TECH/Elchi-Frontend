@@ -147,7 +147,7 @@ describe("Qabul va yaratish — sarlavha va «Buyurtma yaratish»", () => {
 describe("Qabul va yaratish — tablar (v1 shartlari) va sonlar", () => {
   beforeEach(() => respond());
 
-  it("admin: 4 ta tab, «Filial paketlari», sonlar backenddan; «Buyurtma yaratish» tab emas", async () => {
+  it("admin: 5 ta tab, «Tashqi saytlar» va «Filial paketlari», sonlar backenddan; «Buyurtma yaratish» tab emas", async () => {
     renderShell("/new-orders", "admin");
 
     const nav = tabsNav();
@@ -155,15 +155,18 @@ describe("Qabul va yaratish — tablar (v1 shartlari) va sonlar", () => {
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       "/new-orders",
       "/new-orders/incoming",
+      "/new-orders/sites",
       "/new-orders/branches",
       "/new-orders/cancelled",
     ]);
     expect(within(nav).getByRole("link", { current: "page" })).toHaveTextContent("Marketlar");
-    // Sonlar: marketlar 2 ta, posilkalar 7+5, filiallar 3 ta, bekor qilingan marketlar 9 ta.
+    // Sonlar: marketlar 2 ta, posilkalar 7+5, filiallar 3 ta, bekor qilingan marketlar 9 ta. «Tashqi saytlar» —
+    // sonsiz (saytda nechta posilka kutayotgani bizga noma'lum).
     await waitFor(() => expect(links[0]).toHaveTextContent("Marketlar 2"));
     await waitFor(() => expect(links[1]).toHaveTextContent("Kiruvchi posilkalar 12"));
-    await waitFor(() => expect(links[2]).toHaveTextContent("Filial paketlari 3"));
-    await waitFor(() => expect(links[3]).toHaveTextContent("Bekor qilinganlar 9"));
+    expect(links[2]).toHaveTextContent(/^Tashqi saytlar$/);
+    await waitFor(() => expect(links[3]).toHaveTextContent("Filial paketlari 3"));
+    await waitFor(() => expect(links[4]).toHaveTextContent("Bekor qilinganlar 9"));
     expect(screen.queryByText("Filial batchlari")).not.toBeInTheDocument();
     expect(screen.getAllByText("Buyurtma yaratish")).toHaveLength(1);
   });

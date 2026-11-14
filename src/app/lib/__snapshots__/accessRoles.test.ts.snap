@@ -18,6 +18,7 @@ exports[`access.ts — ruxsat jadvali > jadval o'zgarmagan (snapshot) 1`] = `
   "canReceiveExternalOrders": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID manager/HQ manager/PICKUP manager/HYBRID",
   "canReceiveRefusedMail": "superadmin admin registrator/HQ manager/HQ manager/REGIONAL manager/HYBRID",
   "canSendNotifications": "superadmin admin",
+  "canUseExternalSites": "superadmin admin",
   "canViewAdminDashboard": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID courier courier/HQ courier/PICKUP courier/REGIONAL courier/HYBRID operator",
   "canViewAiAdvisor": "superadmin",
   "canViewAllWarehouses": "superadmin admin registrator registrator/HQ registrator/PICKUP registrator/REGIONAL registrator/HYBRID",

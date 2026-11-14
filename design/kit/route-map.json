@@ -34,6 +34,7 @@
     "canViewReturns": { "source": "access.ts → canViewReturnsPage", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID" } },
     "canCreateOrdersByRoleAndBranchType": { "source": "access.ts → canCreateOrders", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "", "market": "", "market_operator": "MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)" } },
     "canManageExternalIntegrations": { "source": "access.ts → canReceiveExternalOrders", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "" } },
+    "canUseExternalSites": { "source": "access.ts → canUseExternalSites", "roles": { "superadmin": "", "admin": "" } },
     "canHandoverCancelledToMarket": { "source": "access.ts → canHandoverCancelledToMarket", "roles": { "superadmin": "", "admin": "", "registrator": "faqat HQ" } },
     "canCreateProducts": { "source": "access.ts → canCreateProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "" } },
     "canViewProducts": { "source": "access.ts → canViewProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "faqat ko'rish", "market_operator": "faqat ko'rish" } },
@@ -518,6 +519,30 @@
         "tizim": ["scanner"]
       },
       "note": "Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Chala qop va skanni olib tashlash (DamKku7C, eo3eeJxs): «Qop» ustuni (external_batch_ref, bo'lmasa external_batch_token ning 8 belgisi + «…»; «kelgan/aytilgan» — external_batch_size bilan), skanerlangan qatorda va oxirgi skan xabarida «Olib tashlash» + «Qaytarish» xabari, chala qop ogohlantirishi va qabul tasdig'i. «N tasi keldi» — qopning shu ro'yxatdagi va ilgari qabul qilingan a'zolari birga, faqat ro'yxatdagi NEW buyurtmalar emas; manba — backend GET orders/external javobidagi meta.batches: received_count + pending_count (ega S3, 2026-10-19; backend Sm3LZ6EN), frontend o'zi sanamaydi; hajmni hamkor aytmagan qopda ogohlantirish yo'q. Ega qarorlari (2026-10-19): S2 — chala qop bilan qabulda tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi (hamkorga avtomatik xabar yo'q); S4 — «Olib tashlandi» xabaridagi «Qaytarish» 5 soniya (tizim-scanner 05.2); S5 — chala qop QR'i skanerlanganda oxirgi skan xabari darhol sariq («Qop BP-24817: 2/3 keldi», maket: *-incoming-scan-partial) + ogohlantirish ovozi (Sozlamalar → Skaner dagi xato ovozi) va telefonda tebranish 60·45·80 ms; to'liq qop QR'i — odatdagi yashil xabar va muvaffaqiyat ovozi. «Kun tartibi» (Ops, 2026-11-10): yaratilgan buyurtmalarni qabul qilish chegarasi o'tgan bo'lsa (GET orders/intake-settings → receive_*) — sarlavha ostida ogohlantirish («Bugungi qabul vaqti tugadi (HH:MM)», ochilish vaqti; market yangi buyurtmalaridagi bilan bir xil) va «Qabul qilish» o'chiq; skan faqat belgilaydi — ishlayveradi; 409 ORDER_RECEIVE_CLOSED — backend matni, holat qayta o'qiladi. Maket yo'q — eng yaqini: superadmin-neworders-incoming-scan."
+    },
+    {
+      "path": "/new-orders/sites",
+      "section": "newOrders",
+      "title": "Tashqi saytlar — sayt tanlash (QR bo'yicha buyurtma olinadigan ulanishlar)",
+      "components": ["src/pages/new_orders/sites/index.tsx", "src/pages/new_orders/sites/model/externalSites.ts"],
+      "views": {},
+      "roleNotes": {
+        "superadmin": "Maket yo'q — eng yaqini: superadmin-neworders-incoming-sources",
+        "admin": "Maket yo'q — eng yaqini: admin-neworders-incoming-sources"
+      },
+      "note": "«Qabul va yaratish» qobig'idagi «Tashqi saytlar» tabi (BeePost «Bugungi buyurtmalar → Tashqi buyurtmalar» naqshi). Ro'yxat — GET /integrations (faol, marketga bog'langan, to'lov tizimi emas); backendda faqat SUPERADMIN, ADMIN — registrator va menejerda tab yo'q (ular uchun backendda alohida ro'yxat kerak). Maket so'raladi."
+    },
+    {
+      "path": "/new-orders/sites/:integrationId",
+      "section": "newOrders",
+      "title": "Tashqi sayt — QR skan, skanerlangan buyurtmalar va qabul",
+      "components": ["src/pages/new_orders/sites/scan.tsx", "src/pages/new_orders/sites/ui/SiteOrdersTable.tsx", "src/pages/new_orders/sites/model/siteOrder.ts", "src/entities/integrations/siteIntake.ts"],
+      "views": {},
+      "roleNotes": {
+        "superadmin": "Maket yo'q — eng yaqini: superadmin-integrations-legacy-source-detail (skan + «Skanerlangan buyurtmalar») va superadmin-neworders-incoming-scan",
+        "admin": "Maket yo'q — eng yaqini: admin-neworders-incoming-scan"
+      },
+      "note": "Skan faqat ko'rsatadi: POST integrations/:slug/search-by-qr (endpoint sozlanmagan bo'lsa /qrorder/find). «Qabul qilish» (tasdiq bilan): POST orders/external/receive (10 talab) → POST orders/external/receive-by-scan (QR). O'tmagan qator sababi bilan qoladi. Kamera — markaziy «Skaner» tugmasi (useScanTarget)."
     },
     {
       "path": "/new-orders/branches",
