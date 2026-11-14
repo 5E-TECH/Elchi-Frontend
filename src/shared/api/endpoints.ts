@@ -667,13 +667,14 @@ export const API_ENDPOINTS = {
     SHIPMENTS: (id: string | number) => `admin/partners/${id}/shipments`, // GET
   },
   // Carrier API akkauntlari (tashqi yetkazuvchi = bitta kuryer; SUPERADMIN, ADMIN). Javoblar `successRes` o'ramida.
-  // GET → [{ id, name, courier_user_id, ip_allowlist | null, is_active, createdAt, updatedAt }] (kalitsiz, id DESC).
+  // GET → [{ id, name, courier_user_id, ip_allowlist | null, is_active, rollback_enabled, createdAt, updatedAt }]
+  // (kalitsiz, id DESC). `rollback_enabled` — ichki kalit (ega 2026-11-14, sukut false; kompaniyaga ko'rsatilmaydi).
   // POST { name, courier_id, ip_allowlist? } → { …akkaunt, courier_name, api_key } — kalit FAQAT shu javobda;
   // 400 (nom / IP / kuryer faol emas yoki kuryer emas), 404 «Kurier topilmadi», 409 kuryer band, 503 identity.
   // O'chirish (DELETE) backendda YO'Q — to'xtatish `STATUS` orqali.
   CARRIERS: {
     BASE: "admin/carriers",
-    BY_ID: (id: string | number) => `admin/carriers/${id}`, // PATCH { name?, ip_allowlist? } (kuryer va kalit o'zgarmaydi)
+    BY_ID: (id: string | number) => `admin/carriers/${id}`, // PATCH { name?, ip_allowlist?, rollback_enabled? } → akkaunt (kuryer va kalit o'zgarmaydi)
     ROTATE_KEY: (id: string | number) => `admin/carriers/${id}/rotate-key`, // POST → { id, api_key } (eski kalit darhol o'ladi)
     STATUS: (id: string | number) => `admin/carriers/${id}/status`, // POST { is_active } → { id, is_active }
   },

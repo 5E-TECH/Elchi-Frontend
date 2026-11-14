@@ -393,13 +393,14 @@ const aiAssistantMock = (path) => {
 /**
  * Tashqi yetkazuvchilar (`/integrations/connections?scope=carrier`, maket `*-carrier-console`): maketdagi uch akkaunt —
  * faol (HQ kuryeri, 2 IP qoida), bog'langan kuryer bloklangan, to'xtatilgan (Farg'ona filiali kuryeri).
+ * «Rollback ruxsati» (ichki kalit, sukut o'chiq): faqat Samarqand Ekspress'da yoqiq — ikkala holat ham ko'rinsin.
  * `GET admin/carriers`, `GET users/:id` va kuryer kassasi (faqat shu uch kuryer id), `GET branches/hq` — faqat
  * `/integrations*` route'larida (boshqa ekranlarda HQ avvalgidek umumiy bo'sh javob: masalan ombor yaratish oynasi).
  */
 const CARRIER_ACCOUNTS = [
-  { id: '3', name: 'FastPost Logistics', courier_user_id: '1055', ip_allowlist: ['203.0.113.10', '198.51.100.0/24'], is_active: true, createdAt: '2026-11-09T05:15:00.000Z', updatedAt: '2026-11-10T04:40:00.000Z' },
-  { id: '2', name: 'Samarqand Ekspress', courier_user_id: '1066', ip_allowlist: null, is_active: true, createdAt: '2026-11-06T10:40:00.000Z', updatedAt: '2026-11-06T10:40:00.000Z' },
-  { id: '1', name: 'Vodiy Kargo', courier_user_id: '1077', ip_allowlist: ['203.0.113.0/24'], is_active: false, createdAt: '2026-11-03T06:20:00.000Z', updatedAt: '2026-11-03T06:20:00.000Z' },
+  { id: '3', name: 'FastPost Logistics', courier_user_id: '1055', ip_allowlist: ['203.0.113.10', '198.51.100.0/24'], is_active: true, rollback_enabled: false, createdAt: '2026-11-09T05:15:00.000Z', updatedAt: '2026-11-10T04:40:00.000Z' },
+  { id: '2', name: 'Samarqand Ekspress', courier_user_id: '1066', ip_allowlist: null, is_active: true, rollback_enabled: true, createdAt: '2026-11-06T10:40:00.000Z', updatedAt: '2026-11-06T10:40:00.000Z' },
+  { id: '1', name: 'Vodiy Kargo', courier_user_id: '1077', ip_allowlist: ['203.0.113.0/24'], is_active: false, rollback_enabled: false, createdAt: '2026-11-03T06:20:00.000Z', updatedAt: '2026-11-03T06:20:00.000Z' },
 ];
 const CARRIER_COURIERS = {
   1055: { name: 'FastPost kuryeri', phone_number: '+998909774040', status: 'active', branch: { id: '1', name: 'Toshkent HQ' }, tariff_home: 30000, tariff_center: 25000 },
