@@ -18,6 +18,10 @@
 //              sensorli rejim `--device` dan qoladi. Fayl nomiga `-w<px>` qo'shiladi.
 //            · --sessions locked — `GET auth/sessions` yangi qurilma cheklovi bilan (`can_revoke_others: false`,
 //              48 soat): profil «Sessiyalar» kartasida ogohlantirish va o'chirilgan chiqarish amallari. Nomga `-sessions-locked`.
+//            · --click <Playwright selektori> (takrorlanadi, tartib bilan) — sahifa tayyor bo'lgach bosiladi (oyna /
+//              tab ochish): `--click 'role=button[name="Barchasini tanlash"]' --click 'text=HQ kuryeriga'`. Bosishdan
+//              keyin surat faqat oyna balandligida (dialog ko'rinishi), sahifa cho'zilmaydi. --tag <nom> — fayl nomiga
+//              qo'shiladi (bir route'ning bir nechta holati: `mails-74-courier--desktop-light.png`).
 // Natija: design/shots/app/<route>--<qurilma>-<mavzu>.png (rol/til sukutdan farq qilsa nomga qo'shiladi:
 // <route>-<rol>[-<filial turi>]-<til>--…; filial turi faqat sukutdan farq qilsa). design/shots git'ga kirmaydi.
 // Har shot uchun JSON hisobot:
@@ -57,7 +61,7 @@ const MOCK_API = 'http://api.app-shot.test';
 
 // ───────────── argumentlar ─────────────
 const args = process.argv.slice(2);
-const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait', '--branch-type', '--width', '--sessions'];
+const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait', '--branch-type', '--width', '--sessions', '--click', '--tag'];
 const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
 const fail = (message) => { console.error(message); process.exit(1); };
 const device = opt('--device');
@@ -69,6 +73,9 @@ const waitFor = opt('--wait');
 const branchTypeArg = opt('--branch-type');
 const widthArg = opt('--width');
 const sessionsArg = opt('--sessions');
+const tagArg = opt('--tag');
+/** `--click` qiymatlari (takrorlanadi) — yozilgan tartibda. */
+const clicks = args.flatMap((a, i) => (a === '--click' && args[i + 1] ? [args[i + 1]] : []));
 const width = widthArg ? Number(widthArg) : 0;
 const branchType = branchTypeArg === 'none' ? null : (branchTypeArg ?? DEFAULT_BRANCH_TYPE[role] ?? null);
 const routes = args.filter((a, i) => !a.startsWith('--') && !FLAGS.includes(args[i - 1]));
@@ -80,12 +87,13 @@ if (!LANGS.includes(lang)) fail(`--lang: ${LANGS.join(' | ')}`);
 if (branchTypeArg && branchTypeArg !== 'none' && !BRANCH_TYPES.includes(branchTypeArg)) fail(`--branch-type: ${BRANCH_TYPES.join(' | ')} | none`);
 if (widthArg && !(Number.isInteger(width) && width >= 320 && width <= 3840)) fail('--width: 320…3840 oralig\'idagi butun son (px)');
 if (sessionsArg && sessionsArg !== 'locked') fail('--sessions: locked');
+if (tagArg && !/^[a-z0-9-]+$/.test(tagArg)) fail('--tag: faqat kichik lotin harf, raqam va «-»');
 for (const r of routes) if (!r.startsWith('/')) fail(`Route "/" bilan boshlanadi: ${r}`);
 
 const slugOf = (route) => {
   const base = route.replace(/^\/+|\/+$/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'home';
   const branchSlug = branchTypeArg && branchType !== (DEFAULT_BRANCH_TYPE[role] ?? null) && (branchType ?? 'none').toLowerCase();
-  return [base, role !== 'superadmin' && role, branchSlug, lang !== 'uz' && lang, sessionsArg && `sessions-${sessionsArg}`]
+  return [base, tagArg, role !== 'superadmin' && role, branchSlug, lang !== 'uz' && lang, sessionsArg && `sessions-${sessionsArg}`]
     .filter(Boolean)
     .join('-');
 };
@@ -408,9 +416,21 @@ const CARRIER_COURIERS = {
   1077: { name: 'Vodiy Kargo kuryeri', phone_number: '+998913306214', status: 'active', branch: { id: '5', name: "Farg'ona filiali" }, tariff_home: 25000, tariff_center: 20000 },
 };
 const CARRIER_SHOT = routes.some((route) => route.startsWith('/integrations'));
+/**
+ * «Yangi tashqi yetkazuvchi» kuryer tanlovi (ega qarori 2026-11-15 — faqat HQ kuryerlari): `GET branches/1/users` —
+ * HQ'dagi bog'langan ikki kuryer, bo'sh «Shahar Kargo kuryeri», nofaol kuryer va menejer (filtrlanadi). Farg'ona
+ * filiali kuryeri (1077) bu ro'yxatda yo'q.
+ */
+const HQ_BRANCH_USERS = [
+  ...['1055', '1066'].map((id) => ({ id: `bu${id}`, branch_id: '1', user_id: id, role: 'COURIER', user: { id, role: 'courier', ...CARRIER_COURIERS[id] } })),
+  { id: 'bu1088', branch_id: '1', user_id: '1088', role: 'COURIER', user: { id: '1088', role: 'courier', name: 'Shahar Kargo kuryeri', phone_number: '+998935551820', status: 'active' } },
+  { id: 'bu1099', branch_id: '1', user_id: '1099', role: 'COURIER', user: { id: '1099', role: 'courier', name: 'Bobur Nazarov', phone_number: '+998901112233', status: 'inactive' } },
+  { id: 'bu1100', branch_id: '1', user_id: '1100', role: 'MANAGER', user: { id: '1100', role: 'manager', name: 'HQ menejeri', phone_number: '+998901110000', status: 'active' } },
+];
 const carrierMock = (path) => {
   if (path === 'admin/carriers') return { statusCode: 200, message: 'carrier accounts', data: CARRIER_ACCOUNTS };
   if (path === 'branches/hq' && CARRIER_SHOT) return { statusCode: 200, data: { id: '1', name: 'Toshkent HQ', type: 'HQ', status: 'active' } };
+  if (path === 'branches/1/users' && CARRIER_SHOT) return { statusCode: 200, message: 'Branch users', data: HQ_BRANCH_USERS };
   const user = /^users\/(\d+)$/.exec(path);
   if (user && CARRIER_COURIERS[user[1]]) return { statusCode: 200, data: { id: user[1], role: 'courier', ...CARRIER_COURIERS[user[1]] } };
   const cash = /^finance\/cashbox\/user\/(\d+)$/.exec(path);
@@ -420,6 +440,114 @@ const carrierMock = (path) => {
     const hq = CARRIER_COURIERS[cash[1]].branch.id === '1';
     return { statusCode: 200, data: { cashbox: { id: `c${cash[1]}`, cashbox_type: 'couriers', balance }, history: [], is_hq_courier: hq, can_receive: hq, olinishi_kerak: hq ? balance : 0, receive_check_failed: false } };
   }
+  return null;
+};
+
+/**
+ * Pochta → HQ kuryeri (ega qarori 2026-11-15): `/mails/<id>` — jo'natilmagan HQ pochtasi (Samarqand, 4 ta «Qabul
+ * qilingan» buyurtma), «Pochtani jo'natish» bosilganda — ikki filial (biri menejersiz) va uch HQ kuryeri (tashqi
+ * yetkazuvchili, oddiy, to'xtatilgan akkauntli «Barcha viloyatlar»). Oynani ochish: `--click` bilan, masalan
+ *   npm run app:shot -- /mails/74 --tag courier --click 'role=button[name="Barchasini tanlash"]' \
+ *     --click 'role=button[name=/Pochtani jo.natish/] >> nth=0' --click 'role=radio[name=/HQ kuryeriga/]'
+ */
+const MAIL_SHOT = routes.some((route) => /^\/mails\/\d+/.test(route));
+const MAIL_ORDERS = [
+  ['10252', 'Shohruh Aliyev', '+998915402217', 'Baraka Shop', 'Samarqand shahri', 'address', 245000],
+  ['10250', 'Feruza Rasulova', '+998932076145', 'Nur Elektronika', 'Urgut tumani', 'center', 410000],
+  ['10247', 'Jamshid Karimov', '+998977130452', 'Baraka Shop', "Kattaqo'rg'on tumani", 'address', 316000],
+  ['10241', 'Malika Toshpulatova', '+998906622184', 'Mehr Kosmetika', 'Samarqand shahri', 'address', 190000],
+];
+const mailMock = (path) => {
+  if (!MAIL_SHOT) return null;
+  const post = /^post\/orders\/(\d+)$/.exec(path);
+  if (post) {
+    const region = { id: '6', name: 'Samarqand viloyati' };
+    const orders = MAIL_ORDERS.map(([id, customer, phone, market, district, where, price], index) => ({
+      id, createdAt: '2026-11-15T02:58:00.000Z', updatedAt: '2026-11-15T02:58:00.000Z', market_id: String(31 + index),
+      customer_id: `c${id}`, product_quantity: 1, where_deliver: where, total_price: price, to_be_paid: price, paid_amount: 0,
+      status: 'received', comment: null, operator: null, post_id: post[1], qr_code_token: `tok-${id}`,
+      customer: { id: `c${id}`, name: customer, phone_number: phone }, market: { id: String(31 + index), name: market },
+      district: { id: `d${id}`, name: district, region_id: '6', region }, region, items: [],
+    }));
+    return {
+      statusCode: 200,
+      data: {
+        allOrdersByPostId: orders,
+        post: {
+          id: post[1], status: 'new', courier_id: null, courier: null, qr_code_token: `post-${post[1]}`,
+          order_quantity: orders.length, post_total_price: orders.reduce((sum, o) => sum + o.total_price, 0),
+          createdAt: '2026-11-15T03:30:00.000Z', branch_id: '1', region_id: '6', region,
+        },
+      },
+    };
+  }
+  if (path === 'branches/dispatch-destinations') {
+    return {
+      statusCode: 200,
+      data: {
+        items: [
+          { id: '21', name: 'Samarqand filiali', type: 'REGIONAL', status: 'active', has_manager: true, phone_number: '+998662331020', region: { id: '6', name: 'Samarqand viloyati' }, region_id: '6' },
+          { id: '23', name: 'Urgut filiali', type: 'HYBRID', status: 'active', has_manager: false, phone_number: '+998662450713', region: { id: '6', name: 'Samarqand viloyati' }, region_id: '6' },
+        ],
+        total: 2,
+      },
+    };
+  }
+  const destinations = /^branches\/posts\/(\d+)\/courier-destinations$/.exec(path);
+  if (destinations) {
+    return {
+      statusCode: 200,
+      message: 'HQ couriers for post region',
+      data: {
+        post_id: destinations[1], region_id: '6', is_hq_region: false, carrier_lookup_failed: false,
+        couriers: [
+          { courier_user_id: '1055', name: 'FastPost kuryeri', phone: '+998909774040', region_match: 'listed', carrier_name: 'FastPost Logistics', carrier_active: true },
+          { courier_user_id: '1062', name: 'Jasur Tursunov', phone: '+998904121855', region_match: 'listed', carrier_name: null, carrier_active: null },
+          { courier_user_id: '1077', name: 'Vodiy Kargo kuryeri', phone: '+998913306214', region_match: 'all_regions', carrier_name: 'Vodiy Kargo', carrier_active: false },
+        ],
+      },
+    };
+  }
+  return null;
+};
+
+/**
+ * «Xizmat viloyatlari» (ega qarori 2026-11-15): `/all-users/1062` — HQ kuryeri Jasur Tursunov, viloyatlari Samarqand
+ * (o'z tarifi bilan) va Qashqadaryo; viloyatlar katalogi `GET region` (faqat shu route'da — boshqa ekranlar bo'sh).
+ */
+const USER_SHOT = routes.some((route) => /^\/all-users\/\d+/.test(route));
+const REGION_CATALOG = [
+  ['1', 'Toshkent shahri'], ['2', 'Toshkent viloyati'], ['3', 'Andijon'], ['4', "Farg'ona"], ['5', 'Qashqadaryo'],
+  ['6', 'Samarqand'], ['7', 'Surxondaryo'], ['8', 'Navoiy'], ['9', 'Buxoro'], ['10', 'Xorazm'], ['11', 'Namangan'],
+  ['12', 'Sirdaryo'], ['13', 'Jizzax'], ['14', "Qoraqalpog'iston"],
+].map(([id, name]) => ({ id, name, districts: [] }));
+const userMock = (path) => {
+  if (!USER_SHOT) return null;
+  if (path === 'users/1062') {
+    return {
+      statusCode: 200,
+      data: {
+        id: '1062', name: 'Jasur Tursunov', phone_number: '+998904121855', username: 'jasur_hq', role: 'courier',
+        status: 'active', salary: 0, payment_day: null, tariff_home: 30000, tariff_center: 25000, can_add_extra_cost: false,
+        branch: { id: '1', name: 'Toshkent HQ' }, createdAt: '2026-09-29T09:00:00.000Z', updatedAt: '2026-11-10T09:00:00.000Z',
+      },
+    };
+  }
+  if (path === 'couriers/1062/regions') {
+    return {
+      statusCode: 200,
+      message: 'Courier regions',
+      data: {
+        courier_id: '1062', home_region_id: '1', is_super_courier: true, serves_all_regions: false,
+        flat_tariff_home: 30000, flat_tariff_center: 25000,
+        regions: [
+          { region_id: '5', tariff_home: null, tariff_center: null },
+          { region_id: '6', tariff_home: 35000, tariff_center: 28000 },
+        ],
+      },
+    };
+  }
+  if (path === 'region') return { statusCode: 200, data: REGION_CATALOG };
   return null;
 };
 
@@ -434,6 +562,10 @@ const mockBody = (path, themeName, query) => {
   if (path === 'notifications/me/telegram-groups') return myTelegramGroupsMock();
   const carrier = carrierMock(path);
   if (carrier) return carrier;
+  const mail = mailMock(path);
+  if (mail) return mail;
+  const userDetail = userMock(path);
+  if (userDetail) return userDetail;
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
   return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };
@@ -602,17 +734,27 @@ try {
           .catch(() => false);
         if (!ready) errors.push(`wait: ${waitFor ?? '<main> kontenti'} 30 s ichida chiqmadi (splash yoki xato sahifasi)`);
         else await page.waitForTimeout(300);
+        // `--click`: oyna / tab ochish (tartib bilan); topilmasa — hisobotda xato, surat baribir olinadi.
+        for (const selector of clicks) {
+          await page
+            .locator(selector)
+            .first()
+            .click({ timeout: 15000 })
+            .catch((e) => errors.push(`click ${selector}: ${String(e.message ?? e).split('\n')[0]}`));
+          await page.waitForTimeout(500);
+        }
         // Bo'lim yuklanish chizig'i (shell `RouteProgress`) so'nguncha — u suratda qolmasin.
         await page.waitForFunction(() => !document.querySelector('[data-route-progress]'), null, { timeout: 10000 }).catch(() => {});
         const report = await page.evaluate(measure, deviceName === 'phone');
         // Qobiq balandligi oynaga teng (h-dvh): <main> ichidagi kontent to'liq tushishi uchun oynani cho'zamiz.
         const height = Math.min(16000, await page.evaluate(fullHeight));
-        if (height > spec.viewport.height) {
+        // Oyna ochilgan bo'lsa (`--click`) — sahifa cho'zilmaydi: oyna o'z joyida (telefonda pastki varaqa).
+        if (height > spec.viewport.height && !clicks.length) {
           await page.setViewportSize({ width: spec.viewport.width, height });
           await page.waitForTimeout(400);
         }
         const file = join(OUT_DIR, `${slugOf(route)}--${deviceName}${width ? `-w${width}` : ''}-${themeName}.png`);
-        await page.screenshot({ path: file, fullPage: true });
+        await page.screenshot({ path: file, fullPage: !clicks.length });
         const tiles = [];
         if (split > 0) {
           const total = await page.evaluate(() => document.documentElement.scrollHeight);
