@@ -213,6 +213,54 @@
     "range": {
       "sameMonth": "{{month}} {{from}}–{{to}}",
       "crossMonth": "{{fromMonth}} {{from}} – {{toMonth}} {{to}}"
+    },
+    "list": {
+      "title": "Alerts",
+      "description": "Rules are checked every 30 minutes and after the daily close",
+      "label": "Alert list",
+      "total": "{{value}}",
+      "columns": {
+        "severity": "Severity",
+        "alert": "Alert",
+        "status": "Status",
+        "occurrences": "Repeats",
+        "lastAt": "Last seen",
+        "open": "Open"
+      },
+      "occurrences_one": "{{value}} time",
+      "occurrences_other": "{{value}} times",
+      "open": "Open alert “{{title}}”",
+      "summary_one": "{{from}}–{{to}} of {{total}} alert",
+      "summary_other": "{{from}}–{{to}} of {{total}} alerts",
+      "loading": "Loading alerts",
+      "errorTitle": "Could not load alerts",
+      "errorOffline": "Check your internet connection and try again.",
+      "footnote": "The assistant only alerts — money actions are made in the relevant section itself."
+    },
+    "empty": {
+      "title": "All clear",
+      "text": "No open alerts. Rules are checked every 30 minutes.",
+      "filteredTitle": "No alerts for this filter",
+      "filteredText": "{{summary}} — nothing found.",
+      "clear": "Clear filters"
+    },
+    "filters": {
+      "label": "Alert filters",
+      "status": "Status",
+      "severity": "Severity",
+      "rule": "Type",
+      "all": "All",
+      "button": "Filters",
+      "rulesCount_one": "{{value}} rule",
+      "rulesCount_other": "{{value}} rules"
+    },
+    "banner": {
+      "title_one": "{{value}} critical alert not reviewed",
+      "title_other": "{{value}} critical alerts not reviewed",
+      "onlyCritical": "Critical only",
+      "filtered": "Table shows critical only",
+      "filteredTotal": "Table shows critical only: {{value}}",
+      "showAll": "Show all"
     }
   },
   "rules": {

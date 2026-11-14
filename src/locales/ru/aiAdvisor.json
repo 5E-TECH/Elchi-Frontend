@@ -225,6 +225,62 @@
     "range": {
       "sameMonth": "{{from}}–{{to}} {{month}}",
       "crossMonth": "{{from}} {{fromMonth}} – {{to}} {{toMonth}}"
+    },
+    "list": {
+      "title": "Предупреждения",
+      "description": "Правила проверяются каждые 30 минут и после дневного расчёта",
+      "label": "Список предупреждений",
+      "total": "{{value}}",
+      "columns": {
+        "severity": "Важность",
+        "alert": "Предупреждение",
+        "status": "Статус",
+        "occurrences": "Повторы",
+        "lastAt": "Последний раз",
+        "open": "Открыть"
+      },
+      "occurrences_one": "{{value}} раз",
+      "occurrences_few": "{{value}} раза",
+      "occurrences_many": "{{value}} раз",
+      "occurrences_other": "{{value}} раза",
+      "open": "Открыть предупреждение «{{title}}»",
+      "summary_one": "{{from}}–{{to}} из {{total}} предупреждения",
+      "summary_few": "{{from}}–{{to}} из {{total}} предупреждений",
+      "summary_many": "{{from}}–{{to}} из {{total}} предупреждений",
+      "summary_other": "{{from}}–{{to}} из {{total}} предупреждения",
+      "loading": "Загружаем предупреждения",
+      "errorTitle": "Не удалось загрузить предупреждения",
+      "errorOffline": "Проверьте подключение к интернету и повторите.",
+      "footnote": "Помощник только предупреждает — денежные операции выполняются в соответствующем разделе."
+    },
+    "empty": {
+      "title": "Всё в порядке",
+      "text": "Открытых предупреждений нет. Правила проверяются каждые 30 минут.",
+      "filteredTitle": "По этому фильтру предупреждений нет",
+      "filteredText": "{{summary}} — ничего не найдено.",
+      "clear": "Сбросить фильтры"
+    },
+    "filters": {
+      "label": "Фильтры предупреждений",
+      "status": "Статус",
+      "severity": "Важность",
+      "rule": "Тип",
+      "all": "Все",
+      "button": "Фильтры",
+      "rulesCount_one": "{{value}} правило",
+      "rulesCount_few": "{{value}} правила",
+      "rulesCount_many": "{{value}} правил",
+      "rulesCount_other": "{{value}} правила"
+    },
+    "banner": {
+      "title_one": "{{value}} критичное предупреждение не просмотрено",
+      "title_few": "{{value}} критичных предупреждения не просмотрены",
+      "title_many": "{{value}} критичных предупреждений не просмотрены",
+      "title_other": "{{value}} критичного предупреждения не просмотрены",
+      "onlyCritical": "Только критичные",
+      "filtered": "В таблице только критичные",
+      "filteredTotal": "В таблице только критичные: {{value}}",
+      "showAll": "Показать все"
     }
   },
   "rules": {

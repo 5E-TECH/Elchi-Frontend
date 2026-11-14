@@ -164,6 +164,8 @@ export {
   subjectName,
 } from "./model/alertText";
 export type { AdvisorTranslate } from "./model/alertText";
+export { AlertSeverityBadge } from "./ui/AlertSeverityBadge";
+export { AlertStatusBadge } from "./ui/AlertStatusBadge";
 export {
   ADVISOR_PROBE_TIMEOUT_MS,
   explainAdvisorAlert,

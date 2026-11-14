@@ -213,6 +213,54 @@
     "range": {
       "sameMonth": "{{from}}–{{to}} {{month}}",
       "crossMonth": "{{from}} {{fromMonth}} – {{to}} {{toMonth}}"
+    },
+    "list": {
+      "title": "Ogohlantirishlar",
+      "description": "Qoidalar har 30 daqiqada va kunlik hisobdan keyin tekshiriladi",
+      "label": "Ogohlantirishlar ro'yxati",
+      "total": "{{value}} ta",
+      "columns": {
+        "severity": "Jiddiylik",
+        "alert": "Ogohlantirish",
+        "status": "Holat",
+        "occurrences": "Takror",
+        "lastAt": "Oxirgi marta",
+        "open": "Ochish"
+      },
+      "occurrences_one": "{{value}} marta",
+      "occurrences_other": "{{value}} marta",
+      "open": "«{{title}}» ogohlantirishini ochish",
+      "summary_one": "{{from}}–{{to}} / {{total}} ta ogohlantirish",
+      "summary_other": "{{from}}–{{to}} / {{total}} ta ogohlantirish",
+      "loading": "Ogohlantirishlar yuklanmoqda",
+      "errorTitle": "Ogohlantirishlarni yuklab bo'lmadi",
+      "errorOffline": "Internet aloqasini tekshirib, qayta urining.",
+      "footnote": "Yordamchi faqat ogohlantiradi — pul amali tegishli bo'limning o'zida qilinadi."
+    },
+    "empty": {
+      "title": "Hammasi joyida",
+      "text": "Ochiq ogohlantirish yo'q. Qoidalar har 30 daqiqada tekshiriladi.",
+      "filteredTitle": "Bu filtr bo'yicha ogohlantirish yo'q",
+      "filteredText": "{{summary}} — hech narsa topilmadi.",
+      "clear": "Filtrlarni tozalash"
+    },
+    "filters": {
+      "label": "Ogohlantirishlar filtrlari",
+      "status": "Holat",
+      "severity": "Jiddiylik",
+      "rule": "Turi",
+      "all": "Barchasi",
+      "button": "Filtrlar",
+      "rulesCount_one": "{{value}} ta qoida",
+      "rulesCount_other": "{{value}} ta qoida"
+    },
+    "banner": {
+      "title_one": "{{value}} ta jiddiy ogohlantirish ko'rib chiqilmagan",
+      "title_other": "{{value}} ta jiddiy ogohlantirish ko'rib chiqilmagan",
+      "onlyCritical": "Faqat jiddiylar",
+      "filtered": "Jadvalda faqat jiddiylar",
+      "filteredTotal": "Jadvalda faqat jiddiylar: {{value}} ta",
+      "showAll": "Hammasini ko'rsatish"
     }
   },
   "rules": {
