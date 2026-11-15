@@ -109,7 +109,7 @@ test.describe("Universal skaner — pochta va topshirish rejimlari (vNcGDnNh), 3
     await expect(dialog.getByText("№10212 · Shoxrux Rahmonov")).toBeVisible();
     await dialog.getByRole("button", { name: "Tugatish" }).click();
     await expect(dialog).toBeHidden();
-    // Jo'natish — sahifaning o'z tugmasi va «Filialni tanlang» oynasi.
+    // Jo'natish — sahifaning o'z tugmasi va «Manzilni tanlang» oynasi.
     await expect(page.getByRole("button", { name: "Pochtani jo'natish — 1 ta" })).toBeVisible();
     await expectNoHorizontalScroll(page);
     expect(leaked).toEqual([]);

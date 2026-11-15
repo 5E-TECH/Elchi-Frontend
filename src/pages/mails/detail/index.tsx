@@ -117,7 +117,8 @@ import { resolveReceiveAccess } from "./model/receiveAccess";
  * POCHTA TAFSILOTI — `/mails/:id` (dizayn v2, sahifa shell ichida).
  *
  * Rejim rol va URL/holatdan (`?type=refused`, `?view=old`, `?view=old-all-batches`; URL tozalanib holatda saqlanadi):
- *  - jo'natish (superadmin/admin/HQ registratori) — «Pochtani jo'natish — n ta» → «Filialni tanlang» oynasi;
+ *  - jo'natish (superadmin/admin/HQ registratori) — «Pochtani jo'natish — n ta» → «Manzilni tanlang» oynasi
+ *    (filial yoki HQ kuryeri, ega qarori 2026-11-15);
  *  - qabul (kuryer, filial menejeri) — faqat yo'ldagi buyurtmalar, «Pochtani qabul qilish — n ta»;
  *    kuryer telefonida tugma pastki menyu ustidagi panelda;
  *  - rad etilgan pochtani qabul qilish — info ogohlantirish, `POST post/cancel/receive/:id`;
