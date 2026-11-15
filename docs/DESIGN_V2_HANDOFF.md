@@ -346,6 +346,22 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
 - `/mails/old` Excel 20 000 qator chegarasida «Fayl to'liq emas» ogohlantirishi bor (`old.exportCapped`).
 - Ochiq: D-12 — yangi to'lanmagan buyurtmada «To'lanishi kerak 0» (`to_be_paid` semantikasi, backend bilan).
 
+### 2.4 Rejada: AI bilim bazasi (ega qarori 2026-11-15, boshlanishi — 2026-11-16 yoki kelasi hafta)
+
+Eslatma, kod hali yozilmagan. Tahlil (ikkala qism, bitta jadval): https://claude.ai/artifact/KSJPJZhB3KhdifTKpdLPig.
+Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
+
+- Yo'l: «AI so'raydi — ega qaror qiladi». AI bilimni o'zi yozmaydi: ega yozadi → AI «Men shunday tushundim» deb
+  qaytaradi → mavjud bilim va kod bilan solishtiriladi → ziddiyat ko'rsatiladi → tasdiqdan keyin yangi versiya.
+- 1-qadam (BE-2 ichida): 8000 belgilik bitta `owner_notes` o'rniga alohida yozuvlar (soha, qamrov, muddat,
+  ≤ 500 belgi, muallif); band ID va turi (ta'rif / kutilgan tartib / siyosat / izoh); formulani kod bilan
+  solishtiradigan test; versiyalar faqat qo'shiladi.
+- Frontend: AI sahifasida alohida «Bilim bazasi» tabi (sohalar, yozuvlar, ziddiyatlar, versiyalar, AI savollari);
+  Sozlamalardagi tab — qisqa xulosa va havola. **Maket yo'q** — kod yozishdan oldin chiziladi va ega tasdiqlaydi.
+- Ko'rish va yozish — faqat superadmin. Qo'lda yozish dastlab 3 moliya sohasida: kuryer puli, filial → HQ,
+  kassa smenasi; tekshirib bo'lmaydigan gap — «izoh», 180 kunlik muddat; kuniga ≤ 10, jami ≤ 40 faol yozuv.
+- Boshlashdan oldin egadan qolgan qarorlar so'raladi (tahlil sahifasining oxirida: 2-qism — 8 ta, 1-qism — 18 ta).
+
 ## 3. Ish usuli (o'zini oqlagan)
 
 - **Har guruh = bitta ish oqimi.** Ketma-ketligi:
