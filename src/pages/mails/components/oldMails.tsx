@@ -109,6 +109,9 @@ import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
  * (`MailCardsGrid`, `useMailsCardView`) — joriy sahifa yangilari tepada, «Chekni qayta chiqarish» karta pastida
  * (havoladan tashqarida); filtrlar, chiplar, Excel va sahifalash o'zgarmaydi. HQ xodimlari — jadval.
  *
+ * Ega qarori 2026-11-15 (BeePost kabi): «Chekni qayta chiqarish» — «Jo'natilgan» pochtada ham (avval faqat «Qabul
+ * qilingan»da); rad etilgan va qaytarilgan pochtada yo'q. Chek tarkibi o'zgarmaydi (ega qarori 5).
+ *
  * Jadvalda superadmin, admin va registrator «Kuryer» o'rnida «Filial» ustunini ko'radi (Bahodir, 2026-11-04;
  * `model/mailBranchNames.ts`); menejer — «Kuryer» (o'z filiali). Filtr, Excel va chek — avvalgidek (kuryer).
  */
@@ -120,7 +123,7 @@ type OldMailRow = MailsTableRow & {
   /** Chek uchun xom viloyat nomi (ekrandagi «Viloyat #…» zaxirasi emas); noma'lum — `null`. */
   regionLabel: string | null;
   isBatch: boolean;
-  /** Pochta holati turi (paketda — `null`). Chekni qayta chiqarish — faqat «qabul qilingan» pochtada. */
+  /** Pochta holati turi (paketda — `null`). Chekni qayta chiqarish — «jo'natilgan» va «qabul qilingan» pochtada. */
   kind: OldMailStatusKind | null;
 };
 
@@ -453,7 +456,9 @@ const OldMails = ({ layout }: OldMailsProps) => {
         )
       : undefined;
 
-  const canReprint = (row: OldMailRow) => !row.isBatch && row.kind === "received";
+  // Ega qarori 2026-11-15 (BeePost kabi): chek «jo'natilgan» (hali qabul qilinmagan — qopdagi chek yo'qolsa) va
+  // «qabul qilingan» pochtada; rad etilgan va qaytarilganda — yo'q.
+  const canReprint = (row: OldMailRow) => !row.isBatch && (row.kind === "sent" || row.kind === "received");
   const reprintAria = (row: OldMailRow) => t(isCourier ? "old.reprintAriaCourier" : "old.reprintAria", { id: row.id });
 
   const rowActions = (row: OldMailRow): ReactNode => {

@@ -323,7 +323,7 @@ describe("OldMails — xodim (pochtalar)", () => {
     });
   });
 
-  it("branch manager: «Chekni qayta chiqarish» stays on the received card (outside the link) and prints", async () => {
+  it("branch manager: «Chekni qayta chiqarish» stays on the sent/received cards (outside the link) and prints", async () => {
     const user = userEvent.setup();
     const orders = [{ id: "o1", qr_code_token: "a".repeat(24) }];
     mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
@@ -341,8 +341,11 @@ describe("OldMails — xodim (pochtalar)", () => {
     const reprint = within(list).getByRole("button", { name: "№90: chekni qayta chiqarish" });
     expect(reprint).toHaveTextContent("Chekni qayta chiqarish");
     expect(reprint.closest("a")).toBeNull();
-    // Faqat qabul qilingan pochtada.
-    expect(within(list).getAllByRole("button")).toHaveLength(1);
+    // Qabul qilingan (№90) va jo'natilgan (№91) pochtada; rad etilganda (№92) — yo'q (ega 2026-11-15).
+    expect(within(list).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+      "№90: chekni qayta chiqarish",
+      "№91: chekni qayta chiqarish",
+    ]);
 
     await user.click(reprint);
     expect(get).toHaveBeenCalledWith("post/orders/90");
@@ -357,12 +360,44 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(container.querySelector('[data-skeleton-preset="cards"]')).not.toBeNull();
   });
 
-  it("offers receipt reprint only for received mails", () => {
-    renderOld("admin", "/mails/old", "card");
+  it("⭐ 2026-11-15: receipt reprint for sent and received mails (BeePost), not for refused or returned", () => {
+    const rows = [...MAILS, post("93", { status: "canceled_received" }), post("94", { status: "on_the_road" })];
+    mocks.useGetOldMails.mockReturnValue(mailsResult(rows));
+    for (const role of ["admin", "superadmin", "registrator", "manager"]) {
+      const { unmount } = renderOld(role, "/mails/old", "card");
+      expect(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "№91: chekni qayta chiqarish" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "№94: chekni qayta chiqarish" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "№92: chekni qayta chiqarish" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "№93: chekni qayta chiqarish" })).not.toBeInTheDocument();
+      unmount();
+    }
+  });
 
-    expect(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "№91: chekni qayta chiqarish" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "№92: chekni qayta chiqarish" })).not.toBeInTheDocument();
+  it("⭐ 2026-11-15: a sent (not yet received) mail reprints the same way — mail receipt, then order receipts", async () => {
+    const user = userEvent.setup();
+    const orders = [{ id: "o7", qr_code_token: "b".repeat(24) }];
+    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    const get = vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        data: {
+          allOrdersByPostId: orders,
+          homeOrders: { homeOrders: 1, homeOrdersTotalPrice: 100_000 },
+          centerOrders: { centerOrders: 0, centerOrdersTotalPrice: 0 },
+          post: { id: "91", status: "sent", qr_code_token: "POST-91", createdAt: "2026-10-05T12:33:00.000Z" },
+        },
+      },
+    });
+    renderOld("superadmin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("button", { name: "№91: chekni qayta chiqarish" }));
+
+    expect(get).toHaveBeenCalledWith("post/orders/91");
+    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
+    const [source, printed] = mocks.printPostWithOrders.mock.calls[0];
+    expect(printed).toEqual(orders);
+    expect(source).toMatchObject({ kind: "post", id: "91", token: "POST-91", to: "Andijon", ordersCount: 1, totalPrice: 100_000 });
+    expect(screen.getByTestId("path").textContent).toBe("/mails/old");
   });
 
   it("⭐ 2026-11-10: umumiy xulosa yo'q — server yig'indilari kelsa ham (admin, superadmin, registrator, menejer)", () => {
