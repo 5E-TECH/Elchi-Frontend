@@ -36,11 +36,21 @@ export const tabSearch = (params: URLSearchParams, tab: AiTab): URLSearchParams 
 /** Tab va panel `id` lari prefiksi (`Tabs idPrefix`, `getPanelId`). */
 export const AI_TABS_ID_PREFIX = "ai-assistant";
 
+/** Telefondagi «Bo'lim» tanlovi (`Select`) `id` si — panel nomi shundan olinadi. */
+export const AI_TAB_SELECT_ID = `${AI_TABS_ID_PREFIX}-section-select`;
+
 /**
- * Panel atributlari: ≥ 768 — `tabpanel` (tanlangan tab `aria-controls` bilan bog'lanadi); telefonda tablar o'rnida
- * `Select`, panel — nomli `region` (ops sahifasidagidek).
+ * Panel atributlari: ≥ 768 — `tabpanel` (tanlangan tab `aria-controls` bilan bog'lanadi; `tabIndex: 0` — ARIA tabs
+ * namunasi: tabdan Tab bilan panelga o'tiladi); telefonda tablar o'rnida `Select`, panel — `region`, nomi tanlovdan
+ * («Bo'lim: Ogohlantirishlar», `aria-labelledby`) — ichidagi «Ogohlantirishlar» kartasi bilan bir xil nomli ikki
+ * hudud bo'lmaydi.
  */
-export const tabPanelProps = (tab: AiTab, { phone, label }: { phone: boolean; label: string }): HTMLAttributes<HTMLDivElement> =>
+export const tabPanelProps = (tab: AiTab, { phone }: { phone: boolean }): HTMLAttributes<HTMLDivElement> =>
   phone
-    ? { role: "region", id: getPanelId(AI_TABS_ID_PREFIX, tab), "aria-label": label }
-    : { role: "tabpanel", id: getPanelId(AI_TABS_ID_PREFIX, tab), "aria-labelledby": getTabId(AI_TABS_ID_PREFIX, tab) };
+    ? { role: "region", id: getPanelId(AI_TABS_ID_PREFIX, tab), "aria-labelledby": AI_TAB_SELECT_ID }
+    : {
+        role: "tabpanel",
+        id: getPanelId(AI_TABS_ID_PREFIX, tab),
+        "aria-labelledby": getTabId(AI_TABS_ID_PREFIX, tab),
+        tabIndex: 0,
+      };

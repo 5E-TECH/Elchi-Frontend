@@ -19,7 +19,7 @@ export type CriticalBannerProps = {
  * Jiddiy ogohlantirishlar banneri (D11, maket `superadmin-ai-assistant-alerts`): faqat KO'RIB CHIQILMAGAN jiddiylar
  * (`overview.alerts.critical` — `new`) bo'lsa. Ostida qoidalar nomi (`critical_rule_keys`, « · »); «Faqat jiddiylar»
  * jadvalni `severity=critical` ga toraytiradi — shunda matn «Jadvalda faqat jiddiylar: N ta» va «Hammasini
- * ko'rsatish» (jiddiylik filtrini olib tashlaydi). `.el-alert.el-tone-danger` (CODE-MAP 2.7), amal o'ngda — tor
+ * ko'rsatish» (jiddiylik filtrini olib tashlaydi; holatni yorliq aytadi — `aria-pressed` yo'q). `.el-alert.el-tone-danger` (CODE-MAP 2.7), amal o'ngda — tor
  * ekranda pastga o'raladi.
  */
 export const CriticalBanner = ({ alerts, onlyCritical, filteredTotal, onOnlyCritical, onShowAll }: CriticalBannerProps) => {
@@ -36,13 +36,13 @@ export const CriticalBanner = ({ alerts, onlyCritical, filteredTotal, onOnlyCrit
 
   return (
     <div
-      role="status"
       data-testid="ai-alerts-critical-banner"
       className="flex min-w-0 items-start gap-3 rounded-xl bg-danger-soft px-4 py-3 text-sm"
     >
       <TriangleAlert size={20} aria-hidden="true" className="mt-px shrink-0 text-danger-fg" />
       <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-1 text-text">
-        <div className="flex min-w-0 flex-col gap-0.5">
+        {/* Jonli hudud — faqat matn (tugma e'lon qilinmaydi). */}
+        <div role="status" className="flex min-w-0 flex-col gap-0.5">
           <div className="font-bold">
             {t("alerts.banner.title", { count: alerts.critical, value: formatNumberLocalized(alerts.critical, { language }) })}
           </div>
@@ -51,7 +51,6 @@ export const CriticalBanner = ({ alerts, onlyCritical, filteredTotal, onOnlyCrit
         <Button
           variant="link"
           size="sm"
-          aria-pressed={onlyCritical}
           className="max-md:-ml-1"
           onClick={onlyCritical ? onShowAll : onOnlyCritical}
         >

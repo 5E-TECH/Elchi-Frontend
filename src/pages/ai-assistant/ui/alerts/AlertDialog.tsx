@@ -169,6 +169,9 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
   );
 
   // ── Ogohlantirish yo'q: noto'g'ri ID, yuklanish, 404, xato ─────────────────────────────────────────────
+  // `QueryBoundary` emas (asosli istisno): holatga qarab oynaning pastki qatori ham o'zgaradi (topilmadi / xato —
+  // «Yopish», yuklanish — yo'q), `QueryBoundary` esa faqat tanani almashtiradi. Holat primitivlari o'sha:
+  // `EmptyState`, `ErrorState` + «Qayta urinish», `SkeletonLines` — qo'lda yozilgan matn yo'q.
   if (!alert) {
     const notFound =
       id === null || (query.isError && [400, 404].includes(readAdvisorError(query.error).status ?? 0));

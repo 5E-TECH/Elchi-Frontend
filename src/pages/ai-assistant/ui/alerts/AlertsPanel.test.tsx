@@ -107,7 +107,10 @@ describe("AlertsPanel — ro'yxat (desktop)", () => {
     const banner = await screen.findByTestId("ai-alerts-critical-banner");
     expect(banner).toHaveTextContent("2 ta jiddiy ogohlantirish ko'rib chiqilmagan");
     expect(banner).toHaveTextContent("Kuryer qarzi o'smoqda · Chek yoki karta farqi");
-    expect(within(banner).getByRole("button", { name: "Faqat jiddiylar" })).toHaveAttribute("aria-pressed", "false");
+    // Holatni yorliq aytadi («Faqat jiddiylar» ↔ «Hammasini ko'rsatish») — `aria-pressed` yo'q; jonli hudud — faqat matn.
+    expect(within(banner).getByRole("button", { name: "Faqat jiddiylar" })).not.toHaveAttribute("aria-pressed");
+    expect(within(banner).getByRole("status")).toHaveTextContent("2 ta jiddiy ogohlantirish ko'rib chiqilmagan");
+    expect(within(within(banner).getByRole("status")).queryByRole("button")).not.toBeInTheDocument();
 
     // Holat segmenti: son faqat ochiq holatlarda.
     const status = screen.getByRole("radiogroup", { name: "Holat" });
@@ -220,7 +223,7 @@ describe("AlertsPanel — banner", () => {
     await waitFor(() => expect(currentParams().get("severity")).toBe("critical"));
     expect(await within(banner).findByText("Jadvalda faqat jiddiylar: 3 ta")).toBeInTheDocument();
     const showAll = within(banner).getByRole("button", { name: "Hammasini ko'rsatish" });
-    expect(showAll).toHaveAttribute("aria-pressed", "true");
+    expect(showAll).not.toHaveAttribute("aria-pressed");
     expect(screen.getByRole("combobox", { name: "Jiddiylik" })).toHaveTextContent("Jiddiy");
 
     await user.click(showAll);

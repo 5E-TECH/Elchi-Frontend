@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Badge, Select, Tabs, type SelectOption, type TabItem } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
-import { AI_TABS, AI_TABS_ID_PREFIX, type AiTab } from "../model/tabs";
+import { AI_TAB_SELECT_ID, AI_TABS, AI_TABS_ID_PREFIX, type AiTab } from "../model/tabs";
 
 type AssistantTabsProps = {
   tab: AiTab;
@@ -34,6 +34,7 @@ export const AssistantTabs = ({ tab, onChange, newAlerts }: AssistantTabsProps) 
         onChange={(next) => {
           if (next && next !== tab) onChange(next);
         }}
+        id={AI_TAB_SELECT_ID}
         aria-label={t("tabs.select", { tab: label(tab) })}
         listLabel={t("tabs.label")}
         renderOption={(option) => {

@@ -444,6 +444,25 @@ describe("«Hal qilindi» / «Ahamiyatsiz» (D9; maket `-alert-resolve-confirm`)
     expect(await within(panel).findByText("«Ahamiyatsiz» saqlanmadi — qayta urining.")).toBeInTheDocument();
     expect(currentParams().get("alert")).toBe("1040");
   });
+
+  it("«Ahamiyatsiz»: oldingi «Hal qilindi» izoh xatosi tozalanadi; server `NOTE_INVALID too_long` — maydon ostida, umumiy xato yo'q", async () => {
+    mocks.patch.mockImplementation(() => fail(400, fx.errors.noteTooLong));
+    const user = userEvent.setup();
+    open();
+    const panel = await findDialog(R1_TITLE);
+    const note = within(panel).getByRole("textbox", { name: "Izoh" });
+    await user.type(note, "ab");
+    await user.click(within(panel).getByRole("button", { name: "Hal qilindi" }));
+    expect(await within(panel).findByText("Izoh kamida 3 belgi bo'lsin")).toBeInTheDocument();
+
+    await user.click(within(panel).getByRole("button", { name: "Ahamiyatsiz" }));
+    expect(within(panel).queryByText("Izoh kamida 3 belgi bo'lsin")).not.toBeInTheDocument();
+    expect(await within(panel).findByText("Izoh 500 belgidan oshmasin")).toBeInTheDocument();
+    expect(note).toHaveAttribute("aria-invalid", "true");
+    expect(note).toHaveFocus();
+    expect(within(panel).queryByText("«Ahamiyatsiz» saqlanmadi — qayta urining.")).not.toBeInTheDocument();
+    expect(currentParams().get("alert")).toBe("1040");
+  });
 });
 
 describe("AI izohi (D15)", () => {

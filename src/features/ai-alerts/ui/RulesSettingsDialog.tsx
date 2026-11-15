@@ -144,7 +144,7 @@ export const RulesSettingsDialog = ({ open, onClose }: RulesSettingsDialogProps)
       <span className="inline-flex flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5">
         <span className="font-normal text-text-muted">{from}</span>
         <ArrowRight aria-hidden="true" size={16} className="shrink-0 text-text-muted" />
-        <span className="sr-only">{t("settings.confirm.newValue")} </span>
+        <span className="sr-only"> {t("settings.confirm.newValue")} </span>
         <span>{to}</span>
       </span>
     );
@@ -264,6 +264,9 @@ export const RulesSettingsDialog = ({ open, onClose }: RulesSettingsDialogProps)
             ))}
           </ul>
         ) : (
+          // `QueryBoundary` emas (asosli istisno): oyna faqat sozlamalar zondi muvaffaqiyatli bo'lganda ochiladi —
+          // ma'lumot keshda, bo'sh / xato holati yo'q; bu yerda faqat qisqa yuklanish skeleti (saqlash xatosi —
+          // pastdagi `NoticeAlert`).
           <div role="status" aria-label={t("settings.rulesLabel")} className="flex flex-col gap-4">
             <SkeletonLines lines={3} />
             <SkeletonLines lines={3} />

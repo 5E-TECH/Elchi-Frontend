@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CircleCheck, CircleX, Info } from "lucide-react";
 import {
@@ -23,7 +23,7 @@ import { useDismissAlert, useResolveAlert } from "../model/useAlertMutations";
  *                  «Hal qilindi deb belgilash») → PATCH (yuklanish va xato — tasdiq oynasining o'zida: 400
  *                  `NOTE_INVALID`, 409 `ALERT_CLOSED`) → toast «Ogohlantirish hal qilindi», oyna yopiladi;
  *   «Ahamiyatsiz»  tasdiqsiz, izoh ixtiyoriy (≤ 500) → PATCH → toast «Ahamiyatsiz deb belgilandi», oyna yopiladi;
- *                  xato — oynada (`dismissError`).
+ *                  400 `NOTE_INVALID` — maydon ostida (`noteError`), boshqa xato — oynada (`dismissError`).
  */
 export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDetail | undefined; onDone: () => void }) => {
   const { t, i18n } = useTranslation("aiAdvisor");
@@ -44,6 +44,14 @@ export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDeta
     setNoteError(null);
     setDismissError(null);
   }
+
+  // So'rov paytida maydon o'chiq — fokus u yana yoqilgan chizishdan keyin beriladi.
+  const focusNoteRef = useRef(false);
+  useEffect(() => {
+    if (!focusNoteRef.current || dismissMutation.isPending) return;
+    focusNoteRef.current = false;
+    noteRef.current?.focus();
+  });
 
   const setNote = (value: string) => {
     setNoteState(value);
@@ -134,6 +142,8 @@ export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDeta
   const dismiss = () => {
     if (!alert || dismissMutation.isPending) return;
     setDismissError(null);
+    // «Hal qilindi» urinishidan qolgan izoh xatosi «Ahamiyatsiz» ga tegishli emas (izoh bu yerda ixtiyoriy).
+    setNoteError(null);
     const label = alertShortLabel(alert, tt);
     dismissMutation.mutate(
       { id: alert.id, note },
@@ -143,7 +153,13 @@ export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDeta
           onDone();
         },
         onError: (error) => {
-          const { status } = readAdvisorError(error);
+          const { code, fields, status } = readAdvisorError(error);
+          // Izoh qoidasi (masalan `too_long`) — umumiy xato emas, maydon ostida (resolve'dagidek).
+          if (code === AI_ADVISOR_ERROR_CODES.NOTE_INVALID) {
+            setNoteError(noteErrorView(fields.reason));
+            focusNoteRef.current = true;
+            return;
+          }
           setDismissError(status === 409 ? t("alerts.dialog.closedAlready") : t("alerts.dialog.dismissFailed"));
         },
       },

@@ -206,6 +206,7 @@ describe("AI yordamchi qobig'i — backend bor", () => {
 
     const chatPanel = screen.getByRole("tabpanel", { name: "Suhbat" });
     expect(tabs[0]).toHaveAttribute("aria-controls", chatPanel.id);
+    expect(chatPanel).toHaveAttribute("tabindex", "0");
     expect(await emptyChatHeading()).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Yangi suhbat" })).toBeInTheDocument();
 
@@ -407,7 +408,8 @@ describe("AI yordamchi qobig'i — telefon", () => {
 
     const select = await screen.findByRole("combobox", { name: "Bo'lim: Suhbat" });
     expect(screen.queryByRole("tablist")).toBeNull();
-    expect(screen.getByRole("region", { name: "Suhbat" })).toBeInTheDocument();
+    // Panel nomi — tanlovdan («Bo'lim: …»): ichidagi «Ogohlantirishlar» kartasi bilan bir xil nomli hudud yo'q.
+    expect(screen.getByRole("region", { name: "Bo'lim: Suhbat" })).toBeInTheDocument();
 
     await user.click(select);
     const options = await screen.findAllByRole("option");
@@ -417,7 +419,7 @@ describe("AI yordamchi qobig'i — telefon", () => {
 
     expect(currentParams().get("tab")).toBe("alerts");
     expect(await screen.findByRole("combobox", { name: "Bo'lim: Ogohlantirishlar" })).toBeInTheDocument();
-    const region = screen.getAllByRole("region", { name: "Ogohlantirishlar" })[0];
+    const region = screen.getByRole("region", { name: "Bo'lim: Ogohlantirishlar" });
     expect(region).toHaveAttribute("id", "ai-assistant-panel-alerts");
     expect(await within(region).findByText("Jasur Tursunov kassasida 2 840 000 so'm — 4 kundan beri topshirilmagan")).toBeInTheDocument();
   });

@@ -86,7 +86,7 @@ export const EvidenceTable = <T,>({
               </th>
             ))}
             {hasLinks ? (
-              <th scope="col" className={cx(TH, "w-12")}>
+              <th scope="col" className={cx(TH, "w-10")}>
                 <span className="sr-only">{linkColumnLabel}</span>
               </th>
             ) : null}
@@ -103,7 +103,7 @@ export const EvidenceTable = <T,>({
                   </td>
                 ))}
                 {hasLinks ? (
-                  <td className={cx(TD, "w-12 pr-2 pl-0 text-right")}>
+                  <td className={cx(TD, "w-10 pr-1 pl-0 text-right")}>
                     {href ? (
                       <Link to={href} aria-label={rowLinkLabel?.(row)} title={rowLinkLabel?.(row)} className={ICON_LINK}>
                         <ChevronRight aria-hidden="true" size={18} strokeWidth={2} />

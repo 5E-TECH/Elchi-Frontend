@@ -28,7 +28,8 @@ const GRID: Record<"auto" | 2, string> = {
 /**
  * Ogohlantirish faktlari — `sunken` quti ichida `dl` (maket: panjara — `padding 14px 16px`, oraliq 12 × 24, yorliq
  * `text-xs text-text-muted`, qiymat `.el-strong`; qatorlar — `padding 4px 16px`, har qator 8 px, yorliq `.el-muted`,
- * qiymat o'ngda). Bo'sh (`null`) qatorlar tashlab ketiladi.
+ * qiymat o'ngda). Bo'sh (`null`) qatorlar tashlab ketiladi. `role="group"` — `dl` ning o'z roli nomni qabul qilmaydi,
+ * guruh esa «Asosiy ma'lumotlar» deb o'qiladi.
  */
 export const AlertFacts = ({ facts, columns = "auto", className }: AlertFactsProps) => {
   const { t } = useTranslation("aiAdvisor");
@@ -36,7 +37,7 @@ export const AlertFacts = ({ facts, columns = "auto", className }: AlertFactsPro
   if (!items.length) return null;
   if (columns === "rows") {
     return (
-      <dl aria-label={t("alerts.facts.label")} className={cx("m-0 flex flex-col rounded-xl bg-sunken px-4 py-1 text-sm", className)}>
+      <dl role="group" aria-label={t("alerts.facts.label")} className={cx("m-0 flex flex-col rounded-xl bg-sunken px-4 py-1 text-sm", className)}>
         {items.map((fact, index) => (
           <div
             key={fact.id}
@@ -51,6 +52,7 @@ export const AlertFacts = ({ facts, columns = "auto", className }: AlertFactsPro
   }
   return (
     <dl
+      role="group"
       aria-label={t("alerts.facts.label")}
       className={cx("m-0 grid gap-x-6 gap-y-3 rounded-xl bg-sunken px-4 py-3.5", GRID[columns], className)}
     >

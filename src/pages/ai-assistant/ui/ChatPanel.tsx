@@ -1,7 +1,6 @@
 // dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-conversations-sheet, superadmin-ai-assistant-daily-cap
 import {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -205,7 +204,8 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess, onNewChatChange,
   useLayoutEffect(() => {
     newChatRef.current = newChat;
   });
-  useEffect(() => {
+  // `useLayoutEffect`: sarlavha tugmasi suhbat tanasi bilan bir kadrda chiziladi (eski sahifadagidek, kechikib chiqmaydi).
+  useLayoutEffect(() => {
     if (!onNewChatChange) return undefined;
     onNewChatChange(() => newChatRef.current());
     return () => onNewChatChange(null);

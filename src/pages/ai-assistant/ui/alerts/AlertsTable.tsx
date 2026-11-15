@@ -104,7 +104,16 @@ export const AlertsTable = ({ rows, hrefOf, busy = false }: AlertsTableProps) =>
         cell: (row) => {
           const label = t("alerts.list.open", { title: title(row) });
           return (
-            <Link to={hrefOf(row)} state={ALERT_FROM_LIST_STATE} aria-haspopup="dialog" aria-label={label} title={label} className={ICON_LINK}>
+            // Sarlavha havolasi bilan bir manzil — klaviaturada qatorga bitta to'xtash (sichqoncha uchun qoladi).
+            <Link
+              to={hrefOf(row)}
+              state={ALERT_FROM_LIST_STATE}
+              tabIndex={-1}
+              aria-haspopup="dialog"
+              aria-label={label}
+              title={label}
+              className={ICON_LINK}
+            >
               <ChevronRight aria-hidden="true" size={18} strokeWidth={2} />
             </Link>
           );

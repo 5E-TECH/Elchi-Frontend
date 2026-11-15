@@ -64,7 +64,7 @@ export const ShiftShortageBody = ({ alert }: RuleBodyProps<"R1">) => {
       header: t("alerts.evidence.shifts.columns.closedBy"),
       hideBelow: "lg",
       cell: (row) => (
-        <span className="whitespace-nowrap text-text-muted">
+        <span className="text-text-muted">
           {row.closed_by_system ? t("alerts.evidence.shifts.system") : advisorUserName(row.closed_by) || "—"}
         </span>
       ),

@@ -130,8 +130,8 @@ describe("Qoidalar sozlamasi — saqlash", () => {
       "Tuzatishlar ko'paydi",
     ]);
     expect(within(confirm).getAllByRole("definition").map((node) => node.textContent)).toEqual([
-      "50 000yangi qiymat: 30 000 so'm",
-      "Yoqilganyangi qiymat: O'chirilgan",
+      "50 000 yangi qiymat: 30 000 so'm",
+      "Yoqilgan yangi qiymat: O'chirilgan",
     ]);
     expect(within(confirm).getByText("O'chirilgan qoida bo'yicha ogohlantirish chiqmaydi.")).toBeInTheDocument();
     expect(mocks.patch).not.toHaveBeenCalled();

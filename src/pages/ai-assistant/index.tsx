@@ -83,7 +83,7 @@ const AiAssistantPage = () => {
     setSearchParams((current) => tabSearch(current, next));
   };
 
-  const panelProps = (value: AiTab) => (available ? tabPanelProps(value, { phone: isPhone, label: t(`tabs.${value}`) }) : undefined);
+  const panelProps = (value: AiTab) => (available ? tabPanelProps(value, { phone: isPhone }) : undefined);
 
   const alertsLoading = (
     <Card padding="none" title={t("alerts.list.title")} description={t("alerts.list.description")}>
