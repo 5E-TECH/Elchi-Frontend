@@ -9,7 +9,7 @@ import {
   useSendTransferBatch,
 } from "../entities/batch";
 import { useBranchCoverage } from "../entities/branch/branchCoverage";
-import { useDispatchPostToBranch, useMails, useReceivePost } from "../entities/mails";
+import { useDispatchPostToBranch, useDispatchPostToCourier, useMails, useReceivePost } from "../entities/mails";
 import { useOrders as useOrderActions } from "../entities/orders";
 import { useOrders as useOrderApi } from "../entities/order/api/orderApi";
 import { useAiConfirm } from "../entities/ai-order/api";
@@ -109,6 +109,38 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
       m.mutateAsync({ postId: "7", payload: { destinationBranchId: "9", orderIds: ["1"] } }),
     );
     expectKeys(keys, [["mails", "detail", "7"], ["mails", "new"], ["mails", "old"], ["orders"]]);
+  });
+
+  it("pochtani HQ kuryeriga berish — filialga jo'natish bilan bir xil kalitlar; tana { courier_id, order_ids }", async () => {
+    apiMock.post.mockClear();
+    const keys = await run(useDispatchPostToCourier, (m) =>
+      m.mutateAsync({ postId: "7", payload: { courierId: "77", orderIds: ["1", "2"] } }),
+    );
+    expect(apiMock.post).toHaveBeenCalledWith("branches/posts/7/dispatch-to-courier", {
+      courier_id: "77",
+      order_ids: ["1", "2"],
+    });
+    expectKeys(keys, [["mails", "detail", "7"], ["mails", "new"], ["mails", "old"], ["orders"]]);
+  });
+
+  it("HQ kuryeriga berish rad etilsa: tanlov eskirgan (409 order_not_in_post / 400 post_not_sendable) — faqat tafsilot", async () => {
+    const rejectWith = (status: number, reason: string) =>
+      apiMock.post.mockRejectedValueOnce({ response: { status, data: { message: "x", data: { reason } } } });
+    for (const [status, reason] of [
+      [409, "order_not_in_post"],
+      [400, "post_not_sendable"],
+    ] as const) {
+      rejectWith(status, reason);
+      const stale = await run(useDispatchPostToCourier, (m) =>
+        m.mutateAsync({ postId: "7", payload: { courierId: "77", orderIds: ["1"] } }).catch(() => undefined),
+      );
+      expect(stale).toEqual([JSON.stringify(["mails", "detail", "7"])]);
+    }
+    rejectWith(403, "courier_region_not_served");
+    const other = await run(useDispatchPostToCourier, (m) =>
+      m.mutateAsync({ postId: "7", payload: { courierId: "77", orderIds: ["1"] } }).catch(() => undefined),
+    );
+    expect(other).toEqual([]);
   });
 
   it("pochtani qabul qilish — buyurtmalar ham", async () => {
