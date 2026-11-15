@@ -1,7 +1,16 @@
 {
   "title": "AI financial assistant",
   "subtitle": "Ask about cash flow, cashboxes and settlements. The assistant only reads data.",
+  "subtitleAdvisor": "Questions and alerts on cashboxes, debts and expenses. The assistant only reads data.",
   "newChat": "New chat",
+  "tabs": {
+    "label": "AI assistant sections",
+    "select": "Section: {{tab}}",
+    "chat": "Chat",
+    "alerts": "Alerts",
+    "newCount_one": "{{value}} new",
+    "newCount_other": "{{value}} new"
+  },
   "readOnly": "Read only: the assistant makes no payments and does not change or delete records. It sees: cashboxes, courier, market and branch settlements, shifts, expenses, receipts.",
   "chat": {
     "logLabel": "Chat",

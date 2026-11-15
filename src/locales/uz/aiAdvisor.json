@@ -1,7 +1,16 @@
 {
   "title": "AI moliyaviy yordamchi",
   "subtitle": "Pul oqimi, kassa va hisob-kitoblar bo'yicha savol bering. Yordamchi faqat ma'lumot o'qiydi.",
+  "subtitleAdvisor": "Kassa, qarzlar va xarajatlar bo'yicha savol va ogohlantirishlar. Yordamchi faqat ma'lumot o'qiydi.",
   "newChat": "Yangi suhbat",
+  "tabs": {
+    "label": "AI yordamchi bo'limlari",
+    "select": "Bo'lim: {{tab}}",
+    "chat": "Suhbat",
+    "alerts": "Ogohlantirishlar",
+    "newCount_one": "{{value}} yangi",
+    "newCount_other": "{{value}} yangi"
+  },
   "readOnly": "Faqat o'qish: yordamchi to'lov qilmaydi, yozuvlarni o'zgartirmaydi va o'chirmaydi. Ko'radi: kassalar, kuryer, market va filial hisob-kitoblari, smenalar, xarajatlar, cheklar.",
   "chat": {
     "logLabel": "Suhbat",

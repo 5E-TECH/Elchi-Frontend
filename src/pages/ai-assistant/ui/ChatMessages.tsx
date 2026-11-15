@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-ai-assistant
 import { useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, FileText, Info, Sparkles } from "lucide-react";
+import { Copy, Database, Info, Sparkles } from "lucide-react";
 import { Card, IconButton } from "../../../shared/ui/primitives";
 import { MiniMarkdown } from "../../../shared/ui/markdown/MiniMarkdown";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
@@ -79,7 +79,7 @@ export const AnswerNotes = ({ sources, short = false }: { sources?: readonly AiS
   const line = sources ? formatSourcesLine(sources, t, i18n.language) : null;
   return (
     <div className="flex flex-col gap-1">
-      {line ? <NoteLine icon={FileText}>{line}</NoteLine> : null}
+      {line ? <NoteLine icon={Database}>{line}</NoteLine> : null}
       <NoteLine icon={Info}>{short ? t("chat.disclaimerShort") : t("chat.disclaimer")}</NoteLine>
     </div>
   );

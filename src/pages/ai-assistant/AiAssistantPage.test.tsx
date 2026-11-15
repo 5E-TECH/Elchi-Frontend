@@ -33,6 +33,8 @@ const mocks = vi.hoisted(() => ({
   getAiAccessMe: vi.fn(),
   getAiConversations: vi.fn(),
   getAiConversation: vi.fn(),
+  getAdvisorOverview: vi.fn(),
+  getAdvisorSettings: vi.fn(),
 }));
 
 vi.mock("../../features/ai-chat/api/streamMessage", () => ({
@@ -50,6 +52,14 @@ vi.mock("../../entities/ai-advisor/api/aiAssistantApi", () => ({
   getAiAccessMe: mocks.getAiAccessMe,
   getAiConversations: mocks.getAiConversations,
   getAiConversation: mocks.getAiConversation,
+}));
+
+// Maslahatchi backend'i yo'q (bugungi prod): `overview` zondi 404 — sahifa avvalgidek faqat suhbat (tablar va qobiq —
+// `AiAssistantShell.test.tsx`).
+vi.mock("../../entities/ai-advisor/api/aiAdvisorApi", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/ai-advisor/api/aiAdvisorApi")>()),
+  getAdvisorOverview: mocks.getAdvisorOverview,
+  getAdvisorSettings: mocks.getAdvisorSettings,
 }));
 
 import AiAssistantPage from ".";
@@ -109,6 +119,8 @@ beforeEach(() => {
   mocks.getAiAccessMe.mockImplementation(async () => mocks.access);
   mocks.getAiConversations.mockImplementation(async () => mocks.list);
   mocks.getAiConversation.mockImplementation(async () => mocks.conversation);
+  mocks.getAdvisorOverview.mockRejectedValue(httpError(404));
+  mocks.getAdvisorSettings.mockRejectedValue(httpError(404));
 });
 
 afterEach(() => vi.clearAllMocks());

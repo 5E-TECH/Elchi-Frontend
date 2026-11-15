@@ -1,4 +1,10 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import type {
+  AiAdvisorAlertDetail,
+  AiAdvisorAlertListItem,
+  AiAdvisorOverview,
+} from "../../../src/entities/ai-advisor";
+import { createAdvisorFixtures, type AdvisorFixtures } from "../../../src/test/aiAdvisorFixtures";
 
 /**
  * F7PWp6cK — AI moliyaviy yordamchi (`/ai-assistant`, faqat superadmin). Soxta gateway backend kabi:
@@ -13,7 +19,11 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  *   `disabled` (503, funksiya o'chiq), `cap` (SSE `error` `assistant_usd_cap` `meta` gacha — xarajat shifti, savol
  *   saqlanmaydi, limitdan ketmaydi).
  *
- * Boshqa yozish so'rovlari taqiqlangan (`leaked`).
+ * - `ai/advisor/*` — maslahatchi (60PWUbgC): sukut `advisor: "off"` — 404 (bugungi prod), `on` — fixture'lar holat
+ *   bilan, `forbidden` — 403 (pastda, `createAdvisorMock`). Har so'rov `advisor.requests` ga yoziladi.
+ *
+ * Boshqa yozish so'rovlari taqiqlangan (`leaked`); ruxsat: maslahatchi `PATCH alerts/:id`, `POST alerts/:id/explain`,
+ * `PATCH settings`.
  */
 
 type Source = { tool: string; period: { from: string; to: string } | null; records: number; truncated: boolean; ok: boolean };
@@ -75,8 +85,25 @@ export const mockAiAssistantApi = async (
     theme,
     conversations = "seeded",
     mode = "answer",
-  }: { role?: string; theme?: "light" | "dark"; conversations?: "seeded" | "none"; mode?: MessageMode } = {},
+    advisor = "off",
+    settings = "on",
+    explain = "queued",
+    patch = "ok",
+    explainReadyAfter = 2,
+  }: {
+    role?: string;
+    theme?: "light" | "dark";
+    conversations?: "seeded" | "none";
+    mode?: MessageMode;
+    advisor?: AdvisorMode;
+    settings?: "on" | "off";
+    explain?: AdvisorExplainMode;
+    patch?: AdvisorPatchMode;
+    /** `pending` izoh nechta `GET :id` dan keyin `ready` bo'ladi. */
+    explainReadyAfter?: number;
+  } = {},
 ) => {
+  const advisorMock = createAdvisorMock({ mode: advisor, settings, explain, patch, explainReadyAfter });
   const origin = appOrigin();
   const corsFor = (route: Route) => ({
     "access-control-allow-origin": origin,
@@ -155,6 +182,12 @@ export const mockAiAssistantApi = async (
       return reply(route, wrap({ id: "1", role, name: "Shodiyor Ergashev", status: "active", ...settings }));
     }
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 0 }));
+
+    if (path.startsWith("ai/advisor/")) {
+      const body = method === "GET" ? undefined : (request.postDataJSON() ?? {});
+      const result = advisorMock.handle(method, path, url.searchParams, body);
+      return reply(route, result.body, result.status);
+    }
 
     if (path === "ai/assistant/access/me" && method === "GET") {
       if (role !== "superadmin" && role !== "admin") return reply(route, { statusCode: 403, message: "Forbidden" }, 403);
@@ -264,7 +297,7 @@ export const mockAiAssistantApi = async (
     );
   });
 
-  return { state, leaked };
+  return { state, leaked, advisor: advisorMock.state, advisorFixtures: advisorMock.fixtures };
 };
 
 /** Sahifa ochildi va holat (`access/me`) keldi. */
@@ -276,7 +309,249 @@ export const openAiAssistant = async (page: Page, path = "/ai-assistant") => {
 
 export const composer = (page: Page) => page.getByRole("textbox", { name: "Savolingiz" });
 
+/** Maketdagi birinchi qator (R2, «Jiddiy», «Yangi»). */
+export const FIRST_ALERT_TITLE = "Jasur Tursunov kassasida 2 840 000 so'm — 4 kundan beri topshirilmagan";
+
+/** «Ogohlantirishlar» tabi ochildi va ro'yxat keldi (`advisor: "on"`). */
+export const openAiAlerts = async (page: Page, path = "/ai-assistant?tab=alerts") => {
+  await page.goto(path);
+  await expect(page.getByRole("heading", { level: 1, name: "AI moliyaviy yordamchi" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(FIRST_ALERT_TITLE)).toBeVisible();
+};
+
+/** Maslahatchi so'rovlari (yo'l bo'yicha). */
+export const advisorCalls = (state: { requests: AdvisorRequest[] }, path: string, method = "GET") =>
+  state.requests.filter((request) => request.path === path && request.method === method);
+
 export const expectNoHorizontalOverflow = async (page: Page) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+};
+
+// ── 60PWUbgC — AI maslahatchi (`ai/advisor/*`) ─────────────────────────────────────────────────────────────
+
+/**
+ * Maslahatchi backend'i (shartnoma v0.3 + BE #644):
+ * - `off` (sukut, bugungi prod) — har `ai/advisor/*` → 404: sahifa avvalgidek faqat suhbat;
+ * - `forbidden` — 403 (ruxsat yo'q — ham faqat suhbat);
+ * - `on` — fixture'lar (`src/test/aiAdvisorFixtures.ts`) holat bilan: ro'yxat 22 ta (maketdagi 8 + 14 ta yopilgan),
+ *   filtr (`status`, `severity`, `rule_key`), sahifalash, `counts.by_status` (status filtrisiz); `overview` — joriy
+ *   holatdan; `GET alerts/:id` — `new` → `seen` (yon ta'sir); izohda `pending` → `explainReadyAfter` ta so'rovdan
+ *   keyin `ready` (`stuck` — hech qachon); `PATCH alerts/:id` — izoh 3–500 («Hal qilindi»), `closed` rejimida 409;
+ *   `GET/PATCH settings` (`settings: "off"` — 404), `version` bilan.
+ */
+export type AdvisorMode = "off" | "on" | "forbidden";
+export type AdvisorExplainMode = "queued" | "cached" | "stuck" | "budget_month" | "budget_global" | "disabled";
+export type AdvisorPatchMode = "ok" | "closed";
+export type AdvisorRequest = { method: string; path: string; query: Record<string, string>; body: unknown };
+
+const ADVISOR_STATUSES = ["new", "seen", "resolved", "dismissed"] as const;
+const ADVISOR_RULES = ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"] as const;
+
+/** Maketdagi 8 qatordan keyin — eski yopilgan ogohlantirishlar (jami 22: yangi 3, ko'rildi 3, hal 12, ahamiyatsiz 4). */
+const paddedAlerts = (fx: AdvisorFixtures): AiAdvisorAlertDetail[] => {
+  const base = fx.items.map((item) => ({ ...(fx.details[item.id] ?? fx.detail.r1), ...item }) as AiAdvisorAlertDetail);
+  const extras = Array.from({ length: 14 }, (_, index) => {
+    const source = index % 2 === 0 ? fx.detail.r1 : fx.detail.r3;
+    const dismissed = index >= 11;
+    const lastAt = fx.at(-5 - index, 10, 0);
+    return {
+      ...source,
+      id: String(1000 - index),
+      status: dismissed ? "dismissed" : "resolved",
+      occurrences: 1,
+      first_at: lastAt,
+      last_at: lastAt,
+      seen_at: lastAt,
+      resolved_at: lastAt,
+      resolved_by: { id: "1", name: "Shodiyor Ergashev" },
+      resolution_note: dismissed ? null : "Tekshirildi, tartibda.",
+    } as AiAdvisorAlertDetail;
+  });
+  return [...base, ...extras];
+};
+
+const listItemOf = (detail: AiAdvisorAlertDetail, keys: readonly string[]): AiAdvisorAlertListItem =>
+  Object.fromEntries(keys.map((key) => [key, (detail as unknown as Record<string, unknown>)[key]])) as unknown as AiAdvisorAlertListItem;
+
+export const createAdvisorMock = ({
+  mode,
+  settings,
+  explain,
+  patch,
+  explainReadyAfter,
+}: {
+  mode: AdvisorMode;
+  settings: "on" | "off";
+  explain: AdvisorExplainMode;
+  patch: AdvisorPatchMode;
+  explainReadyAfter: number;
+}) => {
+  const fx = createAdvisorFixtures();
+  const listKeys = Object.keys(fx.items[0]);
+  const state = {
+    mode,
+    settingsMode: settings,
+    explain,
+    patch,
+    explainReadyAfter,
+    alerts: paddedAlerts(fx),
+    settings: structuredClone(fx.settings),
+    /** `pending` izohli ogohlantirish → `GET :id` so'rovlari soni. */
+    polls: new Map<string, number>(),
+    requests: [] as AdvisorRequest[],
+  };
+
+  const overview = (): AiAdvisorOverview => {
+    const isNew = (alert: AiAdvisorAlertDetail) => alert.status === "new";
+    const isOpen = (alert: AiAdvisorAlertDetail) => alert.status === "new" || alert.status === "seen";
+    const keys = (pick: (alert: AiAdvisorAlertDetail) => boolean) =>
+      ADVISOR_RULES.filter((rule) => state.alerts.some((alert) => alert.rule_key === rule && alert.severity === "critical" && pick(alert)));
+    return {
+      ...fx.overview,
+      alerts: {
+        new: state.alerts.filter(isNew).length,
+        open: state.alerts.filter(isOpen).length,
+        critical: state.alerts.filter((alert) => isNew(alert) && alert.severity === "critical").length,
+        critical_open: state.alerts.filter((alert) => isOpen(alert) && alert.severity === "critical").length,
+        critical_rule_keys: keys(isNew),
+        critical_open_rule_keys: keys(isOpen),
+      },
+      generated_at: new Date().toISOString(),
+    };
+  };
+
+  type Reply = { status: number; body: unknown };
+  type ErrorBody = { statusCode: number } & Record<string, unknown>;
+  const ok = (data: unknown, status = 200, message = "OK"): Reply => ({ status, body: { statusCode: status, message, data } });
+  const fail = (body: ErrorBody): Reply => ({ status: body.statusCode, body });
+  const badRequest = (message: string): Reply => fail({ statusCode: 400, message });
+  const notFound = (method: string, path: string): Reply => fail({ statusCode: 404, message: `Cannot ${method} /${path}`, error: "Not Found" });
+
+  const handle = (method: string, path: string, query: URLSearchParams, body: unknown): Reply => {
+    state.requests.push({ method, path, query: Object.fromEntries(query), body });
+    if (state.mode === "off") return notFound(method, path);
+    if (state.mode === "forbidden") return fail(fx.errors.forbidden);
+
+    if (path === "ai/advisor/overview" && method === "GET") return ok(overview(), 200, "AI advisor overview");
+
+    if (path === "ai/advisor/alerts" && method === "GET") {
+      const status = query.get("status");
+      const severity = query.get("severity");
+      const rule = query.get("rule_key");
+      const page = Number(query.get("page") ?? 1);
+      const limit = Number(query.get("limit") ?? 10);
+      if (status && status !== "open" && !(ADVISOR_STATUSES as readonly string[]).includes(status)) return badRequest("status noto'g'ri");
+      if (severity && severity !== "warning" && severity !== "critical") return badRequest("severity noto'g'ri");
+      if (rule && !(ADVISOR_RULES as readonly string[]).includes(rule)) return badRequest("rule_key noto'g'ri");
+      if (!Number.isInteger(page) || page < 1 || ![1, 10, 25, 50, 100].includes(limit)) return badRequest("page/limit noto'g'ri");
+      const scoped = state.alerts.filter((alert) => (!severity || alert.severity === severity) && (!rule || alert.rule_key === rule));
+      const matches = scoped.filter((alert) =>
+        !status ? true : status === "open" ? alert.status === "new" || alert.status === "seen" : alert.status === status,
+      );
+      const by_status = Object.fromEntries(ADVISOR_STATUSES.map((value) => [value, scoped.filter((alert) => alert.status === value).length]));
+      const total = matches.length;
+      return ok({
+        items: matches.slice((page - 1) * limit, page * limit).map((alert) => listItemOf(alert, listKeys)),
+        meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+        counts: { by_status },
+      });
+    }
+
+    const one = /^ai\/advisor\/alerts\/([^/]+)(\/explain)?$/.exec(path);
+    if (one) {
+      const [, id, explainPath] = one;
+      if (!/^\d{1,18}$/.test(id)) return badRequest("Ogohlantirish ID si noto'g'ri");
+      const alert = state.alerts.find((item) => item.id === id);
+      if (!alert) return fail(fx.errors.notFound);
+      const closed = alert.status === "resolved" || alert.status === "dismissed";
+
+      if (!explainPath && method === "GET") {
+        if (alert.status === "new") Object.assign(alert, { status: "seen", seen_at: new Date().toISOString(), seen_by: { id: "1", name: "Shodiyor Ergashev" } });
+        if (alert.explanation_status === "pending") {
+          const polls = (state.polls.get(id) ?? 0) + 1;
+          state.polls.set(id, polls);
+          if (state.explain !== "stuck" && polls >= state.explainReadyAfter) {
+            Object.assign(alert, {
+              explanation_status: "ready",
+              explanation_md: fx.explain.cached.explanation_md,
+              explained_at: new Date().toISOString(),
+              explanation_poll_after_ms: null,
+            });
+          }
+        }
+        return ok(alert);
+      }
+
+      if (explainPath && method === "POST") {
+        if (closed) return fail(fx.errors.explainClosed);
+        if (state.explain === "budget_month") return fail(fx.errors.budgetAdvisorMonth);
+        if (state.explain === "budget_global") return fail(fx.errors.budgetGlobalDay);
+        if (state.explain === "disabled") return fail(fx.errors.aiDisabled);
+        if (alert.explanation_status === "ready" || state.explain === "cached") {
+          Object.assign(alert, {
+            explanation_status: "ready",
+            explanation_md: alert.explanation_md ?? fx.explain.cached.explanation_md,
+            explained_at: alert.explained_at ?? new Date().toISOString(),
+          });
+          return ok({ ...fx.explain.cached, alert_id: id, explanation_md: alert.explanation_md, explained_at: alert.explained_at }, 202, "Accepted");
+        }
+        state.polls.set(id, 0);
+        Object.assign(alert, {
+          explanation_status: "pending",
+          explanation_md: null,
+          explanation_error: null,
+          explanation_requested_at: new Date().toISOString(),
+          explanation_poll_after_ms: fx.explain.queued.poll_after_ms,
+        });
+        return ok({ ...fx.explain.queued, alert_id: id }, 202, "Accepted");
+      }
+
+      if (!explainPath && method === "PATCH") {
+        const { status, note } = (body ?? {}) as { status?: string; note?: unknown };
+        if (status !== "resolved" && status !== "dismissed") return badRequest("status noto'g'ri");
+        const text = typeof note === "string" ? note.trim() : "";
+        if (status === "resolved") {
+          if (!text) return fail(fx.errors.noteRequired);
+          if (text.length < 3) return fail(fx.errors.noteTooShort);
+        }
+        if (text.length > 500) return fail(fx.errors.noteTooLong);
+        if (state.patch === "closed" || (closed && alert.status !== status)) return fail({ ...fx.errors.closed, alert_status: alert.status });
+        if (!closed) {
+          Object.assign(alert, {
+            status,
+            resolved_at: new Date().toISOString(),
+            resolved_by: { id: "1", name: "Shodiyor Ergashev" },
+            resolution_note: text || null,
+          });
+        }
+        return ok(alert);
+      }
+    }
+
+    if (path === "ai/advisor/settings") {
+      if (state.settingsMode === "off") return notFound(method, path);
+      if (method === "GET") return ok(state.settings);
+      if (method === "PATCH") {
+        const { version, rules, ...rest } = (body ?? {}) as { version?: unknown; rules?: Record<string, Record<string, unknown>> };
+        if (typeof version !== "number") return fail(fx.errors.invalidSetting);
+        if (Object.keys(rest).length) return fail({ ...fx.errors.invalidSetting, field: Object.keys(rest)[0] });
+        if (version !== state.settings.version) return fail({ ...fx.errors.settingsConflict, version: state.settings.version });
+        for (const [rule, patchRule] of Object.entries(rules ?? {})) {
+          if (!(ADVISOR_RULES as readonly string[]).includes(rule)) return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}` });
+          for (const field of ["severity", "telegram"]) {
+            if (field in patchRule) return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}.${field}` });
+          }
+        }
+        const next = structuredClone(state.settings);
+        for (const [rule, patchRule] of Object.entries(rules ?? {})) Object.assign(next.rules[rule as (typeof ADVISOR_RULES)[number]], patchRule);
+        state.settings = { ...next, version: next.version + 1, updated_at: new Date().toISOString() };
+        return ok(state.settings);
+      }
+    }
+
+    return notFound(method, path);
+  };
+
+  return { state, handle, fixtures: fx };
 };

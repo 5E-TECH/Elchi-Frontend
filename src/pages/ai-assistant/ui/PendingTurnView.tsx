@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-ai-assistant-answering, superadmin-ai-assistant-offline, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-budget-exceeded
 import { useTranslation } from "react-i18next";
-import { CircleX, LoaderCircle, Plus, RefreshCw, WifiOff } from "lucide-react";
+import { CircleX, LoaderCircle, MessageSquarePlus, RefreshCw, WifiOff } from "lucide-react";
 import { Button, Card, Skeleton, Spinner } from "../../../shared/ui/primitives";
 import { MiniMarkdown } from "../../../shared/ui/markdown/MiniMarkdown";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -132,7 +132,7 @@ export const PendingReply = ({ turn, online, onRetry, onNewChat }: PendingReplyP
           title={t(view.titleKey)}
           action={
             view.newChat ? (
-              <Button variant="secondary" size="sm" leftIcon={Plus} onClick={() => onNewChat(turn.question)}>
+              <Button variant="secondary" size="sm" leftIcon={MessageSquarePlus} onClick={() => onNewChat(turn.question)}>
                 {t("newChat")}
               </Button>
             ) : view.canRetry ? (

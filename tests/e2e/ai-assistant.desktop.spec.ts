@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { composer, mockAiAssistantApi, openAiAssistant } from "./support/aiAssistant";
+import { advisorCalls, composer, mockAiAssistantApi, openAiAssistant } from "./support/aiAssistant";
 
 /**
  * F7PWp6cK / T2 — AI moliyaviy yordamchi (faqat suhbat, superadmin), desktop 1280: menyu «Moliya» → «AI yordamchi»,
@@ -49,6 +49,36 @@ test("⭐ menyu → bo'sh suhbat → karta → SSE javob: markdown jadval, «Man
   await expect(log.getByRole("button", { name: "Javobni nusxalash" })).toHaveCount(2);
   await expect(composer(page)).toBeFocused();
   expect(state.posts[1]).toEqual({ message: "Kecha-chi?", conversation_id: "77" });
+  expect(leaked).toEqual([]);
+});
+
+test("maslahatchi backend'i yo'q (404, bugungi prod): tablar va «Sozlamalar» yo'q, ?tab=alerts e'tiborga olinmaydi; zond — 1 so'rov", async ({ page }) => {
+  const { advisor, leaked } = await mockAiAssistantApi(page);
+  await openAiAssistant(page, "/ai-assistant?tab=alerts&status=new&alert=1041");
+  await expect(page.getByRole("heading", { name: "Moliya bo'yicha savol bering" })).toBeVisible();
+  await expect(page.getByText("Pul oqimi, kassa va hisob-kitoblar bo'yicha savol bering. Yordamchi faqat ma'lumot o'qiydi.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Yangi suhbat" })).toBeVisible();
+  await expect(page.getByRole("tablist")).toHaveCount(0);
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: /^Bo'lim:/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sozlamalar" })).toHaveCount(0);
+  await expect(page.locator("[data-shell-slot=content]").getByText("Ogohlantirishlar")).toHaveCount(0);
+  // Xato UI yo'q (Toaster'ning bo'sh jonli hududi — slotdan tashqarida).
+  await expect(page.locator("[data-shell-slot=content]").getByRole("alert")).toHaveCount(0);
+  // URL tegilmaydi (faqat e'tiborga olinmaydi).
+  await expect(page).toHaveURL(/\/ai-assistant\?tab=alerts&status=new&alert=1041$/);
+
+  // Boshqa sahifaga o'tib qaytganda ham qayta so'ralmaydi (sessiya davomida keshlanadi), oyna fokusida ham.
+  await page.getByRole("link", { name: "Bosh sahifa" }).first().click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.getByRole("link", { name: "AI yordamchi" }).click();
+  await expect(page.getByRole("heading", { name: "Moliya bo'yicha savol bering" })).toBeVisible();
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByRole("tablist")).toHaveCount(0);
+
+  expect(advisorCalls(advisor, "ai/advisor/overview")).toHaveLength(1);
+  expect(advisorCalls(advisor, "ai/advisor/settings")).toHaveLength(0);
+  expect(advisor.requests).toHaveLength(1);
   expect(leaked).toEqual([]);
 });
 
