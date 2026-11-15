@@ -113,7 +113,7 @@ export const RuleSettingsRow = ({
               "group-aria-checked:bg-action group-disabled:opacity-45",
             )}
           >
-            <span className="absolute top-0.5 left-0.5 size-4 rounded-full bg-surface shadow-xs transition-transform duration-150 group-aria-checked:translate-x-4 motion-reduce:transition-none" />
+            <span className="absolute top-0.5 left-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 group-aria-checked:translate-x-4 motion-reduce:transition-none" />
           </span>
         </Pressable>
       </div>

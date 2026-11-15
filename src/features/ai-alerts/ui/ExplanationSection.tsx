@@ -90,8 +90,8 @@ export const ExplanationSection = ({ alert, expired, onRestart }: ExplanationSec
             <Spinner size="sm" />
             {t("alerts.explain.pending")}
           </span>
-          <Skeleton width="92%" height={12} />
-          <Skeleton width="64%" height={12} />
+          <Skeleton width="92%" height={12} tone="border" />
+          <Skeleton width="64%" height={12} tone="border" />
         </div>
       );
       break;
