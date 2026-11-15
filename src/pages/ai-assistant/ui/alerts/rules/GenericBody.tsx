@@ -11,8 +11,8 @@ import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
 import { AlertFacts, SignedMoney } from "../AlertFacts";
 
 /**
- * Umumiy ko'rinish (D14): noma'lum `rule_key` yoki buzilgan `facts` (sarlavha — server `title`) va hali alohida
- * ko'rinishi yo'q qoidalar — Joy · Summa (`headline_amount`) · Qoida (ma'lum bo'lsa — ochilgan paytdagi sharti).
+ * Umumiy ko'rinish (D14): noma'lum `rule_key` yoki buzilgan `facts` (sarlavha — server `title`) — Joy · Summa
+ * (`headline_amount`) · Qoida (ma'lum bo'lsa — ochilgan paytdagi sharti).
  * Dalillar chizilmaydi (noma'lum `evidence.kind` — `null`). Maket yo'q — eng yaqini `superadmin-ai-assistant-alert-dialog`.
  */
 export const GenericBody = ({ alert }: { alert: AiAdvisorAlertDetail }) => {

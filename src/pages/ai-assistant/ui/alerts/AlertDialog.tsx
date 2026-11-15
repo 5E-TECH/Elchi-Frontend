@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-resolve-confirm
+// dizayn-v2: superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-dialog-courier-debt, superadmin-ai-assistant-alert-dialog-expense, superadmin-ai-assistant-alert-dialog-market-payout, superadmin-ai-assistant-alert-dialog-hq-transfer, superadmin-ai-assistant-alert-dialog-loss, superadmin-ai-assistant-alert-dialog-corrections, superadmin-ai-assistant-alert-resolve-confirm
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -58,8 +58,9 @@ export type AlertDialogProps = {
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
- *  OGOHLANTIRISH OYNASI — `?alert=:id` (maketlar `superadmin-ai-assistant-alert-dialog` R1, `-alert-dialog-receipt`
- *  R7, `-alert-resolve-confirm`; qolgan qoidalar — umumiy ko'rinish, keyingi bosqich)
+ *  OGOHLANTIRISH OYNASI — `?alert=:id` (maketlar `superadmin-ai-assistant-alert-dialog` R1, `-courier-debt` R2,
+ *  `-expense` R3, `-market-payout` R4, `-hq-transfer` R5, `-loss` R6, `-receipt` R7, `-corrections` R8 — tana
+ *  `rules/`; `-alert-resolve-confirm`; noma'lum qoida — umumiy ko'rinish)
  * ────────────────────────────────────────────────────────────────────────────
  *
  *  Ochish — ro'yxatdagi havola (`push`); yopish — `alert` olinadi (`replace`). `React.lazy`: birinchi `?alert` da

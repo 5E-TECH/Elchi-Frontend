@@ -3,6 +3,10 @@ import i18n from "../../../i18n";
 import { createAdvisorFixtures } from "../../../test/aiAdvisorFixtures";
 import type { AiAdvisorAlertListItem } from "./advisorTypes";
 import {
+  addAdvisorDays,
+  advisorDayOf,
+  advisorDaysBetween,
+  advisorIsoWeekday,
   advisorUserName,
   alertDialogTitle,
   alertInlineName,
@@ -10,6 +14,8 @@ import {
   alertShortLabel,
   alertShortName,
   alertSubline,
+  formatAdvisorDayRange,
+  formatAdvisorDayRelative,
   formatAdvisorWeekRange,
   ruleConditionText,
   ruleName,
@@ -175,6 +181,41 @@ describe("hafta oralig'i", () => {
     expect(formatAdvisorWeekRange("2026-09-28", "2026-10-04", t("uz"))).toBe("28 sentyabr – 4 oktabr");
     expect(formatAdvisorWeekRange("2026-10-12", "2026-10-18", t("ru"))).toBe("12–18 октября");
     expect(formatAdvisorWeekRange("2026-09-28", "2026-10-04", t("en"))).toBe("September 28 – October 4");
+  });
+});
+
+describe("kun yordamchilari (dalil qatorlari, R4 oraliq, R6 hafta kuni)", () => {
+  it("davr: bir oy, oy almashsa, yil almashsa, bitta kun", () => {
+    expect(formatAdvisorDayRange("2026-10-12", "2026-10-18")).toBe("12–18.10.2026");
+    expect(formatAdvisorDayRange("2026-09-28", "2026-10-04")).toBe("28.09–04.10.2026");
+    expect(formatAdvisorDayRange("2025-12-29", "2026-01-04")).toBe("29.12.2025 – 04.01.2026");
+    expect(formatAdvisorDayRange("2026-10-20", "2026-10-20")).toBe("20.10.2026");
+  });
+
+  it("kun qo'shish / farq — oy va yil chegarasi, yaroqsiz qiymat", () => {
+    expect(addAdvisorDays("2026-11-01", -1)).toBe("2026-10-31");
+    expect(addAdvisorDays("2026-12-31", 1)).toBe("2027-01-01");
+    expect(addAdvisorDays("yo'q", 1)).toBe("yo'q");
+    expect(advisorDaysBetween("2026-10-09", "2026-10-13")).toBe(4);
+    expect(advisorDaysBetween("2026-10-13", "2026-10-09")).toBe(-4);
+    expect(advisorDaysBetween("2026-10-13", "")).toBeNull();
+  });
+
+  it("hafta kuni (dushanba — 1) va lahzaning Toshkent kuni", () => {
+    expect(advisorIsoWeekday("2026-10-20")).toBe(2);
+    expect(advisorIsoWeekday("2026-10-18")).toBe(7);
+    expect(advisorIsoWeekday("")).toBeNull();
+    // 19:30 UTC = ertasi kun 00:30 Toshkent vaqti.
+    expect(advisorDayOf("2026-10-19T19:30:00Z")).toBe("2026-10-20");
+    expect(advisorDayOf(null)).toBeNull();
+  });
+
+  it("nisbiy kun: «Bugun» / «Kecha» / sana (uz, ru, en)", () => {
+    const now = new Date(2026, 9, 23, 15, 0);
+    expect(formatAdvisorDayRelative("2026-10-23", "uz", now)).toBe("Bugun");
+    expect(formatAdvisorDayRelative("2026-10-22", "uz", now)).toBe("Kecha");
+    expect(formatAdvisorDayRelative("2026-10-22", "ru", now)).toBe("Вчера");
+    expect(formatAdvisorDayRelative("2026-10-21", "en", now)).toBe("21.10.2026");
   });
 });
 

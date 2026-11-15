@@ -203,7 +203,11 @@
       "shifts_one": "{{count}} shift",
       "shifts_other": "{{count}} shifts",
       "corrections_one": "{{count}} correction",
-      "corrections_other": "{{count}} corrections"
+      "corrections_other": "{{count}} corrections",
+      "items_one": "{{count}}",
+      "items_other": "{{count}}",
+      "expenses_one": "{{count}} expense",
+      "expenses_other": "{{count}} expenses"
     },
     "months": {
       "1": "January",
@@ -375,6 +379,74 @@
         "sameCloser2": "Both shifts were closed by {{name}}",
         "sameCloser3": "All three shifts were closed by {{name}}",
         "sameCloserMany": "All {{value}} shifts were closed by {{name}}"
+      },
+      "courierDays": {
+        "title": "Cash movement · last {{days}}",
+        "aside": "Balance — amount at the end of the day",
+        "columns": {
+          "day": "Day",
+          "income": "Sales",
+          "handedOver": "Handed over",
+          "growth": "Growth",
+          "closing": "Balance",
+          "open": "Open courier cash desk"
+        },
+        "openRow": "Open cash movement for {{day}}",
+        "cardHanded": "Sales {{income}} · handed over {{handed}}",
+        "cardGrowth": "Sales {{income}} · growth {{growth}}",
+        "since": "Since {{date}}",
+        "sinceCard": "Since {{date}} · {{days}}"
+      },
+      "expense": {
+        "title_one": "Last {{value}} expense in this category",
+        "title_other": "Last {{value}} expenses in this category",
+        "aside": "{{category}} · {{place}}",
+        "columns": {
+          "date": "Date",
+          "createdBy": "Entered by",
+          "amount": "Amount",
+          "open": "Open expense"
+        },
+        "trigger": "This expense",
+        "openRow": "Open expense {{at}}"
+      },
+      "payouts": {
+        "title_one": "Payout history · last {{value}}",
+        "title_other": "Payout history · last {{value}}",
+        "columns": {
+          "date": "Date",
+          "amount": "Amount",
+          "interval": "Interval"
+        },
+        "intervalCard": "{{days}} after the previous one",
+        "asOf": "As of {{at}}",
+        "debt": "owed",
+        "asOfCard": "As of {{at}} · {{days}} without a payout"
+      },
+      "transfers": {
+        "title_one": "Latest transfers to HQ · {{value}}",
+        "title_other": "Latest transfers to HQ · {{value}}",
+        "columns": {
+          "date": "Date",
+          "amount": "Amount",
+          "open": "Open transfer"
+        },
+        "openRow": "Open transfer {{at}}",
+        "asOf": "As of {{at}} · {{days}} without a transfer"
+      },
+      "loss": {
+        "title": "Comparison with the previous day",
+        "aside": "{{date}}, {{weekday}}",
+        "columns": {
+          "metric": "Metric",
+          "change": "Change"
+        },
+        "prevCard": "{{date}}: {{value}}"
+      },
+      "corrections": {
+        "title": "Breakdown · {{corrections}}",
+        "byKind": "By type",
+        "meter": "{{name}}: {{value}} of {{total}}"
       }
     },
     "facts": {
@@ -393,7 +465,40 @@
       "shift": "Shift",
       "aiRead": "AI read",
       "amount": "Amount",
-      "subject": "Subject"
+      "subject": "Subject",
+      "courier": "Courier",
+      "courierBalance": "Cash on hand",
+      "lastHandover": "Last handover",
+      "neverHanded": "No handovers yet",
+      "ago": "{{value}} ago",
+      "metCondition": "Condition met",
+      "expense": "Expense",
+      "category": "Category",
+      "median_one": "{{count}}-day median",
+      "median_other": "{{count}}-day median",
+      "mad": "Median deviation",
+      "market": "Market",
+      "debt": "Owed",
+      "lastPayout": "Last payout",
+      "noPayout": "No payouts yet",
+      "branch": "Branch",
+      "branchBalance": "In branch cash desk",
+      "lastTransfer": "Last transfer",
+      "noTransfer": "No transfers yet",
+      "period": "Period",
+      "periodDay": "{{date}}, {{weekday}} · day",
+      "periodWeek": "{{range}} · week",
+      "scope": "Scope",
+      "income": "Post profit",
+      "expenses": "Expenses",
+      "net": "Net profit",
+      "week": "Week",
+      "corrections": "Corrections",
+      "baseline_one": "{{count}}-day average",
+      "baseline_other": "{{count}}-day average",
+      "baselineValue": "{{value}} per week",
+      "ratio": "Ratio",
+      "ratioValue": "{{value}}×"
     },
     "receipt": {
       "title": "Receipt check",
@@ -413,6 +518,45 @@
         "courier_to_hq": "Courier handover",
         "branch_to_hq": "Transfer to HQ"
       }
+    },
+    "courier": {
+      "both": "Both conditions met: grew {{growth}} in a row and not handed over for {{days}}",
+      "growth": "Grew {{growth}} in a row above {{balance}}",
+      "noHandover": "Not handed over for more than {{daysOver}}"
+    },
+    "meter": {
+      "over": "{{amount}} over the threshold",
+      "caption": "Vertical line — rule threshold, {{threshold}}",
+      "captionExpense": "Vertical line — rule threshold: median + {{multiplier}} × median deviation = {{threshold}}",
+      "ratio": "{{ratio}}× the usual",
+      "label": "{{what}} {{value}}, rule threshold {{threshold}}"
+    },
+    "correctionKinds": {
+      "name": {
+        "manual_correction": "Manual correction",
+        "order_rollback": "Order rollback",
+        "payment_reverse": "Reversal",
+        "payment_edit": "Amount edit"
+      },
+      "short": {
+        "manual_correction_one": "{{count}} manual",
+        "manual_correction_other": "{{count}} manual",
+        "order_rollback_one": "{{count}} order rollback",
+        "order_rollback_other": "{{count}} order rollbacks",
+        "payment_reverse_one": "{{count}} reversal",
+        "payment_reverse_other": "{{count}} reversals",
+        "payment_edit_one": "{{count}} edit",
+        "payment_edit_other": "{{count}} edits"
+      }
+    },
+    "weekdays": {
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
     }
   },
   "rules": {

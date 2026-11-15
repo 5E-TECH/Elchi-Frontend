@@ -217,7 +217,15 @@
       "corrections_one": "{{count}} исправление",
       "corrections_few": "{{count}} исправления",
       "corrections_many": "{{count}} исправлений",
-      "corrections_other": "{{count}} исправления"
+      "corrections_other": "{{count}} исправления",
+      "items_one": "{{count}} шт.",
+      "items_few": "{{count}} шт.",
+      "items_many": "{{count}} шт.",
+      "items_other": "{{count}} шт.",
+      "expenses_one": "{{count}} расход",
+      "expenses_few": "{{count}} расхода",
+      "expenses_many": "{{count}} расходов",
+      "expenses_other": "{{count}} расхода"
     },
     "months": {
       "1": "января",
@@ -401,6 +409,80 @@
         "sameCloser2": "Обе смены закрыл(а) {{name}}",
         "sameCloser3": "Все три смены закрыл(а) {{name}}",
         "sameCloserMany": "Все смены ({{value}}) закрыл(а) {{name}}"
+      },
+      "courierDays": {
+        "title": "Движение кассы · последние {{days}}",
+        "aside": "Остаток — сумма на конец дня",
+        "columns": {
+          "day": "День",
+          "income": "Продажи",
+          "handedOver": "Сдано",
+          "growth": "Рост",
+          "closing": "Остаток",
+          "open": "Открыть кассу курьера"
+        },
+        "openRow": "Открыть движение кассы за {{day}}",
+        "cardHanded": "Продажи {{income}} · сдано {{handed}}",
+        "cardGrowth": "Продажи {{income}} · рост {{growth}}",
+        "since": "С {{date}}",
+        "sinceCard": "С {{date}} · {{days}}"
+      },
+      "expense": {
+        "title_one": "Последний {{value}} расход в категории",
+        "title_few": "Последние {{value}} расхода в категории",
+        "title_many": "Последние {{value}} расходов в категории",
+        "title_other": "Последние {{value}} расхода в категории",
+        "aside": "{{category}} · {{place}}",
+        "columns": {
+          "date": "Дата",
+          "createdBy": "Внёс",
+          "amount": "Сумма",
+          "open": "Открыть расход"
+        },
+        "trigger": "Этот расход",
+        "openRow": "Открыть расход {{at}}"
+      },
+      "payouts": {
+        "title_one": "История выплат · последняя {{value}}",
+        "title_few": "История выплат · последние {{value}}",
+        "title_many": "История выплат · последние {{value}}",
+        "title_other": "История выплат · последние {{value}}",
+        "columns": {
+          "date": "Дата",
+          "amount": "Сумма",
+          "interval": "Интервал"
+        },
+        "intervalCard": "через {{days}} после предыдущей",
+        "asOf": "На {{at}}",
+        "debt": "к выплате",
+        "asOfCard": "На {{at}} · {{days}} без выплаты"
+      },
+      "transfers": {
+        "title_one": "Последние переводы в HQ · {{value}}",
+        "title_few": "Последние переводы в HQ · {{value}}",
+        "title_many": "Последние переводы в HQ · {{value}}",
+        "title_other": "Последние переводы в HQ · {{value}}",
+        "columns": {
+          "date": "Дата",
+          "amount": "Сумма",
+          "open": "Открыть перевод"
+        },
+        "openRow": "Открыть перевод {{at}}",
+        "asOf": "На {{at}} · {{days}} без перевода"
+      },
+      "loss": {
+        "title": "Сравнение с предыдущим днём",
+        "aside": "{{date}}, {{weekday}}",
+        "columns": {
+          "metric": "Показатель",
+          "change": "Изменение"
+        },
+        "prevCard": "{{date}}: {{value}}"
+      },
+      "corrections": {
+        "title": "Распределение · {{corrections}}",
+        "byKind": "По типу",
+        "meter": "{{name}}: {{value}} из {{total}}"
       }
     },
     "facts": {
@@ -419,7 +501,44 @@
       "shift": "Смена",
       "aiRead": "AI прочитал",
       "amount": "Сумма",
-      "subject": "Объект"
+      "subject": "Объект",
+      "courier": "Курьер",
+      "courierBalance": "Сумма в кассе",
+      "lastHandover": "Последняя сдача",
+      "neverHanded": "Сдач не было",
+      "ago": "{{value}} назад",
+      "metCondition": "Выполненное условие",
+      "expense": "Расход",
+      "category": "Категория",
+      "median_one": "Медиана за {{count}} день",
+      "median_few": "Медиана за {{count}} дня",
+      "median_many": "Медиана за {{count}} дней",
+      "median_other": "Медиана за {{count}} дня",
+      "mad": "Медианное отклонение",
+      "market": "Маркет",
+      "debt": "К выплате",
+      "lastPayout": "Последняя выплата",
+      "noPayout": "Выплат не было",
+      "branch": "Филиал",
+      "branchBalance": "В кассе филиала",
+      "lastTransfer": "Последний перевод",
+      "noTransfer": "Переводов не было",
+      "period": "Период",
+      "periodDay": "{{date}}, {{weekday}} · день",
+      "periodWeek": "{{range}} · неделя",
+      "scope": "Охват",
+      "income": "Доход почты",
+      "expenses": "Расходы",
+      "net": "Чистая прибыль",
+      "week": "Неделя",
+      "corrections": "Исправления",
+      "baseline_one": "Среднее за {{count}} день",
+      "baseline_few": "Среднее за {{count}} дня",
+      "baseline_many": "Среднее за {{count}} дней",
+      "baseline_other": "Среднее за {{count}} дня",
+      "baselineValue": "{{value}} в неделю",
+      "ratio": "Соотношение",
+      "ratioValue": "в {{value}} раза"
     },
     "receipt": {
       "title": "Проверка чека",
@@ -439,6 +558,53 @@
         "courier_to_hq": "Сдача курьера",
         "branch_to_hq": "Перевод в HQ"
       }
+    },
+    "courier": {
+      "both": "Выполнены оба условия: рост {{growth}} подряд и {{days}} без сдачи",
+      "growth": "Рост {{growth}} подряд, больше {{balance}}",
+      "noHandover": "Не сдаётся более {{daysOver}}"
+    },
+    "meter": {
+      "over": "Выше порога на {{amount}}",
+      "caption": "Вертикальная линия — порог правила, {{threshold}}",
+      "captionExpense": "Вертикальная линия — порог правила: медиана + {{multiplier}} × медианное отклонение = {{threshold}}",
+      "ratio": "В {{ratio}} раза больше обычного",
+      "label": "{{what}} {{value}}, порог правила {{threshold}}"
+    },
+    "correctionKinds": {
+      "name": {
+        "manual_correction": "Ручная корректировка",
+        "order_rollback": "Откат заказа",
+        "payment_reverse": "Возврат",
+        "payment_edit": "Изменение суммы"
+      },
+      "short": {
+        "manual_correction_one": "{{count}} вручную",
+        "manual_correction_few": "{{count}} вручную",
+        "manual_correction_many": "{{count}} вручную",
+        "manual_correction_other": "{{count}} вручную",
+        "order_rollback_one": "{{count}} откат заказа",
+        "order_rollback_few": "{{count}} отката заказов",
+        "order_rollback_many": "{{count}} откатов заказов",
+        "order_rollback_other": "{{count}} отката заказов",
+        "payment_reverse_one": "{{count}} возврат",
+        "payment_reverse_few": "{{count}} возврата",
+        "payment_reverse_many": "{{count}} возвратов",
+        "payment_reverse_other": "{{count}} возврата",
+        "payment_edit_one": "{{count}} изменение",
+        "payment_edit_few": "{{count}} изменения",
+        "payment_edit_many": "{{count}} изменений",
+        "payment_edit_other": "{{count}} изменения"
+      }
+    },
+    "weekdays": {
+      "1": "понедельник",
+      "2": "вторник",
+      "3": "среда",
+      "4": "четверг",
+      "5": "пятница",
+      "6": "суббота",
+      "7": "воскресенье"
     }
   },
   "rules": {

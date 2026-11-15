@@ -64,11 +64,29 @@ export const AlertFacts = ({ facts, columns = "auto", className }: AlertFactsPro
   );
 };
 
-/** Ishorali summa (U+2212): manfiy — `danger-fg` (ishora matnda, rang yolg'iz emas). */
-export const SignedMoney = ({ value, className }: { value: number; className?: string }) => {
+/**
+ * Ishorali summa (U+2212): manfiy — `danger-fg` (ishora matnda, rang yolg'iz emas). `tone`: `loss` (sukut) — faqat
+ * manfiy qizil; `profit` — musbat ham yashil (sof foyda, maket R6); `plain` — rangsiz (o'zgarish ustuni).
+ */
+export const SignedMoney = ({
+  value,
+  tone = "loss",
+  className,
+}: {
+  value: number;
+  tone?: "loss" | "profit" | "plain";
+  className?: string;
+}) => {
   const { i18n } = useTranslation();
   return (
-    <span className={cx("font-semibold whitespace-nowrap", value < 0 && "text-danger-fg", className)}>
+    <span
+      className={cx(
+        "font-semibold whitespace-nowrap",
+        tone !== "plain" && value < 0 && "text-danger-fg",
+        tone === "profit" && value > 0 && "text-success-fg",
+        className,
+      )}
+    >
       {formatSignedMoneyLocalized(value, { language: i18n.resolvedLanguage ?? i18n.language })}
     </span>
   );

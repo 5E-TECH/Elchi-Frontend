@@ -123,3 +123,31 @@ test("390: ogohlantirish oynasi — pastki varaqa: dalillar kartalari, amallar u
   expect(advisorCalls(advisor, "ai/advisor/alerts/1040", "PATCH")).toHaveLength(1);
   expect(leaked).toEqual([]);
 });
+
+test("390: R2 va R6 oynalari — dalillar kartalarda (jadval yo'q), o'lchagich, oqish yo'q, nishonlar ≥ 44 px", async ({ page }) => {
+  await mockAiAssistantApi(page, { advisor: "on" });
+  await page.goto("/ai-assistant?tab=alerts&alert=1041");
+  let dialog = page.getByRole("dialog", { name: "Jasur Tursunov kassasida 2 840 000 so'm topshirilmagan" });
+  await expect(dialog).toBeVisible({ timeout: 60_000 });
+  await expect(dialog.getByRole("meter", { name: "Kassadagi summa 2 840 000 so'm, qoida chegarasi 2 000 000 so'm" })).toBeVisible();
+  await expect(dialog.getByRole("table")).toHaveCount(0);
+  const days = dialog.getByRole("list", { name: "Kassa harakati · oxirgi 5 kun" });
+  await expect(days.getByRole("listitem")).toHaveCount(6);
+  await expect(days.getByRole("listitem").first()).toContainText("Sotuvlar 1 180 000 · topshirildi 1 560 000 so'm");
+  await expect(days.getByRole("listitem").last()).toContainText("dan beri · 4 kun");
+  await expectNoHorizontalOverflow(page);
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+
+  await page.goto("/ai-assistant?tab=alerts&alert=1031");
+  dialog = page.getByRole("dialog", { name: /kuni zarar: sof foyda −380 000 so'm$/ });
+  await expect(dialog).toBeVisible({ timeout: 60_000 });
+  await expect(dialog.getByRole("table")).toHaveCount(0);
+  const compare = dialog.getByRole("list", { name: "Oldingi kun bilan solishtirish" });
+  await expect(compare.getByRole("listitem")).toHaveCount(3);
+  await expect(compare.getByRole("listitem").first()).toContainText("−5,3%");
+  await expect(compare.getByRole("listitem").last()).toContainText("−640 000 so'm");
+  await expectNoHorizontalOverflow(page);
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+});

@@ -149,6 +149,10 @@ export {
 } from "./model/advisorRules";
 export type { ThresholdFieldSpec, ThresholdInputMode } from "./model/advisorRules";
 export {
+  addAdvisorDays,
+  advisorDayOf,
+  advisorDaysBetween,
+  advisorIsoWeekday,
   advisorUserName,
   alertDialogTitle,
   alertInlineName,
@@ -158,6 +162,8 @@ export {
   alertSubline,
   formatAdvisorDay,
   formatAdvisorDayMonth,
+  formatAdvisorDayRange,
+  formatAdvisorDayRelative,
   formatAdvisorWeekRange,
   ruleConditionText,
   ruleName,

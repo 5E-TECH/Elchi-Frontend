@@ -203,7 +203,11 @@
       "shifts_one": "{{count}} smena",
       "shifts_other": "{{count}} smena",
       "corrections_one": "{{count}} ta tuzatish",
-      "corrections_other": "{{count}} ta tuzatish"
+      "corrections_other": "{{count}} ta tuzatish",
+      "items_one": "{{count}} ta",
+      "items_other": "{{count}} ta",
+      "expenses_one": "{{count}} ta xarajat",
+      "expenses_other": "{{count}} ta xarajat"
     },
     "months": {
       "1": "yanvar",
@@ -375,6 +379,74 @@
         "sameCloser2": "Ikkala smenani {{name}} yopgan",
         "sameCloser3": "Uchala smenani {{name}} yopgan",
         "sameCloserMany": "Barcha {{value}} ta smenani {{name}} yopgan"
+      },
+      "courierDays": {
+        "title": "Kassa harakati · oxirgi {{days}}",
+        "aside": "Qoldiq — kun oxiridagi summa",
+        "columns": {
+          "day": "Kun",
+          "income": "Sotuvlar",
+          "handedOver": "Topshirildi",
+          "growth": "O'sish",
+          "closing": "Qoldiq",
+          "open": "Kuryer kassasini ochish"
+        },
+        "openRow": "{{day}} kassa harakatini ochish",
+        "cardHanded": "Sotuvlar {{income}} · topshirildi {{handed}}",
+        "cardGrowth": "Sotuvlar {{income}} · o'sish {{growth}}",
+        "since": "{{date}} dan beri",
+        "sinceCard": "{{date}} dan beri · {{days}}"
+      },
+      "expense": {
+        "title_one": "Shu kategoriyadagi oxirgi {{value}} xarajat",
+        "title_other": "Shu kategoriyadagi oxirgi {{value}} xarajat",
+        "aside": "{{category}} · {{place}}",
+        "columns": {
+          "date": "Sana",
+          "createdBy": "Kiritgan",
+          "amount": "Summa",
+          "open": "Xarajatni ochish"
+        },
+        "trigger": "Shu xarajat",
+        "openRow": "{{at}} xarajatini ochish"
+      },
+      "payouts": {
+        "title_one": "To'lovlar tarixi · oxirgi {{value}} ta",
+        "title_other": "To'lovlar tarixi · oxirgi {{value}} ta",
+        "columns": {
+          "date": "Sana",
+          "amount": "Summa",
+          "interval": "Oraliq"
+        },
+        "intervalCard": "oldingisidan {{days}} keyin",
+        "asOf": "{{at}} holatida",
+        "debt": "berilishi kerak",
+        "asOfCard": "{{at}} holatida · {{days}} to'lovsiz"
+      },
+      "transfers": {
+        "title_one": "HQ'ga oxirgi o'tkazmalar · {{value}} ta",
+        "title_other": "HQ'ga oxirgi o'tkazmalar · {{value}} ta",
+        "columns": {
+          "date": "Sana",
+          "amount": "Summa",
+          "open": "O'tkazmani ochish"
+        },
+        "openRow": "{{at}} o'tkazmasini ochish",
+        "asOf": "{{at}} holatida · {{days}} o'tkazmasiz"
+      },
+      "loss": {
+        "title": "Oldingi kun bilan solishtirish",
+        "aside": "{{date}}, {{weekday}}",
+        "columns": {
+          "metric": "Ko'rsatkich",
+          "change": "O'zgarish"
+        },
+        "prevCard": "{{date}}: {{value}}"
+      },
+      "corrections": {
+        "title": "Taqsimot · {{corrections}}",
+        "byKind": "Turi bo'yicha",
+        "meter": "{{name}}: {{total}} tadan {{value}} ta"
       }
     },
     "facts": {
@@ -393,7 +465,40 @@
       "shift": "Smena",
       "aiRead": "AI o'qigan",
       "amount": "Summa",
-      "subject": "Joy"
+      "subject": "Joy",
+      "courier": "Kuryer",
+      "courierBalance": "Kassadagi summa",
+      "lastHandover": "Oxirgi topshirish",
+      "neverHanded": "Topshirish bo'lmagan",
+      "ago": "{{value}} oldin",
+      "metCondition": "Bajarilgan shart",
+      "expense": "Xarajat",
+      "category": "Kategoriya",
+      "median_one": "{{count}} kunlik mediana",
+      "median_other": "{{count}} kunlik mediana",
+      "mad": "Mediana og'ishi",
+      "market": "Market",
+      "debt": "Berilishi kerak",
+      "lastPayout": "Oxirgi to'lov",
+      "noPayout": "To'lov bo'lmagan",
+      "branch": "Filial",
+      "branchBalance": "Filial kassasida",
+      "lastTransfer": "Oxirgi o'tkazma",
+      "noTransfer": "O'tkazma bo'lmagan",
+      "period": "Davr",
+      "periodDay": "{{date}}, {{weekday}} · kun",
+      "periodWeek": "{{range}} · hafta",
+      "scope": "Qamrov",
+      "income": "Pochta foydasi",
+      "expenses": "Xarajatlar",
+      "net": "Sof foyda",
+      "week": "Hafta",
+      "corrections": "Tuzatishlar",
+      "baseline_one": "{{count}} kunlik o'rtacha",
+      "baseline_other": "{{count}} kunlik o'rtacha",
+      "baselineValue": "{{value}} ta / hafta",
+      "ratio": "Nisbat",
+      "ratioValue": "{{value}} barobar"
     },
     "receipt": {
       "title": "Chek tekshiruvi",
@@ -413,6 +518,45 @@
         "courier_to_hq": "Kuryer topshirig'i",
         "branch_to_hq": "HQ'ga o'tkazma"
       }
+    },
+    "courier": {
+      "both": "Ikkala shart bajarildi: {{growth}} ketma-ket o'sdi va {{days}} topshirilmagan",
+      "growth": "{{growth}} ketma-ket o'sib {{balance}}dan oshdi",
+      "noHandover": "{{daysOver}}dan ortiq topshirilmagan"
+    },
+    "meter": {
+      "over": "Chegaradan {{amount}} ortiq",
+      "caption": "Tik chiziq — qoida chegarasi, {{threshold}}",
+      "captionExpense": "Tik chiziq — qoida chegarasi: mediana + {{multiplier}} × mediana og'ishi = {{threshold}}",
+      "ratio": "Odatdagidan {{ratio}} barobar",
+      "label": "{{what}} {{value}}, qoida chegarasi {{threshold}}"
+    },
+    "correctionKinds": {
+      "name": {
+        "manual_correction": "Qo'lda tuzatish",
+        "order_rollback": "Buyurtma qaytarilishi",
+        "payment_reverse": "Qaytarish",
+        "payment_edit": "Summani tahrirlash"
+      },
+      "short": {
+        "manual_correction_one": "{{count}} qo'lda",
+        "manual_correction_other": "{{count}} qo'lda",
+        "order_rollback_one": "{{count}} buyurtma qaytarilishi",
+        "order_rollback_other": "{{count}} buyurtma qaytarilishi",
+        "payment_reverse_one": "{{count}} qaytarish",
+        "payment_reverse_other": "{{count}} qaytarish",
+        "payment_edit_one": "{{count}} tahrir",
+        "payment_edit_other": "{{count}} tahrir"
+      }
+    },
+    "weekdays": {
+      "1": "dushanba",
+      "2": "seshanba",
+      "3": "chorshanba",
+      "4": "payshanba",
+      "5": "juma",
+      "6": "shanba",
+      "7": "yakshanba"
     }
   },
   "rules": {

@@ -296,3 +296,97 @@ test("chuqur havola ?tab=alerts&alert=1039 (R7): chek tekshiruvi; Esc — `alert
   await expect(page.getByTestId("ai-alerts-critical-banner")).toContainText("1 ta jiddiy ogohlantirish ko'rib chiqilmagan");
   expect(advisorCalls(advisor, "ai/advisor/alerts/1039")).toHaveLength(1);
 });
+
+test("R2–R6, R8: ro'yxatdan ochiladi — har qoidaning faktlari, o'lchagich / dalil jadvali va asosiy havolasi", async ({ page }) => {
+  const { advisor } = await mockAiAssistantApi(page, { advisor: "on" });
+  await openAiAlerts(page);
+
+  const open = async (id: string, listTitle: string | RegExp, dialogTitle: string | RegExp) => {
+    // Sarlavha havolasi (› tugmasining nomi ««…» ogohlantirishini ochish» — u tanlanmaydi; ro'yxatda shu nomli
+    // yopilgan nusxalar ham bor — `alert` bo'yicha).
+    await page.getByRole("link", { name: listTitle, exact: true }).and(page.locator(`[href$="alert=${id}"]`)).click();
+    const dialog = page.getByRole("dialog", { name: dialogTitle });
+    await expect(dialog).toBeVisible();
+    return dialog;
+  };
+  const close = async (dialog: ReturnType<typeof page.getByRole>) => {
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(page).toHaveURL(/\/ai-assistant\?tab=alerts$/);
+  };
+  const facts = (dialog: ReturnType<typeof page.getByRole>) => dialog.getByLabel("Asosiy ma'lumotlar");
+
+  // R2 «Kuryer qarzi o'smoqda» — ikkala shart, o'lchagich (jiddiy), kassa harakati.
+  let dialog = await open("1041", FIRST_ALERT_TITLE, "Jasur Tursunov kassasida 2 840 000 so'm topshirilmagan");
+  await expect(facts(dialog)).toContainText("Jasur Tursunov · Toshkent HQ");
+  await expect(facts(dialog)).toContainText("4 kun oldin");
+  await expect(dialog.getByRole("meter", { name: "Kassadagi summa 2 840 000 so'm, qoida chegarasi 2 000 000 so'm" })).toBeVisible();
+  await expect(dialog.getByText("Chegaradan 840 000 so'm ortiq", { exact: true })).toBeVisible();
+  await expect(dialog.getByText(/Ikkala shart bajarildi: 4 kun ketma-ket o'sdi va 4 kun topshirilmagan$/)).toBeVisible();
+  const days = dialog.getByRole("table", { name: "Kassa harakati · oxirgi 5 kun" });
+  await expect(days.getByRole("row")).toHaveCount(7);
+  await expect(days.getByRole("row").last()).toContainText("+2 840 000 so'm");
+  await expect(dialog.getByRole("link", { name: "Kuryer kassasini ochish" })).toHaveAttribute("href", "/payments/cash-detail/377?type=courier");
+  await close(dialog);
+
+  // R3 «G'ayrioddiy xarajat» — «Odatdagidan 3,4 barobar», oxirgi 5 xarajat, «Izoh» ustunisiz.
+  dialog = await open(
+    "1036",
+    "Farg'ona filiali: yoqilg'i xarajati 1 450 000 so'm — odatdagidan 3,4 barobar",
+    "Farg'ona filiali: yoqilg'i xarajati odatdagidan 3,4 barobar ko'p",
+  );
+  await expect(facts(dialog)).toContainText("425 000 so'm · 11 ta xarajat");
+  await expect(dialog.getByText("Odatdagidan 3,4 barobar", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Tik chiziq — qoida chegarasi: mediana + 3 × mediana og'ishi = 680 000 so'm", { exact: true })).toBeVisible();
+  const expenses = dialog.getByRole("table", { name: "Shu kategoriyadagi oxirgi 5 xarajat" });
+  await expect(expenses.getByRole("row").nth(1)).toContainText("Shu xarajat");
+  await expect(expenses.getByRole("row").last()).toContainText("30 kunlik mediana");
+  await expect(expenses.getByRole("columnheader", { name: "Izoh" })).toHaveCount(0);
+  await expect(dialog.getByRole("link", { name: "Xarajatni ochish" })).toHaveAttribute("href", "/payments/cash-detail/9?type=branch&history=98877");
+  await close(dialog);
+
+  // R4 «Market to'lovi kechikmoqda» — to'lovlar tarixi (oraliq), jami — to'lovsiz kunlar.
+  dialog = await open("1034", "Nur Elektronika — 9 kundan beri to'lov yo'q, qarz 3 120 000 so'm", "Nur Elektronika — 9 kundan beri to'lov yo'q");
+  await expect(facts(dialog)).toContainText("3 120 000 so'm");
+  const payouts = dialog.getByRole("table", { name: "To'lovlar tarixi · oxirgi 2 ta" });
+  await expect(payouts.getByRole("row").nth(1)).toContainText("4 kun");
+  await expect(payouts.getByRole("row").last()).toContainText("holatida · berilishi kerak");
+  await expect(payouts.getByRole("row").last()).toContainText("9 kun");
+  await expect(dialog.getByRole("link", { name: "Market kassasini ochish" })).toHaveAttribute("href", "/payments/cash-detail/55?type=market");
+  await close(dialog);
+
+  // R5 «HQ'ga o'tkazma kechikmoqda» — o'lchagich, oxirgi o'tkazmalar.
+  dialog = await open(
+    "1033",
+    "Urgut filiali kassasida 6 400 000 so'm — HQ'ga 4 kundan beri o'tkazma yo'q",
+    "Urgut filiali 4 kundan beri HQ'ga pul o'tkazmagan",
+  );
+  await expect(dialog.getByRole("meter", { name: "Filial kassasida 6 400 000 so'm, qoida chegarasi 5 000 000 so'm" })).toBeVisible();
+  const transfers = dialog.getByRole("table", { name: "HQ'ga oxirgi o'tkazmalar · 4 ta" });
+  await expect(transfers.getByRole("row").last()).toContainText("4 kun o'tkazmasiz");
+  await expect(dialog.getByRole("link", { name: "Filial kassasini ochish" })).toHaveAttribute("href", "/payments/cash-detail/12?type=branch");
+  await close(dialog);
+
+  // R6 «Zarar» (hal qilingan) — oldingi kun bilan solishtirish, faqat «Yopish».
+  dialog = await open("1031", /kuni sof foyda −380 000 so'm$/, /kuni zarar: sof foyda −380 000 so'm$/);
+  await expect(facts(dialog)).toContainText("Butun tizim");
+  const compare = dialog.getByRole("table", { name: "Oldingi kun bilan solishtirish" });
+  await expect(compare).toContainText("−5,3%");
+  await expect(compare).toContainText("+54,3%");
+  await expect(compare).toContainText("−640 000 so'm");
+  await expect(dialog.getByRole("button", { name: "Hal qilindi" })).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Yopish" }).last()).toBeVisible();
+  await close(dialog);
+
+  // R8 «Tuzatishlar ko'paydi» (ahamiyatsiz) — turlar bo'yicha taqsimot.
+  dialog = await open("1029", /haftasida 14 ta tuzatish — 30 kunlik o'rtachadan 2,3 barobar$/, /haftasida 14 ta tuzatish — odatdagidan 2,3 barobar ko'p$/);
+  await expect(facts(dialog)).toContainText("14 ta · 9 qaytarish, 5 tahrir");
+  const breakdown = dialog.getByRole("region", { name: "Taqsimot · 14 ta tuzatish" });
+  await expect(breakdown.getByRole("meter", { name: "Qaytarish: 14 tadan 9 ta" })).toBeVisible();
+  await expect(breakdown.getByRole("meter", { name: "Summani tahrirlash: 14 tadan 5 ta" })).toBeVisible();
+  await expect(dialog.getByRole("link", { name: "Tuzatishlar tarixini ochish" })).toHaveCount(0);
+  await close(dialog);
+
+  // Har oyna — bitta GET (ochilganda «Ko'rildi»).
+  for (const id of ["1041", "1036", "1034", "1033", "1031", "1029"]) expect(advisorCalls(advisor, `ai/advisor/alerts/${id}`)).toHaveLength(1);
+});

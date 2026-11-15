@@ -1,4 +1,5 @@
-import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { RELATIVE_DAY_LABEL, toValidDate } from "../../../shared/lib/formatDateTime";
+import { formatMoneyLocalized, formatNumberLocalized, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
 import { DEFAULT_RULE_LIMITS, isRuleKey } from "./advisorRules";
 import type {
   AiAdvisorAlertListItem,
@@ -62,6 +63,71 @@ export const formatAdvisorWeekRange = (from: string, to: string, t: AdvisorTrans
   const toDay = String(Number(b[3]));
   if (a[1] === b[1] && a[2] === b[2]) return t("alerts.range.sameMonth", { from: fromDay, to: toDay, month: month(b[2]) });
   return t("alerts.range.crossMonth", { from: fromDay, fromMonth: month(a[2]), to: toDay, toMonth: month(b[2]) });
+};
+
+const dayParts = (value: string) => {
+  const match = DAY_RE.exec(value);
+  return match ? { y: Number(match[1]), m: Number(match[2]), d: Number(match[3]) } : null;
+};
+
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+/** UTC yarim tuni (kunlar farqi uchun — mintaqa va yozgi vaqt kunni surmaydi). */
+const dayEpoch = (value: string): number | null => {
+  const parts = dayParts(value);
+  return parts ? Date.UTC(parts.y, parts.m - 1, parts.d) : null;
+};
+
+const DAY_MS = 86_400_000;
+
+/** Kalendar kuni `YYYY-MM-DD` ga `days` kun qo'shadi (manfiy — ayiradi); yaroqsiz — o'zicha. */
+export const addAdvisorDays = (value: string, days: number): string => {
+  const epoch = dayEpoch(value);
+  if (epoch === null) return value;
+  const date = new Date(epoch + days * DAY_MS);
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`;
+};
+
+/** Ikki kalendar kuni orasidagi to'liq kunlar (`to − from`); yaroqsiz — `null`. */
+export const advisorDaysBetween = (from: string, to: string): number | null => {
+  const a = dayEpoch(from);
+  const b = dayEpoch(to);
+  return a === null || b === null ? null : Math.round((b - a) / DAY_MS);
+};
+
+/** Lahzaning kalendar kuni (ilova vaqti — Toshkent) `YYYY-MM-DD`; yaroqsiz — `null`. */
+export const advisorDayOf = (value: string | Date | null | undefined): string | null => {
+  const date = toValidDate(value);
+  return date ? `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}` : null;
+};
+
+/** Hafta kuni (ISO: dushanba — 1, yakshanba — 7); yaroqsiz — `null`. */
+export const advisorIsoWeekday = (value: string): number | null => {
+  const epoch = dayEpoch(value);
+  if (epoch === null) return null;
+  const weekday = new Date(epoch).getUTCDay();
+  return weekday === 0 ? 7 : weekday;
+};
+
+/** Kun: bugun — «Bugun», kecha — «Kecha», boshqa — «21.10.2026» (`formatDateTimeLocalized` qoidasi). */
+export const formatAdvisorDayRelative = (value: string, language?: string | null, now: Date = new Date()): string => {
+  const today = advisorDayOf(now);
+  const labels = RELATIVE_DAY_LABEL[resolveMoneyLanguage(language)];
+  const day = value.slice(0, 10);
+  if (today && day === today) return labels.today;
+  if (today && day === addAdvisorDays(today, -1)) return labels.yesterday;
+  return formatAdvisorDay(value);
+};
+
+/** Davr: «12–18.10.2026»; oy almashsa — «28.09–04.10.2026»; yil almashsa — «29.12.2025 – 04.01.2026»; bir kun — «20.10.2026». */
+export const formatAdvisorDayRange = (from: string, to: string): string => {
+  const a = dayParts(from);
+  const b = dayParts(to);
+  if (!a || !b) return `${from}–${to}`;
+  if (a.y === b.y && a.m === b.m && a.d === b.d) return formatAdvisorDay(from);
+  if (a.y !== b.y) return `${formatAdvisorDay(from)} – ${formatAdvisorDay(to)}`;
+  if (a.m !== b.m) return `${pad2(a.d)}.${pad2(a.m)}–${pad2(b.d)}.${pad2(b.m)}.${b.y}`;
+  return `${pad2(a.d)}–${pad2(b.d)}.${pad2(b.m)}.${b.y}`;
 };
 
 /** Odam: ism yoki «#<id>» (§3.5). */
