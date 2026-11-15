@@ -40,7 +40,7 @@
     "placeholder": "Masalan: qaysi marketlarga to'lov kechikmoqda?",
     "placeholderAnswering": "Javob yozilmoqda…",
     "placeholderLimit": "Limit ertaga, 00:00 da yangilanadi",
-    "placeholderCap": "Xarajat chegarasi ertaga, 00:00 da yangilanadi",
+    "placeholderCap": "Yangi savol ertaga, 00:00 dan",
     "placeholderOff": "AI o'chiq",
     "placeholderOffline": "Internet aloqasi yo'q",
     "send": "Yuborish",
@@ -115,7 +115,18 @@
     "errorTitle": "Suhbatlarni yuklab bo'lmadi",
     "errorText": "Internet aloqasini tekshirib, qayta urining.",
     "retry": "Qayta urinish",
-    "open": "Suhbatlar"
+    "open": "Suhbatlar",
+    "close": "Suhbatlarni yopish",
+    "sheetCount_one": "{{value}} ta",
+    "sheetCount_other": "{{value}} ta",
+    "current": "Ochiq suhbat",
+    "emptyTitle": "Hali suhbat yo'q",
+    "emptyText": "Birinchi savoldan keyin shu yerda chiqadi.",
+    "loading": "Suhbatlar yuklanmoqda",
+    "loadingMore": "Yuklanmoqda…",
+    "moreShown": "{{loaded}} / {{total}} ta suhbat ko'rsatildi",
+    "moreError": "Keyingi suhbatlarni yuklab bo'lmadi.",
+    "allShown": "Hammasi ko'rsatildi · {{value}} ta suhbat"
   },
   "sources": {
     "line": "Manba: {{items}}",
@@ -144,8 +155,7 @@
     "cutTitle": "Aloqa uzildi",
     "cutText": "Server bilan aloqa uzildi. Javob to'liq kelmadi.",
     "cutTextOffline": "Javob to'liq kelmadi.",
-    "capText": "Yangi savol ertaga, 00:00 dan.",
-    "capTurn": "Javob berilmadi: bugungi xarajat chegarasi tugagan.",
+    "capTurn": "Javob berilmadi: bugungi AI chegarasi tugagan. Ertaga, 00:00 dan qayta so'rashingiz mumkin.",
     "throttled": "Juda ko'p so'rov",
     "throttledIn_one": "{{count}} soniyadan keyin qayta urining.",
     "throttledIn_other": "{{count}} soniyadan keyin qayta urining.",
@@ -167,7 +177,12 @@
       "truncated": "Javob juda uzun chiqdi — savolni toraytiring",
       "network": "AI bilan aloqa uzildi — qayta urinib ko'ring",
       "ai_error": "AI xatosi — keyinroq urinib ko'ring"
-    }
+    },
+    "capTitle": "Bugungi AI chegarasi tugadi",
+    "capAssistant": "Yordamchi bugungi xavfsizlik chegarasiga yetdi. Yangi savol ertaga, 00:00 dan (Toshkent vaqti).",
+    "capAlertsOpen": "Ogohlantirishlar ochiq; ogohlantirish qoidalari ishlayveradi.",
+    "capServer": "Kunlik chegara serverda o'rnatilgan — uni oshirib bo'lmaydi.",
+    "capGlobal": "Tizimdagi barcha AI xizmatlari uchun bugungi umumiy chegara tugadi. Yangi savol ertaga, 00:00 dan (Toshkent vaqti)."
   },
   "alerts": {
     "severity": {

@@ -53,12 +53,32 @@ test("390: «Suhbatlar 1» — pastki varaqa, tanlangan suhbat ochiladi; yuboris
   await expect(sheet).toBeVisible();
   const box = (await sheet.boundingBox())!;
   expect(Math.round(box.y + box.height)).toBeGreaterThanOrEqual(844 - 1);
+  // Maket -conversations-sheet: «N ta» (90 kun yozilmaydi), ichida «Yangi suhbat» (to'liq en, ≥ 44 px), ro'yxat chetdan chetga.
+  await expect(sheet).toHaveAttribute("aria-describedby", /.+/);
+  await expect(sheet.getByText("1 ta", { exact: true })).toBeVisible();
+  await expect(sheet).not.toContainText("90 kun");
+  const newChat = sheet.getByRole("button", { name: "Yangi suhbat" });
+  const newChatBox = (await newChat.boundingBox())!;
+  expect(newChatBox.height).toBeGreaterThanOrEqual(44);
+  // Varaqa chekkasi 16 px (+ 1 px chegara) — tugma qolgan butun en.
+  expect(newChatBox.width).toBeGreaterThanOrEqual(390 - 2 * 17);
   const item = sheet.getByRole("link", { name: /Marketlarga to'lanmagan summa/ });
+  const itemBox = (await item.boundingBox())!;
+  expect(Math.round(itemBox.x)).toBeLessThanOrEqual(1);
+  expect(Math.round(itemBox.width)).toBeGreaterThanOrEqual(388);
   expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await item.click();
   await expect(sheet).toBeHidden();
   await expect(page).toHaveURL(/\?conversation=41$/);
   await expect(page.getByRole("log", { name: "Suhbat" }).getByText("18,4 mln so'm")).toBeVisible();
+
+  // Qayta ochilganda tanlangan bandda Check («Ochiq suhbat»); ichidagi «Yangi suhbat» suhbatni tozalab varaqani yopadi.
+  await open.click();
+  await expect(sheet.getByRole("link", { name: /Marketlarga to'lanmagan summa.*Ochiq suhbat/ })).toHaveAttribute("aria-current", "true");
+  await sheet.getByRole("button", { name: "Yangi suhbat" }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page).toHaveURL(/\/ai-assistant$/);
+  await expect(page.getByRole("heading", { name: "Moliya bo'yicha savol bering" })).toBeVisible();
 
   const send = page.getByRole("button", { name: "Yuborish", exact: true });
   const sendBox = (await send.boundingBox())!;

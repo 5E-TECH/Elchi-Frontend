@@ -1,6 +1,6 @@
-// dizayn-v2: superadmin-ai-assistant-answering, superadmin-ai-assistant-offline, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-budget-exceeded
+// dizayn-v2: superadmin-ai-assistant-answering, superadmin-ai-assistant-offline, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-daily-cap
 import { useTranslation } from "react-i18next";
-import { CircleX, LoaderCircle, MessageSquarePlus, RefreshCw, WifiOff } from "lucide-react";
+import { Clock, LoaderCircle, MessageSquarePlus, RefreshCw, WifiOff } from "lucide-react";
 import { Button, Card, Skeleton, Spinner } from "../../../shared/ui/primitives";
 import { MiniMarkdown } from "../../../shared/ui/markdown/MiniMarkdown";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -9,7 +9,7 @@ import type { PendingTurn } from "../../../features/ai-chat";
 import { AnswerNotes, AssistantArticle } from "./ChatMessages";
 
 /**
- * Joriy savolga javob o'rni (maketlar `-answering`, `-offline`, `-unavailable` «Boshqa holatlar», `-budget-exceeded`).
+ * Joriy savolga javob o'rni (maketlar `-answering`, `-offline`, `-unavailable` «Boshqa holatlar», `-daily-cap`).
  * Savol pufakchasi va tayyor javob (`AnswerCard`) — sahifada, tarix bilan bir ro'yxatda va tarixdagi kalit bilan
  * (`turnItemKey`): tarixga o'tganda DOM tuguni almashmaydi.
  *
@@ -17,7 +17,8 @@ import { AnswerNotes, AssistantArticle } from "./ChatMessages";
  *     jonli matn (joriy qadam) va skelet qatorlar;
  *   - to'xtatildi — qisman matn, «AI xato qilishi mumkin.», «Javob to'xtatildi» + «Qayta yuborish»;
  *   - uzildi — qisman matn + «Aloqa uzildi» (oflaynda «Qayta yuborish» o'chiq);
- *   - xarajat shifti — xira izoh «Javob berilmadi: …» (sabab — sahifa ustidagi ogohlantirishda, `-budget-exceeded`);
+ *   - kunlik AI chegarasi — xira izoh «Javob berilmadi: bugungi AI chegarasi tugagan. …» (`Clock`, ogohlantirish rangi;
+ *     sabab — suhbat ustidagi ogohlantirishda, `-daily-cap`);
  *   - xato — «Javob olib bo'lmadi» (yoki suhbat qutisi) + amal; suhbat to'lgan / topilmadi — «Yangi suhbat» savolni
  *     yangi suhbatga olib o'tadi (savol saqlanmagan).
  */
@@ -112,11 +113,11 @@ export const PendingReply = ({ turn, online, onRetry, onNewChat }: PendingReplyP
     );
   }
   if (turn.error?.variant === "cap") {
-    // Maket `-budget-exceeded`: javob o'rnida xira izoh, sabab va muddat — sahifa ustidagi ogohlantirishda.
+    // Maket `-daily-cap`: javob o'rnida xira izoh (soat — ogohlantirish rangida), sabab — suhbat ustidagi ogohlantirishda.
     return (
       <AssistantArticle header={t("chat.assistant", { time: at(turn.askedAt) })}>
         <p className="flex items-start gap-1.5 text-[13px] text-text-muted">
-          <CircleX size={14} aria-hidden="true" className="mt-[3px] flex-none text-danger-fg" />
+          <Clock size={14} aria-hidden="true" className="mt-[3px] flex-none text-warning-fg" />
           <span>{t("errors.capTurn")}</span>
         </p>
       </AssistantArticle>

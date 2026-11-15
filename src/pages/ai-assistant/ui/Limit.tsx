@@ -1,11 +1,12 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-budget-exceeded
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-daily-cap
 import { useTranslation } from "react-i18next";
-import { Clock, Lock, TriangleAlert, Wallet } from "lucide-react";
+import { Clock, Lock, TriangleAlert } from "lucide-react";
 import { Card } from "../../../shared/ui/primitives";
 import { Meter } from "../../../shared/ui/charts";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { NoticeAlert } from "../../../entities/notification/ui/NoticeAlert";
 import type { AiAccessState } from "../../../entities/ai-advisor";
+import type { CapCode } from "../../../features/ai-chat";
 import { limitView, type LimitView } from "../model/limit";
 
 /**
@@ -106,15 +107,28 @@ export const LimitAlert = ({ access }: { access: AiAccessState }) => {
 };
 
 /**
- * Xarajat shifti (`assistant_usd_cap` | `cap_exceeded`) — maket yo'q, eng yaqini `-budget-exceeded`: sahifa ustida
- * `danger` ogohlantirish (`Wallet`), «Yangi suhbat» va suhbat almashganda ham turadi (kunlik savol limiti emas —
- * `LimitCard` savollar qolganini ko'rsatadi). «Budjetni oshirish» / «Sarfni ko'rish» — T2, chizilmaydi.
+ * Kunlik AI chegarasi tugadi (`assistant_usd_cap` | `cap_exceeded`; maket `-daily-cap`): suhbat ustida `warning`
+ * ogohlantirish (`Clock`, `role="status"`), «Yangi suhbat» va suhbat almashganda ham turadi (kunlik savol limiti emas —
+ * `LimitCard` savollar qolganini ko'rsatadi). Sarlavha ikkala chegarada bir xil; matn:
+ *   - `assistant_usd_cap` — «Yordamchi bugungi xavfsizlik chegarasiga yetdi. …» + (maslahatchi backend'i bo'lsa)
+ *     «Ogohlantirishlar ochiq; …» + xira «Kunlik chegara serverda o'rnatilgan — uni oshirib bo'lmaydi.»;
+ *   - `cap_exceeded` — «Tizimdagi barcha AI xizmatlari uchun bugungi umumiy chegara tugadi. …».
+ * Summalar (64 000 so'm · 5 $), «Sarfni ko'rish», maketdagi «Hisobotlar … va tavsiyalar» va «oylik budjet» gapi —
+ * backend yo'q, chizilmaydi.
  */
-export const CapAlert = ({ titleKey }: { titleKey: string }) => {
+export const CapAlert = ({ code, advisorAvailable = false }: { code: CapCode; advisorAvailable?: boolean }) => {
   const { t } = useTranslation("aiAdvisor");
+  if (code === "cap_exceeded") {
+    return (
+      <NoticeAlert tone="warning" role="status" icon={Clock} title={t("errors.capTitle")}>
+        {t("errors.capGlobal")}
+      </NoticeAlert>
+    );
+  }
   return (
-    <NoticeAlert tone="danger" role="alert" icon={Wallet} title={t(titleKey)}>
-      {t("errors.capText")}
+    <NoticeAlert tone="warning" role="status" icon={Clock} title={t("errors.capTitle")}>
+      {advisorAvailable ? `${t("errors.capAssistant")} ${t("errors.capAlertsOpen")}` : t("errors.capAssistant")}
+      <span className="mt-1 block text-text-muted">{t("errors.capServer")}</span>
     </NoticeAlert>
   );
 };

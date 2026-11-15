@@ -37,9 +37,20 @@ describe("xato → ko'rinish (maketlar -unavailable, -offline, -limit-reached)",
   it("xarajat shifti — ogohlantirish qutisi, `reset_at` gacha kiritish o'chiq", () => {
     expect(classifyStreamError({ code: "assistant_usd_cap", resetAt: "2026-11-11T00:00:00+05:00" }, false)).toEqual({
       action: "turn",
-      view: expect.objectContaining({ variant: "cap", tone: "warning", canRetry: false, resetAt: "2026-11-11T00:00:00+05:00" }),
+      view: expect.objectContaining({
+        variant: "cap",
+        tone: "warning",
+        titleKey: "errors.capTitle",
+        descriptionKey: "errors.capAssistant",
+        canRetry: false,
+        resetAt: "2026-11-11T00:00:00+05:00",
+        capCode: "assistant_usd_cap",
+      }),
     });
-    expect(classifyStreamError({ code: "cap_exceeded" }, true)).toMatchObject({ view: { variant: "cap", titleKey: "errors.codes.cap_exceeded" } });
+    // Maket `-daily-cap`: umumiy chegara — o'z matni, sarlavha bir xil.
+    expect(classifyStreamError({ code: "cap_exceeded" }, true)).toMatchObject({
+      view: { variant: "cap", titleKey: "errors.capTitle", descriptionKey: "errors.capGlobal", capCode: "cap_exceeded", resetAt: null },
+    });
   });
 
   it("suhbat to'lgan / topilmadi — «Yangi suhbat» amali", () => {

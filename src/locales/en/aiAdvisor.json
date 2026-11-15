@@ -40,7 +40,7 @@
     "placeholder": "For example: which markets have late payments?",
     "placeholderAnswering": "Writing the answer…",
     "placeholderLimit": "The limit resets tomorrow at 00:00",
-    "placeholderCap": "The spending cap resets tomorrow at 00:00",
+    "placeholderCap": "Ask again tomorrow from 00:00",
     "placeholderOff": "AI is off",
     "placeholderOffline": "No internet connection",
     "send": "Send",
@@ -115,7 +115,18 @@
     "errorTitle": "Could not load chats",
     "errorText": "Check your internet connection and try again.",
     "retry": "Try again",
-    "open": "Chats"
+    "open": "Chats",
+    "close": "Close chats",
+    "sheetCount_one": "{{value}} chat",
+    "sheetCount_other": "{{value}} chats",
+    "current": "Current chat",
+    "emptyTitle": "No chats yet",
+    "emptyText": "They appear here after your first question.",
+    "loading": "Loading chats",
+    "loadingMore": "Loading…",
+    "moreShown": "Showing {{loaded}} of {{total}}",
+    "moreError": "Could not load more chats.",
+    "allShown": "All chats shown · {{value}}"
   },
   "sources": {
     "line": "Source: {{items}}",
@@ -144,8 +155,7 @@
     "cutTitle": "Connection lost",
     "cutText": "The connection to the server was lost. The answer is incomplete.",
     "cutTextOffline": "The answer is incomplete.",
-    "capText": "You can ask again tomorrow from 00:00.",
-    "capTurn": "No answer: today's spending cap has been reached.",
+    "capTurn": "No answer: today's AI limit is used up. You can ask again tomorrow from 00:00.",
     "throttled": "Too many requests",
     "throttledIn_one": "Try again in {{count}} second.",
     "throttledIn_other": "Try again in {{count}} seconds.",
@@ -167,7 +177,12 @@
       "truncated": "The answer came out too long — narrow the question",
       "network": "The connection to AI was lost — try again",
       "ai_error": "AI error — try again later"
-    }
+    },
+    "capTitle": "Today's AI limit is used up",
+    "capAssistant": "The assistant has reached today's safety limit. You can ask again tomorrow from 00:00 (Tashkent time).",
+    "capAlertsOpen": "Alerts stay open; alert rules keep running.",
+    "capServer": "The daily limit is set on the server and can't be raised.",
+    "capGlobal": "Today's shared limit for all AI services in the system is used up. You can ask again tomorrow from 00:00 (Tashkent time)."
   },
   "alerts": {
     "severity": {

@@ -139,24 +139,42 @@ test("429 (limit tugadi) → ogohlantirish, maydon o'chiq, yon ustunda «Limit t
   await expect(page.getByText("Limit tugadi — ertaga, 00:00 da yangilanadi (Toshkent vaqti).")).toBeVisible();
 });
 
-test("xarajat shifti → sahifa ustida ogohlantirish, maydon o'z placeholder'i bilan o'chiq; «Yangi suhbat» dan keyin ham sabab ko'rinadi", async ({ page }) => {
+test("kunlik AI chegarasi (-daily-cap) → suhbat ustida ogohlantirish (summasiz), maydon o'z placeholder'i bilan o'chiq; «Yangi suhbat» dan keyin ham turadi", async ({ page }) => {
   await mockAiAssistantApi(page, { mode: "cap", conversations: "none" });
   await openAiAssistant(page);
   await composer(page).fill("Bu oy kassaga qancha tushdi?");
   await page.getByRole("button", { name: "Yuborish", exact: true }).click();
-  const alert = page.getByRole("alert").filter({ hasText: "AI yordamchining bugungi xarajat chegarasi tugadi" });
-  await expect(alert).toBeVisible();
-  await expect(alert).toContainText("Yangi savol ertaga, 00:00 dan.");
-  await expect(page.getByText("Javob berilmadi: bugungi xarajat chegarasi tugagan.")).toBeVisible();
+  const cap = page.getByRole("status").filter({ hasText: "Bugungi AI chegarasi tugadi" });
+  await expect(cap).toBeVisible();
+  await expect(cap).toContainText("Yordamchi bugungi xavfsizlik chegarasiga yetdi. Yangi savol ertaga, 00:00 dan (Toshkent vaqti).");
+  await expect(cap).toContainText("Kunlik chegara serverda o'rnatilgan — uni oshirib bo'lmaydi.");
+  // Maslahatchi backend'i yo'q — «Ogohlantirishlar ochiq» yo'q; summa va «Sarfni ko'rish» — backend yo'q.
+  await expect(cap).not.toContainText("Ogohlantirishlar ochiq");
+  await expect(cap).not.toContainText("so'm");
+  await expect(page.getByRole("link", { name: /Sarfni ko'rish/ })).toHaveCount(0);
+  await expect(page.locator("[data-shell-slot=content]").getByRole("alert")).toHaveCount(0);
+  await expect(page.getByText("Javob berilmadi: bugungi AI chegarasi tugagan. Ertaga, 00:00 dan qayta so'rashingiz mumkin.")).toBeVisible();
   await expect(composer(page)).toBeDisabled();
-  await expect(composer(page)).toHaveAttribute("placeholder", "Xarajat chegarasi ertaga, 00:00 da yangilanadi");
+  await expect(composer(page)).toHaveAttribute("placeholder", "Yangi savol ertaga, 00:00 dan");
   // Savol limiti tugamagan — yon ustunda «Qolgan: 62 ta savol».
   await expect(page.getByRole("complementary").getByText("Limit har kuni 00:00 da (Toshkent vaqti) yangilanadi. Qolgan: 62 ta savol.")).toBeVisible();
 
   await page.getByRole("button", { name: "Yangi suhbat" }).first().click();
   await expect(page.getByRole("heading", { name: "Moliya bo'yicha savol bering" })).toBeVisible();
-  await expect(alert).toBeVisible();
-  await expect(composer(page)).toHaveAttribute("placeholder", "Xarajat chegarasi ertaga, 00:00 da yangilanadi");
+  await expect(cap).toBeVisible();
+  await expect(composer(page)).toHaveAttribute("placeholder", "Yangi savol ertaga, 00:00 dan");
+});
+
+test("kunlik AI chegarasi, maslahatchi backend'i bor — «Ogohlantirishlar ochiq; ogohlantirish qoidalari ishlayveradi.»", async ({ page }) => {
+  await mockAiAssistantApi(page, { mode: "cap", conversations: "none", advisor: "on" });
+  await openAiAssistant(page);
+  await expect(page.getByRole("tab", { name: /Ogohlantirishlar/ })).toBeVisible();
+  await composer(page).fill("Bu oy kassaga qancha tushdi?");
+  await page.getByRole("button", { name: "Yuborish", exact: true }).click();
+  const cap = page.getByRole("status").filter({ hasText: "Bugungi AI chegarasi tugadi" });
+  await expect(cap).toContainText(
+    "Yordamchi bugungi xavfsizlik chegarasiga yetdi. Yangi savol ertaga, 00:00 dan (Toshkent vaqti). Ogohlantirishlar ochiq; ogohlantirish qoidalari ishlayveradi.",
+  );
 });
 
 test("suhbat topilmadi (404) → «Yangi suhbat»", async ({ page }) => {

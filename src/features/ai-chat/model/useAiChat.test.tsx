@@ -373,6 +373,19 @@ describe("useAiChat — holat mashinasi", () => {
     });
     expect(pendingOf(hook)).toMatchObject({ phase: "error", error: { variant: "cap" } });
     expect(hook.result.current.capped).toBe(true);
+    expect(hook.result.current.capCode).toBe("assistant_usd_cap");
+  });
+
+  it("umumiy AI chegarasi (`cap_exceeded`, `reset_at` siz) — `capCode` va kiritish Toshkent yarim tunigacha o'chiq", async () => {
+    const { hook } = setup();
+    act(() => void hook.result.current.send("Savol"));
+    await act(async () => {
+      lastStream().emit({ type: "error", code: "cap_exceeded", message: "…", conversationId: null, resetAt: null });
+      lastStream().finish({ kind: "ended", terminal: "error" });
+    });
+    expect(pendingOf(hook)).toMatchObject({ phase: "error", error: { variant: "cap", descriptionKey: "errors.capGlobal" } });
+    expect(hook.result.current.capCode).toBe("cap_exceeded");
+    expect(Date.parse(hook.result.current.capUntil ?? "")).toBeGreaterThan(Date.now());
   });
 
   it("`meta` dan oldin tarmoq xatosi — «Savol saqlanmadi», yangilash yo'q", async () => {

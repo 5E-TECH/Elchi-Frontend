@@ -9,6 +9,12 @@ import { PASSWORD_CHANGE_REQUIRED_CODE, responseErrorCode } from "../../../auth/
  * esa `access/me` qayta so'raladi (kunlik limitmi yoki gateway IP cheklovimi, funksiya o'chganmi).
  */
 
+/**
+ * Kunlik AI chegarasi (maket `superadmin-ai-assistant-daily-cap`): `assistant_usd_cap` — yordamchining o'z xavfsizlik
+ * chegarasi, `cap_exceeded` — tizimdagi barcha AI xizmatlarining umumiy chegarasi.
+ */
+export type CapCode = "assistant_usd_cap" | "cap_exceeded";
+
 /** Javob o'rnidagi xato qutisi. Matnlar — `aiAdvisor` kalitlari (`description` — kalit yoki tayyor matn emas). */
 export interface TurnErrorView {
   /** `failed` — javob olinmadi; `cut` — oqim uzildi (qisman matn qoladi); `cap` — xarajat shifti; `conversation` — suhbat. */
@@ -22,6 +28,8 @@ export interface TurnErrorView {
   newChat: boolean;
   /** Xarajat shifti tugashi (Toshkent yarim tuni, ISO) — kiritish shu vaqtgacha o'chiq. */
   resetAt: string | null;
+  /** Qaysi kunlik chegara (faqat `variant: "cap"`): sahifa ustidagi ogohlantirish matni shundan. */
+  capCode?: CapCode;
 }
 
 export type ChatFailure =
@@ -95,16 +103,18 @@ export const classifyStreamError = (
       return afterMeta ? { action: "turn", view: failedView(true, code) } : { action: "access" };
     case "assistant_usd_cap":
     case "cap_exceeded":
+      // Maket `-daily-cap`: sarlavha ikkala chegarada bir xil, matn — qaysi chegara tugaganiga qarab (summasiz).
       return {
         action: "turn",
         view: {
           variant: "cap",
           tone: "warning",
-          titleKey: `errors.codes.${code}`,
-          descriptionKey: "errors.capText",
+          titleKey: "errors.capTitle",
+          descriptionKey: code === "cap_exceeded" ? "errors.capGlobal" : "errors.capAssistant",
           canRetry: false,
           newChat: false,
           resetAt: resetAt ?? null,
+          capCode: code,
         },
       };
     case "conversation_full":

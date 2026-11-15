@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-tab-select, superadmin-ai-assistant-alerts, superadmin-ai-assistant-alerts-filters-mobile, superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-dialog-courier-debt, superadmin-ai-assistant-alert-dialog-expense, superadmin-ai-assistant-alert-dialog-market-payout, superadmin-ai-assistant-alert-dialog-hq-transfer, superadmin-ai-assistant-alert-dialog-loss, superadmin-ai-assistant-alert-dialog-corrections, superadmin-ai-assistant-alert-resolve-confirm, superadmin-ai-assistant-settings-rules-dialog, superadmin-ai-assistant-settings-confirm
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-tab-select, superadmin-ai-assistant-alerts, superadmin-ai-assistant-alerts-filters-mobile, superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-dialog-courier-debt, superadmin-ai-assistant-alert-dialog-expense, superadmin-ai-assistant-alert-dialog-market-payout, superadmin-ai-assistant-alert-dialog-hq-transfer, superadmin-ai-assistant-alert-dialog-loss, superadmin-ai-assistant-alert-dialog-corrections, superadmin-ai-assistant-alert-resolve-confirm, superadmin-ai-assistant-settings-rules-dialog, superadmin-ai-assistant-settings-confirm, superadmin-ai-assistant-conversations-sheet, superadmin-ai-assistant-daily-cap
 import { lazy, Suspense, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -118,7 +118,12 @@ const AiAssistantPage = () => {
 
       {overview ? <AssistantTabs tab={tab} onChange={selectTab} newAlerts={overview.alerts.new} /> : null}
 
-      <ChatPanel hidden={tab !== "chat"} panelProps={panelProps("chat")} onNewChatChange={registerNewChat} />
+      <ChatPanel
+        hidden={tab !== "chat"}
+        panelProps={panelProps("chat")}
+        onNewChatChange={registerNewChat}
+        advisorAvailable={available}
+      />
 
       {tab === "alerts" ? (
         available ? (

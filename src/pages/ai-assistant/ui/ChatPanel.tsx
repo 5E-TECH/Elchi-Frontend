@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-conversations-sheet, superadmin-ai-assistant-daily-cap
 import {
   useCallback,
   useEffect,
@@ -62,8 +62,9 @@ import { EmptyChat, SuggestionChips } from "./Suggestions";
  *  ostida sabab qatori (maket yo'q — eng yaqini `-unavailable`): `feature_disabled` — serverda yoqilmagan,
  *  `ai_disabled` — AI xizmati ulanmagan (kalit yo'q yoki o'chiq). Muhit o'zgaruvchilari nomi ko'rsatilmaydi.
  *  Holat (`access/me`) yuklanmasa — izoh xato turidan (`ErrorState`): server / vaqt chegarasi «internet» deyilmaydi.
- *  Xarajat shifti — panel ustida ogohlantirish (maket yo'q — eng yaqini `-budget-exceeded`), «Yangi suhbat» dan
- *  keyin ham.
+ *  Kunlik AI chegarasi (`assistant_usd_cap` | `cap_exceeded`, maket `-daily-cap`) — panel ustida `warning`
+ *  ogohlantirish (`CapAlert`), «Yangi suhbat» dan keyin ham; «Ogohlantirishlar ochiq; …» gapi — faqat maslahatchi
+ *  backend'i bo'lsa (`advisorAvailable`).
  *
  *  Fokus: savol yuborilganda / to'xtatilganda bosilgan boshqaruv (tugma, tavsiya, «Qayta yuborish») yo'qolsa yoki
  *  o'chsa, fokus `<body>` ga tushmaydi — jonli javobda «To'xtatish» ga, aks holda matn maydoniga o'tadi (sensorli
@@ -114,6 +115,8 @@ const useConversationsState = (): ConversationsState => {
     hasMore: Boolean(query.hasNextPage),
     loadMore: () => void query.fetchNextPage(),
     loadingMore: query.isFetchingNextPage,
+    loadMoreError: query.isFetchNextPageError,
+    complete: !query.hasNextPage && (query.data?.pages.length ?? 0) > 1,
   };
 };
 
@@ -122,9 +125,10 @@ type AssistantBodyProps = {
   onRetryAccess: () => void;
   retryingAccess: boolean;
   onNewChatChange?: (action: NewChatAction | null) => void;
+  advisorAvailable: boolean;
 };
 
-const AssistantBody = ({ access, onRetryAccess, retryingAccess, onNewChatChange }: AssistantBodyProps) => {
+const AssistantBody = ({ access, onRetryAccess, retryingAccess, onNewChatChange, advisorAvailable }: AssistantBodyProps) => {
   const { t } = useTranslation("aiAdvisor");
   const [searchParams, setSearchParams] = useSearchParams();
   const rawConversation = searchParams.get("conversation");
@@ -295,7 +299,7 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess, onNewChatChange 
 
   return (
     <>
-      {chat.capTitleKey && !unavailable && !denied ? <CapAlert titleKey={chat.capTitleKey} /> : null}
+      {chat.capCode && !unavailable && !denied ? <CapAlert code={chat.capCode} advisorAvailable={advisorAvailable} /> : null}
 
       <div className="flex flex-wrap items-start gap-6">
         <div ref={columnRef} onFocusCapture={onColumnFocus} className="flex min-w-0 flex-[1_1_560px] flex-col gap-5">
@@ -377,6 +381,10 @@ const AssistantBody = ({ access, onRetryAccess, retryingAccess, onNewChatChange 
         onClose={() => setSheetOpen(false)}
         state={conversations}
         selectedId={conversationId}
+        onNewChat={() => {
+          newChat();
+          setSheetOpen(false);
+        }}
       />
     </>
   );
@@ -401,18 +409,22 @@ export type ChatPanelProps = {
   panelProps?: HTMLAttributes<HTMLDivElement>;
   /** Sarlavhadagi «Yangi suhbat» uchun barqaror amal (holat yuklangach beriladi, chiqib ketganda `null`). */
   onNewChatChange?: (action: NewChatAction | null) => void;
+  /** Maslahatchi backend'i bor (overview zondi) — kunlik AI chegarasi matnida «Ogohlantirishlar ochiq; …». */
+  advisorAvailable?: boolean;
 };
 
 /** «Suhbat» paneli: `access/me` holati (yuklanish / xato) va suhbat tanasi. Sarlavhasiz — uni qobiq chizadi. */
-export const ChatPanel = ({ hidden = false, panelProps, onNewChatChange }: ChatPanelProps) => {
+export const ChatPanel = ({ hidden = false, panelProps, onNewChatChange, advisorAvailable = false }: ChatPanelProps) => {
   const { t } = useTranslation("aiAdvisor");
   const access = useAiAccessMe();
 
   return (
     <div {...panelProps} hidden={hidden} className="flex flex-col gap-6 max-md:gap-4">
+      {/* Tana (kunlik AI chegarasi ogohlantirishi + suhbat ustunlari) — bo'limlar orasi sahifadagidek 24 / telefonda 16. */}
       <QueryBoundary
         query={access}
         isEmpty={() => false}
+        className="flex flex-col gap-6 max-md:gap-4"
         loadingLabel={t("chat.loading")}
         loading={<SkeletonLines lines={4} />}
         error={(error, retry) => (
@@ -432,6 +444,7 @@ export const ChatPanel = ({ hidden = false, panelProps, onNewChatChange }: ChatP
             onRetryAccess={() => void access.refetch()}
             retryingAccess={access.isRefetching}
             onNewChatChange={onNewChatChange}
+            advisorAvailable={advisorAvailable}
           />
         )}
       </QueryBoundary>

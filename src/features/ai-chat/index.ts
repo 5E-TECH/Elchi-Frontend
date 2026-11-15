@@ -13,7 +13,7 @@ export {
   classifyNetworkFailure,
   classifyStreamError,
 } from "./model/errorView";
-export type { ChatFailure, TurnErrorView } from "./model/errorView";
+export type { CapCode, ChatFailure, TurnErrorView } from "./model/errorView";
 export {
   CUT_POLL_INTERVAL_MS,
   CUT_POLL_MAX_MS,

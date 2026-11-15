@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-answering, superadmin-ai-assistant-budget-exceeded
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-answering, superadmin-ai-assistant-daily-cap
 import { useId, type KeyboardEvent, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Info, Send } from "lucide-react";
@@ -10,7 +10,7 @@ import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
  * maydoni (matn ko'paysa 160 px gacha o'sadi — `field-sizing: content`) + kvadrat «Yuborish» (44 px); ostida
  * «AI xato qilishi mumkin …» va hisoblagich «0 / 1000» (telefonda yashirin). Javob yozilayotganda — maydon o'chiq «Javob yozilmoqda…», tugma o'rnida ikkinchi darajali «To'xtatish»
  * (ikonkasiz — maketdagidek), izoh «To'xtatish — javob shu joyda to'xtaydi». O'chiq holatlar (AI o'chiq, oflayn,
- * limit, xarajat shifti — `-budget-exceeded` kabi o'z placeholder'i) — maketdagi placeholder bilan. Enter — yangi qator,
+ * limit, kunlik AI chegarasi — `-daily-cap` «Yangi savol ertaga, 00:00 dan») — maketdagi placeholder bilan. Enter — yangi qator,
  * Ctrl/Cmd + Enter — yuborish (maket yo'q). Fokus sahifada boshqariladi (`fieldRef` / `stopRef`).
  */
 

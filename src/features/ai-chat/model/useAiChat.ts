@@ -20,6 +20,7 @@ import {
   classifyHttpFailure,
   classifyNetworkFailure,
   classifyStreamError,
+  type CapCode,
   type ChatFailure,
   type TurnErrorView,
 } from "./errorView";
@@ -106,8 +107,8 @@ export const turnItemKey = (turnKey: number, part: "q" | "a") => `turn-${turnKey
 /** Uzilgan javobni kutish (tarixda savoldan keyin javob paydo bo'lguncha). */
 type AnswerWatch = { conversationId: string; questionId: string; since: number };
 
-/** Xarajat shifti: `reset_at` gacha kiritish o'chiq. */
-type CapState = { until: string; titleKey: string };
+/** Kunlik AI chegarasi: `reset_at` gacha kiritish o'chiq. */
+type CapState = { until: string; code: CapCode };
 
 type SendContext = { key: number; question: string; previous: PendingTurn | null; restoreDraft: boolean };
 
@@ -180,7 +181,7 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
       switch (failure.action) {
         case "turn":
           if (failure.view.variant === "cap") {
-            setCap({ until: failure.view.resetAt ?? nextMidnightTashkent(), titleKey: failure.view.titleKey });
+            setCap({ until: failure.view.resetAt ?? nextMidnightTashkent(), code: failure.view.capCode ?? "assistant_usd_cap" });
           }
           patch(context.key, (turn) => ({
             ...turn,
@@ -448,8 +449,8 @@ export const useAiChat = ({ conversationId, onConversationStarted, onRestoreDraf
     live: pending !== null && LIVE_PHASES.has(pending.phase),
     capped: cap !== null,
     capUntil: cap?.until ?? null,
-    /** Shift sarlavhasi (`errors.codes.assistant_usd_cap` | `errors.codes.cap_exceeded`). */
-    capTitleKey: cap?.titleKey ?? null,
+    /** Qaysi kunlik chegara tugagan (`assistant_usd_cap` | `cap_exceeded`) — sahifa ustidagi ogohlantirish matni uchun. */
+    capCode: cap?.code ?? null,
     messageKey,
     send,
     stop,

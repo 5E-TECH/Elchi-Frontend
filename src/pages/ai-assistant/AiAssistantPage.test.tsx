@@ -277,6 +277,56 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     expect(screen.getByRole("button", { name: /^Suhbatlar/ }).textContent).toMatch(/^Suhbatlar\d+$/);
   });
 
+  it("50 tadan ko'p suhbat: «Ko'proq» keyingi 50 tani yuklaydi — xato bo'lsa ro'yxat joyida + «Qayta urinish», oxirida «Hammasi ko'rsatildi»", async () => {
+    const all = Array.from({ length: 63 }, (_, index) => ({
+      id: String(200 - index),
+      title: `Suhbat ${index + 1}`,
+      turns: 1,
+      lastMessageAt: "2026-10-21T06:30:00.000Z",
+      createdAt: null,
+    }));
+    let failNext = true;
+    mocks.getAiConversations.mockImplementation(async ({ limit, offset }: { limit: number; offset: number }) => {
+      if (offset > 0 && failNext) {
+        failNext = false;
+        throw httpError(500);
+      }
+      return { items: all.slice(offset, offset + limit), total: all.length, limit, offset };
+    });
+    renderPage();
+    const more = await screen.findByRole("button", { name: "Ko'proq" });
+    expect(more).toHaveAccessibleDescription("50 / 63 ta suhbat ko'rsatildi");
+    expect(screen.getAllByRole("link", { name: /^Suhbat \d+/ })).toHaveLength(50);
+
+    await userEvent.click(more);
+    expect(await screen.findByText("Keyingi suhbatlarni yuklab bo'lmadi.")).toBeInTheDocument();
+    // Ro'yxat joyida, butun ro'yxat xatosi emas.
+    expect(screen.getAllByRole("link", { name: /^Suhbat \d+/ })).toHaveLength(50);
+    expect(screen.queryByText("Suhbatlarni yuklab bo'lmadi")).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByText("Hammasi ko'rsatildi · 63 ta suhbat")).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /^Suhbat \d+/ })).toHaveLength(63);
+    expect(screen.queryByRole("button", { name: "Ko'proq" })).toBeNull();
+    expect(mocks.getAiConversations).toHaveBeenLastCalledWith({ limit: 50, offset: 50 });
+  });
+
+  it("< 1024 «Suhbatlar» varag'i: «2 ta», tanlanganda Check, ichidagi «Yangi suhbat» suhbatni tozalab varaqani yopadi", async () => {
+    renderPage("/ai-assistant?conversation=41");
+    await screen.findByText("Bu oy kassaga qancha pul tushdi?");
+    await userEvent.click(await screen.findByRole("button", { name: /^Suhbatlar\s?\d+$/ }));
+    const sheet = await screen.findByRole("dialog", { name: "Suhbatlar" });
+    expect(sheet).toHaveAccessibleDescription("2 ta");
+    const current = within(sheet).getByRole("link", { name: /Oktabr tushumi va kuryer qarzlari/ });
+    expect(current).toHaveAttribute("aria-current", "true");
+    expect(current.querySelector("svg.lucide-check")).not.toBeNull();
+
+    await userEvent.click(within(sheet).getByRole("button", { name: "Yangi suhbat" }));
+    expect(await screen.findByRole("heading", { name: "Moliya bo'yicha savol bering" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Suhbatlar" })).toBeNull());
+    expect(screen.queryByRole("log", { name: "Suhbat" })).toBeNull();
+  });
+
   it("holat (access/me) yuklanmadi — sahifa xatosi va «Qayta urinish»", async () => {
     mocks.getAiAccessMe.mockRejectedValueOnce(httpError(504));
     renderPage();
@@ -353,7 +403,7 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     expect(screen.queryByText(/Limit tugadi/)).toBeNull();
   });
 
-  it("xarajat shifti: sahifa ustida ogohlantirish va o'z placeholder'i (savol limiti emas); «Yangi suhbat» dan keyin ham turadi", async () => {
+  it("kunlik AI chegarasi (maket -daily-cap): suhbat ustida ogohlantirish va o'z placeholder'i (savol limiti emas); «Yangi suhbat» dan keyin ham turadi", async () => {
     mocks.list = { items: [], total: 0, limit: 50, offset: 0 };
     renderPage();
     const field = await screen.findByRole("textbox", { name: "Savolingiz" });
@@ -362,20 +412,43 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     lastStream().emit({ type: "error", code: "assistant_usd_cap", message: "…", conversationId: null, resetAt: new Date(Date.now() + 3_600_000).toISOString() });
     lastStream().finish({ kind: "ended", terminal: "error" });
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("AI yordamchining bugungi xarajat chegarasi tugadi");
-    expect(alert).toHaveTextContent("Yangi savol ertaga, 00:00 dan.");
-    expect(screen.getByText("Javob berilmadi: bugungi xarajat chegarasi tugagan.")).toBeInTheDocument();
+    // Ogohlantirish — `warning`, `role="status"` (xato emas); summalarsiz, maslahatchi backend'i yo'q — «Ogohlantirishlar ochiq» yo'q.
+    const capAlert = (await screen.findByText("Bugungi AI chegarasi tugadi")).closest("[role=status]");
+    expect(capAlert).toHaveAttribute("data-tone", "warning");
+    expect(capAlert).toHaveTextContent(
+      "Yordamchi bugungi xavfsizlik chegarasiga yetdi. Yangi savol ertaga, 00:00 dan (Toshkent vaqti).Kunlik chegara serverda o'rnatilgan — uni oshirib bo'lmaydi.",
+    );
+    expect(capAlert).not.toHaveTextContent(/Ogohlantirishlar ochiq|so'm|\$/);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("link", { name: /Sarfni ko'rish/ })).toBeNull();
+    expect(screen.getByText("Javob berilmadi: bugungi AI chegarasi tugagan. Ertaga, 00:00 dan qayta so'rashingiz mumkin.")).toBeInTheDocument();
     expect(field).toBeDisabled();
-    expect(field).toHaveAttribute("placeholder", "Xarajat chegarasi ertaga, 00:00 da yangilanadi");
+    expect(field).toHaveAttribute("placeholder", "Yangi savol ertaga, 00:00 dan");
     // Savol limiti tugamagan — limit kartasi o'zgarmaydi, «Bugungi … savol ishlatildi» chiqmaydi.
     expect(screen.getByText("Limit har kuni 00:00 da (Toshkent vaqti) yangilanadi. Qolgan: 62 ta savol.")).toBeInTheDocument();
     expect(screen.queryByText(/savol ishlatildi/)).toBeNull();
 
     await userEvent.click(screen.getAllByRole("button", { name: "Yangi suhbat" })[0]);
     expect(await screen.findByRole("heading", { name: "Moliya bo'yicha savol bering" })).toBeInTheDocument();
-    expect(screen.getByRole("alert")).toHaveTextContent("AI yordamchining bugungi xarajat chegarasi tugadi");
-    expect(field).toHaveAttribute("placeholder", "Xarajat chegarasi ertaga, 00:00 da yangilanadi");
+    expect(screen.getByText("Bugungi AI chegarasi tugadi")).toBeInTheDocument();
+    expect(field).toHaveAttribute("placeholder", "Yangi savol ertaga, 00:00 dan");
+  });
+
+  it("umumiy AI chegarasi (`cap_exceeded`) — o'z matni, «Kunlik chegara serverda …» gapisiz", async () => {
+    mocks.list = { items: [], total: 0, limit: 50, offset: 0 };
+    renderPage();
+    const field = await screen.findByRole("textbox", { name: "Savolingiz" });
+    await userEvent.type(field, "Bu oy kassaga qancha tushdi?");
+    await userEvent.click(screen.getByRole("button", { name: "Yuborish" }));
+    lastStream().emit({ type: "error", code: "cap_exceeded", message: "…", conversationId: null, resetAt: null });
+    lastStream().finish({ kind: "ended", terminal: "error" });
+
+    const capAlert = (await screen.findByText("Bugungi AI chegarasi tugadi")).closest("[role=status]");
+    expect(capAlert).toHaveTextContent(
+      "Tizimdagi barcha AI xizmatlari uchun bugungi umumiy chegara tugadi. Yangi savol ertaga, 00:00 dan (Toshkent vaqti).",
+    );
+    expect(capAlert).not.toHaveTextContent(/Kunlik chegara serverda|Ogohlantirishlar ochiq/);
+    expect(field).toHaveAttribute("placeholder", "Yangi savol ertaga, 00:00 dan");
   });
 
   it("suhbat to'lgan: «Savol saqlanmadi — yangi suhbatda yuboring.», «Yangi suhbat» savolni yangi suhbat maydoniga olib o'tadi", async () => {
