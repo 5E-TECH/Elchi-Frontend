@@ -2,8 +2,10 @@ import { expect, type Page, type Route } from "@playwright/test";
 
 /**
  * Bekor qilinganlarni marketga topshirish (`/new-orders/cancelled/:marketId`) e2e — soxta backend.
- * Biznes qoida: marketga jo'natish FAQAT market QR skanerlangach (skanerlansa — barcha bekorlar tanlanadi va
- * topshirish tokeni olinadi); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — enum kodi).
+ * Biznes qoida: marketga jo'natish FAQAT market QR skanerlangach (yoki PIN kod kiritilgach) — topshirish tokeni
+ * olinadi; QR / kod hech narsani avtomatik tanlamaydi (ega qarori 2026-11-15) — faqat skanerlangan buyurtma jo'natiladi,
+ * u ro'yxatdan chiqib «Skanerlangan (N)» ga o'tadi; buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi
+ * (sabab — enum kodi).
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -114,4 +116,20 @@ export const openHandover = async (page: Page) => {
 export const usbScan = async (page: Page, value: string) => {
   await page.keyboard.type(value, { delay: 10 });
   await page.keyboard.press("Enter");
+};
+
+/** Tayyorlash ro'yxatidagi qator belgisi (skanerlangani ro'yxatdan chiqadi — belgisi ham yo'q). */
+export const rowCheckbox = (page: Page, id: string) =>
+  page.getByRole("checkbox", { name: new RegExp(`^№${id} ni `) });
+
+/**
+ * Buyurtma QR'larini birma-bir skanerlaydi: har biri ro'yxatdan chiqadi va «Skanerlangan (N)» ga o'tadi
+ * (ega qarori 2026-11-15).
+ */
+export const scanOrders = async (page: Page, ids: readonly string[]) => {
+  for (const id of ids) {
+    await usbScan(page, `tok-${id}`);
+    await expect(rowCheckbox(page, id)).toHaveCount(0);
+    await expect(page.getByTestId("scanned-card").getByText(`№${id}`, { exact: true })).toBeVisible();
+  }
 };

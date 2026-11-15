@@ -258,8 +258,10 @@ describe("newOrders:cancelled — uz/ru/en kalitlari", () => {
     expect(uz.cancelled.card.hint).toBe(
       "Buyurtmalar faqat QR skaner orqali tanlanadi. QR buzilgan bo'lsa, qo'lda tasdiqlash mumkin.",
     );
+    // Ega qarori 2026-11-15: market QR hech narsani avtomatik tanlamaydi — maketdagi «Skanerlangach, barcha
+    // buyurtmalar avtomatik tanlanadi» endi noto'g'ri, keyingi qadam aytiladi.
     expect(uz.cancelled.alert.requiredBody).toBe(
-      "Jo'natish uchun avval market chiqargan QR kodni skanerlang. Skanerlangach, barcha buyurtmalar avtomatik tanlanadi.",
+      "Jo'natish uchun avval market chiqargan QR kodni skanerlang. Keyin buyurtmalarni birma-bir skanerlang — skanerlangani ro'yxatdan chiqadi.",
     );
     expect(uz.cancelled.selection.hint).toBe("Tanlangan buyurtmalar market uchun qaytarish pochtasiga qo'shiladi.");
     expect(uz.cancelled.manual.note).toBe(

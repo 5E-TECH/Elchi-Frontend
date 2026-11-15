@@ -8,8 +8,9 @@ import CancelledMarketDetail from "./detail";
 
 /**
  * Bekor qilinganlarni marketga topshirish (dizayn v2) — biznes qoida o'zgarmaganini tekshiradi:
- * market QR skanerlanmaguncha jo'natilmaydi; skanerlansa barcha bekorlar tanlanadi va token yuboriladi;
- * buyurtma QR skani — tanlov, takror — ogohlantirish, notanish — «QR topilmadi»; market roli — o'z QR kodi.
+ * market QR skanerlanmaguncha jo'natilmaydi; QR / kod hech narsani avtomatik tanlamaydi (ega qarori 2026-11-15,
+ * BeePost naqshi) — faqat skanerlangani jo'natiladi va token yuboriladi; buyurtma QR skani qatorni ro'yxatdan
+ * chiqarib «Skanerlangan (N)» ga o'tkazadi, takror — ogohlantirish, notanish — «QR topilmadi»; market roli — o'z QR kodi.
  */
 
 type ScannerOptions = {
@@ -174,6 +175,10 @@ const renderDetail = (preloadedState = staffState("admin")) =>
     { route: "/new-orders/cancelled/201", preloadedState },
   );
 
+/** Tayyorlash ro'yxatidagi qator belgisi (skanerlangani ro'yxatdan chiqadi — belgisi ham yo'q). */
+const rowCheckbox = (id: string) => screen.queryByRole("checkbox", { name: new RegExp(`^№${id} ni `) });
+const scannedCard = () => screen.getByTestId("scanned-card");
+
 const scan = async (raw: string) => {
   await act(async () => {
     const scanner = mocks.scanner.current!;
@@ -210,9 +215,8 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
     expect(screen.getByText("USB skaner tayyor")).toBeInTheDocument();
   });
 
-  it("market QR skanerlansa — barcha bekorlar tanlanadi, taymer chiqadi, token bilan jo'natiladi", async () => {
+  it("⭐ market QR skanerlansa — hech narsa avtomatik tanlanmaydi; taymer chiqadi, keyingi qadam aytiladi", async () => {
     mocks.scanMutateAsync.mockResolvedValue({ data: { authorization_token: "auth-1", remaining_seconds: 252 } });
-    const user = userEvent.setup();
     renderDetail();
 
     await scan("MCR-baraka-201");
@@ -220,15 +224,60 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
     expect(mocks.scanMutateAsync).toHaveBeenCalledWith("MCR-baraka-201");
     expect(await screen.findByText("Market QR skanerlandi")).toBeInTheDocument();
     expect(screen.getByRole("timer", { name: /QR amal qilish vaqti: 4 daqiqa (12|11) soniya/ })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "№501 ni tanlovdan chiqarish" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "№502 ni tanlovdan chiqarish" })).toBeChecked();
-    const selectedRegion = screen.getByRole("region", { name: "Tanlangan buyurtmalar" });
-    expect(within(selectedRegion).getByText("2 ta buyurtma tanlandi")).toBeInTheDocument();
-    expect(selectedRegion).toHaveClass("bg-action-soft");
+    expect(
+      screen.getByText(
+        "Endi buyurtmalarni birma-bir skanerlang — skanerlangani ro'yxatdan chiqadi. QR muddati tugasa, uni qayta skanerlash kerak bo'ladi.",
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Endi buyurtmalarni birma-bir skanerlang.")).toBeInTheDocument();
+    // Ilgari shu yerda marketning BARCHA bekorlari tanlanardi.
+    expect(screen.getByRole("checkbox", { name: "№501 ni qo'lda tanlash" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "№502 ni qo'lda tanlash" })).not.toBeChecked();
+    const region = screen.getByRole("region", { name: "Tanlangan buyurtmalar" });
+    expect(within(region).getByText("Hali buyurtma tanlanmagan")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Marketga jo'natish" })).toBeDisabled();
+    expect(screen.queryByTestId("scanned-card")).toBeNull();
+    expect(mocks.handoverMutate).not.toHaveBeenCalled();
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String), undefined, {
       step: true,
       voice: "received",
     });
+  });
+
+  it("⭐ skanerlangan buyurtma ro'yxatdan chiqadi → «Skanerlangan (N)»; hammasi skanerlansa — token bilan jo'natiladi", async () => {
+    mocks.scanMutateAsync.mockResolvedValue({ data: { authorization_token: "auth-1", remaining_seconds: 252 } });
+    const user = userEvent.setup();
+    renderDetail();
+
+    await scan("MCR-baraka-201");
+    await screen.findByText("Market QR skanerlandi");
+
+    await scan("tok-501");
+    // Tanlangan holda ro'yxatda qolmaydi — chiqib ketadi; qolgani — hali skanerlanmagan.
+    expect(rowCheckbox("501")).toBeNull();
+    expect(screen.getByRole("checkbox", { name: "№502 ni qo'lda tanlash" })).not.toBeChecked();
+    const card = scannedCard();
+    expect(within(card).getByRole("heading", { name: /Skanerlangan/ })).toBeInTheDocument();
+    expect(within(card).getByText("1 ta")).toBeInTheDocument();
+    const table = within(card).getByRole("table", { name: "Skanerlangan buyurtmalar" });
+    expect(within(table).getByRole("link", { name: "№501" })).toHaveAttribute("href", "/orders/edit/501");
+    expect(within(table).getByText("Malika Yusupova")).toBeInTheDocument();
+    expect(card).toHaveTextContent(/jami 96\s000 so'm/);
+    const selectedRegion = screen.getByRole("region", { name: "Tanlangan buyurtmalar" });
+    expect(within(selectedRegion).getByText("1 ta buyurtma tanlandi")).toBeInTheDocument();
+    expect(selectedRegion).toHaveClass("bg-action-soft");
+
+    await scan("tok-502");
+    expect(rowCheckbox("502")).toBeNull();
+    // Yangi skan tepada.
+    const links = within(within(scannedCard()).getByRole("table")).getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual(["№502", "№501"]);
+    // Ro'yxatda hech narsa qolmadi — «jo'natiladigan bekor yo'q» emas, «Hammasi skanerlandi».
+    expect(screen.getByText("Hammasi skanerlandi")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ro'yxatda skanerlanmagan buyurtma qolmadi. Tekshirib, «Marketga jo'natish» ni bosing."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Bekor qilingan buyurtma yo'q")).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" }));
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
@@ -254,8 +303,17 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
 
     await scan("tok-501");
 
-    expect(screen.getByRole("checkbox", { name: "№501 ni tanlovdan chiqarish" })).toBeChecked();
+    expect(rowCheckbox("501")).toBeNull();
+    expect(within(scannedCard()).getByRole("link", { name: "№501" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Marketga jo'natish — 1 ta" })).toBeDisabled();
+
+    // Hammasi QR'dan oldin skanerlandi — bo'sh ro'yxat keyingi qadamni aytadi (jo'natish hali o'chiq).
+    await scan("tok-502");
+    expect(screen.getByText("Hammasi skanerlandi")).toBeInTheDocument();
+    expect(
+      screen.getByText("Endi market QR kodini skanerlang yoki PIN kodni kiriting, so'ng «Marketga jo'natish» ni bosing."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" })).toBeDisabled();
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String), undefined, { voice: "selected" });
   });
 });
@@ -290,7 +348,8 @@ describe("Bekor qilinganlarni topshirish — kamera (markaziy «Skaner» tugmasi
     expect(mocks.scanMutateAsync).toHaveBeenCalledTimes(1);
     expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", "Market QR allaqachon qabul qilingan");
     expect(screen.getByText("Market QR skanerlandi")).toBeInTheDocument();
-    const send = screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" });
+    await scan("tok-501");
+    const send = screen.getByRole("button", { name: "Marketga jo'natish — 1 ta" });
     expect(send).toBeEnabled();
     await user.click(send);
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
@@ -316,12 +375,20 @@ describe("Bekor qilinganlarni topshirish — kamera (markaziy «Skaner» tugmasi
 
     await scan("MCR-baraka-201");
 
+    const afterQr = mocks.scanner.current!.camera!;
+    expect(afterQr.id).toBe("cancelled-handover:201");
+    expect(afterQr.title).toBe("Buyurtmalarni tanlash");
+    expect(afterQr.hint).toMatch(/^Buyurtmalarni tanlang · QR 04:1\d amal qiladi$/);
+    expect(afterQr.note?.title).toBe("Buyurtma QR kodini skanerlang — u ro'yxatdan chiqadi");
+    // Market QR hech narsani tanlamaydi — hisoblagich 0 dan.
+    expect(afterQr.progress).toMatchObject({ done: 0, total: 2, label: "ta tanlandi" });
+    expect(afterQr.finish).toMatchObject({ label: "Tugatish" });
+    expect(afterQr.list).toEqual([]);
+
+    await scan("tok-501");
+    await scan("tok-502");
     const after = mocks.scanner.current!.camera!;
-    expect(after.id).toBe("cancelled-handover:201");
-    expect(after.title).toBe("Buyurtmalarni tanlash");
-    expect(after.hint).toMatch(/^Buyurtmalarni tanlang · QR 04:1\d amal qiladi$/);
-    expect(after.progress).toMatchObject({ done: 2, total: 2, label: "ta tanlandi" });
-    expect(after.finish).toMatchObject({ label: "Tugatish" });
+    expect(after.progress).toMatchObject({ done: 2, total: 2 });
     expect(after.list?.map((item) => item.key)).toEqual(["501", "502"]);
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Market QR qabul qilindi", undefined, {
       step: true,
@@ -349,7 +416,8 @@ describe("Bekor qilinganlarni topshirish — skaner (QR talab qilinmaydi)", () =
     expect(screen.queryByRole("button", { name: "Market QR skanerlash" })).not.toBeInTheDocument();
 
     await scan("tok-501");
-    expect(screen.getByRole("checkbox", { name: "№501 ni tanlovdan chiqarish" })).toBeChecked();
+    expect(rowCheckbox("501")).toBeNull();
+    expect(within(scannedCard()).getByRole("link", { name: "№501" })).toBeInTheDocument();
 
     await scan("tok-501");
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("duplicate", expect.any(String));
@@ -364,6 +432,47 @@ describe("Bekor qilinganlarni topshirish — skaner (QR talab qilinmaydi)", () =
       { marketId: "201", orderIds: ["501"], authorizationToken: undefined, manualOverrides: [] },
       expect.any(Object),
     );
+  });
+
+  it("«Skanerlangan» dagi «Ro'yxatga qaytarish» — qator ro'yxatga qaytadi va jo'natishga kirmaydi", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await scan("tok-501");
+    await scan("tok-502");
+    await user.click(within(scannedCard()).getByRole("button", { name: "№501 ni ro'yxatga qaytarish" }));
+
+    expect(screen.getByRole("checkbox", { name: "№501 ni qo'lda tanlash" })).not.toBeChecked();
+    expect(within(scannedCard()).queryByRole("link", { name: "№501" })).toBeNull();
+    expect(within(scannedCard()).getByRole("link", { name: "№502" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Marketga jo'natish — 1 ta" }));
+    expect(mocks.handoverMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ orderIds: ["502"] }),
+      expect.any(Object),
+    );
+
+    // Oxirgisi ham qaytarilsa — karta yo'qoladi.
+    await user.click(within(scannedCard()).getByRole("button", { name: "№502 ni ro'yxatga qaytarish" }));
+    expect(screen.queryByTestId("scanned-card")).toBeNull();
+    expect(screen.getByRole("button", { name: "Marketga jo'natish" })).toBeDisabled();
+  });
+
+  it("qo'lda tasdiqlangan (QR buzilgan) qator ro'yxatda qoladi — «Skanerlangan» ga tushmaydi", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getAllByRole("button", { name: "QR buzilgan" })[1]);
+    const dialog = await screen.findByRole("dialog", { name: "QR buzilganini tasdiqlash" });
+    await user.click(within(dialog).getByRole("button", { name: "Qo'lda tasdiqlash" }));
+
+    expect(screen.getByRole("checkbox", { name: "№502 ni tanlovdan chiqarish" })).toBeChecked();
+    expect(screen.queryByTestId("scanned-card")).toBeNull();
+
+    await scan("tok-501");
+    expect(within(scannedCard()).getByRole("link", { name: "№501" })).toBeInTheDocument();
+    expect(within(scannedCard()).queryByRole("link", { name: "№502" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" })).toBeEnabled();
   });
 
   it("QR buzilgan: oyna → «Qo'lda tasdiqlangan» badge'i (sabab — yorliq), tanlovdan chiqarish", async () => {
@@ -409,6 +518,8 @@ describe("Bekor qilinganlarni topshirish — «Topshirildi (N)» (maket superadm
 
     await scan("MCR-baraka-201");
     await screen.findByText("Market QR skanerlandi");
+    await scan("tok-501");
+    await scan("tok-502");
     await user.click(screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" }));
 
     const card = await screen.findByTestId("handed-over-card");
@@ -422,8 +533,9 @@ describe("Bekor qilinganlarni topshirish — «Topshirildi (N)» (maket superadm
     expect(within(table).getByRole("link", { name: "№501" })).toHaveAttribute("href", "/orders/edit/501");
     expect(within(table).getAllByText("Marketga topshirildi")).toHaveLength(2);
     expect(within(table).getAllByText("QR orqali")).toHaveLength(2);
-    // Tayyorlash ro'yxatida qolmadi.
+    // Tayyorlash ro'yxatida ham, «Skanerlangan» da ham qolmadi.
     expect(screen.queryByRole("checkbox", { name: /№501/ })).toBeNull();
+    expect(screen.queryByTestId("scanned-card")).toBeNull();
   });
 
   it("qo'lda tasdiqlangani — «Qo'lda tasdiq — Yorliq yo'qolgan»", async () => {
@@ -508,7 +620,7 @@ describe("Bekor qilinganlarni topshirish — 6 xonali kod (zkRab9M2, maket super
     expect(mocks.pinMutateAsync).not.toHaveBeenCalled();
   });
 
-  it("to'g'ri kod — QR skani bilan bir xil: hamma bekorlar tanlanadi, taymer, token bilan jo'natiladi, usul «Parol orqali»", async () => {
+  it("⭐ to'g'ri kod — QR skani bilan bir xil: hech narsa tanlanmaydi, taymer; skanerlangani token bilan, usul «Parol orqali»", async () => {
     mocks.pinMutateAsync.mockResolvedValue({
       data: { market_id: "201", authorized: true, authorization_token: "auth-pin", remaining_seconds: 300, method: "pin" },
     });
@@ -525,15 +637,21 @@ describe("Bekor qilinganlarni topshirish — 6 xonali kod (zkRab9M2, maket super
     expect(screen.queryByRole("dialog", { name: "Market PIN kodi" })).not.toBeInTheDocument();
     expect(await screen.findByText("PIN kod qabul qilindi")).toBeInTheDocument();
     expect(screen.getByRole("timer", { name: /QR amal qilish vaqti: (5 daqiqa 0|4 daqiqa 59) soniya/ })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "№501 ni tanlovdan chiqarish" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "№502 ni tanlovdan chiqarish" })).toBeChecked();
+    // Ilgari kod qabul qilingach marketning BARCHA bekorlari tanlanardi.
+    expect(screen.getByRole("checkbox", { name: "№501 ni qo'lda tanlash" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "№502 ni qo'lda tanlash" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Marketga jo'natish" })).toBeDisabled();
     // Kod ruxsati olingach — «PIN kodni kiritish» yo'q (holat «skanerlandi»).
     expect(screen.queryByRole("button", { name: "PIN kodni kiritish" })).not.toBeInTheDocument();
     expect(mocks.scanner.current!.paused).toBe(false);
 
+    await scan("tok-502");
+    await scan("tok-501");
+    expect(rowCheckbox("501")).toBeNull();
+    expect(rowCheckbox("502")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" }));
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
-      { marketId: "201", orderIds: ["501", "502"], authorizationToken: "auth-pin", manualOverrides: [] },
+      { marketId: "201", orderIds: ["502", "501"], authorizationToken: "auth-pin", manualOverrides: [] },
       expect.any(Object),
     );
     const table = within(await screen.findByTestId("handed-over-card")).getByRole("table");
@@ -608,7 +726,8 @@ describe("Bekor qilinganlarni topshirish — 6 xonali kod (zkRab9M2, maket super
     expect(mocks.scanMutateAsync).toHaveBeenCalledWith(MARKET_QR);
     expect(screen.queryByRole("dialog", { name: "Market PIN kodi" })).not.toBeInTheDocument();
     expect(await screen.findByText("Market QR skanerlandi")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "№501 ni tanlovdan chiqarish" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "№501 ni qo'lda tanlash" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Marketga jo'natish" })).toBeDisabled();
   });
 
   it("oyna ochiq paytda boshqa skan (buyurtma QR'i) — kod yuborilmaydi, maydon tozalanadi, xato maydon ostida", async () => {

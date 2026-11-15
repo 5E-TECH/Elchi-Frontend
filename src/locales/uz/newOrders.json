@@ -488,9 +488,9 @@
     "titleFallback": "Bekor qilingan buyurtmalar",
     "alert": {
       "requiredTitle": "Market QR kerak",
-      "requiredBody": "Jo'natish uchun avval market chiqargan QR kodni skanerlang. Skanerlangach, barcha buyurtmalar avtomatik tanlanadi.",
+      "requiredBody": "Jo'natish uchun avval market chiqargan QR kodni skanerlang. Keyin buyurtmalarni birma-bir skanerlang — skanerlangani ro'yxatdan chiqadi.",
       "scannedTitle": "Market QR skanerlandi",
-      "scannedBody": "{{value}} ta bekor qilingan buyurtma jo'natishga tayyor. QR muddati tugasa, uni qayta skanerlash kerak bo'ladi.",
+      "scannedBody": "Endi buyurtmalarni birma-bir skanerlang — skanerlangani ro'yxatdan chiqadi. QR muddati tugasa, uni qayta skanerlash kerak bo'ladi.",
       "notRequiredTitle": "Market QR talab qilinmaydi",
       "notRequiredBody": "HQ xodimlari bekor qilingan buyurtmalarni market QR kodisiz topshira oladi. Buyurtmalarni skaner bilan birma-bir tanlang.",
       "timerLabel": "QR amal qilish vaqti",
@@ -511,8 +511,8 @@
       "selected": "{{value}} ta buyurtma tanlandi",
       "hint": "Tanlangan buyurtmalar market uchun qaytarish pochtasiga qo'shiladi.",
       "none": "Hali buyurtma tanlanmagan",
-      "noneHintQr": "Market QR kodini skanerlang — barcha buyurtmalar avtomatik tanlanadi.",
-      "noneHintScan": "Buyurtma QR kodini skanerlang — u ro'yxatda tanlanadi."
+      "noneHintQr": "Market QR kodini skanerlang, so'ng buyurtmalarni birma-bir skanerlang.",
+      "noneHintScan": "Buyurtma QR kodini skanerlang — u ro'yxatdan chiqib, «Skanerlangan» ga o'tadi."
     },
     "table": {
       "label": "Bekor qilingan buyurtmalar",
@@ -535,7 +535,10 @@
       "loading": "Buyurtmalar yuklanmoqda",
       "emptyTitle": "Bekor qilingan buyurtma yo'q",
       "emptyDescription": "Bu marketning topshiriladigan bekor qilingan buyurtmalari qolmadi.",
-      "marketEmptyDescription": "Kuryer bekor qilgan buyurtmalaringiz HQ omboriga qaytganda shu yerda ko'rinadi."
+      "marketEmptyDescription": "Kuryer bekor qilgan buyurtmalaringiz HQ omboriga qaytganda shu yerda ko'rinadi.",
+      "allScannedTitle": "Hammasi skanerlandi",
+      "allScannedDescription": "Ro'yxatda skanerlanmagan buyurtma qolmadi. Tekshirib, «Marketga jo'natish» ni bosing.",
+      "allScannedDescriptionQr": "Endi market QR kodini skanerlang yoki PIN kodni kiriting, so'ng «Marketga jo'natish» ni bosing."
     },
     "manual": {
       "title": "QR buzilganini tasdiqlash",
@@ -554,7 +557,7 @@
     },
     "notify": {
       "qrAccepted": "Market QR qabul qilindi",
-      "qrAcceptedDescription": "{{value}} ta bekor qilingan buyurtma jo'natishga tayyor.",
+      "qrAcceptedDescription": "Endi buyurtmalarni birma-bir skanerlang.",
       "qrNotFound": "QR topilmadi",
       "scanMissing": "Bu QR kod shu marketning jo'natilmagan bekor qilingan buyurtmalariga mos kelmadi.",
       "sendSuccess": "Buyurtmalar marketga jo'natildi",
@@ -635,7 +638,7 @@
       "selectTitle": "Buyurtmalarni tanlash",
       "selectContext": "{{market}} · {{value}} ta bekor qilingan",
       "selectHintQr": "Buyurtmalarni tanlang · QR {{time}} amal qiladi",
-      "selectNoteTitle": "Buyurtma QR kodini skanerlang — u ro'yxatda tanlanadi",
+      "selectNoteTitle": "Buyurtma QR kodini skanerlang — u ro'yxatdan chiqadi",
       "selectNoteText": "Faqat {{market}}'ning jo'natilmagan bekor qilingan buyurtmalari tanlanadi.",
       "selectNoteTextQr": "Faqat {{market}}'ning jo'natilmagan bekor qilingan buyurtmalari tanlanadi. Market QR yana {{time}} amal qiladi.",
       "meter": "ta tanlandi",
@@ -644,6 +647,14 @@
       "selected": "Tanlandi №{{id}}",
       "missing": "Bu marketning bekorlarida yo'q",
       "qrAlreadyAccepted": "Market QR allaqachon qabul qilingan"
+    },
+    "scanned": {
+      "title": "Skanerlangan",
+      "hint": "Jo'natishdan oldin tekshiring. Xato skanerlangan buyurtmani ro'yxatga qaytaring.",
+      "label": "Skanerlangan buyurtmalar",
+      "undo": "Ro'yxatga qaytarish",
+      "undoAria": "№{{id}} ni ro'yxatga qaytarish",
+      "undoColumn": "Amal"
     },
     "done": {
       "title": "Topshirildi",

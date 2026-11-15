@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "
 import { useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Trans, useTranslation } from "react-i18next";
-import { QrCode, RotateCcw, ScanLine, Send } from "lucide-react";
+import { CircleCheck, QrCode, RotateCcw, ScanLine, Send } from "lucide-react";
 import { useOrders } from "../../../entities/orders";
 import {
   CANCELLED_MANUAL_REASONS,
@@ -70,6 +70,7 @@ import { HandoverStatusAlert } from "./ui/HandoverStatusAlert";
 import { ManualConfirmDialog } from "./ui/ManualConfirmDialog";
 import { MarketPinDialog } from "./ui/MarketPinDialog";
 import { MarketQrDialog } from "./ui/MarketQrDialog";
+import { ScannedOrdersCard } from "./ui/ScannedOrdersCard";
 
 /**
  * BEKOR QILINGANLARNI MARKETGA TOPSHIRISH — `/new-orders/cancelled/:marketId`, dizayn v2.
@@ -87,15 +88,21 @@ import { MarketQrDialog } from "./ui/MarketQrDialog";
  *    amal qiladi» — kamera yopilmaydi.
  *  - KOD (zkRab9M2, BG6; maket `superadmin-neworders-cancelled-pin-dialog`): «Market QR kerak» holatida «PIN kodni
  *    kiritish» → `MarketPinDialog` — market QR oynasidagi 6 xonali kod `POST scan/market-cancelled { market_id, pin }`
- *    ga; muvaffaqiyat QR skani bilan AYNAN bir xil (`applyAuthorization`: token, taymer, hamma bekorlar tanlanadi),
+ *    ga; muvaffaqiyat QR skani bilan AYNAN bir xil (`applyAuthorization`: token va taymer; tanlov o'zgarmaydi),
  *    topshirilganlarda usul «Parol orqali» (`pin`). Oyna ochiq paytda sahifa skaneri to'xtatiladi — 6 raqam + Enter
  *    buyurtma skani deb olinmasin; maydonga skaner yozgan market QR'i esa kod deb yuborilmaydi — QR skani bo'ladi
  *    (`scanInPinDialog`), boshqa skan — maydon ostida xato (urinish yeyilmaydi).
  *  - Market (qobiq `hosted`): karta «Yangi buyurtmalar / Bekor qilinganlar» tablari bilan; «Bekor qilingan
  *    buyurtmalarni pochtaga topshirish» bloki («Qabul qilish» → QR oynasi) va o'z ro'yxati.
  *
- * ⚠️ BIZNES QOIDA (o'zgarmaydi): bekor qilingan buyurtma marketga FAQAT market QR skanerlangach qaytadi
- * (skanerlansa marketning barcha bekorlari tanlanadi va topshirish tokeni olinadi). Buyurtma QR buzilgan
+ * ⚠️ BIZNES QOIDA (o'zgarmaydi): bekor qilingan buyurtma marketga FAQAT market QR skanerlangach (yoki uning
+ * 6 xonali kodi kiritilgach) qaytadi — topshirish tokeni olinadi.
+ * ⚠️ FAQAT SKANERLANGANI JO'NATILADI (ega qarori 2026-11-15, BeePost «Marketga topshirish» naqshi): market
+ * QR / kodi hech narsani avtomatik tanlamaydi (ilgari marketning BARCHA bekorlari tanlanardi). Buyurtma QR skani
+ * qatorni «tayyorlash» ro'yxatidan chiqaradi — u «Skanerlangan (N)» kartasiga o'tadi (`ScannedOrdersCard`, xato
+ * skan bittalab qaytariladi); «Marketga jo'natish — N ta» skanerlanganlarni (va qo'lda tasdiqlanganlarni) bitta
+ * so'rov bilan topshiradi. ⚠️ Backend ruxsati BIR MARTALIK (`consumed_at`) — shuning uchun «skan = darhol
+ * topshirish» (BeePost'ning keyingi qadami) backend o'zgarishisiz qilinmaydi. Buyurtma QR buzilgan
  * bo'lsa — sessiya ichida «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Marketda QR
  * o'chirilgan bo'lsa (`cancelled_handover_qr_required === false`) — skaner bilan birma-bir tanlanadi.
  * Skaner, ovoz, xabarlar, so'rovlar va yuk (payload) — dizayn v2 gacha bo'lgani AYNAN.
@@ -256,8 +263,11 @@ const CancelledMarketDetail = () => {
   }, [handoverQr]);
 
   /**
-   * Market ruxsati olindi (QR skani yoki 6 xonali kod — javob bir xil): token va taymer, barcha bekorlar tanlanadi.
-   * Token yo'q javob — xato (`normalizeCancelledAuthorization` tashlaydi), holat o'zgarmaydi.
+   * Market ruxsati olindi (QR skani yoki 6 xonali kod — javob bir xil): token va taymer. Tanlov O'ZGARMAYDI —
+   * ega qarori 2026-11-15 (BeePost naqshi): ilgari shu yerda marketning BARCHA bekorlari tanlanardi va xodim
+   * qo'lidagi posilkalarni skanerlamasdan hammasini «topshirilgan» deb yuborardi. Endi faqat jismonan skanerlangani
+   * (yoki «QR buzilgan» bilan qo'lda tasdiqlangani) jo'natiladi. Token yo'q javob — xato
+   * (`normalizeCancelledAuthorization` tashlaydi), holat o'zgarmaydi.
    */
   const applyAuthorization = useCallback((response: unknown, method: HandoverAuthMethod) => {
     const authorization = normalizeCancelledAuthorization(response);
@@ -266,17 +276,10 @@ const CancelledMarketDetail = () => {
     setAuthorizationToken(authorization.authorizationToken);
     setAuthorizationExpiresAt(authorization.expiresAt);
     setAuthorizationMethod(method);
-    setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
     setIsHandoverQrScanned(true);
 
     const title = method === "pin" ? t("cancelled.notify.pinAccepted") : t("cancelled.notify.qrAccepted");
-    const options = {
-      description: t("cancelled.notify.qrAcceptedDescription", {
-        count: selectableOrders.length,
-        value: formatNumberLocalized(selectableOrders.length, { language }),
-      }),
-      duration: 3000,
-    };
+    const options = { description: t("cancelled.notify.qrAcceptedDescription"), duration: 3000 };
     if (method === "pin") {
       // Kod oynada yozildi — kamera yo'q, oddiy xabar.
       notify.success(title, options);
@@ -285,7 +288,7 @@ const CancelledMarketDetail = () => {
     // Oraliq qadam: «Uzluksiz skanerlash» o'chiq bo'lsa ham kamera yopilmaydi — buyurtmalar shu kamerada.
     void playScanFeedback("success", title, undefined, { step: true, voice: "received" });
     scanNotify.success(title, options);
-  }, [language, selectableOrders, t]);
+  }, [t]);
 
   const verifyHandoverQr = useCallback(async (rawValue: string) => {
     if (!marketId) return false;
@@ -591,6 +594,25 @@ const CancelledMarketDetail = () => {
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
   const rows = useMemo<MarketOrder[]>(() => orders.map(toOrderCardData), [orders]);
   const marketRows = useMemo(() => sortMarketOrders(rows, marketSort), [marketSort, rows]);
+  /**
+   * Skanerlangan (qo'lda tasdiqlanmagan) tanlov — «tayyorlash» ro'yxatidan CHIQADI va «Skanerlangan (N)» kartasida
+   * turadi (ega qarori 2026-11-15, BeePost naqshi): ro'yxatda faqat hali skanerlanmaganlar, ya'ni ro'yxat uzunligi —
+   * «yana nechta qoldi». Qo'lda tasdiqlangani (QR buzilgan) ro'yxatda qoladi — sababi ko'rinib tursin. Yangi skan
+   * tepada (`Set` qo'shilish tartibi).
+   */
+  const isScannedRow = useCallback(
+    (orderId: string) => selectedIds.has(orderId) && !manualSelectedIds.has(orderId),
+    [manualSelectedIds, selectedIds],
+  );
+  const scannedRows = useMemo(() => {
+    const byId = new Map(rows.map((order) => [String(order.id), order]));
+    return [...selectedIds]
+      .reverse()
+      .filter((orderId) => !manualSelectedIds.has(orderId))
+      .map((orderId) => byId.get(orderId))
+      .filter((order): order is MarketOrder => order !== undefined);
+  }, [manualSelectedIds, rows, selectedIds]);
+  const pendingRows = useMemo(() => rows.filter((order) => !isScannedRow(String(order.id))), [isScannedRow, rows]);
   const totalSum = sumTotalPrice(rows);
   const isLoaded = query.data !== undefined;
   const number = (value: number) => formatNumberLocalized(value, { language });
@@ -599,6 +621,8 @@ const CancelledMarketDetail = () => {
   const titleText = marketName ?? t("cancelled.titleFallback");
 
   const listQuery = { ...query, data: isLoaded ? rows : undefined };
+  // Xodim ro'yxati — faqat hali skanerlanmaganlar (market roli `listQuery` ni ishlatadi).
+  const pendingQuery = { ...query, data: isLoaded ? pendingRows : undefined };
 
   const stage = resolveHandoverQrStage({
     qrRequired: isCancelledHandoverQrRequired,
@@ -855,7 +879,6 @@ const CancelledMarketDetail = () => {
       {hasOrders ? (
         <HandoverStatusAlert
           stage={stage}
-          readyCount={orders.length}
           remainingSeconds={authorizationRemainingSeconds}
           hintId={hintId}
           method={authorizationMethod}
@@ -908,15 +931,28 @@ const CancelledMarketDetail = () => {
         ) : null}
 
         <QueryBoundary
-          query={listQuery}
+          query={pendingQuery}
           skeleton="table"
           loadingLabel={t("cancelled.table.loading")}
           empty={
-            <EmptyState
-              icon={RotateCcw}
-              title={t("cancelled.table.emptyTitle")}
-              description={t("cancelled.table.emptyDescription")}
-            />
+            scannedRows.length > 0 ? (
+              <EmptyState
+                icon={CircleCheck}
+                title={t("cancelled.table.allScannedTitle")}
+                description={
+                  // Skan market QR'idan oldin ham ishlaydi — QR hali yo'q bo'lsa «jo'natish» o'chiq, avval ruxsat.
+                  stage === "required"
+                    ? t("cancelled.table.allScannedDescriptionQr")
+                    : t("cancelled.table.allScannedDescription")
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={RotateCcw}
+                title={t("cancelled.table.emptyTitle")}
+                description={t("cancelled.table.emptyDescription")}
+              />
+            )
           }
           className={hasOrders ? undefined : "border-t border-border"}
         >
@@ -939,6 +975,10 @@ const CancelledMarketDetail = () => {
           )}
         </QueryBoundary>
       </Card>
+
+      {scannedRows.length > 0 ? (
+        <ScannedOrdersCard rows={scannedRows} onUndo={deselectOrder} disabled={handoverCancelledOrders.isPending} />
+      ) : null}
 
       {handedOver.length > 0 ? <HandedOverCard rows={handedOver} /> : null}
 
