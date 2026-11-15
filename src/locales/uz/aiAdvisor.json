@@ -768,7 +768,9 @@
   "messages": {
     "alert": {
       "toastTitle": "Jiddiy ogohlantirish",
-      "toastText": "{{rule}} — {{subject}}"
+      "toastText": "{{rule}} — {{subject}}",
+      "toastMany_one": "{{value}} ta jiddiy ogohlantirish",
+      "toastMany_other": "{{value}} ta jiddiy ogohlantirish"
     }
   }
 }

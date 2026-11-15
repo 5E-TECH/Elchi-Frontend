@@ -1,7 +1,10 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
+// Chuqur import ataylab: modul socket bilan birga dinamik bo'lakda — `entities/ai-advisor` barreli (UI, so'rovlar,
+// normalizatorlar) bu bo'lakka kirmasin, faqat `advisorRules` dagi ikki tekshiruv kerak.
 import { isAlertId, isRuleKey } from "../../entities/ai-advisor/model/advisorRules";
 import { queryKeys } from "../../shared/config/queryKeys";
+import { formatNumberLocalized } from "../../shared/lib/formatMoney";
 
 /**
  * AI maslahatchining jiddiy ogohlantirishi — jonli kanal (60PWUbgC, shartnoma v0.3 §9.3–9.4; maket
@@ -87,4 +90,26 @@ export const advisorAlertToast = (row: AdvisorRealtimePayload, t: TFunction): Ad
     };
   }
   return { title: serverTitle, description: subject || readText(row.body) || undefined, link };
+};
+
+/** Bir nechta jiddiy ogohlantirish — jadval faqat jiddiylar bilan (banner «Faqat jiddiylar» bilan bir xil). */
+export const ADVISOR_CRITICAL_LIST_LINK = "/ai-assistant?tab=alerts&severity=critical";
+
+/**
+ * Bitta yig'ish oynasida bir nechta jiddiy ogohlantirish — BITTA xabar: «N ta jiddiy ogohlantirish» + qisqa nomlar
+ * (« · », takrorsiz — banner ost-qatoridagidek), «Ochish» → faqat jiddiylar ro'yxati. Aks holda har biri yopilguncha
+ * turadigan alohida xabar bo'lib, `MAX_TOASTS` dan oshganlari jimgina tushib qolardi. Maket yo'q — eng yaqini
+ * «N ta yangi bildirishnoma» (`notifications:realtime.manyNew`, kalit topilmasa — shu matn).
+ */
+export const advisorAlertsBatchToast = (
+  rows: readonly AdvisorRealtimePayload[],
+  t: TFunction,
+  language: string,
+): AdvisorAlertToast => {
+  const count = rows.length;
+  const names = [...new Set(rows.map((row) => shortName(readData(row.data), t)).filter(Boolean))];
+  const title =
+    readText(t("aiAdvisor:messages.alert.toastMany", { count, value: formatNumberLocalized(count, { language }), defaultValue: "" })) ||
+    t("realtime.manyNew", { count });
+  return { title, description: names.length ? names.join(" · ") : undefined, link: ADVISOR_CRITICAL_LIST_LINK };
 };

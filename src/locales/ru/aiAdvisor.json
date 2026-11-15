@@ -822,7 +822,11 @@
   "messages": {
     "alert": {
       "toastTitle": "Критичное предупреждение",
-      "toastText": "{{rule}} — {{subject}}"
+      "toastText": "{{rule}} — {{subject}}",
+      "toastMany_one": "{{value}} критичное предупреждение",
+      "toastMany_few": "{{value}} критичных предупреждения",
+      "toastMany_many": "{{value}} критичных предупреждений",
+      "toastMany_other": "{{value}} критичного предупреждения"
     }
   }
 }

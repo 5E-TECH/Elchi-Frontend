@@ -2,7 +2,14 @@ import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "../../i18n";
 import { queryKeys } from "../../shared/config/queryKeys";
-import { ADVISOR_ALERT_TYPE, advisorAlertToast, isAdvisorAlert, refreshAdvisorQueries } from "./realtimeAdvisor";
+import {
+  ADVISOR_ALERT_TYPE,
+  ADVISOR_CRITICAL_LIST_LINK,
+  advisorAlertsBatchToast,
+  advisorAlertToast,
+  isAdvisorAlert,
+  refreshAdvisorQueries,
+} from "./realtimeAdvisor";
 
 /** Shartnoma v0.3 §9.3: rol orqali emas, `recipient_ids` ga to'liq qator; `data` — qisqa nom va joy uchun. */
 const row = (data: Record<string, unknown> | null, extra: Record<string, unknown> = {}) => ({
@@ -104,5 +111,21 @@ describe("realtimeAdvisor — jiddiy AI ogohlantirishi jonli kanalda (60PWUbgC �
       queryKeys.aiAdvisor.overview,
       queryKeys.aiAdvisor.alertLists,
     ]);
+  });
+  it("bir nechtasi — «N ta jiddiy ogohlantirish» (ru — ko'plik shakli), qisqa nomlar takrorsiz, havola — faqat jiddiylar", async () => {
+    const r2 = { alert_id: "1041", rule_key: "R2", severity: "critical", subject_name: "Toshkent HQ" };
+    const rows = [row(R7_RECEIPT), row(r2, { id: "n-501" }), row({ ...r2, alert_id: "1042" }, { id: "n-502" })];
+    expect(advisorAlertsBatchToast(rows, tNotifications(), "uz")).toEqual({
+      title: "3 ta jiddiy ogohlantirish",
+      description: "Chekda farq bor · Kuryer qarzi o'smoqda",
+      link: ADVISOR_CRITICAL_LIST_LINK,
+    });
+    // Qoida noma'lum — izohsiz.
+    expect(advisorAlertsBatchToast([row(null), row(null, { id: "n-9" })], tNotifications(), "uz").description).toBeUndefined();
+
+    await i18n.changeLanguage("ru");
+    expect(advisorAlertsBatchToast(rows, tNotifications(), "ru").title).toBe("3 критичных предупреждения");
+    await i18n.changeLanguage("en");
+    expect(advisorAlertsBatchToast(rows, tNotifications(), "en").title).toBe("3 critical alerts");
   });
 });

@@ -768,7 +768,9 @@
   "messages": {
     "alert": {
       "toastTitle": "Critical alert",
-      "toastText": "{{rule}} — {{subject}}"
+      "toastText": "{{rule}} — {{subject}}",
+      "toastMany_one": "{{value}} critical alert",
+      "toastMany_other": "{{value}} critical alerts"
     }
   }
 }

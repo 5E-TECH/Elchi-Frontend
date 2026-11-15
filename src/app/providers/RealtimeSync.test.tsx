@@ -315,6 +315,34 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
       await user.click(screen.getByRole("button", { name: "Ochish" }));
       expect(await screen.findByText("ai-sahifasi ?tab=alerts&alert=1041")).toBeInTheDocument();
     });
+
+    it("bir oynada bir nechta jiddiy — bitta «N ta jiddiy ogohlantirish» (qisqa nomlar takrorsiz), «Ochish» — faqat jiddiylar", async () => {
+      const user = userEvent.setup();
+      renderSync();
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      const row = (id: string, alertId: string, ruleKey: string, subject: string) => ({
+        ...ADVISOR_ROW,
+        id,
+        link: null,
+        data: { alert_id: alertId, rule_key: ruleKey, severity: "critical", variant: null, subject_name: subject },
+      });
+
+      act(() => {
+        lastSocket().fire("notification:new", ADVISOR_ROW);
+        lastSocket().fire("notification:new", row("n-601", "1041", "R2", "Toshkent HQ"));
+        lastSocket().fire("notification:new", row("n-602", "1042", "R2", "Samarqand filiali"));
+        lastSocket().fire("notification:new", row("n-603", "1043", "R6", "Butun tizim"));
+      });
+
+      expect(await screen.findByText("4 ta jiddiy ogohlantirish")).toBeInTheDocument();
+      expect(screen.getByText("Chekda farq bor · Kuryer qarzi o'smoqda · Zarar")).toBeInTheDocument();
+      // Yopilmaydigan xabarlar ustma-ust to'planib, eskilari tushib qolmaydi — bittasi.
+      expect(toastStore.getSnapshot()).toEqual([
+        expect.objectContaining({ id: "elchi-advisor-batch-n-500", tone: "error", duration: 0 }),
+      ]);
+      await user.click(screen.getByRole("button", { name: "Ochish" }));
+      expect(await screen.findByText("ai-sahifasi ?tab=alerts&severity=critical")).toBeInTheDocument();
+    });
   });
 
   it("⭐ TC4/TC11: ulanganda polling 5 daqiqa; uzilsa sanoq darhol so'raladi va 60 s ga qaytadi; qayta ulanganda inbox yangilanadi", async () => {

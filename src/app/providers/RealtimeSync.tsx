@@ -37,8 +37,9 @@ import {
  *   holat tablari sonlari va «Qabul va yaratish» badge'i — GaBIPi3Z) shu yig'ish oynasida bir marta yangilanadi.
  * - AI maslahatchining jiddiy ogohlantirishi (`type: "ai.advisor_alert"`, 60PWUbgC; maket `tizim-ai-advisor-messages`
  *   «Jiddiy ogohlantirish · ilova ochiq»): qatorli yoki signal — `overview` va ogohlantirishlar ro'yxatlari shu
- *   oynada bir marta yangilanadi; qatorli hodisa — umumiy «N ta yangi»ga qo'shilmaydi, har biri alohida, foydalanuvchi
- *   yopguncha turadigan xabar (`duration: 0`, kalit o'sha `elchi-push-<id>`, «Ochish» → ogohlantirish oynasi). Yashirin
+ *   oynada bir marta yangilanadi; qatorli hodisa — umumiy «N ta yangi»ga qo'shilmaydi, foydalanuvchi yopguncha
+ *   turadigan xabar (`duration: 0`, kalit o'sha `elchi-push-<id>`, «Ochish» → ogohlantirish oynasi); bir oynada bir
+ *   nechtasi — bitta «N ta jiddiy ogohlantirish» («Ochish» → faqat jiddiylar ro'yxati). Yashirin
  *   tabda ham chiqadi — u o'zi yopilmaydi, foydalanuvchi qaytganda ko'radi (bu tur uchun push yo'q). Matn va
  *   yangilash — `realtimeAdvisor` (socket bilan birga dinamik).
  * - Sessiya boshqa qurilmadan yopilsa (Elchi Pochta #3): `auth:session_revoked` `{ session_id, reason }` — joriy
@@ -75,7 +76,7 @@ const toInAppLink = (link: string | null | undefined) =>
 const RealtimeSync = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { t } = useTranslation("notifications");
+  const { t, i18n } = useTranslation("notifications");
   const accessToken = useSelector((state: RootState) => state.user.accessToken);
   const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
 
@@ -107,20 +108,26 @@ const RealtimeSync = () => {
         advisorChangedRef.current = false;
         if (advisor) void advisor.refreshAdvisorQueries(queryClient);
       }
-      // Jiddiy AI ogohlantirishi — har biri alohida va yopilguncha (yashirin tabda ham: o'zi yopilmaydi).
+      // Jiddiy AI ogohlantirishi — yopilguncha (yashirin tabda ham: o'zi yopilmaydi); bitta — o'zi, bir nechta —
+      // bitta umumiy xabar (yopilmaydigan xabarlar `MAX_TOASTS` dan oshib, eskilari jimgina tushib qolmasin).
       let others = rows;
       if (advisor) {
         others = rows.filter((row) => !advisor.isAdvisorAlert(row));
-        for (const row of rows) {
-          if (!advisor.isAdvisorAlert(row)) continue;
-          const toast = advisor.advisorAlertToast(row, t);
+        const alerts = rows.filter((row) => advisor.isAdvisorAlert(row));
+        const show = (id: string, toast: { title: string; description?: string; link: string | null }) => {
           const link = toInAppLink(toast.link);
           notify.error(toast.title, {
-            id: `elchi-push-${row.id}`,
+            id,
             description: toast.description,
             duration: 0,
             action: { label: t("push.toastOpen"), onClick: () => navigate(link) },
           });
+        };
+        if (alerts.length > 1) {
+          const language = i18n.resolvedLanguage ?? i18n.language;
+          show(`elchi-advisor-batch-${alerts[0].id}`, advisor.advisorAlertsBatchToast(alerts, t, language));
+        } else if (alerts.length === 1) {
+          show(`elchi-push-${alerts[0].id}`, advisor.advisorAlertToast(alerts[0], t));
         }
       }
       // Yashirin tabda xabar emas (badge baribir yangilanadi).
@@ -142,7 +149,7 @@ const RealtimeSync = () => {
         action: { label: t("push.toastOpen"), onClick: () => navigate(link) },
       });
     };
-  }, [navigate, queryClient, t]);
+  }, [i18n, navigate, queryClient, t]);
 
   // rWdLuoP3: smena va kassa kartasi hodisasi — ochiq kassa sahifalari yangilanadi; avtomatik yopilganda xabar.
   // Ishlovchi modul socket bilan birga dinamik yuklanadi (`realtimeFinance`) — eng so'nggi `t` ref orqali.
