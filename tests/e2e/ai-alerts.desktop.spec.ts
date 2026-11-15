@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { RESOLVE_NOTE } from "../../src/test/aiAdvisorFixtures";
 import { advisorCalls, composer, FIRST_ALERT_TITLE, mockAiAssistantApi, openAiAlerts, openAiAssistant } from "./support/aiAssistant";
 
@@ -9,7 +9,9 @@ import { advisorCalls, composer, FIRST_ALERT_TITLE, mockAiAssistantApi, openAiAl
  * tab almashganda suhbat qoralamasi saqlanadi va ochiq oyna (`alert`) olinadi. Ogohlantirish oynasi (maketlar
  * `superadmin-ai-assistant-alert-dialog`, `-alert-dialog-receipt`, `-alert-resolve-confirm`): ochilganda «Ko'rildi»
  * (nishon kamayadi), «Hal qilindi» (izoh → tasdiq → PATCH → toast), «Ahamiyatsiz» (tasdiqsiz), AI izohi (navbat →
- * tayyor; 60 s; 429 oylik / umumiy), 409, chuqur havola. Backend yo'q holati — `ai-assistant.desktop.spec.ts`.
+ * tayyor; 60 s; 429 oylik / umumiy), 409, chuqur havola. «Sozlamalar» — qoidalar oynasi (maketlar
+ * `superadmin-ai-assistant-settings-rules-dialog`, `-settings-confirm`): tasdiq → PATCH `{version, rules}`, mijoz va
+ * server xatolari, 409, sozlamalar zondi 404. Backend yo'q holati — `ai-assistant.desktop.spec.ts`.
  */
 test.describe.configure({ timeout: 120_000 });
 
@@ -22,9 +24,9 @@ test("⭐ tablar → «Ogohlantirishlar»: banner, ro'yxat, filtrlar ↔ URL, sa
   await expect(tablist.getByRole("tab", { name: "Suhbat" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText("Kassa, qarzlar va xarajatlar bo'yicha savol va ogohlantirishlar. Yordamchi faqat ma'lumot o'qiydi.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Yangi suhbat" })).toBeVisible();
-  // Hisobotlar · Tavsiyalar · Sarf va «Sozlamalar» (S6) — hozircha yo'q.
+  // Hisobotlar · Tavsiyalar · Sarf — backend yo'q; «Sozlamalar» — sozlamalar zondi muvaffaqiyatli (D3).
   await expect(page.getByRole("tab", { name: /Hisobotlar|Tavsiyalar|Sarf/ })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Sozlamalar" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sozlamalar" })).toBeVisible();
 
   await composer(page).fill("Kecha-chi?");
   await tablist.getByRole("tab", { name: /Ogohlantirishlar/ }).click();
@@ -92,10 +94,11 @@ test("⭐ tablar → «Ogohlantirishlar»: banner, ro'yxat, filtrlar ↔ URL, sa
   await expect(composer(page)).toHaveValue("Kecha-chi?");
   await expect(page.getByRole("button", { name: "Yangi suhbat" })).toBeVisible();
 
-  // Zond + oyna ochilgandagi yangilash (D16) + ko'pi bilan bitta 60 s poll; sozlamalar (S6) so'ralmaydi;
-  // GET :id (yon ta'sirli) — faqat oyna ochilganda, bir marta.
+  // Zond + oyna ochilgandagi yangilash (D16) + ko'pi bilan bitta 60 s poll; sozlamalar zondi — bitta (oyna ochilmadi;
+  // fokusda 30 s dan eski bo'lsa yana bittasi); GET :id (yon ta'sirli) — faqat oyna ochilganda, bir marta.
   expect(advisorCalls(advisor, "ai/advisor/overview").length).toBeLessThanOrEqual(3);
-  expect(advisorCalls(advisor, "ai/advisor/settings")).toHaveLength(0);
+  expect(advisorCalls(advisor, "ai/advisor/settings").length).toBeGreaterThanOrEqual(1);
+  expect(advisorCalls(advisor, "ai/advisor/settings").length).toBeLessThanOrEqual(2);
   expect(advisor.requests.filter((request) => /^ai\/advisor\/alerts\/\d+/.test(request.path)).map((request) => request.path)).toEqual([
     "ai/advisor/alerts/1041",
   ]);
@@ -389,4 +392,130 @@ test("R2–R6, R8: ro'yxatdan ochiladi — har qoidaning faktlari, o'lchagich / 
 
   // Har oyna — bitta GET (ochilganda «Ko'rildi»).
   for (const id of ["1041", "1036", "1034", "1033", "1031", "1029"]) expect(advisorCalls(advisor, `ai/advisor/alerts/${id}`)).toHaveLength(1);
+});
+
+// ── «Sozlamalar» — qoidalar oynasi (maketlar `superadmin-ai-assistant-settings-rules-dialog`, `-settings-confirm`) ──
+
+/** «Sozlamalar» → oyna (faqat «Qoidalar», D3). */
+const openSettings = async (page: Page) => {
+  await page.getByRole("button", { name: "Sozlamalar" }).click();
+  const dialog = page.getByRole("dialog", { name: "AI yordamchi sozlamalari" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("switch")).toHaveCount(8);
+  return dialog;
+};
+
+test("⭐ sozlamalar: chegara va kalit → tasdiq («eski → yangi», izoh) → PATCH {version, rules} (severity yo'q) → toast; qayta ochilganda yangi qiymat", async ({
+  page,
+}) => {
+  const { advisor, leaked } = await mockAiAssistantApi(page, { advisor: "on" });
+  await openAiAlerts(page);
+  const dialog = await openSettings(page);
+  await expect(dialog.getByText("Faqat superadmin · har o'zgarish faoliyat jurnaliga yoziladi")).toBeVisible();
+  await expect(dialog.getByRole("tablist")).toHaveCount(0);
+  await expect(dialog.getByRole("textbox", { name: "Nisbat" })).toHaveCount(0);
+
+  const shortage = dialog.getByRole("textbox", { name: "Bir smenadagi kamomad" });
+  await expect(shortage).toHaveValue("50 000");
+  await shortage.fill("30000");
+  await expect(shortage).toHaveValue("30 000");
+  await expect(dialog.getByText("Avval: 50 000 so'm")).toBeVisible();
+  const corrections = dialog.getByRole("switch", { name: "Tuzatishlar ko'paydi" });
+  await corrections.click();
+  await expect(corrections).toHaveAttribute("aria-checked", "false");
+  await expect(dialog.getByText("Tuzatishlar 30 kunlik o'rtachadan 2 barobar ko'p · avval yoqilgan edi")).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Saqlash" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Sozlamalarni saqlaysizmi?" });
+  await expect(confirm).toContainText("2 ta o'zgarish · faoliyat jurnaliga yoziladi");
+  await expect(confirm.getByRole("term")).toHaveText(["Smena kamomadi · Bir smenadagi kamomad", "Tuzatishlar ko'paydi"]);
+  await expect(confirm.getByRole("definition").nth(0)).toContainText("30 000 so'm");
+  await expect(confirm.getByRole("definition").nth(1)).toContainText("O'chirilgan");
+  await expect(confirm).toContainText("O'chirilgan qoida bo'yicha ogohlantirish chiqmaydi.");
+  expect(advisorCalls(advisor, "ai/advisor/settings", "PATCH")).toHaveLength(0);
+  await confirm.getByRole("button", { name: "Saqlash" }).click();
+
+  await expect(page.getByText("Sozlamalar saqlandi", { exact: true })).toBeVisible();
+  await expect(page.getByText("Qoidalar keyingi tekshiruvdan qo'llanadi", { exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "AI yordamchi sozlamalari" })).toHaveCount(0);
+  const patches = advisorCalls(advisor, "ai/advisor/settings", "PATCH");
+  expect(patches.map((request) => request.body)).toEqual([{ version: 4, rules: { R1: { shortage_uzs: 30_000 }, R8: { enabled: false } } }]);
+  expect(advisor.settings.version).toBe(5);
+
+  const again = await openSettings(page);
+  await expect(again.getByRole("textbox", { name: "Bir smenadagi kamomad" })).toHaveValue("30 000");
+  await expect(again.getByRole("switch", { name: "Tuzatishlar ko'paydi" })).toHaveAttribute("aria-checked", "false");
+  await expect(again.getByText(/Avval:|avval yoqilgan edi/)).toHaveCount(0);
+  await again.getByRole("button", { name: "Bekor qilish" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(leaked).toEqual([]);
+});
+
+test("sozlamalar: noto'g'ri qiymat — maydonda xato, PATCH yo'q; server INVALID_RULE — maydonda; 500 — «Sozlamalar saqlanmadi»", async ({
+  page,
+}) => {
+  const { advisor } = await mockAiAssistantApi(page, { advisor: "on", settingsPatch: "invalid_rule" });
+  await openAiAssistant(page);
+  const dialog = await openSettings(page);
+  const consecutive = dialog.getByRole("textbox", { name: "Ketma-ket manfiy smenalar" });
+
+  await consecutive.fill("0");
+  await dialog.getByRole("button", { name: "Saqlash" }).click();
+  await expect(consecutive).toHaveAttribute("aria-invalid", "true");
+  await expect(dialog.getByText("1 dan katta son kiriting")).toBeVisible();
+  await expect(consecutive).toBeFocused();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+
+  // Server boshqa chegara bilan rad etadi (mijoz o'tkazgan qiymat).
+  await consecutive.fill("4");
+  await dialog.getByRole("button", { name: "Saqlash" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Saqlash" }).click();
+  await expect(dialog.getByText("2–30 oralig'ida kiriting")).toBeVisible();
+  await expect(consecutive).toBeFocused();
+  await expect(dialog).toBeVisible();
+
+  advisor.settingsPatch = "error";
+  await dialog.getByRole("button", { name: "Saqlash" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Saqlash" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("Sozlamalar saqlanmadi");
+  await expect(dialog.getByRole("alert")).toContainText("Hech narsa o'zgarmadi — qayta urining.");
+  await expect(consecutive).toHaveValue("4");
+  expect(advisorCalls(advisor, "ai/advisor/settings", "PATCH")).toHaveLength(2);
+  expect(advisor.settings.version).toBe(4);
+});
+
+test("sozlamalar: 409 — boshqa oynada saqlangan: qayta o'qiladi, o'zgarish saqlanib qoladi, qayta saqlash yangi versiya bilan", async ({ page }) => {
+  const { advisor } = await mockAiAssistantApi(page, { advisor: "on" });
+  await openAiAssistant(page);
+  const dialog = await openSettings(page);
+  await dialog.getByRole("textbox", { name: "To'lovsiz kunlar" }).fill("10");
+
+  // Boshqa superadmin: versiya 5, «Kuryer qarzi o'smoqda» o'chirilgan.
+  advisor.settings = { ...advisor.settings, version: 5, rules: { ...advisor.settings.rules, R2: { ...advisor.settings.rules.R2, enabled: false } } };
+  await dialog.getByRole("button", { name: "Saqlash" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Saqlash" }).click();
+
+  await expect(dialog.getByText("Sozlamalar boshqa oynada o'zgartirilgan")).toBeVisible();
+  await expect(dialog.getByRole("switch", { name: "Kuryer qarzi o'smoqda" })).toHaveAttribute("aria-checked", "false");
+  await expect(dialog.getByRole("textbox", { name: "To'lovsiz kunlar" })).toHaveValue("10");
+
+  await dialog.getByRole("button", { name: "Saqlash" }).click();
+  const confirm = page.getByRole("alertdialog");
+  await expect(confirm).toContainText("1 ta o'zgarish · faoliyat jurnaliga yoziladi");
+  await confirm.getByRole("button", { name: "Saqlash" }).click();
+  await expect(page.getByText("Sozlamalar saqlandi", { exact: true })).toBeVisible();
+  expect(advisorCalls(advisor, "ai/advisor/settings", "PATCH").map((request) => request.body)).toEqual([
+    { version: 4, rules: { R4: { days_without_payout: 10 } } },
+    { version: 5, rules: { R4: { days_without_payout: 10 } } },
+  ]);
+  expect(advisor.settings.version).toBe(6);
+  expect(advisor.settings.rules.R2.enabled).toBe(false);
+});
+
+test("sozlamalar zondi 404 (backend faqat ogohlantirishlar bilan) — «Sozlamalar» yo'q, tablar bor", async ({ page }) => {
+  const { advisor } = await mockAiAssistantApi(page, { advisor: "on", settings: "off" });
+  await openAiAlerts(page);
+  await expect(page.getByRole("tablist", { name: "AI yordamchi bo'limlari" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sozlamalar" })).toHaveCount(0);
+  expect(advisorCalls(advisor, "ai/advisor/settings")).toHaveLength(1);
 });

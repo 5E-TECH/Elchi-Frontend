@@ -11,7 +11,8 @@ import { renderWithProviders } from "../../test/test-utils";
  * `/ai-assistant` qobig'i (60PWUbgC, D1–D5, D12, D13; maketlar `superadmin-ai-assistant`, `-alerts`, `-tab-select`):
  * maslahatchi backend'ini aniqlash (`overview` zondi — bitta so'rov, keshlanadi), backend yo'q — avvalgi faqat suhbat
  * sahifasi (`?tab` e'tiborga olinmaydi), tablar va URL, zond kutilayotgandagi `?tab=alerts` (skelet, suhbat emas),
- * tab almashganda suhbat qoralamasi saqlanadi, sarlavha amallari, telefonda «Bo'lim» tanlovi; ogohlantirish oynasi
+ * tab almashganda suhbat qoralamasi saqlanadi, sarlavha amallari («Sozlamalar» — sozlamalar zondi bilan, D3), telefonda
+ * «Bo'lim» tanlovi; ogohlantirish oynasi
  * (`?alert`) faqat «Ogohlantirishlar» tabida va zond «mavjud» bo'lgach (yon ta'sirli tafsilot GET'i oldinroq ketmaydi).
  */
 
@@ -225,8 +226,10 @@ describe("AI yordamchi qobig'i — backend bor", () => {
     expect(composer()).toHaveValue("Kecha-chi?");
     expect(screen.getByRole("button", { name: "Yangi suhbat" })).toBeInTheDocument();
     expect(screen.queryByRole("table", { name: "Ogohlantirishlar ro'yxati" })).toBeNull();
-    // Zond bitta; sozlamalar (S6) hali so'ralmaydi.
+    // Zond bitta; sozlamalar zondi ham bitta (404 — «Sozlamalar» yo'q).
     expect(mocks.getAdvisorOverview).toHaveBeenCalledTimes(1);
+    expect(mocks.getAdvisorSettings).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Sozlamalar" })).toBeNull();
     expect(mocks.getAiAccessMe).toHaveBeenCalledTimes(1);
   });
 
@@ -253,6 +256,58 @@ describe("AI yordamchi qobig'i — backend bor", () => {
     expect(within(tablist).getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Suhbat", "Ogohlantirishlar"]);
     expect(within(tablist).getByRole("tab", { name: "Suhbat" })).toHaveAttribute("aria-selected", "true");
     expect(await emptyChatHeading()).toBeInTheDocument();
+  });
+});
+
+describe("AI yordamchi qobig'i — «Sozlamalar» (D3, D13)", () => {
+  it("sozlamalar zondi muvaffaqiyatli — «Sozlamalar» (secondary) ikkala tabda, «Yangi suhbat» faqat suhbatda; oyna faqat «Qoidalar»", async () => {
+    const user = userEvent.setup();
+    mocks.getAdvisorSettings.mockResolvedValue(fx.settings);
+    renderPage();
+
+    const settingsButton = await screen.findByRole("button", { name: "Sozlamalar" });
+    expect(settingsButton).toHaveAttribute("aria-haspopup", "dialog");
+    expect(settingsButton.querySelector("svg.lucide-settings")).not.toBeNull();
+    const newChat = await screen.findByRole("button", { name: "Yangi suhbat" });
+    // Maketdagi tartib: «Sozlamalar», keyin «Yangi suhbat».
+    expect(settingsButton.compareDocumentPosition(newChat) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    await user.click(screen.getByRole("tab", { name: /Ogohlantirishlar/ }));
+    expect(screen.getByRole("button", { name: "Sozlamalar" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Yangi suhbat" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Sozlamalar" }));
+    const dialog = await screen.findByRole("dialog", { name: "AI yordamchi sozlamalari" });
+    expect(within(dialog).getAllByRole("switch")).toHaveLength(8);
+    expect(within(dialog).queryByRole("tablist")).toBeNull();
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "AI yordamchi sozlamalari" })).toBeNull());
+    // Ochilganda qayta o'qildi; URL o'zgarmaydi.
+    expect(mocks.getAdvisorSettings).toHaveBeenCalledTimes(2);
+    expect(currentParams().toString()).toBe("tab=alerts");
+  });
+
+  it("overview yo'q (404) — sozlamalar umuman so'ralmaydi, tugma yo'q (#644 yolg'iz deploy bo'lsa ham)", async () => {
+    mocks.getAdvisorOverview.mockRejectedValue(advisorHttpError(404));
+    mocks.getAdvisorSettings.mockResolvedValue(fx.settings);
+    renderPage();
+    expect(await emptyChatHeading()).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Yangi suhbat" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sozlamalar" })).toBeNull();
+    expect(mocks.getAdvisorSettings).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["404", () => advisorHttpError(404)],
+    ["403", () => advisorHttpError(403)],
+    ["tarmoq", () => advisorNetworkError()],
+  ])("sozlamalar zondi %s — tugma yo'q, tablar bor, xato UI yo'q", async (_label, error) => {
+    mocks.getAdvisorSettings.mockRejectedValue(error());
+    renderPage();
+    expect(await screen.findByRole("tablist", { name: "AI yordamchi bo'limlari" })).toBeInTheDocument();
+    await waitFor(() => expect(mocks.getAdvisorSettings).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("button", { name: "Sozlamalar" })).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });
 

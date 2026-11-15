@@ -89,6 +89,7 @@ export const mockAiAssistantApi = async (
     settings = "on",
     explain = "queued",
     patch = "ok",
+    settingsPatch = "ok",
     explainReadyAfter = 2,
   }: {
     role?: string;
@@ -99,11 +100,13 @@ export const mockAiAssistantApi = async (
     settings?: "on" | "off";
     explain?: AdvisorExplainMode;
     patch?: AdvisorPatchMode;
+    /** `PATCH settings`: `invalid_rule` — 400 `INVALID_RULE` (`rules.R1.consecutive_negative`), `error` — 500. */
+    settingsPatch?: AdvisorSettingsPatchMode;
     /** `pending` izoh nechta `GET :id` dan keyin `ready` bo'ladi. */
     explainReadyAfter?: number;
   } = {},
 ) => {
-  const advisorMock = createAdvisorMock({ mode: advisor, settings, explain, patch, explainReadyAfter });
+  const advisorMock = createAdvisorMock({ mode: advisor, settings, explain, patch, settingsPatch, explainReadyAfter });
   const origin = appOrigin();
   const corsFor = (route: Route) => ({
     "access-control-allow-origin": origin,
@@ -338,11 +341,13 @@ export const expectNoHorizontalOverflow = async (page: Page) => {
  *   filtr (`status`, `severity`, `rule_key`), sahifalash, `counts.by_status` (status filtrisiz); `overview` — joriy
  *   holatdan; `GET alerts/:id` — `new` → `seen` (yon ta'sir); izohda `pending` → `explainReadyAfter` ta so'rovdan
  *   keyin `ready` (`stuck` — hech qachon); `PATCH alerts/:id` — izoh 3–500 («Hal qilindi»), `closed` rejimida 409;
- *   `GET/PATCH settings` (`settings: "off"` — 404), `version` bilan.
+ *   `GET/PATCH settings` (`settings: "off"` — 404), `version` bilan (eskisi — 409; `severity` / `telegram` / boshqa
+ *   kalit — 400 `INVALID_SETTING`; `settingsPatch`: `invalid_rule` — 400 `INVALID_RULE`, `error` — 500).
  */
 export type AdvisorMode = "off" | "on" | "forbidden";
 export type AdvisorExplainMode = "queued" | "cached" | "stuck" | "budget_month" | "budget_global" | "disabled";
 export type AdvisorPatchMode = "ok" | "closed";
+export type AdvisorSettingsPatchMode = "ok" | "invalid_rule" | "error";
 export type AdvisorRequest = { method: string; path: string; query: Record<string, string>; body: unknown };
 
 const ADVISOR_STATUSES = ["new", "seen", "resolved", "dismissed"] as const;
@@ -379,12 +384,14 @@ export const createAdvisorMock = ({
   settings,
   explain,
   patch,
+  settingsPatch = "ok",
   explainReadyAfter,
 }: {
   mode: AdvisorMode;
   settings: "on" | "off";
   explain: AdvisorExplainMode;
   patch: AdvisorPatchMode;
+  settingsPatch?: AdvisorSettingsPatchMode;
   explainReadyAfter: number;
 }) => {
   const fx = createAdvisorFixtures();
@@ -394,6 +401,8 @@ export const createAdvisorMock = ({
     settingsMode: settings,
     explain,
     patch,
+    /** Test o'rtasida o'zgartirsa bo'ladi (`advisor.settingsPatch = "ok"`). */
+    settingsPatch,
     explainReadyAfter,
     alerts: paddedAlerts(fx),
     settings: structuredClone(fx.settings),
@@ -537,6 +546,8 @@ export const createAdvisorMock = ({
         if (typeof version !== "number") return fail(fx.errors.invalidSetting);
         if (Object.keys(rest).length) return fail({ ...fx.errors.invalidSetting, field: Object.keys(rest)[0] });
         if (version !== state.settings.version) return fail({ ...fx.errors.settingsConflict, version: state.settings.version });
+        if (state.settingsPatch === "invalid_rule") return fail(fx.errors.invalidRule);
+        if (state.settingsPatch === "error") return fail({ statusCode: 500, message: "Internal server error" });
         for (const [rule, patchRule] of Object.entries(rules ?? {})) {
           if (!(ADVISOR_RULES as readonly string[]).includes(rule)) return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}` });
           for (const field of ["severity", "telegram"]) {

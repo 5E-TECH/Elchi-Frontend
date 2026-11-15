@@ -1,9 +1,9 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-tab-select, superadmin-ai-assistant-alerts, superadmin-ai-assistant-alerts-filters-mobile, superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-dialog-courier-debt, superadmin-ai-assistant-alert-dialog-expense, superadmin-ai-assistant-alert-dialog-market-payout, superadmin-ai-assistant-alert-dialog-hq-transfer, superadmin-ai-assistant-alert-dialog-loss, superadmin-ai-assistant-alert-dialog-corrections, superadmin-ai-assistant-alert-resolve-confirm
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-tab-select, superadmin-ai-assistant-alerts, superadmin-ai-assistant-alerts-filters-mobile, superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-dialog-courier-debt, superadmin-ai-assistant-alert-dialog-expense, superadmin-ai-assistant-alert-dialog-market-payout, superadmin-ai-assistant-alert-dialog-hq-transfer, superadmin-ai-assistant-alert-dialog-loss, superadmin-ai-assistant-alert-dialog-corrections, superadmin-ai-assistant-alert-resolve-confirm, superadmin-ai-assistant-settings-rules-dialog, superadmin-ai-assistant-settings-confirm
 import { lazy, Suspense, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { MessageSquarePlus } from "lucide-react";
-import { useAdvisorAvailability } from "../../entities/ai-advisor";
+import { MessageSquarePlus, Settings } from "lucide-react";
+import { useAdvisorAvailability, useAdvisorSettings } from "../../entities/ai-advisor";
 import { Button, Card, PageHeader, SkeletonLines } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
 import { ALERT_ID_PARAM } from "./model/alertFilters";
@@ -15,6 +15,10 @@ import { ChatPanel, type NewChatAction } from "./ui/ChatPanel";
 const AlertsPanel = lazy(() => import("./ui/alerts/AlertsPanel"));
 /** Ogohlantirish oynasi — birinchi `?alert` da yuklanadi, keyin o'rnatilgan qoladi (yopilish harakati). */
 const AlertDialog = lazy(() => import("./ui/alerts/AlertDialog"));
+/** Qoidalar sozlamasi — birinchi «Sozlamalar» bosilganda yuklanadi, keyin o'rnatilgan qoladi (yopilish harakati). */
+const RulesSettingsDialog = lazy(() =>
+  import("../../features/ai-alerts").then((module) => ({ default: module.RulesSettingsDialog })),
+);
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
@@ -38,8 +42,11 @@ const AlertDialog = lazy(() => import("./ui/alerts/AlertDialog"));
  *  `ui/alerts/AlertDialog.tsx`) — faqat «Ogohlantirishlar» tabida, birinchi `?alert` da yuklanadi.
  *
  *  Sarlavha (D12, D13): izoh — tablar bo'lsa `subtitleAdvisor` («…savol va ogohlantirishlar…», maketdagi «hisobot» va
- *  «tavsiyalar» olib tashlangan), aks holda avvalgisi. Amallar: «Suhbat» — «Yangi suhbat» (ghost, MessageSquarePlus;
- *  suhbat holati yuklangach); «Sozlamalar» (qoidalar oynasi) — sozlamalar zondi muvaffaqiyatli bo'lsa (S6).
+ *  «tavsiyalar» olib tashlangan), aks holda avvalgisi. Amallar: «Sozlamalar» (secondary, Settings) — ikkala tabda,
+ *  faqat sozlamalar zondi ham muvaffaqiyatli bo'lsa (D3: `GET ai/advisor/settings` faqat `overview` mavjud bo'lgach
+ *  so'raladi; #644 yolg'iz deploy qilinsa ham sahifa o'zgarmaydi); «Suhbat» tabida yonida «Yangi suhbat» (ghost,
+ *  MessageSquarePlus; suhbat holati yuklangach). «Sozlamalar» — qoidalar oynasi (`features/ai-alerts` →
+ *  `RulesSettingsDialog`, `React.lazy`, birinchi ochilishda yuklanadi).
  */
 const AiAssistantPage = () => {
   const { t } = useTranslation("aiAdvisor");
@@ -50,6 +57,15 @@ const AiAssistantPage = () => {
   const available = probe?.kind === "available";
   const probing = probe === undefined;
   const overview = probe?.kind === "available" ? probe.data : null;
+  // D3: sozlamalar zondi — faqat maslahatchi mavjud bo'lsa; «Sozlamalar» tugmasi faqat u ham muvaffaqiyatli bo'lsa.
+  const settingsProbe = useAdvisorSettings({ enabled: available });
+  const settingsAvailable = available && settingsProbe.data?.kind === "available";
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsMounted, setSettingsMounted] = useState(false);
+  const openSettings = () => {
+    setSettingsMounted(true);
+    setSettingsOpen(true);
+  };
 
   // Backend yo'q — faqat suhbat (URL'dagi tab e'tiborga olinmaydi).
   const tab: AiTab = available || probing ? readTab(searchParams) : "chat";
@@ -83,10 +99,19 @@ const AiAssistantPage = () => {
         title={t("title")}
         description={available ? t("subtitleAdvisor") : t("subtitle")}
         actions={
-          tab === "chat" && newChat ? (
-            <Button variant="ghost" leftIcon={MessageSquarePlus} onClick={() => newChat()}>
-              {t("newChat")}
-            </Button>
+          settingsAvailable || (tab === "chat" && newChat) ? (
+            <>
+              {settingsAvailable ? (
+                <Button variant="secondary" leftIcon={Settings} aria-haspopup="dialog" onClick={openSettings}>
+                  {t("settingsButton")}
+                </Button>
+              ) : null}
+              {tab === "chat" && newChat ? (
+                <Button variant="ghost" leftIcon={MessageSquarePlus} onClick={() => newChat()}>
+                  {t("newChat")}
+                </Button>
+              ) : null}
+            </>
           ) : undefined
         }
       />
@@ -110,6 +135,12 @@ const AiAssistantPage = () => {
       {available && alertDialogMounted ? (
         <Suspense fallback={null}>
           <AlertDialog active={tab === "alerts"} />
+        </Suspense>
+      ) : null}
+
+      {settingsAvailable && settingsMounted ? (
+        <Suspense fallback={null}>
+          <RulesSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
         </Suspense>
       ) : null}
     </div>

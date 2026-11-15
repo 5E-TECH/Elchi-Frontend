@@ -3,6 +3,7 @@
   "subtitle": "Ask about cash flow, cashboxes and settlements. The assistant only reads data.",
   "subtitleAdvisor": "Questions and alerts on cashboxes, debts and expenses. The assistant only reads data.",
   "newChat": "New chat",
+  "settingsButton": "Settings",
   "tabs": {
     "label": "AI assistant sections",
     "select": "Section: {{tab}}",
@@ -687,6 +688,64 @@
       "fields": {
         "ratio": "Ratio"
       }
+    }
+  },
+  "settings": {
+    "title": "AI assistant settings",
+    "description": "Superadmin only · every change is written to the activity log",
+    "intro": "Rules run without AI: they are checked every 30 minutes and after the daily close. Critical ones are sent right away, the rest in the daily report.",
+    "rulesLabel": "Rules",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "enabled": "On",
+    "disabled": "Off",
+    "wasEnabled": "was on before",
+    "wasDisabled": "was off before",
+    "before": "Before: {{value}}",
+    "beforeInline": "before {{value}}",
+    "units": {
+      "uzs": "UZS",
+      "days": "days",
+      "count": "",
+      "multiplier": "×"
+    },
+    "errors": {
+      "required": "Enter a value",
+      "number": "Enter a number",
+      "integer": "Enter a whole number",
+      "decimal_one": "At most {{count}} decimal place",
+      "decimal_other": "At most {{count}} decimal places",
+      "greaterThan": "Enter a number greater than {{value}}",
+      "atLeast": "Enter at least {{value}}",
+      "atMost": "Must not exceed {{value}}",
+      "range": "Enter a value from {{min}} to {{max}}"
+    },
+    "confirm": {
+      "title": "Save the settings?",
+      "description_one": "{{count}} change · written to the activity log",
+      "description_other": "{{count}} changes · written to the activity log",
+      "fieldRow": "{{rule}} · {{field}}",
+      "newValue": "new value:",
+      "disabledNote": "A rule that is off creates no alerts.",
+      "back": "Back",
+      "save": "Save"
+    },
+    "saved": {
+      "title": "Settings saved",
+      "text": "The rules apply from the next check"
+    },
+    "failed": {
+      "title": "Settings not saved",
+      "text": "Nothing changed — try again."
+    },
+    "invalid": {
+      "title": "Settings not saved",
+      "text": "Fix the highlighted field."
+    },
+    "conflict": {
+      "title": "Settings were changed in another window",
+      "text": "The new values are loaded and your changes are kept. Check them and save again."
     }
   }
 }

@@ -3,6 +3,7 @@
   "subtitle": "Pul oqimi, kassa va hisob-kitoblar bo'yicha savol bering. Yordamchi faqat ma'lumot o'qiydi.",
   "subtitleAdvisor": "Kassa, qarzlar va xarajatlar bo'yicha savol va ogohlantirishlar. Yordamchi faqat ma'lumot o'qiydi.",
   "newChat": "Yangi suhbat",
+  "settingsButton": "Sozlamalar",
   "tabs": {
     "label": "AI yordamchi bo'limlari",
     "select": "Bo'lim: {{tab}}",
@@ -687,6 +688,64 @@
       "fields": {
         "ratio": "Nisbat"
       }
+    }
+  },
+  "settings": {
+    "title": "AI yordamchi sozlamalari",
+    "description": "Faqat superadmin · har o'zgarish faoliyat jurnaliga yoziladi",
+    "intro": "Qoidalar AI'siz ishlaydi: har 30 daqiqada va kunlik hisobdan keyin tekshiriladi. Jiddiylari darhol, qolganlari kunlik hisobotda yuboriladi.",
+    "rulesLabel": "Qoidalar",
+    "cancel": "Bekor qilish",
+    "save": "Saqlash",
+    "saving": "Saqlanmoqda…",
+    "enabled": "Yoqilgan",
+    "disabled": "O'chirilgan",
+    "wasEnabled": "avval yoqilgan edi",
+    "wasDisabled": "avval o'chirilgan edi",
+    "before": "Avval: {{value}}",
+    "beforeInline": "avval {{value}}",
+    "units": {
+      "uzs": "so'm",
+      "days": "kun",
+      "count": "ta",
+      "multiplier": "×"
+    },
+    "errors": {
+      "required": "Qiymat kiriting",
+      "number": "Son kiriting",
+      "integer": "Butun son kiriting",
+      "decimal_one": "Ko'pi bilan {{count}} kasr xona",
+      "decimal_other": "Ko'pi bilan {{count}} kasr xona",
+      "greaterThan": "{{value}} dan katta son kiriting",
+      "atLeast": "Kamida {{value}} kiriting",
+      "atMost": "{{value}} dan katta bo'lmasin",
+      "range": "{{min}}–{{max}} oralig'ida kiriting"
+    },
+    "confirm": {
+      "title": "Sozlamalarni saqlaysizmi?",
+      "description_one": "{{count}} ta o'zgarish · faoliyat jurnaliga yoziladi",
+      "description_other": "{{count}} ta o'zgarish · faoliyat jurnaliga yoziladi",
+      "fieldRow": "{{rule}} · {{field}}",
+      "newValue": "yangi qiymat:",
+      "disabledNote": "O'chirilgan qoida bo'yicha ogohlantirish chiqmaydi.",
+      "back": "Orqaga",
+      "save": "Saqlash"
+    },
+    "saved": {
+      "title": "Sozlamalar saqlandi",
+      "text": "Qoidalar keyingi tekshiruvdan qo'llanadi"
+    },
+    "failed": {
+      "title": "Sozlamalar saqlanmadi",
+      "text": "Hech narsa o'zgarmadi — qayta urining."
+    },
+    "invalid": {
+      "title": "Sozlamalar saqlanmadi",
+      "text": "Belgilangan maydonni tuzating."
+    },
+    "conflict": {
+      "title": "Sozlamalar boshqa oynada o'zgartirilgan",
+      "text": "Yangi qiymatlar yuklandi, sizning o'zgarishlaringiz saqlanib qoldi. Tekshirib, qayta saqlang."
     }
   }
 }

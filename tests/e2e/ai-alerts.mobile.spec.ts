@@ -14,7 +14,8 @@ import {
  * 60PWUbgC — «Ogohlantirishlar» telefonda (390; maketlar `superadmin-ai-assistant-tab-select`, `-alerts`,
  * `-alerts-filters-mobile`): tablar o'rnida «Bo'lim» tanlovi («3 yangi»), kartalar, gorizontal oqish yo'q, nishonlar
  * ≥ 44 px, «Filtrlar» — pastki varaqa (qoralama, «Natijalarni ko'rsatish (N)»), filtrlar URL'da; ogohlantirish oynasi
- * va «Hal qilindi» tasdig'i — pastki varaqa (maketlar `superadmin-ai-assistant-alert-dialog`, `-alert-resolve-confirm`).
+ * va «Hal qilindi» tasdig'i — pastki varaqa (maketlar `superadmin-ai-assistant-alert-dialog`, `-alert-resolve-confirm`);
+ * «Sozlamalar» — qoidalar oynasi va tasdig'i pastki varaqa (`-settings-rules-dialog`, `-settings-confirm`).
  */
 test.describe.configure({ timeout: 120_000 });
 
@@ -150,4 +151,52 @@ test("390: R2 va R6 oynalari — dalillar kartalarda (jadval yo'q), o'lchagich, 
   await expect(compare.getByRole("listitem").last()).toContainText("−640 000 so'm");
   await expectNoHorizontalOverflow(page);
   expect(tooSmall(await tapTargets(page))).toEqual([]);
+});
+
+test("390: «Sozlamalar» — qoidalar oynasi pastki varaqa: maydonlar 16 px va bitta ustunda, kalitlar ≥ 44 px, oqish yo'q; tasdiq ham pastda", async ({
+  page,
+}) => {
+  const { advisor, leaked } = await mockAiAssistantApi(page, { advisor: "on" });
+  await openAiAssistant(page);
+  const button = page.getByRole("button", { name: "Sozlamalar" });
+  await expect(button).toBeVisible();
+  expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await button.click();
+
+  const dialog = page.getByRole("dialog", { name: "AI yordamchi sozlamalari" });
+  await expect(dialog).toBeVisible();
+  const box = (await dialog.boundingBox())!;
+  expect(Math.round(box.y + box.height)).toBeGreaterThanOrEqual(844 - 1);
+  await expect(dialog.getByRole("tablist")).toHaveCount(0);
+
+  const inputs = dialog.getByRole("textbox");
+  await expect(inputs).toHaveCount(9);
+  for (const size of await inputs.evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).fontSize))) expect(size).toBe("16px");
+  // Telefonda bitta ustun: R1 ning ikki maydoni ustma-ust.
+  const [first, second] = await Promise.all([
+    dialog.getByRole("textbox", { name: "Bir smenadagi kamomad" }).boundingBox(),
+    dialog.getByRole("textbox", { name: "Ketma-ket manfiy smenalar" }).boundingBox(),
+  ]);
+  expect(second!.y).toBeGreaterThan(first!.y + first!.height);
+  for (const switchBox of await dialog.getByRole("switch").evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect()))) {
+    expect(switchBox.height).toBeGreaterThanOrEqual(44);
+    expect(switchBox.width).toBeGreaterThanOrEqual(44);
+  }
+  await expect(dialog.getByRole("button", { name: "Saqlash" })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Bekor qilish" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+
+  await dialog.getByRole("switch", { name: "Zarar" }).click();
+  await dialog.getByRole("button", { name: "Saqlash" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Sozlamalarni saqlaysizmi?" });
+  await expect(confirm).toBeVisible();
+  const confirmBox = (await confirm.boundingBox())!;
+  expect(Math.round(confirmBox.y + confirmBox.height)).toBeGreaterThanOrEqual(844 - 1);
+  await confirm.getByRole("button", { name: "Saqlash" }).click();
+  await expect(page.getByText("Sozlamalar saqlandi", { exact: true })).toBeVisible();
+  expect(advisorCalls(advisor, "ai/advisor/settings", "PATCH").map((request) => request.body)).toEqual([
+    { version: 4, rules: { R6: { enabled: false } } },
+  ]);
+  expect(leaked).toEqual([]);
 });
