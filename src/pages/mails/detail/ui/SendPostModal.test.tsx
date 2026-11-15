@@ -233,6 +233,31 @@ describe("SendPostModal — HQ kuryeri (ega qarori 2026-11-15)", () => {
     expect(screen.getByRole("radio", { name: /BeePost kuryeri/ })).toBeChecked();
   });
 
+  it("tasdiqni chetlab bo'lmaydi: fokus «Orqaga»da, «Kuryerga berish» ikki marta bosilsa — faqat tasdiq bosqichi", async () => {
+    const user = userEvent.setup();
+    renderModal();
+    await openCourierTab(user);
+    await user.click(screen.getByRole("radio", { name: /Ali Valiyev/ }));
+    // Klaviatura: Enter — tasdiq bosqichi, fokus «Orqaga»da (Enter takrori berib yubormaydi).
+    screen.getByRole("button", { name: "Kuryerga berish — 2 ta" }).focus();
+    await user.keyboard("{Enter}");
+    let dialog = screen.getByRole("dialog", { name: "Kuryerga berilsinmi?" });
+    expect(within(dialog).getByRole("button", { name: "Orqaga" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(mocks.dispatchCourier).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog", { name: "Manzilni tanlang" })).toBeInTheDocument();
+
+    // Sichqoncha: ikkinchi bosish shu joyga chiqqan «Ha, kuryerga berish»ga tushadi (React o'sha DOM tugmani qayta
+    // ishlatadi) — e'tiborsiz.
+    await user.dblClick(screen.getByRole("button", { name: "Kuryerga berish — 2 ta" }));
+    dialog = screen.getByRole("dialog", { name: "Kuryerga berilsinmi?" });
+    expect(mocks.dispatchCourier).not.toHaveBeenCalled();
+
+    // Alohida bosish — beriladi.
+    await user.click(within(dialog).getByRole("button", { name: "Ha, kuryerga berish" }));
+    await waitFor(() => expect(mocks.dispatchCourier).toHaveBeenCalledTimes(1));
+  });
+
   it("tasdiqda «Ha, kuryerga berish» → { courierId, orderIds }; xabar va onSuccess (backend bergan id'lar)", async () => {
     const user = userEvent.setup();
     mocks.dispatchCourier.mockResolvedValue({

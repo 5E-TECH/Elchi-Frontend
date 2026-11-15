@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-mails-detail-send-dialog, admin-mails-send-branch-dialog, registrator-mails-detail-send-dialog
-import { memo, useId, useState, type ReactNode } from "react";
+import { memo, useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Building2, Globe, Info, Phone, Send, TriangleAlert, Truck, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -379,6 +379,18 @@ const SendPostModal = memo(
     );
 
     const confirming = kind === "courier" && step === "confirm" && selectedCourier !== null;
+    // Tasdiq bosqichi ochilganda fokus «Orqaga»da (`ConfirmDialog` dagi kabi — qaytarib bo'lmaydigan amal xavfsiz
+    // tugmadan boshlanadi): aks holda fokus o'sha joydagi asosiy tugmada qolib, Enter takrori darhol berib yuborardi.
+    const backRef = useRef<HTMLButtonElement>(null);
+    useEffect(() => {
+      if (confirming) backRef.current?.focus();
+    }, [confirming]);
+    // «Kuryerga berish» ikki marta bosilsa, ikkinchi bosish shu joyga chiqqan «Ha, kuryerga berish»ga tushadi —
+    // tasdiq faqat alohida bosish bilan (`detail > 1` — ikki / uch karra bosishning davomi).
+    const confirmClick = (event: MouseEvent<HTMLButtonElement>) => {
+      if (event.detail > 1) return;
+      submitCourier();
+    };
 
     const confirmBody = selectedCourier ? (
       <div className="flex min-w-0 flex-col gap-4">
@@ -416,10 +428,10 @@ const SendPostModal = memo(
 
     const footer = confirming ? (
       <>
-        <Button variant="secondary" disabled={isPending} onClick={() => setStep("select")}>
+        <Button ref={backRef} variant="secondary" disabled={isPending} onClick={() => setStep("select")}>
           {t("back", { ns: "common" })}
         </Button>
-        <Button leftIcon={Truck} loading={isPending} loadingText={t("sending")} onClick={submitCourier}>
+        <Button leftIcon={Truck} loading={isPending} loadingText={t("sending")} onClick={confirmClick}>
           {t("detailPage.sendDialog.confirmOk")}
         </Button>
       </>
