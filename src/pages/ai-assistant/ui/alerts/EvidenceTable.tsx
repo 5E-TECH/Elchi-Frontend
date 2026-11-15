@@ -43,8 +43,10 @@ export type EvidenceTableProps<T> = {
   note?: ReactNode;
 };
 
-const TH = "h-9 whitespace-nowrap bg-sunken px-3 text-xs font-semibold tracking-[.04em] text-text-muted uppercase";
-const TD = "h-11 border-t border-border px-3 py-1.5 align-middle";
+// Maket `.el-table.is-compact` — 12 px chekka; 720 px oynada R1 dalillari (6 ustun) 1440 da 13 px toshardi — 10 px
+// chekka va ixchamroq havola ustuni bilan sig'adi (gorizontal skroll yo'q, ism bir qatorda).
+const TH = "h-9 whitespace-nowrap bg-sunken px-2.5 text-xs font-semibold tracking-[.04em] text-text-muted uppercase";
+const TD = "h-11 border-t border-border px-2.5 py-1.5 align-middle";
 const ICON_LINK =
   "inline-flex size-8 items-center justify-center rounded-lg text-text-muted transition-[background-color,color] " +
   "duration-150 hover:bg-sunken hover:text-text motion-reduce:transition-none";
