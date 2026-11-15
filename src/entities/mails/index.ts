@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../shared/api/api";
+import { api, BATCH_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
@@ -784,7 +784,8 @@ const STALE_POST_REASONS = new Set(["order_not_in_post", "post_not_sendable"]);
  * Pochta buyurtmalarini HQ kuryeriga berish: `POST branches/posts/:id/dispatch-to-courier { courier_id, order_ids }`.
  * Buyurtmalar kuryerning bugungi pochtasiga o'tadi, filialga bormaydi — qaytarib bo'lmaydi (oynada tasdiq bosqichi).
  * Muvaffaqiyatda filialga jo'natish bilan bir xil kalitlar eskiradi; 409 `order_not_in_post` / 400
- * `post_not_sendable` da — pochta tafsiloti (tanlov eskirgan).
+ * `post_not_sendable` da — pochta tafsiloti (tanlov eskirgan). Brauzer gateway'dan (120 s) uzoqroq kutadi
+ * (`BATCH_REQUEST_TIMEOUT_MS`): katta pochta 20 s dan oshsa ham natija yo'lda qolmasin.
  */
 export const useDispatchPostToCourier = () => {
   const queryClient = useQueryClient();
@@ -792,10 +793,11 @@ export const useDispatchPostToCourier = () => {
   return useMutation({
     mutationFn: ({ postId, payload }: { postId: string; payload: DispatchPostToCourierPayload }) =>
       api
-        .post(API_ENDPOINTS.BRANCHES.POST_DISPATCH_TO_COURIER(postId), {
-          courier_id: payload.courierId,
-          order_ids: payload.orderIds,
-        })
+        .post(
+          API_ENDPOINTS.BRANCHES.POST_DISPATCH_TO_COURIER(postId),
+          { courier_id: payload.courierId, order_ids: payload.orderIds },
+          { timeout: BATCH_REQUEST_TIMEOUT_MS },
+        )
         .then((res) => res.data as { statusCode?: number; message?: string; data?: DispatchPostToCourierResult }),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({

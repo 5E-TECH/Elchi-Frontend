@@ -111,15 +111,18 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
     expectKeys(keys, [["mails", "detail", "7"], ["mails", "new"], ["mails", "old"], ["orders"]]);
   });
 
-  it("pochtani HQ kuryeriga berish — filialga jo'natish bilan bir xil kalitlar; tana { courier_id, order_ids }", async () => {
+  it("pochtani HQ kuryeriga berish — filialga jo'natish bilan bir xil kalitlar; tana { courier_id, order_ids }; 125 s", async () => {
     apiMock.post.mockClear();
     const keys = await run(useDispatchPostToCourier, (m) =>
       m.mutateAsync({ postId: "7", payload: { courierId: "77", orderIds: ["1", "2"] } }),
     );
-    expect(apiMock.post).toHaveBeenCalledWith("branches/posts/7/dispatch-to-courier", {
-      courier_id: "77",
-      order_ids: ["1", "2"],
-    });
+    // Brauzer gateway'dan (`BATCH_RPC_TIMEOUT_MS` = 120 s) uzoqroq kutadi — 20 s sukutida katta pochta
+    // «So'rov vaqti tugadi» bo'lib, buyurtmalar baribir kuryerga o'tardi.
+    expect(apiMock.post).toHaveBeenCalledWith(
+      "branches/posts/7/dispatch-to-courier",
+      { courier_id: "77", order_ids: ["1", "2"] },
+      { timeout: 125_000 },
+    );
     expectKeys(keys, [["mails", "detail", "7"], ["mails", "new"], ["mails", "old"], ["orders"]]);
   });
 
