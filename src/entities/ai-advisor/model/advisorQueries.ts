@@ -7,7 +7,7 @@ import {
   getAdvisorSettings,
 } from "../api/aiAdvisorApi";
 import { classifyProbeError, type AdvisorUnavailableReason } from "./advisorErrors";
-import { isAlertId } from "./advisorRules";
+import { explanationPollInterval, isAlertId } from "./advisorRules";
 import type {
   AiAdvisorAlertListParams,
   AiAdvisorOverview,
@@ -128,15 +128,23 @@ export const useAdvisorAlertCount = (params: AdvisorAlertCountParams, { enabled 
   });
 
 /**
- * Tafsilot. ⚠️ GET ogohlantirishni «Ko'rildi» qiladi — prefetch qilinmaydi, `enabled` faqat ID to'g'ri bo'lsa.
- * `pollMs` (> 0) — izoh `pending` bo'lsa shu oraliqda qayta so'raladi (60 s chegarasini chaqiruvchi boshqaradi).
+ * Tafsilot. ⚠️ GET ogohlantirishni «Ko'rildi» qiladi — prefetch qilinmaydi, so'rov faqat ID to'g'ri va `enabled`
+ * bo'lsa (oyna yopilganda `false` — yopilish harakatida ma'lumot keshda qoladi, lekin fokusda qayta so'ralmaydi).
+ * `poll` — izoh `pending` bo'lsa server bergan oraliqda (`explanation_poll_after_ms`, ≥ 1 s, sukut 2 s) qayta
+ * so'raladi; 60 s chegarasini chaqiruvchi boshqaradi (`features/ai-alerts` → `useExplanationPoll`).
  */
-export const useAdvisorAlert = (id: string | null, { pollMs = 0 }: { pollMs?: number } = {}) =>
+export const useAdvisorAlert = (
+  id: string | null,
+  { poll = false, enabled = true }: { poll?: boolean; enabled?: boolean } = {},
+) =>
   useQuery({
     queryKey: queryKeys.aiAdvisor.alert(id ?? ""),
     queryFn: () => getAdvisorAlert(id as string),
-    enabled: isAlertId(id),
+    enabled: enabled && isAlertId(id),
     staleTime: 0,
-    refetchInterval: (query) => (pollMs > 0 && query.state.data?.explanation_status === "pending" ? pollMs : false),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return poll && data?.explanation_status === "pending" ? explanationPollInterval(data.explanation_poll_after_ms) : false;
+    },
     meta: { silentError: true },
   });

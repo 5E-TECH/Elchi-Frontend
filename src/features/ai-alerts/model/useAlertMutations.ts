@@ -17,7 +17,7 @@ import { queryKeys } from "../../../shared/config/queryKeys";
  *
  * Kesh (plan §3): PATCH javobi — yangilangan tafsilot → `alert(id)` ga yoziladi, `overview` (nishon, banner) va
  * ro'yxatlar (sanoq ham) eskiradi. 409 `ALERT_CLOSED` (boshqa superadmin yopgan) — tafsilot qayta o'qiladi, ro'yxat
- * va nishon ham. Explain 202 — tafsilotga birlashtiriladi (`pending` → `useAdvisorAlert({pollMs})` poll qiladi);
+ * va nishon ham. Explain 202 — tafsilotga birlashtiriladi (`pending` → `useExplanationPoll` poll qiladi);
  * 429/503 holatni o'zgartirmaydi (matn oynada), 409 — tafsilot qayta o'qiladi.
  */
 

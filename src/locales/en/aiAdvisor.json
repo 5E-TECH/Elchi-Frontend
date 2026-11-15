@@ -270,6 +270,149 @@
       "filtered": "Table shows critical only",
       "filteredTotal": "Table shows critical only: {{value}}",
       "showAll": "Show all"
+    },
+    "dialog": {
+      "label": "Alert",
+      "loading": "Loading alert",
+      "notFoundTitle": "Alert not found",
+      "notFoundText": "The link is outdated or wrong. Open the alert from the list.",
+      "errorTitle": "Could not load the alert",
+      "times": "{{rule}} · first: {{first}} · last: {{last}}",
+      "time": "{{rule}} · {{at}}",
+      "repeated_one": "Repeated {{value}} time",
+      "repeated_other": "Repeated {{value}} times",
+      "close": "Close",
+      "resolve": "Resolved",
+      "dismiss": "Dismiss",
+      "reopenedTitle": "A resolved problem came back — a new alert was opened",
+      "reopenedText": "The previous one stays “{{status}}”; the new one is “New” and sits at the top of the list.",
+      "closedBy": "{{name}} · {{at}}",
+      "dismissFailed": "Could not dismiss — try again.",
+      "closedAlready": "The alert is already closed — the window was refreshed."
+    },
+    "links": {
+      "shift_report": "Go to shift report",
+      "operation": "Go to operation",
+      "operationExpense": "Open expense",
+      "courier_cashbox": "Open courier cash desk",
+      "market_cashbox": "Open market cash desk",
+      "branch_cashbox": "Open branch cash desk",
+      "main_cashbox": "Open main cash desk",
+      "financial_balance": "Open balance",
+      "corrections": "Open corrections history",
+      "other": "Go to section"
+    },
+    "note": {
+      "label": "Note",
+      "hint": "Required for “Resolved” · 3–500 characters · written to the activity log",
+      "tooShort": "The note must be at least 3 characters",
+      "tooLong": "The note must be at most 500 characters",
+      "placeholder": {
+        "R1": "What was done? E.g. the card income arrived the next day",
+        "R2": "What was done? E.g. the courier handed the money to the main cash desk",
+        "R3": "What was done? E.g. a week of fuel for 3 cars",
+        "R4": "What was done? E.g. {{amount}} paid to the market",
+        "R5": "What was done? E.g. the branch transferred the money to HQ",
+        "R6": "What was done? E.g. a one-off repair, the week is in profit",
+        "R7": "What was done? E.g. the amount was corrected per the receipt",
+        "R7card": "What was done? E.g. the card income arrived the next day",
+        "R8": "What was done? E.g. new cashiers' mistakes were reviewed",
+        "other": "What was done?"
+      }
+    },
+    "resolve": {
+      "title": "Is the alert resolved?",
+      "noteLabel": "Note",
+      "status": "The status becomes “Resolved” and is written to the activity log.",
+      "reopen": "If the problem comes back, a new alert opens.",
+      "confirm": "Mark as resolved",
+      "cancel": "Back",
+      "loading": "Saving…",
+      "toastTitle": "Alert resolved",
+      "toastText": "{{label}}. Written to the activity log.",
+      "closedTitle": "The alert is already closed",
+      "closedText": "Another superadmin closed it — the window was refreshed."
+    },
+    "dismiss": {
+      "toastTitle": "Marked as dismissed",
+      "toastText": "{{label}}. If it repeats, a new alert opens."
+    },
+    "explain": {
+      "title": "AI explanation",
+      "none": "The explanation is written on request — it uses the budget.",
+      "request": "Get AI explanation",
+      "pending": "AI is writing an explanation…",
+      "expired": "The explanation is not ready yet — open it later",
+      "retry": "Try again",
+      "budgetMonth": "The monthly AI budget is used up — the explanation is available after {{at}}. Rules and evidence keep working.",
+      "budgetMonthNoDate": "The monthly AI budget is used up — no explanation. Rules and evidence keep working.",
+      "budgetDaily": "Today's overall AI limit is used up. Facts and evidence are complete; you can ask for the explanation tomorrow after 00:00 (Tashkent time).",
+      "budgetDailyAuto": "Today's overall AI limit is used up — the critical alert opened without an explanation. Facts and evidence are complete; you can ask for the explanation tomorrow after 00:00 (Tashkent time).",
+      "failed": "Could not write the explanation.",
+      "disabled": "The AI service is off right now — no explanation. Rules and evidence keep working.",
+      "requestFailed": "Could not request the explanation — try again."
+    },
+    "evidence": {
+      "title_one": "Evidence · {{value}} record",
+      "title_other": "Evidence · {{value}} records",
+      "truncated": "{{shown}} of {{total}} shown",
+      "total": "Total",
+      "shifts": {
+        "columns": {
+          "shift": "Shift",
+          "closedBy": "Closed by",
+          "expected": "Expected",
+          "counted": "Counted",
+          "difference": "Difference",
+          "open": "Open shift report"
+        },
+        "openRow": "Open shift report {{at}}",
+        "cardSub": "Expected {{expected}} · counted {{counted}}",
+        "totalCard": "Total · {{shifts}}",
+        "system": "Automatic",
+        "cardNotCounted": "card not counted",
+        "cashNotCounted": "cash not counted",
+        "sameCloser2": "Both shifts were closed by {{name}}",
+        "sameCloser3": "All three shifts were closed by {{name}}",
+        "sameCloserMany": "All {{value}} shifts were closed by {{name}}"
+      }
+    },
+    "facts": {
+      "label": "Key facts",
+      "cashbox": "Cash desk",
+      "totalShortage": "Total shortage",
+      "shortage": "Shortage",
+      "rule": "Rule",
+      "closedBy": "Closed the shift",
+      "autoClosed": "Closed automatically",
+      "operation": "Operation",
+      "entered": "Entered",
+      "onReceipt": "On receipt",
+      "difference": "Difference",
+      "createdBy": "Entered by",
+      "shift": "Shift",
+      "aiRead": "AI read",
+      "amount": "Amount",
+      "subject": "Subject"
+    },
+    "receipt": {
+      "title": "Receipt check",
+      "amountMismatch": "Mismatch",
+      "cardMismatch": "Card mismatch",
+      "date": "Receipt date",
+      "recipient": "Recipient",
+      "payer": "Payer",
+      "payerNotCashbox": "not the branch cash desk card",
+      "bank": "Bank",
+      "reference": "Transaction number",
+      "confidence": "Confidence",
+      "week": "This week {{checked}} receipts were checked: {{match}} matched, {{mismatch}} mismatched, {{unreadable}} unreadable.",
+      "disabled": "Receipt check is off — only the shift card balance is checked for this type.",
+      "operation": {
+        "manual_expense": "Manual expense",
+        "courier_to_hq": "Courier handover",
+        "branch_to_hq": "Transfer to HQ"
+      }
     }
   },
   "rules": {

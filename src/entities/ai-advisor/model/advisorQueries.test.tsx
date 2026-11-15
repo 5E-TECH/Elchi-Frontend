@@ -214,19 +214,28 @@ describe("ro'yxat, sanoq, tafsilot", () => {
     expect(mocks.get).toHaveBeenCalledWith("ai/advisor/alerts", { params: { page: 1, limit: 1, severity: "critical" } });
   });
 
-  it("tafsilot: ID noto'g'ri — so'ralmaydi (yon ta'sirli GET); `pending` va `pollMs` — poll, boshqasi — yo'q", async () => {
+  it("tafsilot: ID noto'g'ri yoki `enabled: false` — so'ralmaydi (yon ta'sirli GET); `pending` va `poll` — server oralig'ida, boshqasi — yo'q", async () => {
     const { client, wrapper } = setup();
     renderHook(() => useAdvisorAlert("abc"), { wrapper });
     renderHook(() => useAdvisorAlert(null), { wrapper });
+    const disabled = renderHook(() => useAdvisorAlert("1040", { enabled: false }), { wrapper });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(mocks.get).not.toHaveBeenCalled();
+    // `resolved()` birinchi kuzatuvchini o'qiydi — o'chiq hook olib tashlanadi.
+    disabled.unmount();
 
     mocks.get.mockResolvedValue({ data: advisorEnvelope(fx.detail.r1Pending) });
-    const { result } = renderHook(() => useAdvisorAlert("1040", { pollMs: 2_000 }), { wrapper });
+    const { result } = renderHook(() => useAdvisorAlert("1040", { poll: true }), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mocks.get).toHaveBeenCalledWith("ai/advisor/alerts/1040");
     expect(resolved(client, queryKeys.aiAdvisor.alert("1040"), "refetchInterval")).toBe(2_000);
     expect(resolved(client, queryKeys.aiAdvisor.alert("1040"), "staleTime")).toBe(0);
+
+    // Server oralig'i (≥ 1 s): 500 ms → 1 s; berilmasa — 2 s.
+    client.setQueryData(queryKeys.aiAdvisor.alert("1040"), { ...fx.detail.r1Pending, explanation_poll_after_ms: 500 });
+    expect(resolved(client, queryKeys.aiAdvisor.alert("1040"), "refetchInterval")).toBe(1_000);
+    client.setQueryData(queryKeys.aiAdvisor.alert("1040"), { ...fx.detail.r1Pending, explanation_poll_after_ms: null });
+    expect(resolved(client, queryKeys.aiAdvisor.alert("1040"), "refetchInterval")).toBe(2_000);
 
     client.setQueryData(queryKeys.aiAdvisor.alert("1040"), fx.detail.r1);
     expect(resolved(client, queryKeys.aiAdvisor.alert("1040"), "refetchInterval")).toBe(false);

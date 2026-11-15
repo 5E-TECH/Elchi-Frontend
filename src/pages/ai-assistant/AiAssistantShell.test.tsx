@@ -11,7 +11,8 @@ import { renderWithProviders } from "../../test/test-utils";
  * `/ai-assistant` qobig'i (60PWUbgC, D1–D5, D12, D13; maketlar `superadmin-ai-assistant`, `-alerts`, `-tab-select`):
  * maslahatchi backend'ini aniqlash (`overview` zondi — bitta so'rov, keshlanadi), backend yo'q — avvalgi faqat suhbat
  * sahifasi (`?tab` e'tiborga olinmaydi), tablar va URL, zond kutilayotgandagi `?tab=alerts` (skelet, suhbat emas),
- * tab almashganda suhbat qoralamasi saqlanadi, sarlavha amallari, telefonda «Bo'lim» tanlovi.
+ * tab almashganda suhbat qoralamasi saqlanadi, sarlavha amallari, telefonda «Bo'lim» tanlovi; ogohlantirish oynasi
+ * (`?alert`) faqat «Ogohlantirishlar» tabida va zond «mavjud» bo'lgach (yon ta'sirli tafsilot GET'i oldinroq ketmaydi).
  */
 
 const mocks = vi.hoisted(() => ({
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   getAdvisorOverview: vi.fn(),
   getAdvisorAlerts: vi.fn(),
   getAdvisorSettings: vi.fn(),
+  getAdvisorAlert: vi.fn(),
 }));
 
 vi.mock("../../features/ai-chat/api/streamMessage", () => ({
@@ -39,6 +41,7 @@ vi.mock("../../entities/ai-advisor/api/aiAdvisorApi", async (importOriginal) => 
   getAdvisorOverview: mocks.getAdvisorOverview,
   getAdvisorAlerts: mocks.getAdvisorAlerts,
   getAdvisorSettings: mocks.getAdvisorSettings,
+  getAdvisorAlert: mocks.getAdvisorAlert,
 }));
 
 import AiAssistantPage from ".";
@@ -130,6 +133,9 @@ beforeEach(() => {
   mocks.getAdvisorOverview.mockResolvedValue(fx.overview);
   mocks.getAdvisorAlerts.mockResolvedValue(fx.list);
   mocks.getAdvisorSettings.mockRejectedValue(advisorHttpError(404));
+  mocks.getAdvisorAlert.mockImplementation((id: string) =>
+    fx.details[id] ? Promise.resolve(fx.details[id]) : Promise.reject(advisorHttpError(404, fx.errors.notFound)),
+  );
 });
 
 afterEach(() => {
@@ -163,6 +169,9 @@ describe("AI yordamchi qobig'i — backend yo'q (faqat suhbat)", () => {
     expect(mocks.getAdvisorOverview).toHaveBeenCalledTimes(1);
     expect(mocks.getAdvisorSettings).not.toHaveBeenCalled();
     expect(mocks.getAdvisorAlerts).not.toHaveBeenCalled();
+    // `?alert` ham e'tiborsiz: oyna yo'q, yon ta'sirli tafsilot GET'i yuborilmaydi.
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mocks.getAdvisorAlert).not.toHaveBeenCalled();
   });
 
   it("«Yangi suhbat» (MessageSquarePlus) sarlavhada; «Manba» qatori — Database ikonkasi", async () => {
@@ -244,6 +253,46 @@ describe("AI yordamchi qobig'i — backend bor", () => {
     expect(within(tablist).getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Suhbat", "Ogohlantirishlar"]);
     expect(within(tablist).getByRole("tab", { name: "Suhbat" })).toHaveAttribute("aria-selected", "true");
     expect(await emptyChatHeading()).toBeInTheDocument();
+  });
+});
+
+describe("AI yordamchi qobig'i — ogohlantirish oynasi (`?alert`)", () => {
+  it("chuqur havola ?tab=alerts&alert=1040 — ro'yxat ustida oyna; tafsilot bir marta; yopilsa `alert` olinadi, filtrlar qoladi", async () => {
+    const user = userEvent.setup();
+    renderPage("/ai-assistant?tab=alerts&status=seen&alert=1040");
+
+    const dialog = await screen.findByRole("dialog", { name: "Samarqand filiali kassasida 3 smena ketma-ket kamomad" });
+    expect(await screen.findByRole("table", { name: "Ogohlantirishlar ro'yxati", hidden: true })).toBeInTheDocument();
+    expect(mocks.getAdvisorAlert).toHaveBeenCalledTimes(1);
+    expect(mocks.getAdvisorAlert).toHaveBeenCalledWith("1040");
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(currentParams().has("alert")).toBe(false));
+    expect(currentParams().get("tab")).toBe("alerts");
+    expect(currentParams().get("status")).toBe("seen");
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    expect(mocks.getAdvisorAlert).toHaveBeenCalledTimes(1);
+  });
+
+  it("zond kutilayotganda tafsilot so'ralmaydi; zond javobidan keyin — oyna", async () => {
+    const probe = deferred<typeof fx.overview>();
+    mocks.getAdvisorOverview.mockReturnValue(probe.promise);
+    renderPage("/ai-assistant?tab=alerts&alert=1039");
+    await waitFor(() => expect(mocks.getAiAccessMe).toHaveBeenCalled());
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mocks.getAdvisorAlert).not.toHaveBeenCalled();
+
+    probe.resolve(fx.overview);
+    expect(await screen.findByRole("dialog", { name: "Chekda farq bor — Urgut filiali yoqilg'i xarajati" })).toBeInTheDocument();
+    expect(mocks.getAdvisorAlert).toHaveBeenCalledTimes(1);
+  });
+
+  it("«Suhbat» tabida ?alert e'tiborsiz (oyna faqat «Ogohlantirishlar» da)", async () => {
+    renderPage("/ai-assistant?alert=1040");
+    expect(await screen.findByRole("tablist", { name: "AI yordamchi bo'limlari" })).toBeInTheDocument();
+    expect(await emptyChatHeading()).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mocks.getAdvisorAlert).not.toHaveBeenCalled();
   });
 });
 

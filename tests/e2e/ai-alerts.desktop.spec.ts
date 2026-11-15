@@ -1,12 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { advisorCalls, composer, FIRST_ALERT_TITLE, mockAiAssistantApi, openAiAssistant } from "./support/aiAssistant";
+import { RESOLVE_NOTE } from "../../src/test/aiAdvisorFixtures";
+import { advisorCalls, composer, FIRST_ALERT_TITLE, mockAiAssistantApi, openAiAlerts, openAiAssistant } from "./support/aiAssistant";
 
 /**
  * 60PWUbgC — AI yordamchi «Ogohlantirishlar» (superadmin, desktop 1280; maketlar `superadmin-ai-assistant-alerts`,
  * `superadmin-ai-assistant`): maslahatchi backend'i bor (`advisor: "on"`) — tablar «Suhbat · Ogohlantirishlar 3»,
  * yangi izoh, jiddiylar banneri, filtrlar ↔ URL (`status`, `severity`, `rule` → `rule_key`, `page`), bo'sh holat,
- * tab almashganda suhbat qoralamasi saqlanadi va ochiq oyna (`alert`) olinadi. Backend yo'q holati —
- * `ai-assistant.desktop.spec.ts`.
+ * tab almashganda suhbat qoralamasi saqlanadi va ochiq oyna (`alert`) olinadi. Ogohlantirish oynasi (maketlar
+ * `superadmin-ai-assistant-alert-dialog`, `-alert-dialog-receipt`, `-alert-resolve-confirm`): ochilganda «Ko'rildi»
+ * (nishon kamayadi), «Hal qilindi» (izoh → tasdiq → PATCH → toast), «Ahamiyatsiz» (tasdiqsiz), AI izohi (navbat →
+ * tayyor; 60 s; 429 oylik / umumiy), 409, chuqur havola. Backend yo'q holati — `ai-assistant.desktop.spec.ts`.
  */
 test.describe.configure({ timeout: 120_000 });
 
@@ -75,20 +78,27 @@ test("⭐ tablar → «Ogohlantirishlar»: banner, ro'yxat, filtrlar ↔ URL, sa
   await expect(page).toHaveURL(/[?&]page=2/);
   await expect(page.getByText("11–20 / 22 ta ogohlantirish")).toBeVisible();
 
-  // Qator → `?alert=` (oyna — S4); «Suhbat» ga qaytsa `alert` va `tab` olinadi, qoralama joyida.
+  // Qator → `?alert=` — oyna; Esc — `alert` olinadi; «Suhbat» ga qaytsa `tab` olinadi, qoralama joyida.
   await page.getByRole("button", { name: "1", exact: true }).click();
   await expect(page).not.toHaveURL(/[?&]page=/);
   await page.getByRole("link", { name: FIRST_ALERT_TITLE, exact: true }).click();
   await expect(page).toHaveURL(/[?&]alert=1041/);
+  await expect(page.getByRole("dialog", { name: /^Jasur Tursunov kassasida/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/ai-assistant\?tab=alerts$/);
   await page.getByRole("tab", { name: "Suhbat" }).click();
   await expect(page).not.toHaveURL(/[?&](tab|alert)=/);
   await expect(composer(page)).toHaveValue("Kecha-chi?");
   await expect(page.getByRole("button", { name: "Yangi suhbat" })).toBeVisible();
 
-  // Zond — bitta so'rov (60 s poll'gacha), sozlamalar (S6) so'ralmaydi; GET :id (yon ta'sirli) — yo'q.
-  expect(advisorCalls(advisor, "ai/advisor/overview").length).toBeLessThanOrEqual(2);
+  // Zond + oyna ochilgandagi yangilash (D16) + ko'pi bilan bitta 60 s poll; sozlamalar (S6) so'ralmaydi;
+  // GET :id (yon ta'sirli) — faqat oyna ochilganda, bir marta.
+  expect(advisorCalls(advisor, "ai/advisor/overview").length).toBeLessThanOrEqual(3);
   expect(advisorCalls(advisor, "ai/advisor/settings")).toHaveLength(0);
-  expect(advisor.requests.filter((request) => /^ai\/advisor\/alerts\/\d+/.test(request.path))).toHaveLength(0);
+  expect(advisor.requests.filter((request) => /^ai\/advisor\/alerts\/\d+/.test(request.path)).map((request) => request.path)).toEqual([
+    "ai/advisor/alerts/1041",
+  ]);
   expect(leaked).toEqual([]);
 });
 
@@ -123,4 +133,166 @@ test("ogohlantirish yo'q — «Hammasi joyida», tab nishonsiz, banner yo'q", as
   await expect(page.getByText("Ochiq ogohlantirish yo'q. Qoidalar har 30 daqiqada tekshiriladi.")).toBeVisible();
   await expect(page.getByRole("tab", { name: "Ogohlantirishlar", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByTestId("ai-alerts-critical-banner")).toHaveCount(0);
+});
+
+// ── Ogohlantirish oynasi (`?alert=:id`) ────────────────────────────────────────────────────────────────────
+
+/** R1 ro'yxat sarlavhasi (1-sahifada eski yopilgan nusxasi ham bor — birinchisi `1040`). */
+const R1_LIST_TITLE = "Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm";
+const R1_DIALOG_TITLE = "Samarqand filiali kassasida 3 smena ketma-ket kamomad";
+
+test("⭐ R1 oynasi: ochilganda «Ko'rildi» (nishon 3 → 2); izohsiz «Hal qilindi» — xato; tasdiq → PATCH → toast, ro'yxatda «Hal qilindi»", async ({
+  page,
+}) => {
+  const { advisor, leaked } = await mockAiAssistantApi(page, { advisor: "on" });
+  await openAiAlerts(page);
+  const tab = page.getByRole("tab", { name: /Ogohlantirishlar/ });
+  await expect(tab).toHaveText("Ogohlantirishlar 3");
+  const table = page.getByRole("table", { name: "Ogohlantirishlar ro'yxati" });
+  const row = table.getByRole("row").filter({ has: page.getByRole("link", { name: R1_LIST_TITLE, exact: true }) }).first();
+  await expect(row).toContainText("Yangi");
+
+  await row.getByRole("link", { name: R1_LIST_TITLE, exact: true }).click();
+  await expect(page).toHaveURL(/\?tab=alerts&alert=1040$/);
+  const dialog = page.getByRole("dialog", { name: R1_DIALOG_TITLE });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Ko'rildi", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("3 marta takrorlandi")).toBeVisible();
+  await expect(dialog.getByRole("table", { name: "Dalillar · 3 ta yozuv" }).getByRole("row")).toHaveCount(5);
+  await expect(dialog.getByText("Uchala smenani Sardor Mirzayev yopgan")).toBeVisible();
+  await expect(dialog.getByRole("region", { name: "AI izohi" })).toContainText("Uchala kamomad ham «Humo virtual» kartasida");
+  await expect(dialog.getByRole("link", { name: "Smena hisobotiga o'tish" })).toHaveAttribute("href", "/payments/shifts/818");
+  // D16: GET :id — «Ko'rildi»; nishon va ro'yxat yangilanadi.
+  await expect(tab).toHaveText("Ogohlantirishlar 2");
+  await expect(row).toContainText("Ko'rildi");
+
+  // Izohsiz — mijoz xatosi, so'rov yo'q.
+  await dialog.getByRole("button", { name: "Hal qilindi" }).click();
+  await expect(dialog.getByText("Izoh kamida 3 belgi bo'lsin")).toBeVisible();
+  await expect(dialog.getByRole("textbox", { name: "Izoh" })).toBeFocused();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+
+  await dialog.getByRole("textbox", { name: "Izoh" }).fill(`  ${RESOLVE_NOTE}  `);
+  await dialog.getByRole("button", { name: "Hal qilindi" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Ogohlantirish hal qilindimi?" });
+  await expect(confirm).toBeVisible();
+  await expect(confirm).toContainText("Samarqand filiali · smena kamomadi −445 000 so'm");
+  await expect(confirm).toContainText(RESOLVE_NOTE);
+  await expect(confirm).toContainText("Holat «Hal qilindi»ga o'tadi va faoliyat jurnaliga yoziladi.");
+  await expect(confirm).toContainText("Muammo qaytsa, yangi ogohlantirish ochiladi.");
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1040", "PATCH")).toHaveLength(0);
+  await confirm.getByRole("button", { name: "Hal qilindi deb belgilash" }).click();
+
+  await expect(page.getByText("Ogohlantirish hal qilindi", { exact: true })).toBeVisible();
+  await expect(page.getByText("Samarqand filiali · smena kamomadi. Faoliyat jurnaliga yozildi.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: R1_DIALOG_TITLE })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/ai-assistant\?tab=alerts$/);
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1040", "PATCH").map((request) => request.body)).toEqual([
+    { status: "resolved", note: RESOLVE_NOTE },
+  ]);
+  await expect(row).toContainText("Hal qilindi");
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1040")).toHaveLength(1);
+  expect(leaked).toEqual([]);
+});
+
+test("«Ahamiyatsiz» — tasdiqsiz: PATCH `dismissed`, toast, oyna yopiladi", async ({ page }) => {
+  const { advisor } = await mockAiAssistantApi(page, { advisor: "on" });
+  await openAiAlerts(page, "/ai-assistant?tab=alerts&alert=1036");
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("button", { name: "Ahamiyatsiz" })).toBeVisible();
+  await dialog.getByRole("button", { name: "Ahamiyatsiz" }).click();
+
+  await expect(page.getByText("Ahamiyatsiz deb belgilandi", { exact: true })).toBeVisible();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/ai-assistant\?tab=alerts$/);
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1036", "PATCH").map((request) => request.body)).toEqual([{ status: "dismissed" }]);
+});
+
+test("409 — boshqa superadmin yopgan: tasdiq oynasida izoh, tugma o'chadi", async ({ page }) => {
+  await mockAiAssistantApi(page, { advisor: "on", patch: "closed" });
+  await openAiAlerts(page, "/ai-assistant?tab=alerts&alert=1040");
+  const dialog = page.getByRole("dialog", { name: R1_DIALOG_TITLE });
+  await dialog.getByRole("textbox", { name: "Izoh" }).fill(RESOLVE_NOTE);
+  await dialog.getByRole("button", { name: "Hal qilindi" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Ogohlantirish hal qilindimi?" });
+  await confirm.getByRole("button", { name: "Hal qilindi deb belgilash" }).click();
+  await expect(confirm.getByRole("alert")).toContainText("Ogohlantirish allaqachon yopilgan");
+  await expect(confirm.getByRole("button", { name: "Hal qilindi deb belgilash" })).toBeDisabled();
+});
+
+test("AI izohi: «AI izohini olish» → «AI izoh yozmoqda…» → tayyor (poll)", async ({ page }) => {
+  const { advisor } = await mockAiAssistantApi(page, { advisor: "on", explain: "queued", explainReadyAfter: 2 });
+  Object.assign(advisor.alerts.find((alert) => alert.id === "1040")!, { explanation_status: "none", explanation_md: null, explained_at: null });
+  await openAiAlerts(page, "/ai-assistant?tab=alerts&alert=1040");
+  const region = page.getByRole("dialog", { name: R1_DIALOG_TITLE }).getByRole("region", { name: "AI izohi" });
+  await expect(region).toContainText("Izoh so'ralganda yoziladi — budjetdan sarflanadi.");
+
+  await region.getByRole("button", { name: "AI izohini olish" }).click();
+  await expect(region).toContainText("AI izoh yozmoqda…");
+  await expect(region).toContainText("Uchala kamomad ham «Humo virtual» kartasida", { timeout: 20_000 });
+  await expect(region).toContainText("AI xato qilishi mumkin — muhim qarordan oldin manbani tekshiring.");
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1040/explain", "POST").map((request) => request.body)).toEqual([{}]);
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1040").length).toBeGreaterThanOrEqual(3);
+});
+
+test("AI izohi: 60 s da tayyor bo'lmasa — «Izoh hali tayyor emas», poll to'xtaydi; «Qayta urinish» qayta so'raydi", async ({ page }) => {
+  await page.clock.install();
+  const { advisor } = await mockAiAssistantApi(page, { advisor: "on", explain: "stuck" });
+  Object.assign(advisor.alerts.find((alert) => alert.id === "1040")!, { explanation_status: "none", explanation_md: null, explained_at: null });
+  await openAiAlerts(page, "/ai-assistant?tab=alerts&alert=1040");
+  const region = page.getByRole("dialog", { name: R1_DIALOG_TITLE }).getByRole("region", { name: "AI izohi" });
+  await region.getByRole("button", { name: "AI izohini olish" }).click();
+  await expect(region).toContainText("AI izoh yozmoqda…");
+
+  await page.clock.fastForward("01:01");
+  await expect(region).toContainText("Izoh hali tayyor emas — keyinroq oching");
+  // Oxirgi poll so'rovi (tezlatish paytida ketgan) yetib kelsin — keyin yangi so'rov bo'lmasligi kerak.
+  await page.waitForTimeout(500);
+  const polls = advisorCalls(advisor, "ai/advisor/alerts/1040").length;
+  await page.clock.fastForward("00:10");
+  await page.waitForTimeout(500);
+  await expect(region.getByRole("button", { name: "Qayta urinish" })).toBeVisible();
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1040")).toHaveLength(polls);
+
+  await region.getByRole("button", { name: "Qayta urinish" }).click();
+  await expect(region).toContainText("AI izoh yozmoqda…");
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1040/explain", "POST")).toHaveLength(2);
+});
+
+for (const [mode, text] of [
+  ["budget_month", /Oylik AI budjeti tugagan — izohni \d{2}\.\d{2}\.\d{4}, 00:00 dan keyin olish mumkin\. Qoidalar va dalillar ishlayveradi\./],
+  ["budget_global", /Bugungi umumiy AI chegarasi tugadi\. Faktlar va dalillar to'liq; izohni ertaga, 00:00 dan keyin so'rash mumkin \(Toshkent vaqti\)\./],
+] as const) {
+  test(`AI izohi: 429 (${mode}) — matn va o'chiq tugma, holat o'zgarmaydi`, async ({ page }) => {
+    const { advisor } = await mockAiAssistantApi(page, { advisor: "on", explain: mode });
+    Object.assign(advisor.alerts.find((alert) => alert.id === "1040")!, { explanation_status: "none", explanation_md: null, explained_at: null });
+    await openAiAlerts(page, "/ai-assistant?tab=alerts&alert=1040");
+    const region = page.getByRole("dialog", { name: R1_DIALOG_TITLE }).getByRole("region", { name: "AI izohi" });
+    await region.getByRole("button", { name: "AI izohini olish" }).click();
+    await expect(region).toContainText(text);
+    await expect(region.getByRole("button", { name: "AI izohini olish" })).toBeDisabled();
+    expect(advisor.alerts.find((alert) => alert.id === "1040")!.explanation_status).toBe("none");
+  });
+}
+
+test("chuqur havola ?tab=alerts&alert=1039 (R7): chek tekshiruvi; Esc — `alert` olinadi, filtrlar qoladi", async ({ page }) => {
+  const { advisor } = await mockAiAssistantApi(page, { advisor: "on" });
+  await page.goto("/ai-assistant?tab=alerts&severity=critical&alert=1039");
+  const dialog = page.getByRole("dialog", { name: "Chekda farq bor — Urgut filiali yoqilg'i xarajati" });
+  await expect(dialog).toBeVisible({ timeout: 60_000 });
+  const check = dialog.getByRole("region", { name: "Chek tekshiruvi" });
+  await expect(check).toContainText("Farq bor");
+  await expect(check).toContainText("Karta mos emas");
+  await expect(check).toContainText("Bu hafta 46 ta chek tekshirildi: 41 mos, 3 farq bor, 2 o'qib bo'lmadi.");
+  await expect(dialog.getByRole("link", { name: "Operatsiyaga o'tish" })).toHaveAttribute(
+    "href",
+    "/payments/cash-detail/12?type=branch&history=99120",
+  );
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(/\/ai-assistant\?tab=alerts&severity=critical$/);
+  // Banner: R7 ko'rildi — 1 ta jiddiy qoldi.
+  await expect(page.getByTestId("ai-alerts-critical-banner")).toContainText("1 ta jiddiy ogohlantirish ko'rib chiqilmagan");
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1039")).toHaveLength(1);
 });

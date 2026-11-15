@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-tab-select, superadmin-ai-assistant-alerts, superadmin-ai-assistant-alerts-filters-mobile
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-tab-select, superadmin-ai-assistant-alerts, superadmin-ai-assistant-alerts-filters-mobile, superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-resolve-confirm
 import { lazy, Suspense, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -6,12 +6,15 @@ import { MessageSquarePlus } from "lucide-react";
 import { useAdvisorAvailability } from "../../entities/ai-advisor";
 import { Button, Card, PageHeader, SkeletonLines } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
+import { ALERT_ID_PARAM } from "./model/alertFilters";
 import { readTab, tabPanelProps, tabSearch, type AiTab } from "./model/tabs";
 import { AssistantTabs } from "./ui/AssistantTabs";
 import { ChatPanel, type NewChatAction } from "./ui/ChatPanel";
 
 /** Faqat maslahatchi backend'i bor muhitda va «Ogohlantirishlar» ochilganda yuklanadi (faqat suhbatli prod — yo'q). */
 const AlertsPanel = lazy(() => import("./ui/alerts/AlertsPanel"));
+/** Ogohlantirish oynasi — birinchi `?alert` da yuklanadi, keyin o'rnatilgan qoladi (yopilish harakati). */
+const AlertDialog = lazy(() => import("./ui/alerts/AlertDialog"));
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
@@ -31,7 +34,8 @@ const AlertsPanel = lazy(() => import("./ui/alerts/AlertsPanel"));
  *  tarixga yoziladi (`push`), «Ogohlantirishlar» dan chiqishda ochiq oyna (`alert`) olinadi, filtrlar qoladi.
  *
  *  Panellar (D5): suhbat doim o'rnatilgan — boshqa tabda `hidden` (qoralama, jonli SSE oqimi, fokus mantig'i
- *  saqlanadi). «Ogohlantirishlar» — `React.lazy`, birinchi kerak bo'lganda.
+ *  saqlanadi). «Ogohlantirishlar» — `React.lazy`, birinchi kerak bo'lganda. Ogohlantirish oynasi (`?alert=:id`,
+ *  `ui/alerts/AlertDialog.tsx`) — faqat «Ogohlantirishlar» tabida, birinchi `?alert` da yuklanadi.
  *
  *  Sarlavha (D12, D13): izoh — tablar bo'lsa `subtitleAdvisor` («…savol va ogohlantirishlar…», maketdagi «hisobot» va
  *  «tavsiyalar» olib tashlangan), aks holda avvalgisi. Amallar: «Suhbat» — «Yangi suhbat» (ghost, MessageSquarePlus;
@@ -49,6 +53,11 @@ const AiAssistantPage = () => {
 
   // Backend yo'q — faqat suhbat (URL'dagi tab e'tiborga olinmaydi).
   const tab: AiTab = available || probing ? readTab(searchParams) : "chat";
+
+  // Oyna birinchi `?alert` da yuklanadi va keyin o'rnatilgan qoladi (yopilish harakati, ma'lumot keshda).
+  const alertParam = available && tab === "alerts" ? searchParams.get(ALERT_ID_PARAM) : null;
+  const [alertDialogMounted, setAlertDialogMounted] = useState(false);
+  if (alertParam !== null && !alertDialogMounted) setAlertDialogMounted(true);
 
   const [newChat, setNewChat] = useState<NewChatAction | null>(null);
   const registerNewChat = useCallback((action: NewChatAction | null) => setNewChat(() => action), []);
@@ -96,6 +105,12 @@ const AiAssistantPage = () => {
         ) : (
           alertsLoading
         )
+      ) : null}
+
+      {available && alertDialogMounted ? (
+        <Suspense fallback={null}>
+          <AlertDialog active={tab === "alerts"} />
+        </Suspense>
       ) : null}
     </div>
   );

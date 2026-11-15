@@ -270,6 +270,149 @@
       "filtered": "Jadvalda faqat jiddiylar",
       "filteredTotal": "Jadvalda faqat jiddiylar: {{value}} ta",
       "showAll": "Hammasini ko'rsatish"
+    },
+    "dialog": {
+      "label": "Ogohlantirish",
+      "loading": "Ogohlantirish yuklanmoqda",
+      "notFoundTitle": "Ogohlantirish topilmadi",
+      "notFoundText": "Havola eskirgan yoki noto'g'ri. Ogohlantirishni ro'yxatdan oching.",
+      "errorTitle": "Ogohlantirishni yuklab bo'lmadi",
+      "times": "{{rule}} · birinchi: {{first}} · oxirgi: {{last}}",
+      "time": "{{rule}} · {{at}}",
+      "repeated_one": "{{value}} marta takrorlandi",
+      "repeated_other": "{{value}} marta takrorlandi",
+      "close": "Yopish",
+      "resolve": "Hal qilindi",
+      "dismiss": "Ahamiyatsiz",
+      "reopenedTitle": "Hal qilingan muammo qaytdi — yangi ogohlantirish ochildi",
+      "reopenedText": "Avvalgisi «{{status}}» holatida qoladi, yangisi «Yangi» bo'lib ro'yxat boshida turadi.",
+      "closedBy": "{{name}} · {{at}}",
+      "dismissFailed": "«Ahamiyatsiz» saqlanmadi — qayta urining.",
+      "closedAlready": "Ogohlantirish allaqachon yopilgan — oyna yangilandi."
+    },
+    "links": {
+      "shift_report": "Smena hisobotiga o'tish",
+      "operation": "Operatsiyaga o'tish",
+      "operationExpense": "Xarajatni ochish",
+      "courier_cashbox": "Kuryer kassasini ochish",
+      "market_cashbox": "Market kassasini ochish",
+      "branch_cashbox": "Filial kassasini ochish",
+      "main_cashbox": "Asosiy kassani ochish",
+      "financial_balance": "Balansni ochish",
+      "corrections": "Tuzatishlar tarixini ochish",
+      "other": "Bo'limga o'tish"
+    },
+    "note": {
+      "label": "Izoh",
+      "hint": "«Hal qilindi» uchun majburiy · 3–500 belgi · faoliyat jurnaliga yoziladi",
+      "tooShort": "Izoh kamida 3 belgi bo'lsin",
+      "tooLong": "Izoh 500 belgidan oshmasin",
+      "placeholder": {
+        "R1": "Nima qilindi? Masalan: kartadagi tushum keyingi kuni kelgan",
+        "R2": "Nima qilindi? Masalan: kuryer pulni asosiy kassaga topshirdi",
+        "R3": "Nima qilindi? Masalan: 3 ta mashinaga bir haftalik yoqilg'i olingan",
+        "R4": "Nima qilindi? Masalan: marketga {{amount}} to'landi",
+        "R5": "Nima qilindi? Masalan: filial pulni HQ'ga o'tkazdi",
+        "R6": "Nima qilindi? Masalan: ta'mir bir martalik, hafta foydada",
+        "R7": "Nima qilindi? Masalan: summa chek bo'yicha tuzatildi",
+        "R7card": "Nima qilindi? Masalan: kartadagi tushum keyingi kuni kelgan",
+        "R8": "Nima qilindi? Masalan: yangi kassirlar xatolari ko'rib chiqildi",
+        "other": "Nima qilindi?"
+      }
+    },
+    "resolve": {
+      "title": "Ogohlantirish hal qilindimi?",
+      "noteLabel": "Izoh",
+      "status": "Holat «Hal qilindi»ga o'tadi va faoliyat jurnaliga yoziladi.",
+      "reopen": "Muammo qaytsa, yangi ogohlantirish ochiladi.",
+      "confirm": "Hal qilindi deb belgilash",
+      "cancel": "Orqaga",
+      "loading": "Saqlanmoqda…",
+      "toastTitle": "Ogohlantirish hal qilindi",
+      "toastText": "{{label}}. Faoliyat jurnaliga yozildi.",
+      "closedTitle": "Ogohlantirish allaqachon yopilgan",
+      "closedText": "Uni boshqa superadmin yopgan — oyna yangilandi."
+    },
+    "dismiss": {
+      "toastTitle": "Ahamiyatsiz deb belgilandi",
+      "toastText": "{{label}}. Qayta takrorlansa, yangi ogohlantirish ochiladi."
+    },
+    "explain": {
+      "title": "AI izohi",
+      "none": "Izoh so'ralganda yoziladi — budjetdan sarflanadi.",
+      "request": "AI izohini olish",
+      "pending": "AI izoh yozmoqda…",
+      "expired": "Izoh hali tayyor emas — keyinroq oching",
+      "retry": "Qayta urinish",
+      "budgetMonth": "Oylik AI budjeti tugagan — izohni {{at}} dan keyin olish mumkin. Qoidalar va dalillar ishlayveradi.",
+      "budgetMonthNoDate": "Oylik AI budjeti tugagan — izoh olinmaydi. Qoidalar va dalillar ishlayveradi.",
+      "budgetDaily": "Bugungi umumiy AI chegarasi tugadi. Faktlar va dalillar to'liq; izohni ertaga, 00:00 dan keyin so'rash mumkin (Toshkent vaqti).",
+      "budgetDailyAuto": "Bugungi umumiy AI chegarasi tugadi — jiddiy ogohlantirish izohsiz ochildi. Faktlar va dalillar to'liq; izohni ertaga, 00:00 dan keyin so'rash mumkin (Toshkent vaqti).",
+      "failed": "Izoh yozib bo'lmadi.",
+      "disabled": "AI xizmati hozir o'chiq — izoh olinmaydi. Qoidalar va dalillar ishlayveradi.",
+      "requestFailed": "Izohni so'rab bo'lmadi — qayta urining."
+    },
+    "evidence": {
+      "title_one": "Dalillar · {{value}} ta yozuv",
+      "title_other": "Dalillar · {{value}} ta yozuv",
+      "truncated": "{{shown}} / {{total}} ta ko'rsatildi",
+      "total": "Jami",
+      "shifts": {
+        "columns": {
+          "shift": "Smena",
+          "closedBy": "Yopgan",
+          "expected": "Kutilgan",
+          "counted": "Sanalgan",
+          "difference": "Farq",
+          "open": "Smena hisobotini ochish"
+        },
+        "openRow": "{{at}} smena hisobotini ochish",
+        "cardSub": "Kutilgan {{expected}} · sanalgan {{counted}}",
+        "totalCard": "Jami · {{shifts}}",
+        "system": "Avtomatik",
+        "cardNotCounted": "karta sanalmagan",
+        "cashNotCounted": "naqd sanalmagan",
+        "sameCloser2": "Ikkala smenani {{name}} yopgan",
+        "sameCloser3": "Uchala smenani {{name}} yopgan",
+        "sameCloserMany": "Barcha {{value}} ta smenani {{name}} yopgan"
+      }
+    },
+    "facts": {
+      "label": "Asosiy ma'lumotlar",
+      "cashbox": "Kassa",
+      "totalShortage": "Jami kamomad",
+      "shortage": "Kamomad",
+      "rule": "Qoida",
+      "closedBy": "Smenani yopgan",
+      "autoClosed": "Avtomatik yopilgan",
+      "operation": "Operatsiya",
+      "entered": "Kiritilgan",
+      "onReceipt": "Chekda",
+      "difference": "Farq",
+      "createdBy": "Kiritgan",
+      "shift": "Smena",
+      "aiRead": "AI o'qigan",
+      "amount": "Summa",
+      "subject": "Joy"
+    },
+    "receipt": {
+      "title": "Chek tekshiruvi",
+      "amountMismatch": "Farq bor",
+      "cardMismatch": "Karta mos emas",
+      "date": "Chek sanasi",
+      "recipient": "Oluvchi",
+      "payer": "To'lovchi",
+      "payerNotCashbox": "filial kassasi kartasi emas",
+      "bank": "Bank",
+      "reference": "Tranzaksiya raqami",
+      "confidence": "Ishonch",
+      "week": "Bu hafta {{checked}} ta chek tekshirildi: {{match}} mos, {{mismatch}} farq bor, {{unreadable}} o'qib bo'lmadi.",
+      "disabled": "Chek tekshiruvi yoqilmagan — bu turda faqat smena karta qoldig'i tekshiriladi.",
+      "operation": {
+        "manual_expense": "Qo'lda chiqim",
+        "courier_to_hq": "Kuryer topshirig'i",
+        "branch_to_hq": "HQ'ga o'tkazma"
+      }
     }
   },
   "rules": {
