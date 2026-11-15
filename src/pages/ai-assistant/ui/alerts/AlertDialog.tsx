@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, CircleCheck, CircleMinus, SearchX, TriangleAlert } from "lucide-react";
 import {
   AI_ADVISOR_LINK_KINDS,
@@ -38,10 +38,17 @@ import {
   buttonClasses,
 } from "../../../../shared/ui/primitives";
 import { useIsPhone } from "../../../../shared/ui/primitives/date/useIsPhone";
-import { ALERT_ID_PARAM } from "../../model/alertFilters";
+import { ALERT_ID_PARAM, isAlertFromList } from "../../model/alertFilters";
 import { renderRuleBody } from "./rules";
 
 const LINK_KINDS = new Set<string>(AI_ADVISOR_LINK_KINDS);
+
+/**
+ * Epizodli qoidalar (shartnoma §5.1): `first_fact_at` — epizod boshlangan kun 00:00, ya'ni hech narsa bo'lmagan vaqt.
+ * Ularning «birinchi / oxirgi» qatori aniqlash vaqtlarini (`first_at` / `last_at`) ko'rsatadi — maket R4
+ * «birinchi: 21.10.2026, 09:00 · oxirgi: Kecha, 09:00», ro'yxatdagi «Oxirgi marta» bilan bir xil.
+ */
+const EPISODE_RULES = new Set<string>(["R2", "R4", "R5"]);
 
 /** Asosiy havola yorlig'i (`aiAdvisor.alerts.links.<kind>`): R3 dagi operatsiya — «Xarajatni ochish»; noma'lum — umumiy. */
 const linkLabelKey = (link: AiAdvisorLink, ruleKey: string): string => {
@@ -64,11 +71,13 @@ export type AlertDialogProps = {
  *  `rules/`; `-alert-resolve-confirm`; noma'lum qoida — umumiy ko'rinish)
  * ────────────────────────────────────────────────────────────────────────────
  *
- *  Ochish — ro'yxatdagi havola (`push`); yopish — `alert` olinadi (`replace`). `React.lazy`: birinchi `?alert` da
+ *  Ochish — ro'yxatdagi havola (`push` + `ALERT_FROM_LIST_STATE`); yopish — shu yozuvdan orqaga (`navigate(-1)`), chuqur
+ *  havola / jonli xabarda — `alert` olinadi (`replace`). `React.lazy`: birinchi `?alert` da
  *  yuklanadi, keyin o'rnatilgan qoladi (yopilish harakati, ma'lumot keshda).
  *
  *  ⚠️ D16: `GET alerts/:id` ogohlantirishni «Ko'rildi» qiladi — faqat oyna ochiq bo'lsa so'raladi (prefetch / hover yo'q);
- *  har ochilishdagi birinchi muvaffaqiyatli javobdan keyin `overview` (tab nishoni, banner) va ro'yxatlar eskiradi.
+ *  har ochilishdagi birinchi muvaffaqiyatli javobdan keyin `overview` (tab nishoni, banner) eskiradi, ro'yxatlar —
+ *  oyna yopilgach.
  *
  *  Tuzilma: sarlavha (ikonka — jiddiylik toni, «Qoida · birinchi: … · oxirgi: …» yoki bitta takrorda «Qoida · vaqt») → belgilar (jiddiylik, holat,
  *  «N marta takrorlandi») → qoida tanasi (faktlar, dalillar) → «qaytgan muammo» izohi → AI izohi → izoh maydoni.
@@ -93,22 +102,39 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
   const { query, expired, restart } = useExplanationPoll(id, { enabled: open });
   const alert: AiAdvisorAlertDetail | undefined = query.data && query.data.id === id ? query.data : undefined;
 
-  const close = useCallback(
-    () =>
-      setSearchParams(
-        (current) => {
-          const next = new URLSearchParams(current);
-          next.delete(ALERT_ID_PARAM);
-          return next;
-        },
-        { replace: true },
-      ),
-    [setSearchParams],
-  );
+  // Yopish: ro'yxatdan ochilgan bo'lsa (`ALERT_FROM_LIST_STATE`, `push`) — tarixda orqaga (ro'yxat yozuvi
+  // takrorlanmaydi, «Orqaga» sahifadan chiqadi); chuqur havola / jonli xabar — `alert` olinadi (`replace`).
+  // Bir yozuvdan bir marta: Esc va `onDone` ketma-ket kelsa ham ikki qadam orqaga ketilmaydi.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const closedKey = useRef<string | null>(null);
+  useEffect(() => {
+    // Yangi yozuv (yoki «Oldinga» bilan qaytilgan o'sha yozuv) — yana yopish mumkin.
+    closedKey.current = null;
+  }, [location.key]);
+  const close = useCallback(() => {
+    if (closedKey.current === location.key) return;
+    closedKey.current = location.key;
+    if (isAlertFromList(location.state)) {
+      navigate(-1);
+      return;
+    }
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete(ALERT_ID_PARAM);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [location.key, location.state, navigate, setSearchParams]);
 
-  // D16: ochilishdan keyingi birinchi javob — nishon, banner va ro'yxat yangilanadi (bir marta).
+  // D16: ochilishdan keyingi birinchi javob — nishon va banner darhol yangilanadi (bir marta); ro'yxat — oyna
+  // yopilgach (har yo'l: tugma, Esc, «Orqaga», tab almashuvi): `?status=new` da ochilgan qator oyna ortida
+  // yo'qolmaydi va fokus o'z havolasiga qaytadi.
   const openedAt = useRef(0);
   const refreshedFor = useRef<string | null>(null);
+  const listStale = useRef(false);
   useEffect(() => {
     if (!open || id === null) return;
     openedAt.current = Date.now();
@@ -118,9 +144,20 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
     if (!open || id === null || !query.isSuccess || refreshedFor.current === id) return;
     if (query.dataUpdatedAt < openedAt.current) return;
     refreshedFor.current = id;
+    listStale.current = true;
     void queryClient.invalidateQueries({ queryKey: queryKeys.aiAdvisor.overview });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alertLists });
   }, [id, open, query.dataUpdatedAt, query.isSuccess, queryClient]);
+  useEffect(() => {
+    if (open || !listStale.current) return;
+    listStale.current = false;
+    void queryClient.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alertLists });
+  }, [open, queryClient]);
+  useEffect(
+    () => () => {
+      if (listStale.current) void queryClient.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alertLists });
+    },
+    [queryClient],
+  );
 
   const flow = useResolutionFlow({ alert, onDone: close });
   const isPhone = useIsPhone();
@@ -167,12 +204,14 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
 
   // ── Ogohlantirish ──────────────────────────────────────────────────────────────────────────────────────
   const openAlert = isAlertOpen(alert.status);
-  // Maketlar: takrorlangan ogohlantirish (R1 «3 marta», R4 «2 marta») — fakt oralig'i «birinchi: … · oxirgi: …»;
-  // bitta takror — aniqlash vaqti (`last_at`: R3 «Kecha, 18:20», R6 «21.10.2026, 08:00»). R6 sarlavhasida joy yo'q —
-  // «Zarar · butun tizim» (ro'yxat ost-qatoridagidek).
+  // Maketlar: takrorlangan ogohlantirish (R1 «3 marta», R4 «2 marta») — «birinchi: … · oxirgi: …» (R1 — fakt
+  // vaqtlari; epizodli R2, R4, R5 — aniqlash vaqtlari, `EPISODE_RULES`); bitta takror — aniqlash vaqti (`last_at`:
+  // R3 «Kecha, 18:20», R6 «21.10.2026, 08:00»). R6 sarlavhasida joy yo'q — «Zarar · butun tizim» (ro'yxat
+  // ost-qatoridagidek).
   const rule = alert.rule_key === "R6" ? alertSubline(alert, tt) : ruleName(alert.rule_key, tt);
-  const first = formatDateTimeLocalized(alert.first_fact_at, { language });
-  const last = formatDateTimeLocalized(alert.last_fact_at, { language });
+  const episodic = EPISODE_RULES.has(alert.rule_key);
+  const first = formatDateTimeLocalized(episodic ? alert.first_at : alert.first_fact_at, { language });
+  const last = formatDateTimeLocalized(episodic ? alert.last_at : alert.last_fact_at, { language });
   const description =
     alert.occurrences > 1 && first !== last
       ? t("alerts.dialog.times", { rule, first, last })

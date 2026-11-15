@@ -154,10 +154,15 @@ describe("R1 «Smena kamomadi» (maket `superadmin-ai-assistant-alert-dialog`)",
     expect(within(panel).getByRole("button", { name: "Ahamiyatsiz" })).toBeEnabled();
     expect(within(panel).getByRole("button", { name: "Hal qilindi" })).toBeEnabled();
 
-    // D16: yon ta'sirli GET — bitta; birinchi javobdan keyin nishon va ro'yxat eskiradi.
+    // D16: yon ta'sirli GET — bitta; birinchi javobdan keyin nishon eskiradi, ro'yxat — oyna yopilgach
+    // (`?status=new` da qator oyna ortida yo'qolmaydi, fokus o'z havolasiga qaytadi).
     expect(detailCalls()).toEqual([["ai/advisor/alerts/1040"]]);
     await waitFor(() => expect(queryClient.getQueryState(queryKeys.aiAdvisor.overview)?.isInvalidated).toBe(true));
-    expect(queryClient.getQueryState(queryKeys.aiAdvisor.alertList({ page: 1, limit: 10 }))?.isInvalidated).toBe(true);
+    const listState = () => queryClient.getQueryState(queryKeys.aiAdvisor.alertList({ page: 1, limit: 10 }));
+    expect(listState()?.isInvalidated).toBe(false);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(currentParams().get("alert")).toBeNull());
+    await waitFor(() => expect(listState()?.isInvalidated).toBe(true));
   });
 
   it("telefonda: dalillar — kartalar «Kutilgan … · sanalgan …» va «Jami · 3 smena»; amallar ustma-ust («Hal qilindi», «Ahamiyatsiz», havola)", async () => {
@@ -659,12 +664,65 @@ describe("sarlavha ostidagi vaqt (maketlar: takrorlanganda fakt oralig'i, bitta 
     expect(within(panel).getByText(`Zarar · butun tizim · ${at}`)).toBeInTheDocument();
   });
 
-  it("R4 (2 marta) — fakt oralig'i «birinchi: … · oxirgi: …»", async () => {
+  it("R4 (2 marta, epizodli) — aniqlash vaqtlari «birinchi: {first_at} · oxirgi: {last_at}», epizod boshi 00:00 emas", async () => {
     replyDetail(fx.detail.r4);
     open("1034");
     const panel = await findDialog(/9 kundan beri to'lov yo'q/);
-    const first = formatDateTimeLocalized(fx.detail.r4.first_fact_at, { language: "uz" });
-    const last = formatDateTimeLocalized(fx.detail.r4.last_fact_at, { language: "uz" });
+    const first = formatDateTimeLocalized(fx.detail.r4.first_at, { language: "uz" });
+    const last = formatDateTimeLocalized(fx.detail.r4.last_at, { language: "uz" });
     expect(within(panel).getByText(`Market to'lovi kechikmoqda · birinchi: ${first} · oxirgi: ${last}`)).toBeInTheDocument();
+    const episodeStart = formatDateTimeLocalized(fx.detail.r4.first_fact_at, { language: "uz" });
+    expect(panel.textContent).not.toContain(`birinchi: ${episodeStart}`);
+  });
+});
+
+/**
+ * Yopish va brauzer «Orqaga» (`BrowserRouter`, jsdom `window.history`): ro'yxatdan ochilgan oyna (`push` +
+ * `ALERT_FROM_LIST_STATE`) yopilganda o'sha ro'yxat yozuviga qaytadi — tarixda ikki bir xil yozuv qolmaydi va keyingi
+ * «Orqaga» tabdan chiqadi. Chuqur havola (state'siz) — `alert` olinadi, yozuv almashtiriladi.
+ */
+describe("yopish va brauzer tarixi", () => {
+  const LIST = "/ai-assistant?tab=alerts&status=new";
+  const renderBrowser = () =>
+    renderWithProviders(
+      <>
+        <AlertDialog active />
+        <LocationProbe />
+      </>,
+      { history: "browser" },
+    );
+
+  it("ro'yxatdan ochilgan — Esc tarixda orqaga qaytadi (yangi yozuv yo'q, ro'yxat yozuvi o'sha)", async () => {
+    window.history.replaceState({ usr: null, key: "list", idx: 0 }, "", LIST);
+    window.history.pushState({ usr: { aiAlertFromList: true }, key: "alert", idx: 1 }, "", `${LIST}&alert=1040`);
+    const length = window.history.length;
+    renderBrowser();
+    await findDialog(R1_TITLE);
+
+    const popped = new Promise<void>((resolve) => window.addEventListener("popstate", () => resolve(), { once: true }));
+    await userEvent.keyboard("{Escape}");
+    await act(async () => {
+      await popped;
+    });
+
+    await waitFor(() => expect(currentParams().get("alert")).toBeNull());
+    expect(window.location.search).toBe("?tab=alerts&status=new");
+    expect(window.history.state).toMatchObject({ key: "list", idx: 0 });
+    expect(window.history.length).toBe(length);
+  });
+
+  it("chuqur havola (state'siz) — `alert` olinadi, joriy yozuv almashtiriladi (orqada ro'yxat yo'q)", async () => {
+    window.history.replaceState(null, "", "/");
+    window.history.pushState(null, "", `${LIST}&alert=1040`);
+    const length = window.history.length;
+    renderBrowser();
+    await findDialog(R1_TITLE);
+
+    await userEvent.keyboard("{Escape}");
+
+    await waitFor(() => expect(currentParams().get("alert")).toBeNull());
+    expect(window.location.pathname).toBe("/ai-assistant");
+    expect(window.location.search).toBe("?tab=alerts&status=new");
+    expect(window.history.length).toBe(length);
   });
 });

@@ -14,6 +14,7 @@ import {
 import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { DataTable, type DataTableColumn } from "../../../../shared/ui/primitives";
+import { ALERT_FROM_LIST_STATE } from "../../model/alertFilters";
 
 export type AlertsTableProps = {
   rows: readonly AiAdvisorAlertListItem[];
@@ -37,7 +38,8 @@ const ICON_LINK =
  * (sarlavha-havola + «Qoida · filial») · Holat · Takror «N marta» · Oxirgi marta · ›; < 1024 — oxirgi uchtasi
  * yashirin. Telefonda (< 768) — kartalar: belgilar, sarlavha, «Qoida · filial · N marta · vaqt» (takror faqat > 1).
  *
- * Har havola `?alert=<id>` ni qo'shadi (tarixga — `push`, «Orqaga» oynani yopadi). ⚠️ Ochish (GET tafsilot)
+ * Har havola `?alert=<id>` ni qo'shadi (tarixga — `push` + `ALERT_FROM_LIST_STATE`; «Orqaga» oynani yopadi, oyna
+ * yopilishi esa shu yozuvdan orqaga qaytadi — tarixda ikki bir xil ro'yxat yozuvi qolmaydi). ⚠️ Ochish (GET tafsilot)
  * ogohlantirishni «Ko'rildi» qiladi — shuning uchun hover/prefetch yo'q, faqat bosilganda.
  */
 export const AlertsTable = ({ rows, hrefOf, busy = false }: AlertsTableProps) => {
@@ -66,7 +68,7 @@ export const AlertsTable = ({ rows, hrefOf, busy = false }: AlertsTableProps) =>
         header: t("alerts.list.columns.alert"),
         cell: (row) => (
           <>
-            <Link to={hrefOf(row)} aria-haspopup="dialog" className={TITLE_LINK}>
+            <Link to={hrefOf(row)} state={ALERT_FROM_LIST_STATE} aria-haspopup="dialog" className={TITLE_LINK}>
               {title(row)}
             </Link>
             <div className={SUB}>{alertSubline(row, tt)}</div>
@@ -102,7 +104,7 @@ export const AlertsTable = ({ rows, hrefOf, busy = false }: AlertsTableProps) =>
         cell: (row) => {
           const label = t("alerts.list.open", { title: title(row) });
           return (
-            <Link to={hrefOf(row)} aria-haspopup="dialog" aria-label={label} title={label} className={ICON_LINK}>
+            <Link to={hrefOf(row)} state={ALERT_FROM_LIST_STATE} aria-haspopup="dialog" aria-label={label} title={label} className={ICON_LINK}>
               <ChevronRight aria-hidden="true" size={18} strokeWidth={2} />
             </Link>
           );
@@ -119,6 +121,7 @@ export const AlertsTable = ({ rows, hrefOf, busy = false }: AlertsTableProps) =>
       return (
         <Link
           to={hrefOf(row)}
+          state={ALERT_FROM_LIST_STATE}
           aria-haspopup="dialog"
           className="flex min-h-14 items-start gap-3 px-4 py-3 text-sm text-text"
         >
@@ -145,7 +148,7 @@ export const AlertsTable = ({ rows, hrefOf, busy = false }: AlertsTableProps) =>
       columns={columns}
       getRowKey={(row) => row.id}
       label={t("alerts.list.label")}
-      onRowClick={(row) => navigate(hrefOf(row))}
+      onRowClick={(row) => navigate(hrefOf(row), { state: ALERT_FROM_LIST_STATE })}
       renderCard={renderCard}
       busy={busy}
     />

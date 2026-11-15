@@ -128,6 +128,32 @@ test("tab=alerts — tarixda: «Orqaga» suhbatga qaytaradi", async ({ page }) =
   await expect(composer(page)).toBeVisible();
 });
 
+test("ro'yxatdan ochilgan oyna: Esc — o'sha ro'yxat yozuviga qaytadi (fokus havolada, qator «Ko'rildi»); «Orqaga» — tabdan chiqadi", async ({
+  page,
+}) => {
+  await mockAiAssistantApi(page, { advisor: "on" });
+  await openAiAssistant(page);
+  await page.getByRole("tab", { name: /Ogohlantirishlar/ }).click();
+  await expect(page).toHaveURL(/\?tab=alerts$/);
+  const link = page.getByRole("link", { name: FIRST_ALERT_TITLE, exact: true });
+  const row = page.getByRole("table", { name: "Ogohlantirishlar ro'yxati" }).getByRole("row").filter({ has: link });
+  await expect(row).toContainText("Yangi");
+
+  await link.click();
+  await expect(page).toHaveURL(/[?&]alert=1041/);
+  await expect(page.getByRole("dialog", { name: /^Jasur Tursunov kassasida/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/ai-assistant\?tab=alerts$/);
+  await expect(link).toBeFocused();
+  await expect(row).toContainText("Ko'rildi");
+
+  // Yopish tarixga yangi ro'yxat yozuvini qo'shmaydi: bitta «Orqaga» — suhbatga.
+  await page.goBack();
+  await expect(page).toHaveURL(/\/ai-assistant$/);
+  await expect(page.getByRole("tab", { name: "Suhbat" })).toHaveAttribute("aria-selected", "true");
+});
+
 test("ogohlantirish yo'q — «Hammasi joyida», tab nishonsiz, banner yo'q", async ({ page }) => {
   const { advisor } = await mockAiAssistantApi(page, { advisor: "on" });
   advisor.alerts.length = 0;
@@ -165,9 +191,9 @@ test("⭐ R1 oynasi: ochilganda «Ko'rildi» (nishon 3 → 2); izohsiz «Hal qil
   await expect(dialog.getByText("Uchala smenani Sardor Mirzayev yopgan")).toBeVisible();
   await expect(dialog.getByRole("region", { name: "AI izohi" })).toContainText("Uchala kamomad ham «Humo virtual» kartasida");
   await expect(dialog.getByRole("link", { name: "Smena hisobotiga o'tish" })).toHaveAttribute("href", "/payments/shifts/818");
-  // D16: GET :id — «Ko'rildi»; nishon va ro'yxat yangilanadi.
+  // D16: GET :id — «Ko'rildi»; nishon darhol yangilanadi, ro'yxat — oyna yopilgach (qator oyna ortida o'zgarmaydi).
   await expect(tab).toHaveText("Ogohlantirishlar 2");
-  await expect(row).toContainText("Ko'rildi");
+  await expect(row).toContainText("Yangi");
 
   // Izohsiz — mijoz xatosi, so'rov yo'q.
   await dialog.getByRole("button", { name: "Hal qilindi" }).click();

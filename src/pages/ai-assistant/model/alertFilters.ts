@@ -43,6 +43,16 @@ export const DEFAULT_ALERT_PAGE_SIZE = ALERT_PAGE_SIZES[0];
 export const ALERT_URL_PARAMS = { status: "status", severity: "severity", rule: "rule", page: "page", limit: "limit" } as const;
 export const ALERT_ID_PARAM = "alert";
 
+/**
+ * Ro'yxatdan ochilgan oyna belgisi (router `state`): ochish — `push`, yopish — `navigate(-1)`, shunda tarixda
+ * ro'yxatning ikki bir xil yozuvi qolmaydi va «Orqaga» sahifadan chiqadi. Chuqur havola va jonli xabar belgisiz —
+ * ular `replace` bilan yopiladi (orqada ro'yxat yozuvi yo'q).
+ */
+export const ALERT_FROM_LIST_STATE = { aiAlertFromList: true } as const;
+
+export const isAlertFromList = (state: unknown): boolean =>
+  typeof state === "object" && state !== null && (state as { aiAlertFromList?: unknown }).aiAlertFromList === true;
+
 const SEVERITY_SET = new Set<string>(AI_ADVISOR_SEVERITIES);
 const isSeverity = (value: unknown): value is AiAdvisorSeverity => typeof value === "string" && SEVERITY_SET.has(value);
 
