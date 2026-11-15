@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { MARKET_PIN, MARKET_QR, mockCancelledApi, openHandover, usbScan } from "./support/cancelledHandover";
+import { MARKET_PIN, MARKET_QR, mockCancelledApi, openHandover, scanOrders, usbScan } from "./support/cancelledHandover";
 
 /**
  * Bekor qilinganlarni marketga topshirish — 390px: kartalar, «QR buzilganini tasdiqlash» pastki varaqasi
- * (sabab — backend enum kodi), market QR bilan jo'natish; gorizontal skroll yo'q.
+ * (sabab — backend enum kodi), market QR bilan jo'natish; QR / kod hech narsani tanlamaydi — skanerlangani
+ * «Skanerlangan (N)» kartasiga o'tadi (ega qarori 2026-11-15); gorizontal skroll yo'q.
  */
 test.describe("Bekor qilinganlar — telefon, 390px", () => {
   test.describe.configure({ timeout: 90_000 });
@@ -27,11 +28,20 @@ test.describe("Bekor qilinganlar — telefon, 390px", () => {
 
     await usbScan(page, MARKET_QR);
     await expect(page.getByText("Market QR skanerlandi")).toBeVisible();
+    // Market QR qolganlarini tanlamaydi — faqat qo'lda tasdiqlangan bittasi.
+    await expect(page.getByRole("button", { name: "Marketga jo'natish — 1 ta" })).toBeEnabled();
+
+    await scanOrders(page, ["10220", "10213"]);
+    // «Skanerlangan» kartasi telefonda: qaytarish tugmasi ≥ 44 px, gorizontal skroll yo'q.
+    const undo = page.getByRole("button", { name: "№10213 ni ro'yxatga qaytarish" });
+    expect((await undo.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
     await page.getByRole("button", { name: "Marketga jo'natish — 3 ta" }).click();
     await expect.poll(() => handovers.length).toBe(1);
     expect(handovers[0]).toEqual(
       expect.objectContaining({
+        order_ids: ["10235", "10220", "10213"],
         authorization_token: "auth-e2e",
         manual_overrides: [{ order_id: "10235", reason: "Label yo'qolgan" }],
       }),
@@ -72,7 +82,10 @@ test.describe("Bekor qilinganlar — telefon, 390px", () => {
     await expect(sheet).toBeHidden();
     await expect(page.getByText("Market PIN kodi tasdiqlandi")).toBeVisible();
     expect(pins).toEqual([{ market_id: "201", pin: MARKET_PIN }]);
+    // Kod hech narsani tanlamaydi — avval buyurtmalar skanerlanadi.
+    await expect(page.getByRole("button", { name: "Marketga jo'natish" })).toBeDisabled();
 
+    await scanOrders(page, ["10235", "10220", "10213"]);
     await page.getByRole("button", { name: "Marketga jo'natish — 3 ta" }).click();
     await expect.poll(() => handovers.length).toBe(1);
     expect(handovers[0]).toEqual(expect.objectContaining({ authorization_token: "auth-pin-e2e" }));
