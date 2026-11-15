@@ -1,11 +1,12 @@
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import { loginSuccess, logout } from "../../entities/user/model/slice";
 import { queryKeys } from "../../shared/config/queryKeys";
 import { BASE_URL } from "../../shared/const";
+import { toastStore } from "../../shared/lib/notify";
 import {
   isRealtimeConnected,
   OFFLINE_POLL_MS,
@@ -77,6 +78,12 @@ const authState = (token: string | null) => ({
 
 let visibility: DocumentVisibilityState = "visible";
 
+/** «Ochish» olib borgan AI sahifasi — qidiruv qatori bilan (ogohlantirish oynasi `?alert=`). */
+const AiAssistantProbe = () => {
+  const { search } = useLocation();
+  return <div>{`ai-sahifasi ${search}`}</div>;
+};
+
 const renderSync = (token: string | null = "tok-1") =>
   renderWithProviders(
     <>
@@ -84,6 +91,7 @@ const renderSync = (token: string | null = "tok-1") =>
       <Routes>
         <Route path="/orders/:id" element={<div>buyurtma-sahifasi</div>} />
         <Route path="/inbox" element={<div>inbox-sahifasi</div>} />
+        <Route path="/ai-assistant" element={<AiAssistantProbe />} />
         <Route path="*" element={null} />
       </Routes>
     </>,
@@ -207,6 +215,106 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
     act(() => lastSocket().fire("notification:new", { type: "order.created", category: "order" }));
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["orders"], refetchType: "active" }));
     expect(invalidate).toHaveBeenCalledTimes(2);
+  });
+
+  describe("AI maslahatchi: jiddiy ogohlantirish `ai.advisor_alert` (60PWUbgC, maket tizim-ai-advisor-messages)", () => {
+    /** Shartnoma v0.3 §9.3: `recipient_ids` ga to'liq qator (`data` — qisqa nom va joy uchun). */
+    const ADVISOR_ROW = {
+      id: "n-500",
+      type: "ai.advisor_alert",
+      category: "finance",
+      priority: "critical",
+      title: "Jiddiy ogohlantirish · Chekda farq bor",
+      body: "Urgut filiali · yoqilg'i: kiritilgan 320 000 so'm, chekda 302 000 so'm (−18 000 so'm).",
+      link: "/ai-assistant?tab=alerts&alert=1045",
+      data: { alert_id: "1045", rule_key: "R7", severity: "critical", variant: "receipt", subject_name: "Urgut filiali" },
+    };
+
+    it("⭐ qatorli hodisa — yopilguncha turadigan xabar «Jiddiy ogohlantirish» + «Chekda farq bor — Urgut filiali»; overview va ro'yxatlar yangilanadi; «Ochish» — ogohlantirish oynasi", async () => {
+      const user = userEvent.setup();
+      const { queryClient } = renderSync();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      invalidate.mockClear();
+
+      act(() => {
+        // Ayni qator ikki marta (qayta yuborish) — xabar bitta.
+        lastSocket().fire("notification:new", ADVISOR_ROW);
+        lastSocket().fire("notification:new", ADVISOR_ROW);
+      });
+
+      expect(await screen.findByText("Jiddiy ogohlantirish")).toBeInTheDocument();
+      expect(screen.getByText("Chekda farq bor — Urgut filiali")).toBeInTheDocument();
+      // Maket: «foydalanuvchi yopguncha turadi» — o'zi yopilmaydi; kalit push bilan bir xil (ikki marta chiqmaydi).
+      expect(toastStore.getSnapshot()).toEqual([
+        expect.objectContaining({ id: "elchi-push-n-500", tone: "error", duration: 0 }),
+      ]);
+      expect(screen.queryByText("Jiddiy ogohlantirish · Chekda farq bor")).not.toBeInTheDocument();
+      // Bitta yig'ish oynasi: inbox + overview (tab nishoni, banner) + ro'yxatlar (sanoqlar ham); tafsilot emas.
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.notificationsInbox.all });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.overview });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists });
+      expect(invalidate).toHaveBeenCalledTimes(3);
+
+      await user.click(screen.getByRole("button", { name: "Ochish" }));
+      expect(await screen.findByText("ai-sahifasi ?tab=alerts&alert=1045")).toBeInTheDocument();
+    });
+
+    it("rol signali (`id` siz) — faqat overview va ro'yxatlar yangilanadi, xabar yo'q; boshqa moliya hodisasi ularga tegmaydi", async () => {
+      const { queryClient } = renderSync();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      invalidate.mockClear();
+
+      act(() => lastSocket().fire("notification:new", { type: "finance.cashbox", category: "finance" }));
+      await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.notificationsInbox.all }));
+      expect(invalidate).not.toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.overview });
+
+      invalidate.mockClear();
+      act(() => lastSocket().fire("notification:new", { type: "ai.advisor_alert", category: "finance", priority: "critical" }));
+      await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.overview }));
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists });
+      expect(invalidate).toHaveBeenCalledTimes(3);
+      expect(screen.queryByRole("region", { name: "Bildirishnomalar" })).not.toBeInTheDocument();
+    });
+
+    it("boshqa xabarlar bilan birga — jiddiy ogohlantirish «N ta yangi»ga qo'shilmaydi, alohida turadi", async () => {
+      renderSync();
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+
+      act(() => {
+        lastSocket().fire("notification:new", { id: "o-1", title: "Holat 1", category: "order", link: "/orders/1" });
+        lastSocket().fire("notification:new", ADVISOR_ROW);
+        lastSocket().fire("notification:new", { id: "o-2", title: "Holat 2", category: "order", link: "/orders/1" });
+      });
+
+      expect(await screen.findByText("2 ta yangi bildirishnoma")).toBeInTheDocument();
+      expect(screen.getByText("Chekda farq bor — Urgut filiali")).toBeInTheDocument();
+      expect(toastStore.getSnapshot().map((toast) => toast.id)).toEqual(["elchi-push-n-500", "elchi-realtime-batch"]);
+    });
+
+    it("yashirin tabda ham chiqadi (o'zi yopilmaydi — qaytganda ko'rinadi); oddiy xabar — yo'q; `link` siz — `alert_id` dan", async () => {
+      const user = userEvent.setup();
+      renderSync();
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      visibility = "hidden";
+
+      act(() => {
+        lastSocket().fire("notification:new", { id: "n-9", title: "Yashirin tab", category: "system" });
+        lastSocket().fire("notification:new", {
+          ...ADVISOR_ROW,
+          id: "n-501",
+          link: null,
+          data: { alert_id: "1041", rule_key: "R2", severity: "critical", variant: null, subject_name: "Toshkent HQ" },
+        });
+      });
+
+      expect(await screen.findByText("Kuryer qarzi o'smoqda — Toshkent HQ")).toBeInTheDocument();
+      expect(screen.queryByText("Yashirin tab")).not.toBeInTheDocument();
+      expect(toastStore.getSnapshot()).toEqual([expect.objectContaining({ id: "elchi-push-n-501", duration: 0 })]);
+      await user.click(screen.getByRole("button", { name: "Ochish" }));
+      expect(await screen.findByText("ai-sahifasi ?tab=alerts&alert=1041")).toBeInTheDocument();
+    });
   });
 
   it("⭐ TC4/TC11: ulanganda polling 5 daqiqa; uzilsa sanoq darhol so'raladi va 60 s ga qaytadi; qayta ulanganda inbox yangilanadi", async () => {

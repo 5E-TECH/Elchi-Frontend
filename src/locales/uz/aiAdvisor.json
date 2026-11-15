@@ -762,5 +762,11 @@
       "title": "Sozlamalar boshqa oynada o'zgartirilgan",
       "text": "Yangi qiymatlar yuklandi, sizning o'zgarishlaringiz saqlanib qoldi. Tekshirib, qayta saqlang."
     }
+  },
+  "messages": {
+    "alert": {
+      "toastTitle": "Jiddiy ogohlantirish",
+      "toastText": "{{rule}} — {{subject}}"
+    }
   }
 }

@@ -762,5 +762,11 @@
       "title": "Settings were changed in another window",
       "text": "The new values are loaded and your changes are kept. Check them and save again."
     }
+  },
+  "messages": {
+    "alert": {
+      "toastTitle": "Critical alert",
+      "toastText": "{{rule}} — {{subject}}"
+    }
   }
 }

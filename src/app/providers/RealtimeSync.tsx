@@ -35,6 +35,12 @@ import {
  * - Polling zaxira: ulanganda sanoq 5 daqiqada, uzilganda 60 s da (`useUnreadCount`).
  * - Buyurtma hodisasi (`category: "order"`, qatorli yoki signal) — ochiq buyurtma so'rovlari (`["orders"]`: ro'yxat,
  *   holat tablari sonlari va «Qabul va yaratish» badge'i — GaBIPi3Z) shu yig'ish oynasida bir marta yangilanadi.
+ * - AI maslahatchining jiddiy ogohlantirishi (`type: "ai.advisor_alert"`, 60PWUbgC; maket `tizim-ai-advisor-messages`
+ *   «Jiddiy ogohlantirish · ilova ochiq»): qatorli yoki signal — `overview` va ogohlantirishlar ro'yxatlari shu
+ *   oynada bir marta yangilanadi; qatorli hodisa — umumiy «N ta yangi»ga qo'shilmaydi, har biri alohida, foydalanuvchi
+ *   yopguncha turadigan xabar (`duration: 0`, kalit o'sha `elchi-push-<id>`, «Ochish» → ogohlantirish oynasi). Yashirin
+ *   tabda ham chiqadi — u o'zi yopilmaydi, foydalanuvchi qaytganda ko'radi (bu tur uchun push yo'q). Matn va
+ *   yangilash — `realtimeAdvisor` (socket bilan birga dinamik).
  * - Sessiya boshqa qurilmadan yopilsa (Elchi Pochta #3): `auth:session_revoked` `{ session_id, reason }` — joriy
  *   token `sid` iga mos bo'lsa — yoki yopilgan sessiya tokeni bilan ulanish rad etilsa (`error` / `connect_error`
  *   «SESSION_REVOKED») — qurilma joyida chiqadi (`auth/sessionRevoked` → `logoutRevokedSession`, `POST auth/logout`
@@ -43,8 +49,11 @@ import {
  */
 
 type RealtimePayload = Partial<
-  Pick<InboxNotification, "id" | "title" | "body" | "link" | "category" | "type">
+  Pick<InboxNotification, "id" | "title" | "body" | "link" | "category" | "type" | "data">
 >;
+
+/** AI maslahatchi hodisalari moduli — socket.io bilan birga dinamik yuklanadi (ilova kirish bo'lagiga kirmaydi). */
+type AdvisorModule = typeof import("./realtimeAdvisor");
 
 /** Buyurtma so'rovlari kalit prefiksi (`entities/order` `ORDER_KEY`, holat sonlari ham shu ostida). */
 const ORDERS_QUERY_PREFIX = "orders";
@@ -75,6 +84,10 @@ const RealtimeSync = () => {
   const pendingRef = useRef(new Map<string, RealtimePayload>());
   /** Yig'ish oynasida buyurtma hodisasi keldimi — ro'yxat va sonlar (`["orders"]`) bir marta yangilanadi. */
   const ordersChangedRef = useRef(false);
+  /** Yig'ish oynasida AI maslahatchi ogohlantirishi keldimi — `overview` va ro'yxatlar bir marta yangilanadi. */
+  const advisorChangedRef = useRef(false);
+  /** `realtimeAdvisor` — socket ulanishidan oldin yuklanadi, shuning uchun hodisa kelganda tayyor. */
+  const advisorRef = useRef<AdvisorModule | null>(null);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ishlovchi — eng so'nggi `t` / `navigate` bilan; ulanish ular o'zgarganda qayta ochilmaydi.
@@ -89,16 +102,37 @@ const RealtimeSync = () => {
         ordersChangedRef.current = false;
         void queryClient.invalidateQueries({ queryKey: [ORDERS_QUERY_PREFIX], refetchType: "active" });
       }
+      const advisor = advisorRef.current;
+      if (advisorChangedRef.current) {
+        advisorChangedRef.current = false;
+        if (advisor) void advisor.refreshAdvisorQueries(queryClient);
+      }
+      // Jiddiy AI ogohlantirishi — har biri alohida va yopilguncha (yashirin tabda ham: o'zi yopilmaydi).
+      let others = rows;
+      if (advisor) {
+        others = rows.filter((row) => !advisor.isAdvisorAlert(row));
+        for (const row of rows) {
+          if (!advisor.isAdvisorAlert(row)) continue;
+          const toast = advisor.advisorAlertToast(row, t);
+          const link = toInAppLink(toast.link);
+          notify.error(toast.title, {
+            id: `elchi-push-${row.id}`,
+            description: toast.description,
+            duration: 0,
+            action: { label: t("push.toastOpen"), onClick: () => navigate(link) },
+          });
+        }
+      }
       // Yashirin tabda xabar emas (badge baribir yangilanadi).
-      if (!rows.length || document.visibilityState !== "visible") return;
-      if (rows.length > 1) {
-        notify.info(t("realtime.manyNew", { count: rows.length }), {
+      if (!others.length || document.visibilityState !== "visible") return;
+      if (others.length > 1) {
+        notify.info(t("realtime.manyNew", { count: others.length }), {
           id: "elchi-realtime-batch",
           action: { label: t("push.toastOpen"), onClick: () => navigate("/inbox") },
         });
         return;
       }
-      const [row] = rows;
+      const [row] = others;
       const category = row.category ? t(`category.${row.category}`) : null;
       const description = [category, row.body?.trim()].filter(Boolean).join(" · ") || undefined;
       const link = toInAppLink(row.link);
@@ -121,6 +155,7 @@ const RealtimeSync = () => {
     // Rol/broadcast signali (`id` yo'q) — faqat yangilash; qatorli hodisa — xabar uchun (bir xil `id` bir marta).
     if (payload.id && payload.title) pendingRef.current.set(payload.id, payload);
     if (payload.category === "order") ordersChangedRef.current = true;
+    if (advisorRef.current?.isAdvisorAlert(payload)) advisorChangedRef.current = true;
     if (!flushTimerRef.current)
       flushTimerRef.current = setTimeout(() => flushRef.current(), BATCH_MS);
   }).current;
@@ -140,9 +175,10 @@ const RealtimeSync = () => {
 
     // Kutubxona faqat kirgandan keyin yuklanadi — kirish sahifasi va birinchi yuklanish og'irlashmaydi.
     // Token `auth` da ketadi (cookie kerak emas — `withCredentials` yo'q).
-    void Promise.all([import("socket.io-client"), import("./realtimeFinance")])
-      .then(([{ io }, finance]) => {
+    void Promise.all([import("socket.io-client"), import("./realtimeFinance"), import("./realtimeAdvisor")])
+      .then(([{ io }, finance, advisor]) => {
         if (cancelled) return;
+        advisorRef.current = advisor;
         // WebSocket birinchi (kam so'rov, Cloudflare qo'llaydi); to'silgan tarmoqda polling'ga o'tadi.
         const client = io(realtimeUrl(BASE_URL), {
           auth: { token: accessToken },
