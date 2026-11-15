@@ -12,8 +12,8 @@ import {
 
 /**
  * Market QR holati (sahifa ogohlantirishi, `.el-alert`):
- *  - `required`    — `warning` «Market QR kerak» (maket `*-scanner-dialog`); matni «Marketga jo'natish»
- *                    tugmasining tavsifi ham (`hintId` → `aria-describedby`);
+ *  - `required`    — `warning` «Market QR kerak» (maket `*-scanner-dialog`); matn `hintId` bilan (tashqi
+ *                    `aria-describedby` uchun);
  *  - `scanned`     — `success` «Market QR skanerlandi» + o'ngda «QR amal qilish vaqti» taymeri
  *                    (`role="timer"`; maket `*-cancelled-handover`), telefonda matn ostida;
  *  - `notRequired` — `neutral` «Market QR talab qilinmaydi» (maket `*-manual-dialog`).

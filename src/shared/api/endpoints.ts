@@ -167,7 +167,7 @@ export const API_ENDPOINTS = {
     MARKETS_NEW: "orders/markets/new", // GET markets with NEW orders
     MARKET_NEW: (marketId: string | number) => `orders/markets/${marketId}/new`,
     MARKETS_CANCELLED: "orders/markets/cancelled", // GET markets with cancelled orders
-    // «Bekor qilinganlar → Topshirilgan» (2026-11-10): HQ «Marketga jo'natish» partiyalari (1 bosish = 1 karta).
+    // «Bekor qilinganlar → Topshirilgan» (2026-11-10): HQ topshirish partiyalari (1 market QR / PIN sessiyasi = 1 karta).
     MARKETS_CANCELLED_HANDOVERS: "orders/markets/cancelled/handovers", // GET ?search&start_day&end_day&page&limit
     MARKETS_CANCELLED_HANDOVER_BATCH: (batchId: string) =>
       `orders/markets/cancelled/handovers/${encodeURIComponent(batchId)}`, // GET { batch, data, total }

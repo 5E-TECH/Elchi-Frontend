@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-scanner-dialog, superadmin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-scanner-dialog, admin-neworders-cancelled-manual-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-scanner-dialog, registrator-new-orders-cancelled-manual-dialog, market-new-orders-cancelled
 import { Fragment, useCallback, useMemo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { TriangleAlert } from "lucide-react";
+import { LoaderCircle, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
@@ -26,11 +26,10 @@ import {
  * Bekor qilingan buyurtmalar jadvali (`.el-table`, telefonda `.el-list` kartalari).
  *
  *  - `handover` — xodim (superadmin/admin/HQ registratori), maket `*-cancelled-handover|detail`:
- *    «Tanlash» belgisi · Buyurtma (№ → tafsilot, sana) · Mijoz · Manzil · Mahsulotlar · Yetkazish · Summa ·
- *    «Tanlov» (tanlanmaganida «QR buzilgan», qo'lda tasdiqlanganida «Qo'lda tasdiqlangan» badge'i).
- *    ⚠️ Tanlov FAQAT skaner orqali (market QR yoki buyurtma QR): sarlavhada «hammasini tanlash» YO'Q
- *    (shuning uchun `DataTable` ning `selection` i emas — o'z belgisi). Tanlanmagan qatorni belgilash yoki
- *    qatorni bosish — «QR buzilganini tasdiqlash» oynasi (v1 kartasidagi kabi); tanlanganini — tanlovdan chiqarish.
+ *    Buyurtma (№ → tafsilot, sana) · Mijoz · Manzil · Mahsulotlar · Yetkazish · Summa · «Amal» («QR buzilgan» →
+ *    «QR buzilganini tasdiqlash» oynasi; so'rov ketayotganida «Topshirilmoqda…»).
+ *    ⚠️ SKAN = TOPSHIRISH (ega qarori 2026-11-15, BeePost naqshi): tanlov belgisi va qatorni bosib tanlash YO'Q —
+ *    jadvalda faqat hali topshirilmaganlar; skanerlangani darhol marketga topshiriladi va ro'yxatdan chiqadi.
  *    Planshetda (< 1024) Manzil, Mahsulotlar va Yetkazish yashirin.
  *  - `market` — market roli (maket `market-new-orders-cancelled`): tanlovsiz, «Buyurtma» sana bo'yicha
  *    saralanadi; planshetda «Tuman / viloyat» va «Yetkazish» yashirin.
@@ -40,13 +39,13 @@ type HandoverProps = {
   variant: "handover";
   rows: readonly MarketOrder[];
   label: string;
-  isSelected: (order: MarketOrder) => boolean;
-  /** Qo'lda tasdiqlangan (skanersiz) — sabab yorlig'i, aks holda `null`. */
-  manualReasonOf: (order: MarketOrder) => string | null;
+  /** Topshirish so'rovi ketmoqda — qatorda «Topshirilmoqda…». */
+  isHanding: (order: MarketOrder) => boolean;
   canManualSelect: boolean;
-  /** Belgi / qator bosildi: tanlanmagan bo'lsa — qo'lda tasdiqlash oynasi, tanlangan bo'lsa — chiqarish. */
-  onToggle: (order: MarketOrder) => void;
-  /** «QR buzilgan» tugmasi. */
+  /** «QR buzilgan» o'chiq (market QR ruxsati hali yo'q) va uning izohi. */
+  manualDisabled?: boolean;
+  manualDisabledHint?: string;
+  /** «QR buzilgan» tugmasi → «QR buzilganini tasdiqlash» oynasi. */
   onManualSelect: (order: MarketOrder) => void;
   busy?: boolean;
   className?: string;
@@ -65,8 +64,6 @@ type MarketProps = {
 };
 
 export type CancelledOrdersTableProps = HandoverProps | MarketProps;
-
-const CHECKBOX = "size-[18px] cursor-pointer accent-action disabled:cursor-not-allowed disabled:opacity-45 max-md:size-5";
 
 export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
   const { t, i18n } = useTranslation(["newOrders", "orders"]);
@@ -100,49 +97,31 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
     [t],
   );
 
-  const manualBadge = useCallback(
-    (order: MarketOrder) => {
-      const reason = handover?.manualReasonOf(order);
-      return reason ? (
-        <Badge tone="warning" dot title={reason}>
-          {t("cancelled.table.manualBadge")}
-        </Badge>
-      ) : null;
-    },
-    [handover, t],
-  );
-
-  const checkbox = useCallback(
-    (order: MarketOrder) => {
+  /** «Amal» katagi: so'rov ketayotganida — «Topshirilmoqda…», aks holda «QR buzilgan» (ruxsat bo'lsa). */
+  const actionCell = useCallback(
+    (order: MarketOrder, size: "sm" | "md") => {
       if (!handover) return null;
-      const selected = handover.isSelected(order);
-      return (
-        <input
-          type="checkbox"
-          className={CHECKBOX}
-          checked={selected}
-          disabled={!handover.canManualSelect}
-          aria-label={t(selected ? "cancelled.table.rowDeselect" : "cancelled.table.rowSelect", { id: order.id })}
-          onChange={() => handover.onToggle(order)}
-        />
-      );
-    },
-    [handover, t],
-  );
-
-  const damagedButton = useCallback(
-    (order: MarketOrder, size: "sm" | "md") =>
-      handover && handover.canManualSelect && !handover.isSelected(order) ? (
+      if (handover.isHanding(order)) {
+        return (
+          <Badge tone="info" icon={LoaderCircle} role="status" className="motion-safe:[&_svg]:animate-spin">
+            {t("cancelled.table.handing")}
+          </Badge>
+        );
+      }
+      return handover.canManualSelect ? (
         <Button
           variant="secondary"
           size={size}
           leftIcon={<TriangleAlert className="text-warning-fg" />}
           aria-haspopup="dialog"
+          disabled={handover.manualDisabled}
+          title={handover.manualDisabled ? handover.manualDisabledHint : undefined}
           onClick={() => handover.onManualSelect(order)}
         >
           {t("cancelled.table.damaged")}
         </Button>
-      ) : null,
+      ) : null;
+    },
     [handover, t],
   );
 
@@ -164,14 +143,6 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
     );
 
     const list: DataTableColumn<MarketOrder>[] = [];
-    if (isHandover) {
-      list.push({
-        id: "select",
-        header: <span className="sr-only">{t("cancelled.table.columns.select")}</span>,
-        className: "w-11 pr-0",
-        cell: (order) => checkbox(order),
-      });
-    }
     list.push(
       isHandover
         ? { id: "order", header: t("cancelled.table.columns.order"), cell: orderCell }
@@ -241,14 +212,14 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
     );
     if (isHandover) {
       list.push({
-        id: "choice",
-        header: t("cancelled.table.columns.choice"),
+        id: "action",
+        header: t("cancelled.table.columns.action"),
         className: "whitespace-nowrap",
-        cell: (order) => manualBadge(order) ?? damagedButton(order, "sm"),
+        cell: (order) => actionCell(order, "sm"),
       });
     }
     return list;
-  }, [checkbox, damagedButton, dateTime, deliveryBadge, isHandover, linkOrders, manualBadge, money, productLines, t]);
+  }, [actionCell, dateTime, deliveryBadge, isHandover, linkOrders, money, productLines, t]);
 
   const renderCard = useCallback(
     (order: MarketOrder) => {
@@ -257,11 +228,7 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
         .map((line) => `${line.name} ${line.qty}`)
         .join(", ");
       const delivery = deliveryBadge(order);
-      const manual = manualBadge(order);
-      const badges: ReactNode[] = [
-        delivery ? <Fragment key="delivery">{delivery}</Fragment> : null,
-        manual ? <Fragment key="manual">{manual}</Fragment> : null,
-      ].filter(Boolean);
+      const badges: ReactNode[] = [delivery ? <Fragment key="delivery">{delivery}</Fragment> : null].filter(Boolean);
       const content = (
         <div className="flex min-w-0 flex-col gap-1">
           <span className="flex min-w-0 justify-between gap-2">
@@ -293,21 +260,15 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
         );
       }
 
-      const damaged = damagedButton(order, "md");
+      const action = actionCell(order, "md");
       return (
-        <div className="flex min-w-0 items-start gap-1 py-3 pr-4 pl-1">
-          {/* Belgi — 44 × 44 bosish maydoni (maketdagidek kartaning chap ustuni). */}
-          <label className="-mt-2.5 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center">
-            {checkbox(order)}
-          </label>
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            {content}
-            {damaged ? <span className="flex">{damaged}</span> : null}
-          </div>
+        <div className="flex min-w-0 flex-col gap-2 px-4 py-3">
+          {content}
+          {action ? <span className="flex">{action}</span> : null}
         </div>
       );
     },
-    [checkbox, damagedButton, dateTime, deliveryBadge, isHandover, linkOrders, manualBadge, money, productLines],
+    [actionCell, dateTime, deliveryBadge, isHandover, linkOrders, money, productLines],
   );
 
   return (
@@ -319,13 +280,11 @@ export const CancelledOrdersTable = (props: CancelledOrdersTableProps) => {
       density="tablet-tight"
       sort={props.variant === "market" ? props.sort : undefined}
       onSortChange={props.variant === "market" ? props.onSortChange : undefined}
-      rowClassName={handover ? (order) => cx(handover.isSelected(order) && "bg-action-soft") : undefined}
-      // Xodimda qator (karta) bosilsa — belgi bilan bir xil (v1 kartasidagi kabi): tanlanmagan → qo'lda tasdiqlash oynasi.
-      onRowClick={handover && handover.canManualSelect ? (order) => handover.onToggle(order) : undefined}
+      rowClassName={handover ? (order) => cx(handover.isHanding(order) && "bg-action-soft") : undefined}
       renderCard={renderCard}
       busy={props.busy}
-      // Xodimda kartalar tanlov qatoridan keyin — chiziq shu yerda; marketda chiziqni o'ram (`QueryBoundary`) beradi.
-      className={cx(isHandover && "max-md:border-t max-md:border-border", props.className)}
+      // Chiziqni o'ram (`QueryBoundary`) beradi — ikkala variantda.
+      className={props.className}
     />
   );
 };

@@ -32,7 +32,7 @@ const httpStatusOf = (error: unknown): number | undefined =>
 
 /**
  * «Bekor qilinganlar → Topshirilgan» kartasi bosilganda (`/new-orders/cancelled/handovers/:batchId`; superadmin,
- * admin, HQ registratori): o'sha BITTA «Marketga jo'natish» bilan marketga berilgan buyurtmalar. Sarlavha — market,
+ * admin, HQ registratori): o'sha BITTA topshirish sessiyasida (market QR / PIN ruxsati; skan = topshirish) marketga berilgan buyurtmalar. Sarlavha — market,
  * izoh — vaqt · son · jami, ostida usul va topshirgan xodim. Faqat ko'rish (amal yo'q).
  */
 const CancelledHandoverBatch = () => {

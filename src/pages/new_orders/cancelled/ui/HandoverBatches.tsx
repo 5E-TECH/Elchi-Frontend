@@ -45,7 +45,7 @@ type Props = {
 };
 
 /**
- * «Bekor qilinganlar → Topshirilgan» (HQ): har «Marketga jo'natish» — bitta karta, kun bo'yicha guruhlangan (eng
+ * «Bekor qilinganlar → Topshirilgan» (HQ): har topshirish sessiyasi (market QR / PIN) — bitta karta, kun bo'yicha guruhlangan (eng
  * yangisi tepada). Qidiruv (market nomi / telefoni) va sana oralig'i (sukut — joriy oy) serverda; xulosa — butun
  * filtr bo'yicha (`totals`). Karta → `/new-orders/cancelled/handovers/:batchId`.
  */

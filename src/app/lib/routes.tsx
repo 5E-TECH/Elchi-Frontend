@@ -975,7 +975,7 @@ const AppRouter = () => {
                   ),
                 },
                 {
-                  // «Bekor qilinganlar → Topshirilgan» kartasi: bitta «Marketga jo'natish» buyurtmalari.
+                  // «Bekor qilinganlar → Topshirilgan» kartasi: bitta topshirish sessiyasi buyurtmalari.
                   path: "cancelled/handovers/:batchId",
                   element: (
                     <ProtectedRoute canActivate={canHandoverCancelledToMarket}>
