@@ -1,0 +1,239 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Ops vositalari</h1>
+    <p class="el-sub">Ichki xizmat ekranlari — kamdan-kam ishlatiladi, faqat superadmin</p>
+  </div>
+</div>
+
+<nav class="el-tabs el-hide-mobile" role="tablist" aria-label="Ops bo'limlari">
+    <a class="el-tab el-hide-tablet" role="tab" aria-selected="false" href="@ops-finance-operators" title="Eski manzil: /finance-operators" style="text-decoration: none; color: var(--text-muted)">Moliya operatorlari</a>
+    <a class="el-tab el-hide-tablet" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Xarajat kategoriyalari</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@ops-investors" title="Eski manzil: /investors-ops" style="text-decoration: none; color: var(--text-muted)">Investorlar</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Yetkazish narxi</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Kun tartibi</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@ops-identity" title="Eski manzil: /identity-ops" style="text-decoration: none; color: var(--text-muted)">Xodimlar</a>
+    <a class="el-tab" role="tab" aria-selected="true" aria-current="page" href="@ops-ai" style="text-decoration: none; color: var(--text)">AI kalit va modellar</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@ops-system" title="Eski manzil: /system-ops" style="text-decoration: none; color: var(--text-muted)">Tizim holati</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@ops-auth-diagnostics" title="Eski manzil: /logs" style="text-decoration: none; color: var(--text-muted)">Kirish diagnostikasi</a>
+</nav>
+<button class="el-input el-select el-show-mobile" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Ops bo'limi: AI kalit va modellar"><span class="el-strong">AI kalit va modellar</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+
+<div role="tabpanel" aria-label="AI kalit va modellar" style="display: flex; flex-direction: column; gap: 24px; min-width: 0">
+<section class="el-card" aria-labelledby="tool-title">
+  <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 4px">
+    <h2 class="el-h2" id="tool-title">AI kalit va modellar</h2>
+    <p class="el-small el-muted">Anthropic API kaliti va har AI vazifasining modeli. Har o'zgarish tarixga yoziladi va ops Telegram kanaliga xabar ketadi. Kunlik limit va fikrlash darajasi faqat serverda o'zgaradi.</p>
+  </div>
+</section>
+<section class="el-card" aria-labelledby="key-title">
+  <div class="el-card-head" style="flex-wrap: wrap; gap: 8px 16px">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><h2 class="el-h2" id="key-title">API kaliti</h2><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>Server sozlamasi</span><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan</span></div>
+      <p class="el-small el-muted">Barcha AI vazifalari uchun bitta kalit · Anthropic</p>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+      <button class="el-btn el-btn-ghost el-btn-sm el-hide-mobile" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Qayta tekshirish</button>
+      <a class="el-btn el-btn-primary" href="@ops-ai-key-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Kalit qo'shish</a>
+    </div>
+  </div>
+  <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; align-items: center; gap: 12px 16px">
+      <span class="el-stat-icon" style="width: 44px; height: 44px; flex: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg></span>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <h3 class="el-h3">Server sozlamasidagi kalit ishlatilmoqda</h3>
+        <p class="el-small el-muted">Shu sahifadan kalit qo'shilsa, u server kalitidan ustun turadi. Server kaliti zaxira bo'lib qoladi.</p>
+      </div>
+    </div>
+    <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px 24px">
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><dt class="el-xs el-muted">Manba</dt><dd class="el-strong" style="margin: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px">Server sozlamasi</dd></div>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><dt class="el-xs el-muted">Kalit</dt><dd class="el-strong" style="margin: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px">sk-ant-…a1b2</dd></div>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><dt class="el-xs el-muted">Kalit izi</dt><dd class="el-strong" style="margin: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px">5d17 e8a0 b3c4</dd></div>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><dt class="el-xs el-muted">Oxirgi tekshiruv</dt><dd class="el-strong" style="margin: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Qabul qilindi</span><span class="el-small" style="font-weight: 400">Bugun, 09:30 · tekshiruvda</span></dd></div>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><dt class="el-xs el-muted">Oxirgi ishlatilgan</dt><dd class="el-strong" style="margin: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px">Bugun, 14:10 atrofida</dd></div>
+    </dl>
+    <div class="el-alert el-tone-info" role="status">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px; flex: none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      <div class="el-alert-body" style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div class="el-alert-title">Server kaliti serverdagi sozlamada turadi</div><div class="el-small">Uni shu sahifadan o'zgartirib yoki o'chirib bo'lmaydi. Alohida kalit qo'shsangiz, server kalitiga bir bosishda qaytish mumkin bo'ladi («Kalitni o'chirish»).</div></div>
+    </div>
+    <span class="el-show-mobile" style="flex-direction: column"><button class="el-btn el-btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Qayta tekshirish</button></span>
+    <p class="el-xs el-muted" style="display: flex; align-items: flex-start; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Shu sahifadan qo'shilgan kalit shifrlangan holda saqlanadi va hech qachon qayta ko'rsatilmaydi. Elchi'dan o'chirish kalitni Anthropic'da bekor qilmaydi — kalit sizib chiqsa, Anthropic Console'da o'chiring.</span></p>
+  </div>
+</section>
+<section class="el-card" aria-labelledby="models-title">
+  <div class="el-card-head" style="flex-wrap: wrap; gap: 8px 16px">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><h2 class="el-h2" id="models-title">Modellar</h2></div>
+      <p class="el-small el-muted">6 ta vazifa · ro'yxat Bugun, 09:30 da yangilangan (41 ta model)</p>
+    </div>
+    <button class="el-btn el-btn-ghost el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Ro'yxatni yangilash</button>
+  </div>
+  
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead><tr><th>Vazifa</th><th>Model</th><th class="el-hide-tablet">Narx · 1 mln token</th><th>Holat</th><th class="el-hide-tablet">Manba</th><th><span class="el-sr">Amallar</span></th></tr></thead>
+      <tbody>
+        <tr>
+          <td style="min-width: 160px"><div class="el-cell-title">Matndan buyurtma</div><div class="el-cell-sub" style="white-space: normal">«AI bilan» bo'limi — matn</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Sonnet 4.6</div><div class="el-cell-sub" style="overflow-wrap: anywhere">claude-sonnet-4-6</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><div>3 $ / 15 $</div><div class="el-cell-sub">kirish / chiqish</div></td>
+          <td style="min-width: 170px"><div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>Eskirmoqda</span></div><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">So'nggi soat: 42 ta muvaffaqiyatli</div><div class="el-cell-sub" style="margin-top: 2px; white-space: normal">Joriy model 15.01.2027 da o'chiriladi</div></td>
+          <td class="el-hide-tablet"><div>Server sozlamasi</div><div class="el-cell-sub">AI_ORDER_MODEL</div></td>
+          <td style="text-align: right; white-space: nowrap"><div style="display: inline-flex; align-items: center; gap: 4px"><a class="el-btn el-btn-ghost el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Matndan buyurtma: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-expanded="false" aria-label="Matndan buyurtma: salomatlik tafsiloti"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td style="min-width: 160px"><div class="el-cell-title">Rasmdan buyurtma</div><div class="el-cell-sub" style="white-space: normal">«AI bilan» bo'limi — rasm</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Sonnet 4.6</div><div class="el-cell-sub" style="overflow-wrap: anywhere">claude-sonnet-4-6</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><div>3 $ / 15 $</div><div class="el-cell-sub">kirish / chiqish</div></td>
+          <td style="min-width: 170px"><div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>Eskirmoqda</span></div><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">So'nggi soat: 9 ta muvaffaqiyatli</div><div class="el-cell-sub" style="margin-top: 2px; white-space: normal">Joriy model 15.01.2027 da o'chiriladi</div></td>
+          <td class="el-hide-tablet"><div>Server sozlamasi</div><div class="el-cell-sub">AI_ORDER_VISION_MODEL</div></td>
+          <td style="text-align: right; white-space: nowrap"><div style="display: inline-flex; align-items: center; gap: 4px"><a class="el-btn el-btn-ghost el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Rasmdan buyurtma: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-expanded="false" aria-label="Rasmdan buyurtma: salomatlik tafsiloti"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td style="min-width: 160px"><div class="el-cell-title">Tumanni aniqlash</div><div class="el-cell-sub" style="white-space: normal">Manzildan tumanni topish</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Sonnet 5</div><div class="el-cell-sub" style="overflow-wrap: anywhere">claude-sonnet-5</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><div>2 $ / 10 $</div><div class="el-cell-sub">kirish / chiqish</div></td>
+          <td style="min-width: 170px"><div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Mos</span></div><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">So'nggi soat: 38 ta muvaffaqiyatli · 1 xato</div></td>
+          <td class="el-hide-tablet"><div>Kod sukuti</div></td>
+          <td style="text-align: right; white-space: nowrap"><div style="display: inline-flex; align-items: center; gap: 4px"><a class="el-btn el-btn-ghost el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Tumanni aniqlash: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-expanded="false" aria-label="Tumanni aniqlash: salomatlik tafsiloti"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td style="min-width: 160px"><div class="el-cell-title">Mahsulotni moslash</div><div class="el-cell-sub" style="white-space: normal">Market mahsulotlari bilan</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Haiku 4.5</div><div class="el-cell-sub" style="overflow-wrap: anywhere">claude-haiku-4-5</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><div>1 $ / 5 $</div><div class="el-cell-sub">kirish / chiqish</div></td>
+          <td style="min-width: 170px"><div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Mos</span></div><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">So'nggi soat: 51 ta muvaffaqiyatli</div></td>
+          <td class="el-hide-tablet"><div>Kod sukuti</div></td>
+          <td style="text-align: right; white-space: nowrap"><div style="display: inline-flex; align-items: center; gap: 4px"><a class="el-btn el-btn-ghost el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Mahsulotni moslash: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-expanded="false" aria-label="Mahsulotni moslash: salomatlik tafsiloti"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td style="min-width: 160px"><div class="el-cell-title">Kassa rasmlari</div><div class="el-cell-sub" style="white-space: normal">Qoldiq skrinshoti va chek</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Sonnet 5</div><div class="el-cell-sub" style="overflow-wrap: anywhere">claude-sonnet-5</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><div>2 $ / 10 $</div><div class="el-cell-sub">kirish / chiqish</div></td>
+          <td style="min-width: 170px"><div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Mos</span></div><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">So'nggi soat: 4 ta muvaffaqiyatli</div></td>
+          <td class="el-hide-tablet"><div>Server sozlamasi</div><div class="el-cell-sub">AI_FINANCE_VISION_MODEL</div></td>
+          <td style="text-align: right; white-space: nowrap"><div style="display: inline-flex; align-items: center; gap: 4px"><a class="el-btn el-btn-ghost el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Kassa rasmlari: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-expanded="false" aria-label="Kassa rasmlari: salomatlik tafsiloti"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td style="min-width: 160px"><div class="el-cell-title">Moliyaviy AI yordamchi</div><div class="el-cell-sub" style="white-space: normal">Fikrlash darajasi: o'rtacha</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Sonnet 5</div><div class="el-cell-sub" style="overflow-wrap: anywhere">claude-sonnet-5</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><div>2 $ / 10 $</div><div class="el-cell-sub">kirish / chiqish</div></td>
+          <td style="min-width: 170px"><div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Mos</span></div><div class="el-cell-sub" style="margin-top: 4px; white-space: normal">So'nggi soat: 6 ta muvaffaqiyatli</div></td>
+          <td class="el-hide-tablet"><div>Kod sukuti</div></td>
+          <td style="text-align: right; white-space: nowrap"><div style="display: inline-flex; align-items: center; gap: 4px"><a class="el-btn el-btn-ghost el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Moliyaviy AI yordamchi: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-expanded="false" aria-label="Moliyaviy AI yordamchi: salomatlik tafsiloti"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="el-list el-show-mobile" style="flex-direction: column; margin: 0; padding: 0; list-style: none">
+    <li class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">Matndan buyurtma</span><span class="el-cell-sub">«AI bilan» bo'limi — matn</span></div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>Eskirmoqda</span></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <span class="el-small"><span class="el-strong">Sonnet 4.6</span> <span class="el-muted" style="overflow-wrap: anywhere">· claude-sonnet-4-6</span></span>
+        <span class="el-xs el-muted">3 $ / 15 $ · 1 mln token · Server sozlamasi (AI_ORDER_MODEL)</span>
+        <span class="el-xs el-muted">So'nggi soat: 42 ta muvaffaqiyatli</span>
+        <span class="el-xs el-muted">Joriy model 15.01.2027 da o'chiriladi</span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column"><a class="el-btn el-btn-secondary el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Matndan buyurtma: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a></div>
+    </li>
+    <li class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">Rasmdan buyurtma</span><span class="el-cell-sub">«AI bilan» bo'limi — rasm</span></div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>Eskirmoqda</span></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <span class="el-small"><span class="el-strong">Sonnet 4.6</span> <span class="el-muted" style="overflow-wrap: anywhere">· claude-sonnet-4-6</span></span>
+        <span class="el-xs el-muted">3 $ / 15 $ · 1 mln token · Server sozlamasi (AI_ORDER_VISION_MODEL)</span>
+        <span class="el-xs el-muted">So'nggi soat: 9 ta muvaffaqiyatli</span>
+        <span class="el-xs el-muted">Joriy model 15.01.2027 da o'chiriladi</span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column"><a class="el-btn el-btn-secondary el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Rasmdan buyurtma: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a></div>
+    </li>
+    <li class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">Tumanni aniqlash</span><span class="el-cell-sub">Manzildan tumanni topish</span></div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Mos</span></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <span class="el-small"><span class="el-strong">Sonnet 5</span> <span class="el-muted" style="overflow-wrap: anywhere">· claude-sonnet-5</span></span>
+        <span class="el-xs el-muted">2 $ / 10 $ · 1 mln token · Kod sukuti</span>
+        <span class="el-xs el-muted">So'nggi soat: 38 ta muvaffaqiyatli · 1 xato</span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column"><a class="el-btn el-btn-secondary el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Tumanni aniqlash: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a></div>
+    </li>
+    <li class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">Mahsulotni moslash</span><span class="el-cell-sub">Market mahsulotlari bilan</span></div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Mos</span></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <span class="el-small"><span class="el-strong">Haiku 4.5</span> <span class="el-muted" style="overflow-wrap: anywhere">· claude-haiku-4-5</span></span>
+        <span class="el-xs el-muted">1 $ / 5 $ · 1 mln token · Kod sukuti</span>
+        <span class="el-xs el-muted">So'nggi soat: 51 ta muvaffaqiyatli</span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column"><a class="el-btn el-btn-secondary el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Mahsulotni moslash: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a></div>
+    </li>
+    <li class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">Kassa rasmlari</span><span class="el-cell-sub">Qoldiq skrinshoti va chek</span></div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Mos</span></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <span class="el-small"><span class="el-strong">Sonnet 5</span> <span class="el-muted" style="overflow-wrap: anywhere">· claude-sonnet-5</span></span>
+        <span class="el-xs el-muted">2 $ / 10 $ · 1 mln token · Server sozlamasi (AI_FINANCE_VISION_MODEL)</span>
+        <span class="el-xs el-muted">So'nggi soat: 4 ta muvaffaqiyatli</span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column"><a class="el-btn el-btn-secondary el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Kassa rasmlari: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a></div>
+    </li>
+    <li class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">Moliyaviy AI yordamchi</span><span class="el-cell-sub">Fikrlash darajasi: o'rtacha</span></div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px 6px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Mos</span></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+        <span class="el-small"><span class="el-strong">Sonnet 5</span> <span class="el-muted" style="overflow-wrap: anywhere">· claude-sonnet-5</span></span>
+        <span class="el-xs el-muted">2 $ / 10 $ · 1 mln token · Kod sukuti</span>
+        <span class="el-xs el-muted">So'nggi soat: 6 ta muvaffaqiyatli</span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column"><a class="el-btn el-btn-secondary el-btn-sm" href="@ops-ai-model-dialog" aria-haspopup="dialog" aria-label="Moliyaviy AI yordamchi: modelni o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>O'zgartirish</a></div>
+    </li>
+  </ul>
+  <div class="el-card-foot" style="justify-content: flex-start; align-items: flex-start; gap: 8px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--text-muted)"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span class="el-xs el-muted">Kunlik limit: 50,00 $ · chiqish narxi 25 $ / 1 mln token dan qimmat model tanlanmaydi · ikkalasi faqat serverda o'zgaradi</span>
+  </div>
+</section>
+<section class="el-card" aria-labelledby="hist-title">
+  <div class="el-card-head" style="flex-wrap: wrap; gap: 8px 16px">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><h2 class="el-h2" id="hist-title">O'zgarishlar tarixi</h2></div>
+      <p class="el-small el-muted">Oxirgi 10 ta · har o'zgarish ops Telegram kanaliga ham yuboriladi</p>
+    </div>
+    <a class="el-btn el-btn-ghost el-btn-sm" href="@ops-ai-history-dialog" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>Barchasini ko'rish</a>
+  </div>
+  <ul class="el-list" style="flex-direction: column; margin: 0; padding: 0; list-style: none">
+    <li class="el-list-item" style="align-items: flex-start; gap: 12px">
+      <span class="el-stat-icon" style="flex: none; background: var(--success-soft); color: var(--success-fg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong">Kalit tekshirildi</span></span>
+        <span class="el-small" style="overflow-wrap: anywhere">Server kaliti sk-ant-…a1b2 · Anthropic qabul qildi</span>
+        <span class="el-xs el-muted">Shodiyor Ergashev · IP 84.54.71.12 · Bugun, 09:30</span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; gap: 12px">
+      <span class="el-stat-icon" style="flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg></span>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong">Model o'zgardi: Kassa rasmlari</span></span>
+        <span class="el-small" style="overflow-wrap: anywhere">Shu sahifadagi tanlov → server sozlamasi (claude-sonnet-5) · Sabab: «Server qiymatiga qaytish»</span>
+        <span class="el-xs el-muted">Shodiyor Ergashev · IP 84.54.71.12 · Kecha, 18:02</span>
+      </div>
+    </li>
+  </ul>
+</section>
+</div>

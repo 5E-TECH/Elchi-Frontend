@@ -1713,6 +1713,168 @@
   },
   {
    "role": "superadmin",
+   "viewId": "ops-ai",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar",
+   "fragment": "superadmin--ops-ai",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-no-key",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: kalit yo'q, AI o'chiq",
+   "fragment": "superadmin--ops-ai-no-key",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-env-key",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: faqat server kaliti",
+   "fragment": "superadmin--ops-ai-env-key",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-key-failed",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: kalit muammosi, AI to'xtadi (bir bosishda tiklash)",
+   "fragment": "superadmin--ops-ai-key-failed",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-locked",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: faqat ko'rish (yozish o'chiq)",
+   "fragment": "superadmin--ops-ai-locked",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-catalog-unavailable",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: modellar ro'yxati olinmadi",
+   "fragment": "superadmin--ops-ai-catalog-unavailable",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-recent-change",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: model yaqinda o'zgardi (1 soat kuzatuv)",
+   "fragment": "superadmin--ops-ai-recent-change",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-slot-reverted",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: qaytarilgan va mavjud bo'lmagan modellar",
+   "fragment": "superadmin--ops-ai-slot-reverted",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-loading",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: yuklanish va xato",
+   "fragment": "superadmin--ops-ai-loading",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-mobile",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: telefon (kartalar, pastki varaqalar)",
+   "fragment": "superadmin--ops-ai-mobile",
+   "order": 132.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-key-dialog",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: kalit qo'shish va almashtirish (oyna)",
+   "fragment": "superadmin--ops-ai-key-dialog",
+   "order": 132.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-key-replace-confirm",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: kalitni almashtirish tasdig'i",
+   "fragment": "superadmin--ops-ai-key-replace-confirm",
+   "order": 132.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-step-up-dialog",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: parolni qayta kiritish (oyna)",
+   "fragment": "superadmin--ops-ai-step-up-dialog",
+   "order": 132.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-key-deactivate-confirm",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: kalitni o'chirish tasdig'i",
+   "fragment": "superadmin--ops-ai-key-deactivate-confirm",
+   "order": 132.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-key-restore-confirm",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: oldingisiga qaytarish va oldingisini o'chirish",
+   "fragment": "superadmin--ops-ai-key-restore-confirm",
+   "order": 132.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-model-dialog",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: modelni tanlash (oyna)",
+   "fragment": "superadmin--ops-ai-model-dialog",
+   "order": 132.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-model-confirm",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: model o'zgarishlarini tasdiqlash",
+   "fragment": "superadmin--ops-ai-model-confirm",
+   "order": 132.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-ai-history-dialog",
+   "menuKey": "ops",
+   "title": "Ops — AI kalit va modellar: o'zgarishlar tarixi (oyna)",
+   "fragment": "superadmin--ops-ai-history-dialog",
+   "order": 132.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
    "viewId": "ops-system",
    "menuKey": "ops",
    "title": "Ops — Tizim",

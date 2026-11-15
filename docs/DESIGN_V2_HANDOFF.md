@@ -533,6 +533,28 @@ Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
     ziddiyati shu qaror bilan hal qilindi, maket fayllari tegilmadi); HQ'dagi bog'langan kuryerni HQ'dan boshqa
     filialga o'tkazish backendda rad etiladi (409 `courier_carrier_linked`);
   - kuryer tafsilotida (superadmin, admin) «Xizmat viloyatlari» kartasi va tahrirlash oynasi (`PUT couriers/:id/regions`).
+- **2026-11-15 (Ops → «AI kalit va modellar» — ega 18 ta yangi maketni va «Tizim holati» dagi 2 ta o'zgarishni
+  tasdiqladi; izohlar — `design/kit/route-map.json` → `/ops` route izohi, `newViews`, `partialViews`; kodda hali
+  yo'q, rejada `/ops?tab=ai`, faqat superadmin):**
+  - spec: https://claude.ai/artifact/4CQm55j8bySf2EXGPwGbP7; ko'rib chiqish sahifasi:
+    https://claude.ai/artifact/4smZdmWsqr7NYDfVZt2cS5;
+  - yangi ekranlar: `superadmin-ops-ai`, `superadmin-ops-ai-no-key`, `superadmin-ops-ai-env-key`,
+    `superadmin-ops-ai-key-failed`, `superadmin-ops-ai-locked`, `superadmin-ops-ai-catalog-unavailable`,
+    `superadmin-ops-ai-recent-change`, `superadmin-ops-ai-slot-reverted`, `superadmin-ops-ai-loading`,
+    `superadmin-ops-ai-mobile`; oynalar — `superadmin-ops-ai-key-dialog`, `superadmin-ops-ai-key-replace-confirm`,
+    `superadmin-ops-ai-step-up-dialog`, `superadmin-ops-ai-key-deactivate-confirm`,
+    `superadmin-ops-ai-key-restore-confirm`, `superadmin-ops-ai-model-dialog`, `superadmin-ops-ai-model-confirm`,
+    `superadmin-ops-ai-history-dialog`;
+  - o'zgargan ekranlar: `superadmin-ops-system-ai-config` (tablar qatorida «AI kalit va modellar», kirish matni,
+    ogohlantirishlarda «AI sozlamalariga o'tish →»), `superadmin-ops-system-error` («AI holati» ogohlantirishida
+    xuddi shu matn va havola); kodda (`AiStatusCard`) tab chiqquncha yo'q;
+  - server sozlamasidagi kalit (env) zaxira bo'lib qoladi, lekin unga **avtomatik o'tish yo'q**: shu sahifadan
+    qo'shilgan kalit ishlamay qolsa AI to'xtaydi, ops Telegram guruhiga ogohlantirish ketadi, ega bir bosishda
+    o'tkazadi (`superadmin-ops-ai-key-failed`);
+  - pilot (#650) test serverda (staging) o'tadi: UI'dan qo'shilgan kalit alohida Anthropic Console workspace'ida,
+    oylik limit 20 $;
+  - Sonnet 5 narxi ega hisob-fakturani tasdiqlaguncha «Narx tasdiqlanmagan» bo'lib qoladi
+    (`superadmin-ops-ai-model-dialog`, `superadmin-ops-ai-model-confirm`).
 - **2026-11-16 (Ops tahlili → u5HTJtqK, «Pochta → Qaytarish»):** bitta bosish tasdiqsiz buyurtmani omborga
   qaytarmasin, bir ish ikki joyda bo'lmasin. `/mails/return` da «Tasdiqlash» va «Rad etish» — faqat tasdiq oynasi
   orqali (maket `superadmin-ops-logistics-approve-dialog`, Ops'dagi OS-3 oqimi ko'chdi: kuryer guruhlari, natija —

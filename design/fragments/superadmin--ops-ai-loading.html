@@ -1,0 +1,133 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Ops vositalari</h1>
+    <p class="el-sub">Ichki xizmat ekranlari — kamdan-kam ishlatiladi, faqat superadmin</p>
+  </div>
+</div>
+
+<nav class="el-tabs el-hide-mobile" role="tablist" aria-label="Ops bo'limlari">
+    <a class="el-tab el-hide-tablet" role="tab" aria-selected="false" href="@ops-finance-operators" title="Eski manzil: /finance-operators" style="text-decoration: none; color: var(--text-muted)">Moliya operatorlari</a>
+    <a class="el-tab el-hide-tablet" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Xarajat kategoriyalari</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@ops-investors" title="Eski manzil: /investors-ops" style="text-decoration: none; color: var(--text-muted)">Investorlar</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Yetkazish narxi</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Kun tartibi</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@ops-identity" title="Eski manzil: /identity-ops" style="text-decoration: none; color: var(--text-muted)">Xodimlar</a>
+    <a class="el-tab" role="tab" aria-selected="true" aria-current="page" href="@ops-ai" style="text-decoration: none; color: var(--text)">AI kalit va modellar</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@ops-system" title="Eski manzil: /system-ops" style="text-decoration: none; color: var(--text-muted)">Tizim holati</a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@ops-auth-diagnostics" title="Eski manzil: /logs" style="text-decoration: none; color: var(--text-muted)">Kirish diagnostikasi</a>
+</nav>
+<button class="el-input el-select el-show-mobile" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Ops bo'limi: AI kalit va modellar"><span class="el-strong">AI kalit va modellar</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+
+<div role="tabpanel" aria-label="AI kalit va modellar" style="display: flex; flex-direction: column; gap: 24px; min-width: 0">
+<section class="el-card" aria-labelledby="tool-title">
+  <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 4px">
+    <h2 class="el-h2" id="tool-title">AI kalit va modellar</h2>
+    <p class="el-small el-muted">Anthropic API kaliti va har AI vazifasining modeli. Har o'zgarish tarixga yoziladi va ops Telegram kanaliga xabar ketadi. Kunlik limit va fikrlash darajasi faqat serverda o'zgaradi.</p>
+  </div>
+</section>
+<section class="el-card" aria-labelledby="key-title" aria-busy="true">
+  <div class="el-card-head" style="flex-wrap: wrap; gap: 8px 16px">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><h2 class="el-h2" id="key-title">API kaliti</h2><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 24px; background: var(--border); border-radius: 6px"></span></div>
+      <p class="el-small el-muted">Barcha AI vazifalari uchun bitta kalit · Anthropic</p>
+    </div>
+    
+  </div>
+  <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span class="el-skel-circle el-shimmer" style="display: block; width: 44px; height: 44px; border-radius: 10px; background: var(--border); flex: none"></span>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: min(240px, 70%); height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: min(380px, 90%); height: 12px; background: var(--border)"></span></div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px 24px">
+      <div style="display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 75%; height: 14px; background: var(--border)"></span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 75%; height: 14px; background: var(--border)"></span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 75%; height: 14px; background: var(--border)"></span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 75%; height: 14px; background: var(--border)"></span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 75%; height: 14px; background: var(--border)"></span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 75%; height: 14px; background: var(--border)"></span></div>
+    </div>
+    <span class="el-skel-block el-shimmer" style="display: block; width: 100%; height: 112px; border-radius: 12px; background: var(--border)"></span>
+  </div>
+</section>
+<section class="el-card" aria-labelledby="models-title" aria-busy="true">
+  <div class="el-card-head" style="flex-wrap: wrap; gap: 8px 16px">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><h2 class="el-h2" id="models-title">Modellar</h2></div>
+      <p class="el-small el-muted">6 ta vazifa · yuklanmoqda</p>
+    </div>
+    
+  </div>
+  <ul class="el-list" style="flex-direction: column; margin: 0; padding: 0; list-style: none" aria-label="Modellar yuklanmoqda">
+    <li class="el-list-item" style="gap: 16px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: min(220px, 60%); height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: min(320px, 80%); height: 12px; background: var(--border)"></span></div><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 24px; background: var(--border); border-radius: 6px; flex: none"></span><span class="el-hide-mobile" style="display: block; flex: none"><span class="el-skel-line el-shimmer" style="display: block; width: 104px; height: 32px; background: var(--border); border-radius: 8px"></span></span></li>
+    <li class="el-list-item" style="gap: 16px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: min(180px, 50%); height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: min(280px, 70%); height: 12px; background: var(--border)"></span></div><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 24px; background: var(--border); border-radius: 6px; flex: none"></span><span class="el-hide-mobile" style="display: block; flex: none"><span class="el-skel-line el-shimmer" style="display: block; width: 104px; height: 32px; background: var(--border); border-radius: 8px"></span></span></li>
+    <li class="el-list-item" style="gap: 16px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: min(200px, 55%); height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: min(300px, 75%); height: 12px; background: var(--border)"></span></div><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 24px; background: var(--border); border-radius: 6px; flex: none"></span><span class="el-hide-mobile" style="display: block; flex: none"><span class="el-skel-line el-shimmer" style="display: block; width: 104px; height: 32px; background: var(--border); border-radius: 8px"></span></span></li>
+    <li class="el-list-item" style="gap: 16px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: min(240px, 62%); height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: min(260px, 68%); height: 12px; background: var(--border)"></span></div><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 24px; background: var(--border); border-radius: 6px; flex: none"></span><span class="el-hide-mobile" style="display: block; flex: none"><span class="el-skel-line el-shimmer" style="display: block; width: 104px; height: 32px; background: var(--border); border-radius: 8px"></span></span></li>
+    <li class="el-list-item" style="gap: 16px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: min(170px, 48%); height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: min(310px, 78%); height: 12px; background: var(--border)"></span></div><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 24px; background: var(--border); border-radius: 6px; flex: none"></span><span class="el-hide-mobile" style="display: block; flex: none"><span class="el-skel-line el-shimmer" style="display: block; width: 104px; height: 32px; background: var(--border); border-radius: 8px"></span></span></li>
+    <li class="el-list-item" style="gap: 16px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: min(210px, 58%); height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: min(290px, 72%); height: 12px; background: var(--border)"></span></div><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 24px; background: var(--border); border-radius: 6px; flex: none"></span><span class="el-hide-mobile" style="display: block; flex: none"><span class="el-skel-line el-shimmer" style="display: block; width: 104px; height: 32px; background: var(--border); border-radius: 8px"></span></span></li>
+  </ul>
+</section>
+<section class="el-card" aria-labelledby="hist-title" aria-busy="true">
+  <div class="el-card-head" style="flex-wrap: wrap; gap: 8px 16px">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><h2 class="el-h2" id="hist-title">O'zgarishlar tarixi</h2></div>
+      <p class="el-small el-muted">Oxirgi 10 ta</p>
+    </div>
+    
+  </div>
+  <ul class="el-list" style="flex-direction: column; margin: 0; padding: 0; list-style: none" aria-label="Tarix yuklanmoqda">
+    <li class="el-list-item" style="gap: 12px; align-items: flex-start"><span class="el-skel-block el-shimmer" style="display: block; width: 36px; height: 36px; border-radius: 10px; background: var(--border); flex: none"></span><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 64%; height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 80%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span></div></li>
+    <li class="el-list-item" style="gap: 12px; align-items: flex-start"><span class="el-skel-block el-shimmer" style="display: block; width: 36px; height: 36px; border-radius: 10px; background: var(--border); flex: none"></span><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 52%; height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 80%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span></div></li>
+    <li class="el-list-item" style="gap: 12px; align-items: flex-start"><span class="el-skel-block el-shimmer" style="display: block; width: 36px; height: 36px; border-radius: 10px; background: var(--border); flex: none"></span><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px"><span class="el-skel-line el-shimmer" style="display: block; width: 70%; height: 14px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 80%; height: 12px; background: var(--border)"></span><span class="el-skel-line el-shimmer" style="display: block; width: 40%; height: 12px; background: var(--border)"></span></div></li>
+  </ul>
+</section>
+<section aria-labelledby="st-title" style="display: flex; flex-direction: column; gap: 12px; padding-top: 24px; border-top: 1px solid var(--border)">
+  <h2 class="el-overline" id="st-title">Yuklanish va xato holatlari</h2>
+  <div class="el-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); align-items: stretch">
+    <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px; gap: 12px">
+        <div class="el-empty" role="alert" style="padding: 8px 4px">
+          <span class="el-empty-icon" style="background: var(--danger-soft); color: var(--danger-fg)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 10H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M6 14H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-2"/><path d="M6 6h.01"/><path d="M6 18h.01"/><path d="m13 6-4 6h6l-4 6"/></svg></span>
+          <p class="el-empty-title">AI sozlamalarini olib bo'lmadi</p>
+          <p class="el-empty-text">Server javob bermadi yoki ulanish uzildi. Kalit va modellar o'zgarmagan.</p>
+          <button class="el-btn el-btn-primary" type="button" style="margin-top: 4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Qayta urinish</button>
+        </div>
+      </div>
+      <p class="el-state-label">Yuklab bo'lmadi (500 yoki ulanish)</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px; gap: 12px">
+        <div class="el-empty" style="padding: 8px 4px">
+          <span class="el-empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg></span>
+          <p class="el-empty-title">Bu serverda AI sozlamalari hali yo'q</p>
+          <p class="el-empty-text">Server yangilanmagan. AI hozircha server sozlamasi bilan ishlaydi — holatini «Tizim holati» tabida ko'ring.</p>
+          <a class="el-btn el-btn-secondary" href="@ops-system" style="margin-top: 4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Tizim holati</a>
+        </div>
+      </div>
+      <p class="el-state-label">Server eski (404)</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px; gap: 12px">
+        <div class="el-empty" role="alert" style="padding: 8px 4px">
+          <span class="el-empty-icon" style="background: var(--danger-soft); color: var(--danger-fg)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span>
+          <p class="el-empty-title">Tarixni yuklab bo'lmadi</p>
+          <p class="el-empty-text">Kalit va modellar kartalari ishlayveradi.</p>
+          <button class="el-btn el-btn-secondary" type="button" style="margin-top: 4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Qayta urinish</button>
+        </div>
+      </div>
+      <p class="el-state-label">Tarix yuklanmadi</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+      <div class="el-card" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px; gap: 12px">
+        <div class="el-toast" role="status" style="min-width: 0; max-width: 100%; width: 100%">
+          <span style="color: var(--warning-fg); display: inline-flex; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+            <span class="el-strong">Javob kelmadi — hech narsa o'zgarmadi</span>
+            <span class="el-small el-muted">Holat yangilanmoqda… Faol kalit izi qayta solishtiriladi.</span>
+          </div>
+        </div>
+      </div>
+      <p class="el-state-label">Kalit yoki model amalida javob kelmadi (504) — xabar</p>
+    </div>
+  </div>
+</section>
+</div>
