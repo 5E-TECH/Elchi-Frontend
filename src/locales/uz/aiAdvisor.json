@@ -448,6 +448,8 @@
           "open": "O'tkazmani ochish"
         },
         "openRow": "{{at}} o'tkazmasini ochish",
+        "asOfAt": "{{at}} holatida",
+        "idle": "o'tkazmasiz",
         "asOf": "{{at}} holatida · {{days}} o'tkazmasiz"
       },
       "loss": {

@@ -43,17 +43,17 @@ export type EvidenceTableProps<T> = {
   note?: ReactNode;
 };
 
-const TH = "h-9 whitespace-nowrap bg-sunken px-3 text-xs font-semibold tracking-[.04em] text-text-muted uppercase first:pl-4";
-const TD = "h-11 border-t border-border px-3 py-1.5 align-middle first:pl-4";
+const TH = "h-9 whitespace-nowrap bg-sunken px-3 text-xs font-semibold tracking-[.04em] text-text-muted uppercase";
+const TD = "h-11 border-t border-border px-3 py-1.5 align-middle";
 const ICON_LINK =
   "inline-flex size-8 items-center justify-center rounded-lg text-text-muted transition-[background-color,color] " +
   "duration-150 hover:bg-sunken hover:text-text motion-reduce:transition-none";
 
 /**
  * Dalillar jadvali (D7; maket `superadmin-ai-assistant-alert-dialog` «Dalillar»): `DataTable` da `tfoot` yo'q, shuning
- * uchun ixcham jadval shu yerda — `.el-table.is-compact` retsepti (CODE-MAP 2.6: `th` 36, `td` 44, chekka 12 · 16),
- * ramkada (`border` + 12 radius), «Jami» qatori `sunken`. Telefonda (< 768) — kartalar ro'yxati (`.el-list`, har
- * qator — havola, oxirida «Jami»). Namunasi — `widgets/dashboard-region` jadvali.
+ * uchun ixcham jadval shu yerda — `.el-table.is-compact` retsepti (CODE-MAP 2.6: `th` 36, `td` 44, chekka 12 — maketdagidek
+ * birinchi ustunda ham), ramkada (`border` + 12 radius), «Jami» qatori `sunken`. Telefonda (< 768) — kartalar ro'yxati
+ * (`.el-list`, har qator — havola, oxirida «Jami»). Namunasi — `widgets/dashboard-region` jadvali.
  */
 export const EvidenceTable = <T,>({
   title,

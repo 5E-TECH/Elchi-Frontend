@@ -24,6 +24,16 @@ export const HqTransferBody = ({ alert }: RuleBodyProps<"R5">) => {
   const limit = ruleThreshold(alert, "R5", "balance_uzs");
   const transfers = [...(evidence?.transfers ?? [])].sort((a, b) => (a.at === b.at ? 0 : a.at < b.at ? 1 : -1));
   const asOf = t("alerts.evidence.transfers.asOf", { at: f.at(alert.last_fact_at), days: f.days(facts.days_without_transfer) });
+  // Maket: «21.10.2026, 10:30 holatida» + xira «4 kun o'tkazmasiz» («4 kun» — ogohlantirish rangida; R4 «Jami» bilan bir xil).
+  const asOfLabel = (
+    <>
+      {t("alerts.evidence.transfers.asOfAt", { at: f.at(alert.last_fact_at) })}{" "}
+      <span className="font-normal text-text-muted">
+        · <span className="font-semibold text-warning-fg">{f.days(facts.days_without_transfer)}</span>{" "}
+        {t("alerts.evidence.transfers.idle")}
+      </span>
+    </>
+  );
 
   const columns: EvidenceColumn<Transfer>[] = [
     {
@@ -85,7 +95,7 @@ export const HqTransferBody = ({ alert }: RuleBodyProps<"R5">) => {
           rowHref={(row) => row.href}
           rowLinkLabel={(row) => t("alerts.evidence.transfers.openRow", { at: f.at(row.at) })}
           linkColumnLabel={t("alerts.evidence.transfers.columns.open")}
-          totalLabel={asOf}
+          totalLabel={asOfLabel}
           renderCard={(row) => ({
             title: f.at(row.at),
             value: <span className="font-semibold">{f.money(row.amount)}</span>,

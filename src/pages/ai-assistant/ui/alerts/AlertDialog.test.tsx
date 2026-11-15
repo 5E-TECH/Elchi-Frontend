@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AiAdvisorAlertDetail } from "../../../../entities/ai-advisor";
 import { queryKeys } from "../../../../shared/config/queryKeys";
+import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import {
   advisorEnvelope,
   advisorHttpError,
@@ -637,5 +638,33 @@ describe("holatlar", () => {
     open();
     const panel = await findDialog("Ogohlantirish");
     expect(within(panel).getByRole("status", { name: "Ogohlantirish yuklanmoqda" })).toBeInTheDocument();
+  });
+});
+
+describe("sarlavha ostidagi vaqt (maketlar: takrorlanganda fakt oralig'i, bitta takrorda aniqlash vaqti)", () => {
+  it("R3 (1 marta) — «G'ayrioddiy xarajat · {last_at}», «birinchi / oxirgi» yo'q", async () => {
+    replyDetail(fx.detail.r3);
+    open("1036");
+    const panel = await findDialog(/odatdagidan 3,4 barobar/);
+    const at = formatDateTimeLocalized(fx.detail.r3.last_at, { language: "uz" });
+    expect(within(panel).getByText(`G'ayrioddiy xarajat · ${at}`)).toBeInTheDocument();
+    expect(within(panel).queryByText(/birinchi:/)).not.toBeInTheDocument();
+  });
+
+  it("R6 (1 marta) — joy bilan: «Zarar · butun tizim · {last_at}» (davr boshi / oxiri emas)", async () => {
+    replyDetail(fx.detail.r6);
+    open("1031");
+    const panel = await findDialog(/kuni zarar/);
+    const at = formatDateTimeLocalized(fx.detail.r6.last_at, { language: "uz" });
+    expect(within(panel).getByText(`Zarar · butun tizim · ${at}`)).toBeInTheDocument();
+  });
+
+  it("R4 (2 marta) — fakt oralig'i «birinchi: … · oxirgi: …»", async () => {
+    replyDetail(fx.detail.r4);
+    open("1034");
+    const panel = await findDialog(/9 kundan beri to'lov yo'q/);
+    const first = formatDateTimeLocalized(fx.detail.r4.first_fact_at, { language: "uz" });
+    const last = formatDateTimeLocalized(fx.detail.r4.last_fact_at, { language: "uz" });
+    expect(within(panel).getByText(`Market to'lovi kechikmoqda · birinchi: ${first} · oxirgi: ${last}`)).toBeInTheDocument();
   });
 });

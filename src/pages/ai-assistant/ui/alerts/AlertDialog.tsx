@@ -9,6 +9,7 @@ import {
   AlertSeverityBadge,
   AlertStatusBadge,
   alertDialogTitle,
+  alertSubline,
   isAlertId,
   isAlertOpen,
   readAdvisorError,
@@ -69,7 +70,7 @@ export type AlertDialogProps = {
  *  ⚠️ D16: `GET alerts/:id` ogohlantirishni «Ko'rildi» qiladi — faqat oyna ochiq bo'lsa so'raladi (prefetch / hover yo'q);
  *  har ochilishdagi birinchi muvaffaqiyatli javobdan keyin `overview` (tab nishoni, banner) va ro'yxatlar eskiradi.
  *
- *  Tuzilma: sarlavha (ikonka — jiddiylik toni, «Qoida · birinchi: … · oxirgi: …») → belgilar (jiddiylik, holat,
+ *  Tuzilma: sarlavha (ikonka — jiddiylik toni, «Qoida · birinchi: … · oxirgi: …» yoki bitta takrorda «Qoida · vaqt») → belgilar (jiddiylik, holat,
  *  «N marta takrorlandi») → qoida tanasi (faktlar, dalillar) → «qaytgan muammo» izohi → AI izohi → izoh maydoni.
  *  Pastda: chapda asosiy havola (`links[].primary`), o'ngda «Ahamiyatsiz» + «Hal qilindi»; telefonda ustma-ust
  *  («Hal qilindi», «Ahamiyatsiz», havola). Yopilgan ogohlantirish (D8) — izoh bloki va faqat «Yopish».
@@ -166,10 +167,16 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
 
   // ── Ogohlantirish ──────────────────────────────────────────────────────────────────────────────────────
   const openAlert = isAlertOpen(alert.status);
+  // Maketlar: takrorlangan ogohlantirish (R1 «3 marta», R4 «2 marta») — fakt oralig'i «birinchi: … · oxirgi: …»;
+  // bitta takror — aniqlash vaqti (`last_at`: R3 «Kecha, 18:20», R6 «21.10.2026, 08:00»). R6 sarlavhasida joy yo'q —
+  // «Zarar · butun tizim» (ro'yxat ost-qatoridagidek).
+  const rule = alert.rule_key === "R6" ? alertSubline(alert, tt) : ruleName(alert.rule_key, tt);
   const first = formatDateTimeLocalized(alert.first_fact_at, { language });
   const last = formatDateTimeLocalized(alert.last_fact_at, { language });
-  const rule = ruleName(alert.rule_key, tt);
-  const description = first === last ? t("alerts.dialog.time", { rule, at: last }) : t("alerts.dialog.times", { rule, first, last });
+  const description =
+    alert.occurrences > 1 && first !== last
+      ? t("alerts.dialog.times", { rule, first, last })
+      : t("alerts.dialog.time", { rule, at: formatDateTimeLocalized(alert.last_at, { language }) });
   const primary = alert.links.find((link) => link.primary) ?? null;
 
   const primaryLink = primary ? (

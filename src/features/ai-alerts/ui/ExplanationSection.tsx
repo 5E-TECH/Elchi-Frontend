@@ -72,7 +72,10 @@ export const ExplanationSection = ({ alert, expired, onRestart }: ExplanationSec
     case "ready":
       body = (
         <>
-          <MiniMarkdown source={view.markdown} />
+          {/* Maket: izoh matni `.el-small` (13 px, qator 20 px) — suhbat javobidan (14 px) ixchamroq. */}
+          <div className="[&_li]:leading-5 [&_p]:leading-5 [&>div]:text-[13px]">
+            <MiniMarkdown source={view.markdown} />
+          </div>
           <p className="m-0 flex items-start gap-1.5 text-xs text-text-muted">
             <Info aria-hidden="true" size={16} strokeWidth={2} className="shrink-0" />
             <span className="min-w-0">{t("chat.disclaimer")}</span>

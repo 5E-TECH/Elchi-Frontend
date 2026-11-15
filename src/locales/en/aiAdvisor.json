@@ -448,6 +448,8 @@
           "open": "Open transfer"
         },
         "openRow": "Open transfer {{at}}",
+        "asOfAt": "As of {{at}}",
+        "idle": "without a transfer",
         "asOf": "As of {{at}} · {{days}} without a transfer"
       },
       "loss": {
