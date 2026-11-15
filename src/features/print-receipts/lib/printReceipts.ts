@@ -59,8 +59,8 @@ export interface PrintOrderReceiptsOptions {
     sheet: ReceiptSheet,
   ) => ReceiptLabel[];
   /**
-   * Buyurtma cheklaridan oldin bitta chop etish ishida — pochta cheki (ega qarori 5: eski pochtada «Chekni qayta chop
-   * etish»). Faqat termal varaqda (sahifa o'lchami bir xil).
+   * Buyurtma cheklaridan oldin bitta chop etish ishida — pochta cheki (avval ega qarori 5 bo'yicha eski pochtadagi
+   * «Chekni qayta chiqarish» uchun; 2026-11-15 dan u faqat pochta chekini chiqaradi). Faqat termal varaqda.
    */
   leadingPackage?: ReceiptPackageSource;
   /** PDF yuklab olinganda fayl nomi (kengaytmasiz). */

@@ -15,11 +15,7 @@ import {
   type BatchStatus,
 } from "../../../entities/batch";
 import { useUser } from "../../../entities/user/api/userApi";
-import {
-  countReceiptsWithoutQr,
-  receiptPackageWithoutQr,
-  useReceiptPrint,
-} from "../../../features/print-receipts";
+import { receiptPackageWithoutQr, useReceiptPrint } from "../../../features/print-receipts";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { cx } from "../../../shared/lib/cx";
@@ -45,7 +41,7 @@ import {
 import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
-import { printPostWithOrders, toPostReceiptSource } from "../detail/lib/printMode";
+import { printPostReceipt, toPostReceiptSource } from "../detail/lib/printMode";
 import { hasMailBranch, selectMailsBranchColumn, useMailBranchName } from "../model/mailBranchNames";
 import { useMailsCardView } from "../model/mailsCardView";
 import type { MailsTabLayout } from "../model/mailsLayout";
@@ -110,7 +106,8 @@ import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
  * (havoladan tashqarida); filtrlar, chiplar, Excel va sahifalash o'zgarmaydi. HQ xodimlari — jadval.
  *
  * Ega qarori 2026-11-15 (BeePost kabi): «Chekni qayta chiqarish» — «Jo'natilgan» pochtada ham (avval faqat «Qabul
- * qilingan»da); rad etilgan va qaytarilgan pochtada yo'q. Chek tarkibi o'zgarmaydi (ega qarori 5).
+ * qilingan»da); rad etilgan va qaytarilgan pochtada yo'q. Chek — faqat pochtaning umumiy cheki (bitta yorliq, Elchi
+ * «Pochta cheki» dizayni), buyurtma cheklari emas (5-qarorning o'rniga).
  *
  * Jadvalda superadmin, admin va registrator «Kuryer» o'rnida «Filial» ustunini ko'radi (Bahodir, 2026-11-04;
  * `model/mailBranchNames.ts`); menejer — «Kuryer» (o'z filiali). Filtr, Excel va chek — avvalgidek (kuryer).
@@ -380,7 +377,9 @@ const OldMails = ({ layout }: OldMailsProps) => {
 
   /* ─── Chekni qayta chiqarish ────────────────────────────────────────────── */
 
-  // Ega qarori 5 (HJ5sLHiz): avval pochta cheki, keyin buyurtma cheklari — bitta chop etish ishida (termal 100×60).
+  // Ega qarori 2026-11-15 (BeePost kabi, 5-qarorning o'rniga): faqat pochtaning umumiy cheki — bitta termal 100×60
+  // yorliq (tafsilotdagi «Pochta cheki» bilan bir xil: №, sana, Qayerdan / Qayerga, buyurtmalar soni, jami, kuryer
+  // ismi va telefoni, QR); buyurtma cheklari chiqmaydi. Ma'lumot `GET post/orders/:id` dan (pochta meta'si, jami).
   // Chop etish xatosi va «QR yo'q» ogohlantirishi — `useReceiptPrint`; so'rov xatosi — shu yerda.
   const [printingId, setPrintingId] = useState<string | null>(null);
   const printingRef = useRef(false);
@@ -420,9 +419,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
         });
         await runReceiptPrint({
           key: row.id,
-          withoutQr: countReceiptsWithoutQr(orders),
           packageWithoutQr: receiptPackageWithoutQr(source),
-          print: () => printPostWithOrders(source, orders),
+          print: () => printPostReceipt(source),
         });
       } finally {
         printingRef.current = false;

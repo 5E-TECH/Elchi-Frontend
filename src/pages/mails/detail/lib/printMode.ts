@@ -93,16 +93,9 @@ export const toPostReceiptSource = (input: {
   };
 };
 
-/** «Pochta cheki» menyu bandi: faqat pochta cheki (termal 100×60, brauzer). */
+/**
+ * «Pochta cheki» menyu bandi va eski pochtadagi «Chekni qayta chiqarish» (ega qarori 2026-11-15, BeePost kabi):
+ * faqat pochta cheki (termal 100×60, brauzer), buyurtma cheklarisiz.
+ */
 export const printPostReceipt = (source: ReceiptPackageSource): Promise<ReceiptPrintResult> =>
   printPackageReceipt(source, { sheet: "thermal", output: "browser" });
-
-/**
- * Eski pochtada «Chekni qayta chop etish» (ega qarori 5): avval pochta cheki, keyin buyurtma cheklari — bitta chop
- * etish ishida (termal 100×60, brauzer).
- */
-export const printPostWithOrders = (
-  source: ReceiptPackageSource,
-  orders: ReadonlyArray<PostOrder>,
-): Promise<ReceiptPrintResult> =>
-  printOrderReceipts(orders, { sheet: "thermal", output: "browser", leadingPackage: source });

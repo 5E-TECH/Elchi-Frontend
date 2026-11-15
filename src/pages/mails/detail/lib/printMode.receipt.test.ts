@@ -11,8 +11,7 @@ vi.mock("../../../../features/print-receipts", () => ({
   printPackageReceipt: mocks.printPackageReceipt,
 }));
 
-const { postTotalsFromOrders, printOrders, printPostReceipt, printPostWithOrders, toPostReceiptSource } =
-  await import("./printMode");
+const { postTotalsFromOrders, printOrders, printPostReceipt, toPostReceiptSource } = await import("./printMode");
 
 const order = (patch: Partial<PostOrder> = {}) =>
   ({
@@ -100,15 +99,12 @@ describe("pochta chop etish usullari → features/print-receipts (HJ5sLHiz, TZ F
     });
   });
 
-  it("eski pochtani qayta chop etish (ega qarori 5): pochta cheki + buyurtma cheklari bitta ishda, termal", () => {
+  it("eski pochtani qayta chop etish (ega qarori 2026-11-15, BeePost kabi): faqat pochta cheki, buyurtma cheklarisiz", () => {
     const orders = [order()];
     const source = toPostReceiptSource({ postId: "90", post: post(), orders });
-    void printPostWithOrders(source, orders);
-    expect(mocks.printOrderReceipts).toHaveBeenCalledWith(orders, {
-      sheet: "thermal",
-      output: "browser",
-      leadingPackage: source,
-    });
+    void printPostReceipt(source);
+    expect(mocks.printPackageReceipt).toHaveBeenCalledWith(source, { sheet: "thermal", output: "browser" });
+    expect(mocks.printOrderReceipts).not.toHaveBeenCalled();
   });
 
   it("qatorlardan jamlar (vaICniE4): uy — `address`, qolgani — markaz (backend hisobi); bo'sh ro'yxat — 0", () => {

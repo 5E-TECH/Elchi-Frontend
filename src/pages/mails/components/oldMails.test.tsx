@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   fetchAllTransferBatches: vi.fn(),
   useGetRegions: vi.fn(),
   useGetCouriers: vi.fn(),
-  printPostWithOrders: vi.fn(),
+  printPostReceipt: vi.fn(),
   exportOldMailsToExcel: vi.fn(),
 }));
 
@@ -36,7 +36,7 @@ vi.mock("../../../entities/user/api/userApi", () => ({
 }));
 vi.mock("../detail/lib/printMode", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../detail/lib/printMode")>()),
-  printPostWithOrders: mocks.printPostWithOrders,
+  printPostReceipt: mocks.printPostReceipt,
 }));
 vi.mock("./lib/exportOldMailsToExcel", () => ({ exportOldMailsToExcel: mocks.exportOldMailsToExcel }));
 
@@ -197,7 +197,7 @@ describe("OldMails — xodim (pochtalar)", () => {
     mocks.useGetOldMails.mockReset();
     mocks.fetchOldMails.mockReset();
     mocks.exportOldMailsToExcel.mockReset();
-    mocks.printPostWithOrders.mockReset();
+    mocks.printPostReceipt.mockReset();
   });
 
   it("requests one server page (page, limit ≤ 100, has_orders) and renders the table with «Filial» column and status badges", () => {
@@ -326,7 +326,7 @@ describe("OldMails — xodim (pochtalar)", () => {
   it("branch manager: «Chekni qayta chiqarish» stays on the sent/received cards (outside the link) and prints", async () => {
     const user = userEvent.setup();
     const orders = [{ id: "o1", qr_code_token: "a".repeat(24) }];
-    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    mocks.printPostReceipt.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
     const get = vi.spyOn(api, "get").mockResolvedValue({
       data: {
         data: {
@@ -349,7 +349,7 @@ describe("OldMails — xodim (pochtalar)", () => {
 
     await user.click(reprint);
     expect(get).toHaveBeenCalledWith("post/orders/90");
-    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.printPostReceipt).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId("path").textContent).toBe("/mails/old");
   });
 
@@ -374,10 +374,10 @@ describe("OldMails — xodim (pochtalar)", () => {
     }
   });
 
-  it("⭐ 2026-11-15: a sent (not yet received) mail reprints the same way — mail receipt, then order receipts", async () => {
+  it("⭐ 2026-11-15: a sent (not yet received) mail reprints the same way — only the mail receipt", async () => {
     const user = userEvent.setup();
     const orders = [{ id: "o7", qr_code_token: "b".repeat(24) }];
-    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    mocks.printPostReceipt.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
     const get = vi.spyOn(api, "get").mockResolvedValue({
       data: {
         data: {
@@ -393,10 +393,17 @@ describe("OldMails — xodim (pochtalar)", () => {
     await user.click(screen.getByRole("button", { name: "№91: chekni qayta chiqarish" }));
 
     expect(get).toHaveBeenCalledWith("post/orders/91");
-    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
-    const [source, printed] = mocks.printPostWithOrders.mock.calls[0];
-    expect(printed).toEqual(orders);
-    expect(source).toMatchObject({ kind: "post", id: "91", token: "POST-91", to: "Andijon", ordersCount: 1, totalPrice: 100_000 });
+    await waitFor(() => expect(mocks.printPostReceipt).toHaveBeenCalledTimes(1));
+    // Faqat pochta cheki (manba) — buyurtmalar uzatilmaydi.
+    expect(mocks.printPostReceipt.mock.calls[0]).toHaveLength(1);
+    expect(mocks.printPostReceipt.mock.calls[0][0]).toMatchObject({
+      kind: "post",
+      id: "91",
+      token: "POST-91",
+      to: "Andijon",
+      ordersCount: 1,
+      totalPrice: 100_000,
+    });
     expect(screen.getByTestId("path").textContent).toBe("/mails/old");
   });
 
@@ -438,17 +445,24 @@ describe("OldMails — xodim (pochtalar)", () => {
     }
   });
 
-  it("reprints through GET post/orders/:id: the mail receipt first, then the order receipts (ega qarori 5)", async () => {
+  it("⭐ 2026-11-15: reprint = ONLY the mail's summary receipt (BeePost kabi) through GET post/orders/:id, with the courier", async () => {
     const user = userEvent.setup();
     const orders = [{ id: "o1", qr_code_token: "a".repeat(24) }];
-    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    mocks.printPostReceipt.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
     const get = vi.spyOn(api, "get").mockResolvedValue({
       data: {
         data: {
           allOrdersByPostId: orders,
           homeOrders: { homeOrders: 1, homeOrdersTotalPrice: 185_000 },
           centerOrders: { centerOrders: 0, centerOrdersTotalPrice: 0 },
-          post: { id: "90", status: "received", qr_code_token: "POST-90", createdAt: "2026-10-07T12:55:00.000Z" },
+          post: {
+            id: "90",
+            status: "received",
+            qr_code_token: "POST-90",
+            createdAt: "2026-10-07T12:55:00.000Z",
+            branch: { id: "1", name: "HQ Toshkent" },
+            courier: { id: "119", name: "Buxaro Courier", phone_number: "+998901234567" },
+          },
         },
       },
     });
@@ -457,11 +471,20 @@ describe("OldMails — xodim (pochtalar)", () => {
     await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));
 
     expect(get).toHaveBeenCalledWith("post/orders/90");
-    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
-    const [source, printed] = mocks.printPostWithOrders.mock.calls[0];
-    expect(printed).toEqual(orders);
-    expect(source).toMatchObject({ kind: "post", id: "90", token: "POST-90", ordersCount: 1, totalPrice: 185_000 });
-    // Pochta va buyurtma tokenlari bor — «QR yo'q» ogohlantirishi yo'q.
+    await waitFor(() => expect(mocks.printPostReceipt).toHaveBeenCalledTimes(1));
+    // Bitta yorliq: buyurtma cheklari chop etilmaydi (avvalgi 5-qaror o'rniga).
+    expect(mocks.printPostReceipt.mock.calls[0]).toHaveLength(1);
+    expect(mocks.printPostReceipt.mock.calls[0][0]).toMatchObject({
+      kind: "post",
+      id: "90",
+      token: "POST-90",
+      from: "HQ Toshkent",
+      to: "Buxoro",
+      ordersCount: 1,
+      totalPrice: 185_000,
+      courier: { name: "Buxaro Courier", phone_number: "+998901234567" },
+    });
+    // Pochta tokeni bor — «QR yo'q» ogohlantirishi yo'q.
     expect(screen.queryByText("Pochta chekida QR yo'q")).not.toBeInTheDocument();
   });
 
@@ -469,7 +492,7 @@ describe("OldMails — xodim (pochtalar)", () => {
     const user = userEvent.setup();
     const noRegion = { ...post("95"), region: null, region_id: null };
     mocks.useGetOldMails.mockReturnValue(mailsResult([noRegion]));
-    mocks.printPostWithOrders.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
+    mocks.printPostReceipt.mockResolvedValue({ orders: 1, pages: 2, jobs: 1, withoutQr: 0, delivery: ["printed"] });
     const postMeta = { id: "95", status: "received", qr_code_token: "POST-95", createdAt: "2026-10-07T12:55:00.000Z" };
     const order = { id: "o1", qr_code_token: "a".repeat(24) };
     vi.spyOn(api, "get")
@@ -480,30 +503,31 @@ describe("OldMails — xodim (pochtalar)", () => {
     renderOld("admin", "/mails/old", "card");
 
     await user.click(screen.getByRole("button", { name: "№95: chekni qayta chiqarish" }));
-    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(1));
-    expect(mocks.printPostWithOrders.mock.calls[0][0]).toMatchObject({ kind: "post", id: "95", to: "Buxoro viloyati" });
+    await waitFor(() => expect(mocks.printPostReceipt).toHaveBeenCalledTimes(1));
+    expect(mocks.printPostReceipt.mock.calls[0][0]).toMatchObject({ kind: "post", id: "95", to: "Buxoro viloyati" });
 
     // Hech qayerda viloyat yo'q — «Qayerga» chekda chiqmaydi (`to: null`), «Viloyat #» emas.
     await user.click(screen.getByRole("button", { name: "№95: chekni qayta chiqarish" }));
-    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(2));
-    expect(mocks.printPostWithOrders.mock.calls[1][0].to).toBeNull();
+    await waitFor(() => expect(mocks.printPostReceipt).toHaveBeenCalledTimes(2));
+    expect(mocks.printPostReceipt.mock.calls[1][0].to).toBeNull();
   });
 
-  it("warns before printing when orders have no QR token and shows a retryable error when printing fails", async () => {
+  it("warns when the mail receipt has no QR, ignores the orders' QR and shows a retryable error when printing fails", async () => {
     const user = userEvent.setup();
-    mocks.printPostWithOrders.mockRejectedValueOnce(new Error("jsPDF"));
+    mocks.printPostReceipt.mockRejectedValueOnce(new Error("jsPDF"));
     vi.spyOn(api, "get").mockResolvedValue({ data: { data: [{ id: "o1", qr_code_token: null }] } });
     renderOld("admin", "/mails/old", "card");
 
     await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));
-    expect(await screen.findByText("1 ta buyurtmada QR yo'q")).toBeInTheDocument();
+    // Buyurtma cheklari chiqmaydi — ularning QR'i haqida ogohlantirish ham yo'q.
     // Eski javobda `post` meta'si (va uning tokeni) yo'q — pochta cheki ham «QR yo'q» bilan chiqadi: oldindan aytiladi.
     expect(await screen.findByText("Pochta chekida QR yo'q")).toBeInTheDocument();
     expect(await screen.findByText("Chek chop etilmadi")).toBeInTheDocument();
+    expect(screen.queryByText("1 ta buyurtmada QR yo'q")).not.toBeInTheDocument();
 
-    mocks.printPostWithOrders.mockResolvedValueOnce({ orders: 1, pages: 2, jobs: 1, withoutQr: 1, delivery: ["printed"] });
+    mocks.printPostReceipt.mockResolvedValueOnce({ orders: 1, pages: 2, jobs: 1, withoutQr: 1, delivery: ["printed"] });
     await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
-    await waitFor(() => expect(mocks.printPostWithOrders).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mocks.printPostReceipt).toHaveBeenCalledTimes(2));
   });
 
   it("warns when the mail has no orders and reports a reprint failure", async () => {
@@ -513,7 +537,7 @@ describe("OldMails — xodim (pochtalar)", () => {
 
     await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));
     expect(await screen.findByText("Buyurtmalar topilmadi")).toBeInTheDocument();
-    expect(mocks.printPostWithOrders).not.toHaveBeenCalled();
+    expect(mocks.printPostReceipt).not.toHaveBeenCalled();
 
     get.mockRejectedValueOnce(new Error("boom"));
     await user.click(screen.getByRole("button", { name: "№90: chekni qayta chiqarish" }));
