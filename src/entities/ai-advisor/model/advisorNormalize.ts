@@ -796,9 +796,14 @@ const fieldLimitOf = (value: unknown, fallback: AiAdvisorFieldLimit | undefined)
   return { min, max, step, unit, default: def };
 };
 
-const ruleLimitsOf = (key: AiAdvisorRuleKey, value: unknown): AiAdvisorRuleLimits => {
+/**
+ * Qoida chegaralari. `useFallback` — server `limits` ni umuman bermagan (#644 dan oldingi / qisman javob): #644
+ * zaxirasi. `limits` bor bo'lsa — u bitta manba (§7.6): server chegarasini bermagan (yoki noto'g'ri bergan) maydon
+ * chegarasiz qoladi va sozlama oynasida chizilmaydi / PATCH ga kirmaydi (aks holda 400 `INVALID_SETTING`).
+ */
+const ruleLimitsOf = (key: AiAdvisorRuleKey, value: unknown, useFallback: boolean): AiAdvisorRuleLimits => {
   const raw = asRecord(value);
-  const fallback = DEFAULT_RULE_LIMITS[key];
+  const fallback: AiAdvisorRuleLimits = useFallback ? DEFAULT_RULE_LIMITS[key] : {};
   const result: AiAdvisorRuleLimits = {};
   for (const field of AI_ADVISOR_THRESHOLD_FIELDS) {
     const limit = fieldLimitOf(raw?.[field], fallback[field]);
@@ -824,7 +829,8 @@ const ruleSettingsOf = (key: AiAdvisorRuleKey, value: unknown, limits: AiAdvisor
 
 /**
  * `GET/PATCH ai/advisor/settings`. `version` (butun ≥ 1) va `rules` obyekti majburiy — aks holda `AdvisorShapeError`.
- * `limits` server bermagan maydon — #644 zaxirasi; qiymati yo'q chegara — `limits.default`.
+ * `limits` umuman yo'q — #644 zaxirasi; bor bo'lsa — faqat server bergan chegaralar (§7.6, bitta manba); qiymati yo'q
+ * chegara — `limits.default`.
  */
 export const normalizeSettings = (payload: unknown): AiAdvisorSettings => {
   const raw = asRecord(unwrapData(payload));
@@ -837,7 +843,7 @@ export const normalizeSettings = (payload: unknown): AiAdvisorSettings => {
   const limits = {} as Record<AiAdvisorRuleKey, AiAdvisorRuleLimits>;
   const settingsRules = {} as Record<AiAdvisorRuleKey, AiAdvisorRuleSettings>;
   for (const key of AI_ADVISOR_RULE_KEYS) {
-    limits[key] = ruleLimitsOf(key, limitRules?.[key]);
+    limits[key] = ruleLimitsOf(key, limitRules?.[key], !limitRules);
     settingsRules[key] = ruleSettingsOf(key, rules[key], limits[key]);
   }
   const telegram = asRecord(raw.telegram);

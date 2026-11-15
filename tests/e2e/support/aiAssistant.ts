@@ -414,8 +414,17 @@ export const createAdvisorMock = ({
   const overview = (): AiAdvisorOverview => {
     const isNew = (alert: AiAdvisorAlertDetail) => alert.status === "new";
     const isOpen = (alert: AiAdvisorAlertDetail) => alert.status === "new" || alert.status === "seen";
-    const keys = (pick: (alert: AiAdvisorAlertDetail) => boolean) =>
-      ADVISOR_RULES.filter((rule) => state.alerts.some((alert) => alert.rule_key === rule && alert.severity === "critical" && pick(alert)));
+    // Shartnoma / BE: MAX(last_at) DESC, keyin rule_key.
+    const keys = (pick: (alert: AiAdvisorAlertDetail) => boolean) => {
+      const newest = new Map<string, number>();
+      for (const alert of state.alerts) {
+        if (alert.severity !== "critical" || !pick(alert)) continue;
+        newest.set(alert.rule_key, Math.max(newest.get(alert.rule_key) ?? -Infinity, Date.parse(alert.last_at)));
+      }
+      return ADVISOR_RULES.filter((rule) => newest.has(rule)).sort(
+        (a, b) => newest.get(b)! - newest.get(a)! || a.localeCompare(b),
+      );
+    };
     return {
       ...fx.overview,
       alerts: {
@@ -503,7 +512,7 @@ export const createAdvisorMock = ({
             explanation_md: alert.explanation_md ?? fx.explain.cached.explanation_md,
             explained_at: alert.explained_at ?? new Date().toISOString(),
           });
-          return ok({ ...fx.explain.cached, alert_id: id, explanation_md: alert.explanation_md, explained_at: alert.explained_at }, 202, "Accepted");
+          return ok({ ...fx.explain.cached, alert_id: id, explanation_md: alert.explanation_md, explained_at: alert.explained_at }, 202, "Explanation queued");
         }
         state.polls.set(id, 0);
         Object.assign(alert, {
@@ -513,7 +522,7 @@ export const createAdvisorMock = ({
           explanation_requested_at: new Date().toISOString(),
           explanation_poll_after_ms: fx.explain.queued.poll_after_ms,
         });
-        return ok({ ...fx.explain.queued, alert_id: id }, 202, "Accepted");
+        return ok({ ...fx.explain.queued, alert_id: id }, 202, "Explanation queued");
       }
 
       if (!explainPath && method === "PATCH") {
@@ -542,21 +551,34 @@ export const createAdvisorMock = ({
       if (state.settingsMode === "off") return notFound(method, path);
       if (method === "GET") return ok(state.settings);
       if (method === "PATCH") {
+        // #644 `parseSettingsPatch` + `AdvisorSettingsService.update` tartibi: avval tana (400), keyin versiya (409);
+        // `severity` — 400; `enabled` / `telegram` — faqat boolean; o'zgarishsiz PATCH versiyani oshirmaydi.
         const { version, rules, ...rest } = (body ?? {}) as { version?: unknown; rules?: Record<string, Record<string, unknown>> };
         if (typeof version !== "number") return fail(fx.errors.invalidSetting);
         if (Object.keys(rest).length) return fail({ ...fx.errors.invalidSetting, field: Object.keys(rest)[0] });
-        if (version !== state.settings.version) return fail({ ...fx.errors.settingsConflict, version: state.settings.version });
-        if (state.settingsPatch === "invalid_rule") return fail(fx.errors.invalidRule);
-        if (state.settingsPatch === "error") return fail({ statusCode: 500, message: "Internal server error" });
         for (const [rule, patchRule] of Object.entries(rules ?? {})) {
           if (!(ADVISOR_RULES as readonly string[]).includes(rule)) return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}` });
-          for (const field of ["severity", "telegram"]) {
-            if (field in patchRule) return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}.${field}` });
+          if ("severity" in patchRule) return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}.severity` });
+          for (const field of ["enabled", "telegram"]) {
+            if (field in patchRule && typeof patchRule[field] !== "boolean") {
+              return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}.${field}` });
+            }
           }
         }
+        if (state.settingsPatch === "invalid_rule") return fail(fx.errors.invalidRule);
+        if (state.settingsPatch === "error") return fail({ statusCode: 500, message: "Internal server error" });
+        if (version !== state.settings.version) return fail({ ...fx.errors.settingsConflict, version: state.settings.version });
         const next = structuredClone(state.settings);
-        for (const [rule, patchRule] of Object.entries(rules ?? {})) Object.assign(next.rules[rule as (typeof ADVISOR_RULES)[number]], patchRule);
-        state.settings = { ...next, version: next.version + 1, updated_at: new Date().toISOString() };
+        let changed = false;
+        for (const [rule, patchRule] of Object.entries(rules ?? {})) {
+          const target = next.rules[rule as (typeof ADVISOR_RULES)[number]] as unknown as Record<string, unknown>;
+          for (const [field, value] of Object.entries(patchRule)) {
+            if (target[field] === value) continue;
+            target[field] = value;
+            changed = true;
+          }
+        }
+        if (changed) state.settings = { ...next, version: next.version + 1, updated_at: new Date().toISOString() };
         return ok(state.settings);
       }
     }

@@ -1,0 +1,1699 @@
+{
+  "_source": "Elchi AI ogohlantirishlar shartnomasi v0.3 — openapi-fragment.json dagi javob namunalari (o'zgartirmasdan nusxa). Shartnoma yangilansa — shu fayl ham.",
+  "examples": {
+    "GET /ai/advisor/overview 200 example": {
+      "statusCode": 200,
+      "message": "AI advisor overview",
+      "data": {
+        "alerts": {
+          "new": 3,
+          "open": 6,
+          "critical": 2,
+          "critical_open": 2,
+          "critical_rule_keys": [
+            "R2",
+            "R7"
+          ],
+          "critical_open_rule_keys": [
+            "R2",
+            "R7"
+          ]
+        },
+        "recommendations": {
+          "new": 3
+        },
+        "budget": {
+          "scope": "advisor",
+          "period": "month",
+          "period_key": "2026-10",
+          "spent_usd": 47.3,
+          "spent_uzs": 605440,
+          "cap_usd": 100,
+          "override_usd": 0,
+          "effective_cap_usd": 100,
+          "ratio": 0.473,
+          "warn_ratio": 0.8,
+          "state": "ok",
+          "reset_at": "2026-10-31T19:00:00.000Z",
+          "deep_used": 2,
+          "deep_limit": 10
+        },
+        "usd_uzs_rate": 12800,
+        "generated_at": "2026-10-22T09:31:00.000Z"
+      }
+    },
+    "GET /ai/advisor/overview 403 forbidden": {
+      "statusCode": 403,
+      "message": "Bu amal uchun ruxsat yo'q"
+    },
+    "GET /ai/advisor/overview 504 timeout": {
+      "statusCode": 504,
+      "message": "AI service javob bermadi"
+    },
+    "GET /ai/advisor/alerts 200 example": {
+      "statusCode": 200,
+      "message": "AI advisor alerts",
+      "data": {
+        "items": [
+          {
+            "id": "1041",
+            "rule_key": "R2",
+            "severity": "critical",
+            "status": "new",
+            "title": "Jasur Tursunov kassasida 2 840 000 so'm — 4 kundan beri topshirilmagan",
+            "branch": {
+              "id": "1",
+              "name": "Toshkent HQ"
+            },
+            "subject": {
+              "kind": "courier",
+              "id": "377",
+              "name": "Jasur Tursunov"
+            },
+            "headline_amount": 2840000,
+            "facts": {
+              "trigger": "no_handover",
+              "courier": {
+                "id": "377",
+                "name": "Jasur Tursunov"
+              },
+              "branch": {
+                "id": "1",
+                "name": "Toshkent HQ"
+              },
+              "balance": 2840000,
+              "growth_days": 2,
+              "days_without_handover": 4,
+              "last_handover_at": "2026-10-18T13:20:00.000Z"
+            },
+            "occurrences": 1,
+            "first_at": "2026-10-22T09:00:00.000Z",
+            "last_at": "2026-10-22T09:00:00.000Z",
+            "first_fact_at": "2026-10-17T19:00:00.000Z",
+            "last_fact_at": "2026-10-22T09:00:00.000Z",
+            "explanation_status": "ready",
+            "reopened_from_id": null
+          },
+          {
+            "id": "1040",
+            "rule_key": "R1",
+            "severity": "warning",
+            "status": "new",
+            "title": "Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm",
+            "branch": {
+              "id": "7",
+              "name": "Samarqand filiali"
+            },
+            "subject": {
+              "kind": "cashbox",
+              "id": "7",
+              "name": "Samarqand filiali kassasi"
+            },
+            "headline_amount": -445000,
+            "facts": {
+              "trigger": "consecutive_negative",
+              "cashbox": {
+                "type": "branch",
+                "owner_id": "7",
+                "name": "Samarqand filiali kassasi"
+              },
+              "branch": {
+                "id": "7",
+                "name": "Samarqand filiali"
+              },
+              "shifts_count": 3,
+              "total_difference": -445000,
+              "last_difference": -240000,
+              "closed_by": [
+                {
+                  "id": "214",
+                  "name": "Sardor Mirzayev"
+                }
+              ],
+              "last_shift_id": "818"
+            },
+            "occurrences": 3,
+            "first_at": "2026-10-20T16:00:00.000Z",
+            "last_at": "2026-10-22T08:45:00.000Z",
+            "first_fact_at": "2026-10-20T15:50:00.000Z",
+            "last_fact_at": "2026-10-22T08:40:00.000Z",
+            "explanation_status": "none",
+            "reopened_from_id": null
+          },
+          {
+            "id": "1039",
+            "rule_key": "R7",
+            "severity": "critical",
+            "status": "new",
+            "title": "Chekda farq bor — Urgut filiali yoqilg'i xarajati, karta mos emas",
+            "branch": {
+              "id": "12",
+              "name": "Urgut filiali"
+            },
+            "subject": {
+              "kind": "cashbox",
+              "id": "12",
+              "name": "Urgut filiali kassasi"
+            },
+            "headline_amount": -18000,
+            "facts": {
+              "source": "receipt",
+              "receipt_ai_enabled": true,
+              "mismatch": [
+                "amount",
+                "card"
+              ],
+              "cashbox": {
+                "type": "branch",
+                "owner_id": "12",
+                "name": "Urgut filiali kassasi"
+              },
+              "branch": {
+                "id": "12",
+                "name": "Urgut filiali"
+              },
+              "entered_amount": 320000,
+              "read_amount": 302000,
+              "difference": -18000,
+              "operation": {
+                "history_id": "99120",
+                "kind": "manual_expense",
+                "category_name": "Yoqilg'i"
+              },
+              "shift": null,
+              "card": null,
+              "created_by": {
+                "id": "402",
+                "name": "Ravshan Ortiqov"
+              },
+              "created_at": "2026-10-22T06:05:00.000Z"
+            },
+            "occurrences": 1,
+            "first_at": "2026-10-22T06:10:00.000Z",
+            "last_at": "2026-10-22T06:10:00.000Z",
+            "first_fact_at": "2026-10-22T06:05:00.000Z",
+            "last_fact_at": "2026-10-22T06:05:00.000Z",
+            "explanation_status": "ready",
+            "reopened_from_id": null
+          },
+          {
+            "id": "1036",
+            "rule_key": "R3",
+            "severity": "warning",
+            "status": "seen",
+            "title": "Farg'ona filiali: yoqilg'i xarajati 1 450 000 so'm — odatdagidan 3,4 barobar",
+            "branch": {
+              "id": "9",
+              "name": "Farg'ona filiali"
+            },
+            "subject": {
+              "kind": "cashbox",
+              "id": "9",
+              "name": "Farg'ona filiali kassasi"
+            },
+            "headline_amount": 1450000,
+            "facts": {
+              "history_id": "98877",
+              "amount": 1450000,
+              "category": {
+                "id": "4",
+                "name": "Yoqilg'i"
+              },
+              "cashbox": {
+                "type": "branch",
+                "owner_id": "9",
+                "name": "Farg'ona filiali kassasi"
+              },
+              "branch": {
+                "id": "9",
+                "name": "Farg'ona filiali"
+              },
+              "created_by": {
+                "id": "388",
+                "name": "Bekzod Karimov"
+              },
+              "created_at": "2026-10-21T13:10:00.000Z",
+              "median": 426000,
+              "mad": 95000,
+              "threshold": 711000,
+              "ratio_to_median": 3.4,
+              "sample_size": 22,
+              "window_days": 30,
+              "scope": "category_branch"
+            },
+            "occurrences": 1,
+            "first_at": "2026-10-21T13:20:00.000Z",
+            "last_at": "2026-10-21T13:20:00.000Z",
+            "first_fact_at": "2026-10-21T13:10:00.000Z",
+            "last_fact_at": "2026-10-21T13:10:00.000Z",
+            "explanation_status": "none",
+            "reopened_from_id": null
+          }
+        ],
+        "meta": {
+          "page": 1,
+          "limit": 10,
+          "total": 22,
+          "totalPages": 3
+        },
+        "counts": {
+          "by_status": {
+            "new": 3,
+            "seen": 3,
+            "resolved": 12,
+            "dismissed": 4
+          }
+        }
+      }
+    },
+    "GET /ai/advisor/alerts 400 bad_query": {
+      "statusCode": 400,
+      "message": "status must be one of the following values: new, seen, resolved, dismissed, open"
+    },
+    "GET /ai/advisor/alerts 403 forbidden": {
+      "statusCode": 403,
+      "message": "Bu amal uchun ruxsat yo'q"
+    },
+    "GET /ai/advisor/alerts 504 timeout": {
+      "statusCode": 504,
+      "message": "AI service javob bermadi"
+    },
+    "GET /ai/advisor/alerts/{id} 200 r1_shifts_seen": {
+      "statusCode": 200,
+      "message": "AI advisor alert",
+      "data": {
+        "id": "1040",
+        "rule_key": "R1",
+        "severity": "warning",
+        "status": "seen",
+        "title": "Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm",
+        "branch": {
+          "id": "7",
+          "name": "Samarqand filiali"
+        },
+        "subject": {
+          "kind": "cashbox",
+          "id": "7",
+          "name": "Samarqand filiali kassasi"
+        },
+        "headline_amount": -445000,
+        "facts": {
+          "trigger": "consecutive_negative",
+          "cashbox": {
+            "type": "branch",
+            "owner_id": "7",
+            "name": "Samarqand filiali kassasi"
+          },
+          "branch": {
+            "id": "7",
+            "name": "Samarqand filiali"
+          },
+          "shifts_count": 3,
+          "total_difference": -445000,
+          "last_difference": -240000,
+          "closed_by": [
+            {
+              "id": "214",
+              "name": "Sardor Mirzayev"
+            }
+          ],
+          "last_shift_id": "818"
+        },
+        "occurrences": 3,
+        "first_at": "2026-10-20T16:00:00.000Z",
+        "last_at": "2026-10-22T08:45:00.000Z",
+        "first_fact_at": "2026-10-20T15:50:00.000Z",
+        "last_fact_at": "2026-10-22T08:40:00.000Z",
+        "explanation_status": "ready",
+        "reopened_from_id": null,
+        "rule": {
+          "key": "R1",
+          "severity": "warning",
+          "thresholds": {
+            "shortage_uzs": 50000,
+            "consecutive_negative": 3
+          }
+        },
+        "evidence": {
+          "kind": "shifts",
+          "total_rows": 3,
+          "truncated": false,
+          "rows": [
+            {
+              "shift_id": "806",
+              "closed_at": "2026-10-20T15:50:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 3200000,
+              "expected_card": 1660000,
+              "counted_cash": 3200000,
+              "counted_card": 1540000,
+              "expected": 4860000,
+              "counted": 4740000,
+              "difference": -120000,
+              "href": "/payments/shifts/806"
+            },
+            {
+              "shift_id": "811",
+              "closed_at": "2026-10-21T15:55:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 2500000,
+              "expected_card": 1420000,
+              "counted_cash": 2500000,
+              "counted_card": 1335000,
+              "expected": 3920000,
+              "counted": 3835000,
+              "difference": -85000,
+              "href": "/payments/shifts/811"
+            },
+            {
+              "shift_id": "818",
+              "closed_at": "2026-10-22T08:40:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 3400000,
+              "expected_card": 1910000,
+              "counted_cash": 3400000,
+              "counted_card": 1670000,
+              "expected": 5310000,
+              "counted": 5070000,
+              "difference": -240000,
+              "href": "/payments/shifts/818"
+            }
+          ],
+          "totals": {
+            "count": 3,
+            "difference": -445000
+          }
+        },
+        "links": [
+          {
+            "kind": "shift_report",
+            "href": "/payments/shifts/818",
+            "entity_id": "818",
+            "primary": true
+          },
+          {
+            "kind": "branch_cashbox",
+            "href": "/payments/cash-detail/7?type=branch",
+            "entity_id": "7",
+            "primary": false
+          }
+        ],
+        "explanation_md": "Uchala kamomad ham «Humo virtual» kartasida: naqd to'g'ri sanalgan, karta qoldig'i har gal kam kiritilgan. Ehtimol, kechki tushum smena yopilgandan keyin kartaga tushmoqda. Smena hisobotidagi karta rasmlarini solishtiring.",
+        "explanation_error": null,
+        "explanation_error_scope": null,
+        "explanation_retry_at": null,
+        "explanation_requested_at": "2026-10-22T09:19:40.000Z",
+        "explanation_poll_after_ms": null,
+        "explained_at": "2026-10-22T09:20:00.000Z",
+        "seen_at": "2026-10-22T09:18:00.000Z",
+        "seen_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        },
+        "resolved_at": null,
+        "resolved_by": null,
+        "resolution_note": null,
+        "reopened_from": null
+      }
+    },
+    "GET /ai/advisor/alerts/{id} 200 r1_explanation_pending": {
+      "statusCode": 200,
+      "message": "AI advisor alert",
+      "data": {
+        "id": "1040",
+        "rule_key": "R1",
+        "severity": "warning",
+        "status": "seen",
+        "title": "Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm",
+        "branch": {
+          "id": "7",
+          "name": "Samarqand filiali"
+        },
+        "subject": {
+          "kind": "cashbox",
+          "id": "7",
+          "name": "Samarqand filiali kassasi"
+        },
+        "headline_amount": -445000,
+        "facts": {
+          "trigger": "consecutive_negative",
+          "cashbox": {
+            "type": "branch",
+            "owner_id": "7",
+            "name": "Samarqand filiali kassasi"
+          },
+          "branch": {
+            "id": "7",
+            "name": "Samarqand filiali"
+          },
+          "shifts_count": 3,
+          "total_difference": -445000,
+          "last_difference": -240000,
+          "closed_by": [
+            {
+              "id": "214",
+              "name": "Sardor Mirzayev"
+            }
+          ],
+          "last_shift_id": "818"
+        },
+        "occurrences": 3,
+        "first_at": "2026-10-20T16:00:00.000Z",
+        "last_at": "2026-10-22T08:45:00.000Z",
+        "first_fact_at": "2026-10-20T15:50:00.000Z",
+        "last_fact_at": "2026-10-22T08:40:00.000Z",
+        "explanation_status": "pending",
+        "reopened_from_id": null,
+        "rule": {
+          "key": "R1",
+          "severity": "warning",
+          "thresholds": {
+            "shortage_uzs": 50000,
+            "consecutive_negative": 3
+          }
+        },
+        "evidence": {
+          "kind": "shifts",
+          "total_rows": 3,
+          "truncated": false,
+          "rows": [
+            {
+              "shift_id": "806",
+              "closed_at": "2026-10-20T15:50:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 3200000,
+              "expected_card": 1660000,
+              "counted_cash": 3200000,
+              "counted_card": 1540000,
+              "expected": 4860000,
+              "counted": 4740000,
+              "difference": -120000,
+              "href": "/payments/shifts/806"
+            },
+            {
+              "shift_id": "811",
+              "closed_at": "2026-10-21T15:55:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 2500000,
+              "expected_card": 1420000,
+              "counted_cash": 2500000,
+              "counted_card": 1335000,
+              "expected": 3920000,
+              "counted": 3835000,
+              "difference": -85000,
+              "href": "/payments/shifts/811"
+            },
+            {
+              "shift_id": "818",
+              "closed_at": "2026-10-22T08:40:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 3400000,
+              "expected_card": 1910000,
+              "counted_cash": 3400000,
+              "counted_card": 1670000,
+              "expected": 5310000,
+              "counted": 5070000,
+              "difference": -240000,
+              "href": "/payments/shifts/818"
+            }
+          ],
+          "totals": {
+            "count": 3,
+            "difference": -445000
+          }
+        },
+        "links": [
+          {
+            "kind": "shift_report",
+            "href": "/payments/shifts/818",
+            "entity_id": "818",
+            "primary": true
+          },
+          {
+            "kind": "branch_cashbox",
+            "href": "/payments/cash-detail/7?type=branch",
+            "entity_id": "7",
+            "primary": false
+          }
+        ],
+        "explanation_md": null,
+        "explanation_error": null,
+        "explanation_error_scope": null,
+        "explanation_retry_at": null,
+        "explanation_requested_at": "2026-10-22T09:19:40.000Z",
+        "explanation_poll_after_ms": 2000,
+        "explained_at": null,
+        "seen_at": "2026-10-22T09:18:00.000Z",
+        "seen_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        },
+        "resolved_at": null,
+        "resolved_by": null,
+        "resolution_note": null,
+        "reopened_from": null
+      }
+    },
+    "GET /ai/advisor/alerts/{id} 200 r1_include_history": {
+      "statusCode": 200,
+      "message": "AI advisor alert",
+      "data": {
+        "id": "1040",
+        "rule_key": "R1",
+        "severity": "warning",
+        "status": "seen",
+        "title": "Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm",
+        "branch": {
+          "id": "7",
+          "name": "Samarqand filiali"
+        },
+        "subject": {
+          "kind": "cashbox",
+          "id": "7",
+          "name": "Samarqand filiali kassasi"
+        },
+        "headline_amount": -445000,
+        "facts": {
+          "trigger": "consecutive_negative",
+          "cashbox": {
+            "type": "branch",
+            "owner_id": "7",
+            "name": "Samarqand filiali kassasi"
+          },
+          "branch": {
+            "id": "7",
+            "name": "Samarqand filiali"
+          },
+          "shifts_count": 3,
+          "total_difference": -445000,
+          "last_difference": -240000,
+          "closed_by": [
+            {
+              "id": "214",
+              "name": "Sardor Mirzayev"
+            }
+          ],
+          "last_shift_id": "818"
+        },
+        "occurrences": 3,
+        "first_at": "2026-10-20T16:00:00.000Z",
+        "last_at": "2026-10-22T08:45:00.000Z",
+        "first_fact_at": "2026-10-20T15:50:00.000Z",
+        "last_fact_at": "2026-10-22T08:40:00.000Z",
+        "explanation_status": "ready",
+        "reopened_from_id": null,
+        "rule": {
+          "key": "R1",
+          "severity": "warning",
+          "thresholds": {
+            "shortage_uzs": 50000,
+            "consecutive_negative": 3
+          }
+        },
+        "evidence": {
+          "kind": "shifts",
+          "total_rows": 3,
+          "truncated": false,
+          "rows": [
+            {
+              "shift_id": "806",
+              "closed_at": "2026-10-20T15:50:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 3200000,
+              "expected_card": 1660000,
+              "counted_cash": 3200000,
+              "counted_card": 1540000,
+              "expected": 4860000,
+              "counted": 4740000,
+              "difference": -120000,
+              "href": "/payments/shifts/806"
+            },
+            {
+              "shift_id": "811",
+              "closed_at": "2026-10-21T15:55:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 2500000,
+              "expected_card": 1420000,
+              "counted_cash": 2500000,
+              "counted_card": 1335000,
+              "expected": 3920000,
+              "counted": 3835000,
+              "difference": -85000,
+              "href": "/payments/shifts/811"
+            },
+            {
+              "shift_id": "818",
+              "closed_at": "2026-10-22T08:40:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 3400000,
+              "expected_card": 1910000,
+              "counted_cash": 3400000,
+              "counted_card": 1670000,
+              "expected": 5310000,
+              "counted": 5070000,
+              "difference": -240000,
+              "href": "/payments/shifts/818"
+            }
+          ],
+          "totals": {
+            "count": 3,
+            "difference": -445000
+          }
+        },
+        "links": [
+          {
+            "kind": "shift_report",
+            "href": "/payments/shifts/818",
+            "entity_id": "818",
+            "primary": true
+          },
+          {
+            "kind": "branch_cashbox",
+            "href": "/payments/cash-detail/7?type=branch",
+            "entity_id": "7",
+            "primary": false
+          }
+        ],
+        "explanation_md": "Uchala kamomad ham «Humo virtual» kartasida: naqd to'g'ri sanalgan, karta qoldig'i har gal kam kiritilgan. Ehtimol, kechki tushum smena yopilgandan keyin kartaga tushmoqda. Smena hisobotidagi karta rasmlarini solishtiring.",
+        "explanation_error": null,
+        "explanation_error_scope": null,
+        "explanation_retry_at": null,
+        "explanation_requested_at": "2026-10-22T09:19:40.000Z",
+        "explanation_poll_after_ms": null,
+        "explained_at": "2026-10-22T09:20:00.000Z",
+        "seen_at": "2026-10-22T09:18:00.000Z",
+        "seen_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        },
+        "resolved_at": null,
+        "resolved_by": null,
+        "resolution_note": null,
+        "reopened_from": null,
+        "history": [
+          {
+            "at": "2026-10-20T16:00:00.000Z",
+            "event": "opened",
+            "by": null,
+            "note": null
+          },
+          {
+            "at": "2026-10-21T16:00:00.000Z",
+            "event": "occurred",
+            "by": null,
+            "note": null
+          },
+          {
+            "at": "2026-10-22T08:45:00.000Z",
+            "event": "occurred",
+            "by": null,
+            "note": null
+          },
+          {
+            "at": "2026-10-22T09:18:00.000Z",
+            "event": "seen",
+            "by": {
+              "id": "1",
+              "name": "Shodiyor Ergashev"
+            },
+            "note": null
+          },
+          {
+            "at": "2026-10-22T09:20:00.000Z",
+            "event": "explained",
+            "by": {
+              "id": "1",
+              "name": "Shodiyor Ergashev"
+            },
+            "note": null
+          }
+        ]
+      }
+    },
+    "GET /ai/advisor/alerts/{id} 200 r7_receipt": {
+      "statusCode": 200,
+      "message": "AI advisor alert",
+      "data": {
+        "id": "1039",
+        "rule_key": "R7",
+        "severity": "critical",
+        "status": "seen",
+        "title": "Chekda farq bor — Urgut filiali yoqilg'i xarajati, karta mos emas",
+        "branch": {
+          "id": "12",
+          "name": "Urgut filiali"
+        },
+        "subject": {
+          "kind": "cashbox",
+          "id": "12",
+          "name": "Urgut filiali kassasi"
+        },
+        "headline_amount": -18000,
+        "facts": {
+          "source": "receipt",
+          "receipt_ai_enabled": true,
+          "mismatch": [
+            "amount",
+            "card"
+          ],
+          "cashbox": {
+            "type": "branch",
+            "owner_id": "12",
+            "name": "Urgut filiali kassasi"
+          },
+          "branch": {
+            "id": "12",
+            "name": "Urgut filiali"
+          },
+          "entered_amount": 320000,
+          "read_amount": 302000,
+          "difference": -18000,
+          "operation": {
+            "history_id": "99120",
+            "kind": "manual_expense",
+            "category_name": "Yoqilg'i"
+          },
+          "shift": null,
+          "card": null,
+          "created_by": {
+            "id": "402",
+            "name": "Ravshan Ortiqov"
+          },
+          "created_at": "2026-10-22T06:05:00.000Z"
+        },
+        "occurrences": 1,
+        "first_at": "2026-10-22T06:10:00.000Z",
+        "last_at": "2026-10-22T06:10:00.000Z",
+        "first_fact_at": "2026-10-22T06:05:00.000Z",
+        "last_fact_at": "2026-10-22T06:05:00.000Z",
+        "explanation_status": "ready",
+        "reopened_from_id": null,
+        "rule": {
+          "key": "R7",
+          "severity": "critical",
+          "thresholds": {}
+        },
+        "evidence": {
+          "kind": "receipt_check",
+          "total_rows": 1,
+          "truncated": false,
+          "receipt": {
+            "id": "5531",
+            "ai_status": "mismatch",
+            "flags": [
+              "card_mismatch"
+            ],
+            "date": "2026-10-22 10:52",
+            "date_at": "2026-10-22T05:52:00.000Z",
+            "recipient": "UzAuto Petrol, 12-shoxobcha",
+            "recipient_last4": "8840",
+            "payer": "Ravshan Ortiqov",
+            "payer_last4": "3307",
+            "bank": "Hamkorbank",
+            "reference": "512778940112",
+            "confidence": 0.89
+          },
+          "week_summary": {
+            "from": "2026-10-19",
+            "to": "2026-10-25",
+            "checked": 46,
+            "match": 41,
+            "mismatch": 3,
+            "unreadable": 2
+          }
+        },
+        "links": [
+          {
+            "kind": "operation",
+            "href": "/payments/cash-detail/12?type=branch&history=99120",
+            "entity_id": "99120",
+            "primary": true
+          }
+        ],
+        "explanation_md": "Chekdagi summa kiritilganidan 18 000 so'm kam, to'lov esa filial kartasidan emas, boshqa kartadan (··3307) qilingan. Xarajat summasini chek bo'yicha tekshiring va bu karta bilan to'lov sababini aniqlang.",
+        "explanation_error": null,
+        "explanation_error_scope": null,
+        "explanation_retry_at": null,
+        "explanation_requested_at": "2026-10-22T06:10:00.000Z",
+        "explanation_poll_after_ms": null,
+        "explained_at": "2026-10-22T06:10:30.000Z",
+        "seen_at": "2026-10-22T09:30:00.000Z",
+        "seen_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        },
+        "resolved_at": null,
+        "resolved_by": null,
+        "resolution_note": null,
+        "reopened_from": null
+      }
+    },
+    "GET /ai/advisor/alerts/{id} 200 r3_explanation_failed_budget": {
+      "statusCode": 200,
+      "message": "AI advisor alert",
+      "data": {
+        "id": "1036",
+        "rule_key": "R3",
+        "severity": "warning",
+        "status": "seen",
+        "title": "Farg'ona filiali: yoqilg'i xarajati 1 450 000 so'm — odatdagidan 3,4 barobar",
+        "branch": {
+          "id": "9",
+          "name": "Farg'ona filiali"
+        },
+        "subject": {
+          "kind": "cashbox",
+          "id": "9",
+          "name": "Farg'ona filiali kassasi"
+        },
+        "headline_amount": 1450000,
+        "facts": {
+          "history_id": "98877",
+          "amount": 1450000,
+          "category": {
+            "id": "4",
+            "name": "Yoqilg'i"
+          },
+          "cashbox": {
+            "type": "branch",
+            "owner_id": "9",
+            "name": "Farg'ona filiali kassasi"
+          },
+          "branch": {
+            "id": "9",
+            "name": "Farg'ona filiali"
+          },
+          "created_by": {
+            "id": "388",
+            "name": "Bekzod Karimov"
+          },
+          "created_at": "2026-10-21T13:10:00.000Z",
+          "median": 426000,
+          "mad": 95000,
+          "threshold": 711000,
+          "ratio_to_median": 3.4,
+          "sample_size": 22,
+          "window_days": 30,
+          "scope": "category_branch"
+        },
+        "occurrences": 1,
+        "first_at": "2026-10-21T13:20:00.000Z",
+        "last_at": "2026-10-21T13:20:00.000Z",
+        "first_fact_at": "2026-10-21T13:10:00.000Z",
+        "last_fact_at": "2026-10-21T13:10:00.000Z",
+        "explanation_status": "failed",
+        "reopened_from_id": null,
+        "rule": {
+          "key": "R3",
+          "severity": "warning",
+          "thresholds": {
+            "mad_multiplier": 3
+          }
+        },
+        "evidence": {
+          "kind": "expense_stats",
+          "total_rows": 23,
+          "truncated": true,
+          "stats": {
+            "window_days": 30,
+            "sample_size": 22,
+            "median": 426000,
+            "mad": 95000,
+            "multiplier": 3,
+            "threshold": 711000,
+            "scope": "category_branch"
+          },
+          "rows": [
+            {
+              "history_id": "98877",
+              "created_at": "2026-10-21T13:10:00.000Z",
+              "amount": 1450000,
+              "cashbox_name": "Farg'ona filiali kassasi",
+              "created_by": {
+                "id": "388",
+                "name": "Bekzod Karimov"
+              },
+              "is_trigger": true,
+              "href": "/payments/cash-detail/9?type=branch&history=98877"
+            },
+            {
+              "history_id": "98610",
+              "created_at": "2026-10-19T08:30:00.000Z",
+              "amount": 410000,
+              "cashbox_name": "Farg'ona filiali kassasi",
+              "created_by": {
+                "id": "388",
+                "name": "Bekzod Karimov"
+              },
+              "is_trigger": false,
+              "href": "/payments/cash-detail/9?type=branch&history=98610"
+            },
+            {
+              "history_id": "98402",
+              "created_at": "2026-10-16T09:05:00.000Z",
+              "amount": 452000,
+              "cashbox_name": "Farg'ona filiali kassasi",
+              "created_by": {
+                "id": "388",
+                "name": "Bekzod Karimov"
+              },
+              "is_trigger": false,
+              "href": "/payments/cash-detail/9?type=branch&history=98402"
+            }
+          ]
+        },
+        "links": [
+          {
+            "kind": "operation",
+            "href": "/payments/cash-detail/9?type=branch&history=98877",
+            "entity_id": "98877",
+            "primary": true
+          }
+        ],
+        "explanation_md": null,
+        "explained_at": null,
+        "explanation_error": "budget_exceeded",
+        "explanation_error_scope": "advisor",
+        "explanation_retry_at": "2026-10-31T19:00:00.000Z",
+        "explanation_requested_at": "2026-10-21T14:02:00.000Z",
+        "explanation_poll_after_ms": null,
+        "seen_at": "2026-10-21T14:00:00.000Z",
+        "seen_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        },
+        "resolved_at": null,
+        "resolved_by": null,
+        "resolution_note": null,
+        "reopened_from": null
+      }
+    },
+    "GET /ai/advisor/alerts/{id} 400 bad_id": {
+      "statusCode": 400,
+      "message": "Ogohlantirish ID si noto'g'ri"
+    },
+    "GET /ai/advisor/alerts/{id} 403 forbidden": {
+      "statusCode": 403,
+      "message": "Bu amal uchun ruxsat yo'q"
+    },
+    "GET /ai/advisor/alerts/{id} 404 not_found": {
+      "statusCode": 404,
+      "message": "Ogohlantirish topilmadi",
+      "code": "AI_ADVISOR_ALERT_NOT_FOUND"
+    },
+    "GET /ai/advisor/alerts/{id} 504 timeout": {
+      "statusCode": 504,
+      "message": "AI service javob bermadi"
+    },
+    "PATCH /ai/advisor/alerts/{id} 200 example": {
+      "statusCode": 200,
+      "message": "AI advisor alert",
+      "data": {
+        "id": "1040",
+        "rule_key": "R1",
+        "severity": "warning",
+        "status": "resolved",
+        "title": "Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm",
+        "branch": {
+          "id": "7",
+          "name": "Samarqand filiali"
+        },
+        "subject": {
+          "kind": "cashbox",
+          "id": "7",
+          "name": "Samarqand filiali kassasi"
+        },
+        "headline_amount": -445000,
+        "facts": {
+          "trigger": "consecutive_negative",
+          "cashbox": {
+            "type": "branch",
+            "owner_id": "7",
+            "name": "Samarqand filiali kassasi"
+          },
+          "branch": {
+            "id": "7",
+            "name": "Samarqand filiali"
+          },
+          "shifts_count": 3,
+          "total_difference": -445000,
+          "last_difference": -240000,
+          "closed_by": [
+            {
+              "id": "214",
+              "name": "Sardor Mirzayev"
+            }
+          ],
+          "last_shift_id": "818"
+        },
+        "occurrences": 3,
+        "first_at": "2026-10-20T16:00:00.000Z",
+        "last_at": "2026-10-22T08:45:00.000Z",
+        "first_fact_at": "2026-10-20T15:50:00.000Z",
+        "last_fact_at": "2026-10-22T08:40:00.000Z",
+        "explanation_status": "ready",
+        "reopened_from_id": null,
+        "rule": {
+          "key": "R1",
+          "severity": "warning",
+          "thresholds": {
+            "shortage_uzs": 50000,
+            "consecutive_negative": 3
+          }
+        },
+        "evidence": {
+          "kind": "shifts",
+          "total_rows": 3,
+          "truncated": false,
+          "rows": [
+            {
+              "shift_id": "806",
+              "closed_at": "2026-10-20T15:50:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 3200000,
+              "expected_card": 1660000,
+              "counted_cash": 3200000,
+              "counted_card": 1540000,
+              "expected": 4860000,
+              "counted": 4740000,
+              "difference": -120000,
+              "href": "/payments/shifts/806"
+            },
+            {
+              "shift_id": "811",
+              "closed_at": "2026-10-21T15:55:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 2500000,
+              "expected_card": 1420000,
+              "counted_cash": 2500000,
+              "counted_card": 1335000,
+              "expected": 3920000,
+              "counted": 3835000,
+              "difference": -85000,
+              "href": "/payments/shifts/811"
+            },
+            {
+              "shift_id": "818",
+              "closed_at": "2026-10-22T08:40:00.000Z",
+              "closed_by": {
+                "id": "214",
+                "name": "Sardor Mirzayev"
+              },
+              "closed_by_system": false,
+              "expected_cash": 3400000,
+              "expected_card": 1910000,
+              "counted_cash": 3400000,
+              "counted_card": 1670000,
+              "expected": 5310000,
+              "counted": 5070000,
+              "difference": -240000,
+              "href": "/payments/shifts/818"
+            }
+          ],
+          "totals": {
+            "count": 3,
+            "difference": -445000
+          }
+        },
+        "links": [
+          {
+            "kind": "shift_report",
+            "href": "/payments/shifts/818",
+            "entity_id": "818",
+            "primary": true
+          },
+          {
+            "kind": "branch_cashbox",
+            "href": "/payments/cash-detail/7?type=branch",
+            "entity_id": "7",
+            "primary": false
+          }
+        ],
+        "explanation_md": "Uchala kamomad ham «Humo virtual» kartasida: naqd to'g'ri sanalgan, karta qoldig'i har gal kam kiritilgan. Ehtimol, kechki tushum smena yopilgandan keyin kartaga tushmoqda. Smena hisobotidagi karta rasmlarini solishtiring.",
+        "explanation_error": null,
+        "explanation_error_scope": null,
+        "explanation_retry_at": null,
+        "explanation_requested_at": "2026-10-22T09:19:40.000Z",
+        "explanation_poll_after_ms": null,
+        "explained_at": "2026-10-22T09:20:00.000Z",
+        "seen_at": "2026-10-22T09:18:00.000Z",
+        "seen_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        },
+        "resolved_at": "2026-10-22T10:10:00.000Z",
+        "resolved_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        },
+        "resolution_note": "Kartadagi tushum keyingi kuni kelgan, Sardor Mirzayev bilan tekshirildi.",
+        "reopened_from": null
+      }
+    },
+    "PATCH /ai/advisor/alerts/{id} 400 note_required": {
+      "statusCode": 400,
+      "message": "«Hal qilindi» uchun izoh yozing",
+      "code": "AI_ADVISOR_NOTE_INVALID",
+      "reason": "required",
+      "min_length": 3,
+      "max_length": 500
+    },
+    "PATCH /ai/advisor/alerts/{id} 400 note_too_short": {
+      "statusCode": 400,
+      "message": "Izoh kamida 3 belgi bo'lsin",
+      "code": "AI_ADVISOR_NOTE_INVALID",
+      "reason": "too_short",
+      "min_length": 3,
+      "max_length": 500
+    },
+    "PATCH /ai/advisor/alerts/{id} 400 note_too_long": {
+      "statusCode": 400,
+      "message": "Izoh 500 belgidan oshmasin",
+      "code": "AI_ADVISOR_NOTE_INVALID",
+      "reason": "too_long",
+      "min_length": 3,
+      "max_length": 500
+    },
+    "PATCH /ai/advisor/alerts/{id} 400 bad_status": {
+      "statusCode": 400,
+      "message": "status must be one of the following values: resolved, dismissed"
+    },
+    "PATCH /ai/advisor/alerts/{id} 403 forbidden": {
+      "statusCode": 403,
+      "message": "Bu amal uchun ruxsat yo'q"
+    },
+    "PATCH /ai/advisor/alerts/{id} 404 not_found": {
+      "statusCode": 404,
+      "message": "Ogohlantirish topilmadi",
+      "code": "AI_ADVISOR_ALERT_NOT_FOUND"
+    },
+    "PATCH /ai/advisor/alerts/{id} 409 closed": {
+      "statusCode": 409,
+      "message": "Ogohlantirish allaqachon yopilgan",
+      "code": "AI_ADVISOR_ALERT_CLOSED",
+      "alert_status": "resolved"
+    },
+    "PATCH /ai/advisor/alerts/{id} 504 timeout": {
+      "statusCode": 504,
+      "message": "AI service javob bermadi"
+    },
+    "POST /ai/advisor/alerts/{id}/explain 202 queued": {
+      "statusCode": 202,
+      "message": "Explanation queued",
+      "data": {
+        "alert_id": "1040",
+        "explanation_status": "pending",
+        "explanation_md": null,
+        "explained_at": null,
+        "cached": false,
+        "poll_after_ms": 2000
+      }
+    },
+    "POST /ai/advisor/alerts/{id}/explain 202 cached": {
+      "statusCode": 202,
+      "message": "Explanation ready",
+      "data": {
+        "alert_id": "1040",
+        "explanation_status": "ready",
+        "explanation_md": "Uchala kamomad ham «Humo virtual» kartasida: naqd to'g'ri sanalgan, karta qoldig'i har gal kam kiritilgan. Ehtimol, kechki tushum smena yopilgandan keyin kartaga tushmoqda. Smena hisobotidagi karta rasmlarini solishtiring.",
+        "explained_at": "2026-10-22T09:20:00.000Z",
+        "cached": true,
+        "poll_after_ms": null
+      }
+    },
+    "POST /ai/advisor/alerts/{id}/explain 400 bad_id": {
+      "statusCode": 400,
+      "message": "Ogohlantirish ID si noto'g'ri"
+    },
+    "POST /ai/advisor/alerts/{id}/explain 403 forbidden": {
+      "statusCode": 403,
+      "message": "Bu amal uchun ruxsat yo'q"
+    },
+    "POST /ai/advisor/alerts/{id}/explain 404 not_found": {
+      "statusCode": 404,
+      "message": "Ogohlantirish topilmadi",
+      "code": "AI_ADVISOR_ALERT_NOT_FOUND"
+    },
+    "POST /ai/advisor/alerts/{id}/explain 409 closed": {
+      "statusCode": 409,
+      "message": "Yopilgan ogohlantirishga izoh so'ralmaydi",
+      "code": "AI_ADVISOR_ALERT_CLOSED",
+      "alert_status": "dismissed"
+    },
+    "POST /ai/advisor/alerts/{id}/explain 429 advisor_monthly": {
+      "statusCode": 429,
+      "message": "AI maslahatchi budjeti tugadi",
+      "code": "AI_ADVISOR_BUDGET_EXCEEDED",
+      "scope": "advisor",
+      "period": "month",
+      "reset_at": "2026-10-31T19:00:00.000Z",
+      "retry_after_seconds": 86400
+    },
+    "POST /ai/advisor/alerts/{id}/explain 429 advisor_daily": {
+      "statusCode": 429,
+      "message": "Bugungi AI maslahatchi budjeti tugadi",
+      "code": "AI_ADVISOR_BUDGET_EXCEEDED",
+      "scope": "advisor",
+      "period": "day",
+      "reset_at": "2026-10-22T19:00:00.000Z",
+      "retry_after_seconds": 34200
+    },
+    "POST /ai/advisor/alerts/{id}/explain 429 global_daily": {
+      "statusCode": 429,
+      "message": "Bugungi umumiy AI shifti tugadi",
+      "code": "AI_ADVISOR_BUDGET_EXCEEDED",
+      "scope": "global",
+      "period": "day",
+      "reset_at": "2026-10-22T19:00:00.000Z",
+      "retry_after_seconds": 34200
+    },
+    "POST /ai/advisor/alerts/{id}/explain 503 ai_disabled": {
+      "statusCode": 503,
+      "message": "AI xizmati o'chiq",
+      "code": "AI_ADVISOR_AI_DISABLED",
+      "reason": "ai_disabled"
+    },
+    "POST /ai/advisor/alerts/{id}/explain 504 timeout": {
+      "statusCode": 504,
+      "message": "AI service javob bermadi"
+    },
+    "GET /ai/advisor/settings 200 example": {
+      "statusCode": 200,
+      "message": "AI advisor settings",
+      "data": {
+        "version": 4,
+        "rules": {
+          "R1": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "shortage_uzs": 50000,
+            "consecutive_negative": 3
+          },
+          "R2": {
+            "enabled": true,
+            "severity": "critical",
+            "telegram": true,
+            "balance_uzs": 2000000,
+            "growth_days": 3,
+            "no_handover_days": 3
+          },
+          "R3": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "mad_multiplier": 3
+          },
+          "R4": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "days_without_payout": 7
+          },
+          "R5": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "balance_uzs": 5000000,
+            "days_without_transfer": 3
+          },
+          "R6": {
+            "enabled": true,
+            "severity": "critical",
+            "telegram": true
+          },
+          "R7": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true
+          },
+          "R8": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "ratio": 2
+          }
+        },
+        "limits": {
+          "rules": {
+            "R1": {
+              "shortage_uzs": {
+                "min": 1,
+                "max": 1000000000,
+                "step": 1,
+                "unit": "uzs",
+                "default": 50000
+              },
+              "consecutive_negative": {
+                "min": 2,
+                "max": 30,
+                "step": 1,
+                "unit": "count",
+                "default": 3
+              }
+            },
+            "R2": {
+              "balance_uzs": {
+                "min": 1,
+                "max": 1000000000,
+                "step": 1,
+                "unit": "uzs",
+                "default": 2000000
+              },
+              "growth_days": {
+                "min": 1,
+                "max": 60,
+                "step": 1,
+                "unit": "days",
+                "default": 3
+              },
+              "no_handover_days": {
+                "min": 1,
+                "max": 60,
+                "step": 1,
+                "unit": "days",
+                "default": 3
+              }
+            },
+            "R3": {
+              "mad_multiplier": {
+                "min": 1,
+                "max": 10,
+                "step": 0.1,
+                "unit": "multiplier",
+                "default": 3
+              }
+            },
+            "R4": {
+              "days_without_payout": {
+                "min": 1,
+                "max": 60,
+                "step": 1,
+                "unit": "days",
+                "default": 7
+              }
+            },
+            "R5": {
+              "balance_uzs": {
+                "min": 1,
+                "max": 1000000000,
+                "step": 1,
+                "unit": "uzs",
+                "default": 5000000
+              },
+              "days_without_transfer": {
+                "min": 1,
+                "max": 60,
+                "step": 1,
+                "unit": "days",
+                "default": 3
+              }
+            },
+            "R6": {},
+            "R7": {},
+            "R8": {
+              "ratio": {
+                "min": 1.1,
+                "max": 10,
+                "step": 0.1,
+                "unit": "multiplier",
+                "default": 2
+              }
+            }
+          }
+        },
+        "telegram": {
+          "enabled": true,
+          "recipients": [
+            {
+              "user": {
+                "id": "1",
+                "name": "Shodiyor Ergashev"
+              },
+              "telegram_connected": true
+            }
+          ]
+        },
+        "budget": null,
+        "schedule": null,
+        "updated_at": "2026-10-21T12:00:00.000Z",
+        "updated_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        }
+      }
+    },
+    "GET /ai/advisor/settings 403 forbidden": {
+      "statusCode": 403,
+      "message": "Bu amal uchun ruxsat yo'q"
+    },
+    "GET /ai/advisor/settings 504 timeout": {
+      "statusCode": 504,
+      "message": "AI service javob bermadi"
+    },
+    "PATCH /ai/advisor/settings 200 example": {
+      "statusCode": 200,
+      "message": "AI advisor settings",
+      "data": {
+        "version": 5,
+        "rules": {
+          "R1": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "shortage_uzs": 30000,
+            "consecutive_negative": 3
+          },
+          "R2": {
+            "enabled": true,
+            "severity": "critical",
+            "telegram": true,
+            "balance_uzs": 2000000,
+            "growth_days": 3,
+            "no_handover_days": 3
+          },
+          "R3": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "mad_multiplier": 3
+          },
+          "R4": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "days_without_payout": 7
+          },
+          "R5": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true,
+            "balance_uzs": 5000000,
+            "days_without_transfer": 3
+          },
+          "R6": {
+            "enabled": true,
+            "severity": "critical",
+            "telegram": true
+          },
+          "R7": {
+            "enabled": true,
+            "severity": "warning",
+            "telegram": true
+          },
+          "R8": {
+            "enabled": false,
+            "severity": "warning",
+            "telegram": true,
+            "ratio": 2
+          }
+        },
+        "limits": {
+          "rules": {
+            "R1": {
+              "shortage_uzs": {
+                "min": 1,
+                "max": 1000000000,
+                "step": 1,
+                "unit": "uzs",
+                "default": 50000
+              },
+              "consecutive_negative": {
+                "min": 2,
+                "max": 30,
+                "step": 1,
+                "unit": "count",
+                "default": 3
+              }
+            },
+            "R2": {
+              "balance_uzs": {
+                "min": 1,
+                "max": 1000000000,
+                "step": 1,
+                "unit": "uzs",
+                "default": 2000000
+              },
+              "growth_days": {
+                "min": 1,
+                "max": 60,
+                "step": 1,
+                "unit": "days",
+                "default": 3
+              },
+              "no_handover_days": {
+                "min": 1,
+                "max": 60,
+                "step": 1,
+                "unit": "days",
+                "default": 3
+              }
+            },
+            "R3": {
+              "mad_multiplier": {
+                "min": 1,
+                "max": 10,
+                "step": 0.1,
+                "unit": "multiplier",
+                "default": 3
+              }
+            },
+            "R4": {
+              "days_without_payout": {
+                "min": 1,
+                "max": 60,
+                "step": 1,
+                "unit": "days",
+                "default": 7
+              }
+            },
+            "R5": {
+              "balance_uzs": {
+                "min": 1,
+                "max": 1000000000,
+                "step": 1,
+                "unit": "uzs",
+                "default": 5000000
+              },
+              "days_without_transfer": {
+                "min": 1,
+                "max": 60,
+                "step": 1,
+                "unit": "days",
+                "default": 3
+              }
+            },
+            "R6": {},
+            "R7": {},
+            "R8": {
+              "ratio": {
+                "min": 1.1,
+                "max": 10,
+                "step": 0.1,
+                "unit": "multiplier",
+                "default": 2
+              }
+            }
+          }
+        },
+        "telegram": {
+          "enabled": true,
+          "recipients": [
+            {
+              "user": {
+                "id": "1",
+                "name": "Shodiyor Ergashev"
+              },
+              "telegram_connected": true
+            }
+          ]
+        },
+        "budget": null,
+        "schedule": null,
+        "updated_at": "2026-10-22T10:30:00.000Z",
+        "updated_by": {
+          "id": "1",
+          "name": "Shodiyor Ergashev"
+        }
+      }
+    },
+    "PATCH /ai/advisor/settings 400 invalid_rule": {
+      "statusCode": 400,
+      "message": "Ketma-ket manfiy smenalar 1 dan katta bo'lsin",
+      "code": "AI_ADVISOR_INVALID_RULE",
+      "field": "rules.R1.consecutive_negative",
+      "min": 2,
+      "max": 30
+    },
+    "PATCH /ai/advisor/settings 400 invalid_setting": {
+      "statusCode": 400,
+      "message": "Hisobot vaqtini o'zgartirib bo'lmaydi",
+      "code": "AI_ADVISOR_INVALID_SETTING",
+      "field": "schedule.daily_time"
+    },
+    "PATCH /ai/advisor/settings 400 missing_version": {
+      "statusCode": 400,
+      "message": "Sozlamalar versiyasi yuborilmadi",
+      "code": "AI_ADVISOR_INVALID_SETTING",
+      "field": "version"
+    },
+    "PATCH /ai/advisor/settings 403 forbidden": {
+      "statusCode": 403,
+      "message": "Bu amal uchun ruxsat yo'q"
+    },
+    "PATCH /ai/advisor/settings 409 conflict": {
+      "statusCode": 409,
+      "message": "Sozlamalar boshqa oynada o'zgargan",
+      "code": "AI_ADVISOR_SETTINGS_CONFLICT",
+      "version": 5
+    },
+    "PATCH /ai/advisor/settings 504 timeout": {
+      "statusCode": 504,
+      "message": "AI service javob bermadi"
+    }
+  }
+}

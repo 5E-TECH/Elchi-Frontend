@@ -72,18 +72,24 @@ export type SettingsChange =
       to: number;
     };
 
-/** Sozlama oynasidagi maydonlar (R8 `ratio` — yashirin). */
-export const editableFields = (rule: AiAdvisorRuleKey): readonly ThresholdFieldSpec[] =>
-  THRESHOLD_FIELDS[rule].filter((spec) => !spec.hidden);
+/**
+ * Sozlama oynasidagi maydonlar (R8 `ratio` — yashirin). `settings` berilsa — faqat server chegarasini bergan maydonlar
+ * (`limits` — bitta manba, §7.6; server tanimaydigan maydon chizilmaydi va PATCH ga kirmaydi).
+ */
+export const editableFields = (
+  rule: AiAdvisorRuleKey,
+  settings?: Pick<AiAdvisorSettings, "limits">,
+): readonly ThresholdFieldSpec[] =>
+  THRESHOLD_FIELDS[rule].filter((spec) => !spec.hidden && (!settings || Boolean(settings.limits.rules[rule]?.[spec.field])));
 
-/** Chegara: serverdagi `limits` (bitta manba), bo'lmasa #644 zaxirasi. */
+/** Chegara: serverdagi `limits` (bitta manba); yashirin maydon matni uchun (R8 `ratio`) — #644 zaxirasi. */
 export const fieldLimit = (
   settings: Pick<AiAdvisorSettings, "limits">,
   rule: AiAdvisorRuleKey,
   field: AiAdvisorThresholdField,
 ): AiAdvisorFieldLimit => {
   const limit = settings.limits.rules[rule]?.[field] ?? DEFAULT_RULE_LIMITS[rule][field];
-  // Har bir ko'rinadigan maydonning zaxirasi bor (`DEFAULT_RULE_LIMITS`) — bu faqat tip uchun.
+  // Ko'rinadigan maydonda chegara doim bor (`editableFields(rule, settings)`) — bu faqat tip uchun.
   return limit ?? { min: 0, max: Number.MAX_SAFE_INTEGER, step: 1, unit: "count", default: 0 };
 };
 
@@ -106,7 +112,7 @@ export const toSettingsForm = (settings: AiAdvisorSettings, language?: string | 
   const form = {} as SettingsForm;
   for (const rule of AI_ADVISOR_RULE_KEYS) {
     const values: RuleForm["values"] = {};
-    for (const spec of editableFields(rule)) {
+    for (const spec of editableFields(rule, settings)) {
       values[spec.field] = formatFieldInput(savedValue(settings, rule, spec.field), fieldLimit(settings, rule, spec.field), language);
     }
     form[rule] = { enabled: settings.rules[rule]?.enabled ?? true, values };
@@ -144,7 +150,7 @@ export const validateFieldInput = (text: string | undefined, limit: AiAdvisorFie
 export const validateSettingsForm = (form: SettingsForm, settings: AiAdvisorSettings): SettingsErrors => {
   const errors: SettingsErrors = {};
   for (const rule of AI_ADVISOR_RULE_KEYS) {
-    for (const spec of editableFields(rule)) {
+    for (const spec of editableFields(rule, settings)) {
       const error = validateFieldInput(form[rule]?.values[spec.field], fieldLimit(settings, rule, spec.field));
       if (error) errors[settingsFieldKey(rule, spec.field)] = error;
     }
@@ -173,7 +179,7 @@ export const diffSettings = (
       patch.enabled = ruleForm.enabled;
       changes.push({ kind: "enabled", rule, from: wasEnabled, to: ruleForm.enabled });
     }
-    for (const spec of editableFields(rule)) {
+    for (const spec of editableFields(rule, settings)) {
       const limit = fieldLimit(settings, rule, spec.field);
       const next = parseFieldInput(ruleForm.values[spec.field]);
       if (next === null || validateFieldInput(ruleForm.values[spec.field], limit)) continue;
@@ -216,7 +222,7 @@ export const rebaseSettingsForm = (
     }
     const wasEnabled = base.rules[rule]?.enabled ?? true;
     const values: RuleForm["values"] = { ...fresh[rule].values };
-    for (const spec of editableFields(rule)) {
+    for (const spec of editableFields(rule, next)) {
       const text = current.values[spec.field];
       const parsed = parseFieldInput(text);
       const untouched = parsed !== null && sameNumber(parsed, savedValue(base, rule, spec.field));

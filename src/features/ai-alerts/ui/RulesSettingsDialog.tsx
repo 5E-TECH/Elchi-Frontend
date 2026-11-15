@@ -168,7 +168,7 @@ export const RulesSettingsDialog = ({ open, onClose }: RulesSettingsDialogProps)
     const nextErrors = validateSettingsForm(form, base);
     setErrors(nextErrors);
     const firstInvalid = AI_ADVISOR_RULE_KEYS.flatMap((rule) =>
-      editableFields(rule).map((spec) => settingsFieldKey(rule, spec.field)),
+      editableFields(rule, base).map((spec) => settingsFieldKey(rule, spec.field)),
     ).find((key) => nextErrors[key]);
     if (firstInvalid) {
       focusField(firstInvalid);

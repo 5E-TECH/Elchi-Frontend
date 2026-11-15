@@ -62,6 +62,19 @@ describe("toSettingsForm", () => {
   });
 });
 
+describe("server `limits` — bitta manba (§7.6)", () => {
+  it("chegarasi kelmagan maydon formada yo'q, tekshirilmaydi va PATCH ga kirmaydi", () => {
+    const { shortage_uzs: _omit, ...r1Limits } = settings.limits.rules.R1;
+    void _omit;
+    const partial: AiAdvisorSettings = { ...settings, limits: { rules: { ...settings.limits.rules, R1: r1Limits } } };
+    const form = toSettingsForm(partial, "uz");
+    expect(form.R1.values).toEqual({ consecutive_negative: "3" });
+    const edited = edit(edit(form, "R1", "shortage_uzs", "abc"), "R1", "consecutive_negative", "4");
+    expect(validateSettingsForm(edited, partial)).toEqual({});
+    expect(diffSettings(partial, edited).patch).toEqual({ version: settings.version, rules: { R1: { consecutive_negative: 4 } } });
+  });
+});
+
 describe("validateFieldInput — maket «Noto'g'ri qiymat»", () => {
   const consecutive = fieldLimit(settings, "R1", "consecutive_negative");
   const multiplier = fieldLimit(settings, "R3", "mad_multiplier");

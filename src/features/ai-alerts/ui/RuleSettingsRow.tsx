@@ -62,7 +62,7 @@ export const RuleSettingsRow = ({
   const tt = t as unknown as AdvisorTranslate;
   const nameId = useId();
   const descriptionId = useId();
-  const fields = editableFields(rule);
+  const fields = editableFields(rule, settings);
 
   const wasEnabled = settings.rules[rule]?.enabled ?? true;
   const ratio = formatThresholdValue(savedValue(settings, "R8", "ratio"), fieldLimit(settings, "R8", "ratio"), tt, language, {

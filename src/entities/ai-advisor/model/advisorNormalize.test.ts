@@ -188,6 +188,19 @@ describe("normalizeSettings (#644)", () => {
     expect(settings).toMatchObject({ telegram: null, budget: null, schedule: null, updated_at: null, updated_by: null });
   });
 
+  it("`limits` bor — bitta manba (§7.6): server chegarasini bermagan maydon zaxirasiz qoladi (chizilmaydi, yuborilmaydi)", () => {
+    const { shortage_uzs: _omit, ...r1Limits } = fx.settings.limits.rules.R1;
+    void _omit;
+    const settings = normalizeSettings(
+      advisorEnvelope({ ...fx.settings, limits: { rules: { ...fx.settings.limits.rules, R1: r1Limits, R4: undefined } } }),
+    );
+    expect(settings.limits.rules.R1.shortage_uzs).toBeUndefined();
+    expect(settings.limits.rules.R1.consecutive_negative).toEqual(fx.settings.limits.rules.R1.consecutive_negative);
+    expect(settings.limits.rules.R4).toEqual({});
+    expect(settings.rules.R1).not.toHaveProperty("shortage_uzs");
+    expect(settings.rules.R4).toEqual({ enabled: true, severity: "warning", telegram: true });
+  });
+
   it("`version` yo'q / butun emas yoki `rules` yo'q — AdvisorShapeError", () => {
     for (const payload of [{ rules: {} }, { version: 1.5, rules: {} }, { version: 0, rules: {} }, { version: 3 }]) {
       expect(() => normalizeSettings(payload), JSON.stringify(payload)).toThrow(AdvisorShapeError);
