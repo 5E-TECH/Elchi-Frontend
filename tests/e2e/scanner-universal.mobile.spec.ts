@@ -151,8 +151,8 @@ test.describe("Universal skaner — pochta va topshirish rejimlari (vNcGDnNh), 3
     await expect(dialog).toBeVisible({ timeout: 60_000 });
     await enterCode(page, dialog, marketQr);
     await expect.poll(() => marketQrScans).toEqual([marketQr]);
-    // Kamera yopilmaydi — o'sha maqsad keyingi bosqichda (buyurtmalarni tanlash).
-    await expect(page.getByRole("dialog", { name: "Buyurtmalarni tanlash" })).toBeVisible();
+    // Kamera yopilmaydi — o'sha maqsad keyingi bosqichda: skan = topshirish («Marketga topshirish»).
+    await expect(page.getByRole("dialog", { name: "Marketga topshirish" })).toBeVisible();
     await expectNoHorizontalScroll(page);
     expect(leaked).toEqual([]);
   });

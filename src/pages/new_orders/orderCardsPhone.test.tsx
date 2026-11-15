@@ -90,10 +90,8 @@ describe("telefon kartalarida mijoz telefoni", () => {
         variant="handover"
         rows={[order("23")] as never}
         label="Topshirish"
-        isSelected={() => false}
-        manualReasonOf={() => null}
+        isHanding={() => false}
         canManualSelect={false}
-        onToggle={vi.fn()}
         onManualSelect={vi.fn()}
       />,
     );

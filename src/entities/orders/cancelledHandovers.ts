@@ -5,12 +5,13 @@ import { API_ENDPOINTS } from "../../shared/api";
 /**
  * «QABUL VA YARATISH → BEKOR QILINGANLAR → TOPSHIRILGAN» (2026-11-10).
  *
- * Partiya — HQ xodimining BITTA «Marketga jo'natish» bosishi (bitta karta). Backend:
+ * Partiya — HQ xodimining BITTA market QR / PIN sessiyasi (bitta karta; 2026-11-15 dan skan = topshirish — sessiyadagi
+ * barcha skanlar bitta partiya). Backend:
  *  - `GET orders/markets/cancelled/handovers` (`search`, `start_day`, `end_day`, `page`, `limit` 12/24/48) →
  *    `{ data: HandoverBatch[], total, page, limit, totals: { batches, orders, amount }, total_pages, … }`;
  *  - `GET orders/markets/cancelled/handovers/:batchId` → `{ batch, data: buyurtmalar, total }`.
  *
- * Kalit `["orders", "markets", "cancelled", "handovers", …]`: «Marketga jo'natish» `["orders"]` ni yangilaydi — yangi
+ * Kalit `["orders", "markets", "cancelled", "handovers", …]`: har topshirish `["orders"]` ni yangilaydi — yangi
  * karta o'zi chiqadi.
  */
 

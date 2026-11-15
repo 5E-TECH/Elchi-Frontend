@@ -8,13 +8,13 @@ import CancelledMarketDetail from "./detail";
 import NewOrdersTabs from "../ui/NewOrdersTabs";
 
 /**
- * fix3 FE-RET-05 — RU/EN interfeysda ham qo'lda tanlash sababi backend enum
- * (o'zbekcha) qiymati bilan ketadi. fix3 CODE-16 / C4 — HQ registratori
+ * fix3 FE-RET-05 — RU/EN interfeysda ham qo'lda topshirish sababi backend enum
+ * (o'zbekcha) qiymati bilan ketadi (skan = topshirish, 2026-11-15: «Передать вручную» darhol yuboradi). fix3 CODE-16 / C4 — HQ registratori
  * "Bekor qilinganlar" tabini ko'radi.
  */
 
 const mocks = vi.hoisted(() => ({
-  handoverMutate: vi.fn(),
+  handoverMutateAsync: vi.fn(),
 }));
 
 /** Qobiq tablaridagi sonlar (`useNewOrdersTabs`) — bu testda son kerak emas, so'rov kutilmoqda holati. */
@@ -52,7 +52,7 @@ vi.mock("../../../entities/orders", () => ({
     generateCancelledMarketQr: { mutate: vi.fn(), isPending: false },
     scanMarketCancelledQr: { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false },
     verifyMarketCancelledPin: { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false },
-    handoverCancelledOrders: { mutate: mocks.handoverMutate, isPending: false },
+    handoverCancelledOrders: { mutate: vi.fn(), mutateAsync: mocks.handoverMutateAsync, isPending: false },
   }),
 }));
 
@@ -78,9 +78,10 @@ const renderDetail = () =>
     { route: "/new-orders/cancelled/201", preloadedState: adminState },
   );
 
-describe("Bekor qilingan mollar — qo'lda tanlash sababi (fix3 FE-RET-05)", () => {
+describe("Bekor qilingan mollar — qo'lda topshirish sababi (fix3 FE-RET-05)", () => {
   beforeEach(async () => {
-    mocks.handoverMutate.mockReset();
+    mocks.handoverMutateAsync.mockReset();
+    mocks.handoverMutateAsync.mockResolvedValue({ data: {} });
     await i18n.changeLanguage("ru");
   });
 
@@ -101,17 +102,15 @@ describe("Bekor qilingan mollar — qo'lda tanlash sababi (fix3 FE-RET-05)", () 
     // ...lekin qiymat — enum kodi.
     expect(unreadable).toHaveAttribute("value", "QR o'qilmayapti");
     await user.click(unreadable);
-    await user.click(within(dialog).getByRole("button", { name: "Подтвердить вручную" }));
-    await user.click(screen.getByRole("button", { name: /Отправить маркету — 1/ }));
+    await user.click(within(dialog).getByRole("button", { name: "Передать вручную" }));
 
-    expect(mocks.handoverMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        marketId: "201",
-        orderIds: ["501"],
-        manualOverrides: [{ order_id: "501", reason: "QR o'qilmayapti" }],
-      }),
-      expect.any(Object),
-    );
+    expect(mocks.handoverMutateAsync).toHaveBeenCalledWith({
+      marketId: "201",
+      orderIds: ["501"],
+      authorizationToken: undefined,
+      manualOverrides: [{ order_id: "501", reason: "QR o'qilmayapti" }],
+    });
+    expect(await screen.findByText("Заказ передан вручную")).toBeInTheDocument();
   });
 
   it("sukut bo'yicha birinchi sabab — 'QR yirtilgan' (tarjima 'QR порван' EMAS)", async () => {
@@ -122,12 +121,10 @@ describe("Bekor qilingan mollar — qo'lda tanlash sababi (fix3 FE-RET-05)", () 
     const dialog = await screen.findByRole("dialog", { name: "Подтверждение повреждённого QR" });
     // Sukut tanlangan radio — birinchi sabab (yorlig'i tarjima, qiymati enum kodi).
     expect(within(dialog).getByRole("radio", { name: "QR порван" })).toBeChecked();
-    await user.click(within(dialog).getByRole("button", { name: "Подтвердить вручную" }));
-    await user.click(screen.getByRole("button", { name: /Отправить маркету — 1/ }));
+    await user.click(within(dialog).getByRole("button", { name: "Передать вручную" }));
 
-    expect(mocks.handoverMutate).toHaveBeenCalledWith(
+    expect(mocks.handoverMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ manualOverrides: [{ order_id: "501", reason: "QR yirtilgan" }] }),
-      expect.any(Object),
     );
   });
 });

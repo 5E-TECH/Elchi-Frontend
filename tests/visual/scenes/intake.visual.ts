@@ -39,9 +39,11 @@ defineScene({
     "GET orders/markets/31/cancelled": fixture("cancelled-handover/orders.json"),
     "GET orders/markets/cancelled": fixture("cancelled-handover/markets.json"),
   },
-  // Market QR hali skanerlanmagan: jo'natish yopiq, USB skaner kutmoqda.
+  // Market QR hali skanerlanmagan: USB skaner kutmoqda, «QR buzilgan» yopiq. Skan = topshirish (2026-11-15) —
+  // «Marketga jo'natish» tugmasi yo'q, QR'dan keyin har skanerlangan buyurtma o'sha zahoti topshiriladi.
   act: async (page) => {
     await expect(page.getByText("Market QR kerak")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Marketga jo'natish/ }).first()).toBeDisabled();
+    await expect(page.getByRole("button", { name: /Marketga jo'natish/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "QR buzilgan" }).first()).toBeDisabled();
   },
 });
