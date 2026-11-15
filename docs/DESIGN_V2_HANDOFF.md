@@ -487,6 +487,24 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - Ko'rib chiqishdan keyin: suhbat maketlarida `SendHorizontal` → `Send` (reestr); `ThumbsUp` / `ThumbsDown`
     («Foydali / Foydasiz») reestrda yo'q — ochiq savol, ega reestrga qo'shishi kerak (kod ularni backend chiqquncha
     chizmaydi); R3 dagi MAD — «Mediana og'ishi» (sozlamalar oynasida ham).
+- **2026-11-15 (AI tekshiruvlari, «AI izi», Hududlar qamrovi — ega 11 ta maketni tasdiqladi; izohlar —
+  `design/kit/route-map.json` → `newViews`, kodda hali yo'q):**
+  - ekranlar: A — `superadmin-neworders-create-ai-preview-checks`, `admin-neworders-create-ai-checks`,
+    `manager-new-orders-create-ai-checks`, `registrator-new-orders-create-ai-checks`,
+    `market-new-orders-create-ai-preview-checks`; B — `superadmin-orders-detail-ai-trace-dialog`,
+    `admin-orders-detail-ai-trace-dialog`; C — `superadmin-regions-coverage-warning`, `superadmin-regions-coverage-dialog`,
+    `admin-regions-coverage-warning`, `admin-regions-coverage-dialog`;
+  - A — AI preview kartasida tasdiq belgisi (bloklaydi, karta «Tasdiq kutmoqda») faqat `district_low_confidence`
+    («Tuman to'g'ri, tasdiqlayman») va `price_check` («Narx to'g'ri, tasdiqlayman») uchun; `qty_check`,
+    `duplicate_items`, `phone_is_market`, `same_phone_multi` — sariq izoh, bloklamaydi. Backend `ack_checks` ni
+    tekshiradi (Elchi-Backend PR #658) — belgisiz yaratish faqat FE'da emas, serverda ham to'xtaydi;
+  - B — «AI izi» oynasi faqat superadmin va admin, faqat o'qish (bitta «Yopish»), kirish — buyurtma tafsilotidagi
+    «Yaratish usuli: AI bilan · AI izi» qatori;
+  - C — `/regions` dagi qamrov ogohlantirishi superadmin va admin uchun (yopilmaydi, hammasi tasdiqlangach yo'qoladi),
+    «Avtomatik qo'shilgan tumanlar» oynasida har qatorda «Tasdiqlash» va «O'zgartirish» (→ `/regions/sato-management`);
+    backend — Elchi-Backend PR #656: `GET /region/district-coverage`, `POST /region/district/:id/confirm-assignment`.
+    «N ta rasmiy tuman bazada yo'q» qatori faqat superadmin (SATO preview adminga 403);
+  - ochiq: A izohidagi ega savoli — summa «Matnda» qiymatlaridan biriga tahrirlansa `price_check` belgisi kerakmi.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;
