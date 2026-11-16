@@ -3,6 +3,7 @@ import { AxiosError } from "axios";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import { ANALYTICS_KPI_QUERY_KEY } from "../dashboard/lib/queryKeys";
 
 type QueryParams = Record<string, unknown>;
 
@@ -16,7 +17,7 @@ export const useMiscCoverage = () => {
 
   const useGetAnalyticsKpi = (params?: QueryParams, options?: SilentErrorOption) =>
     useQuery({
-      queryKey: ["misc-cov", "analytics-kpi", params],
+      queryKey: [...ANALYTICS_KPI_QUERY_KEY, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ANALYTICS.KPI, { params }).then((res) => res.data),
       ...silentErrorMeta(options),

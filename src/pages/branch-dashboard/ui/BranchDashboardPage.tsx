@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { canViewBatchesPage } from "../../../app/lib/access";
 import type { RootState } from "../../../app/config/store";
 import { useDashboard } from "../../../entities/dashboard";
+import { DASHBOARD_QUERY_KEY } from "../../../entities/dashboard/lib/queryKeys";
 import { hasFailedPart } from "../../../entities/dashboard/lib/partialFailure";
 import {
   isDashboardQuickKey,
@@ -21,6 +22,7 @@ import { getTodayRange } from "../../../shared/lib/dateRange";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../../shared/model/filterSlice";
 import { Card, EmptyState, ErrorState } from "../../../shared/ui/primitives";
+import SectionErrorBoundary, { SectionRetryScope } from "../../../shared/ui/SectionErrorBoundary";
 import { DashboardPartError } from "../../../widgets/dashboard-part-error/ui/DashboardPartError";
 import DashboardHeader from "../../../widgets/dashboard-statistics/ui/DashboardHeader";
 import { CardRow, LoadingChartCard } from "../../../widgets/dashboard-statistics/ui/DashboardGrid";
@@ -33,6 +35,8 @@ import { adaptBranchDashboard } from "./branchDashboardAdapter";
 import { ActivePackagesCard, CouriersCard, MarketsBreakdownCard } from "./BranchCards";
 
 const GOOD_ZONE = 0.7;
+/** Bo'lim xato chegaralari (QKCeGZ3N): «Qayta urinish» — filial paneli so'rovi (`analytics/dashboard`) qayta yuboriladi. */
+const PAGE_RETRY_KEYS = [DASHBOARD_QUERY_KEY];
 
 /**
  * FILIAL PANELI — menejer (`/branch-dashboard`, maket `manager-branch-dashboard-main`).
@@ -125,17 +129,19 @@ const BranchDashboardPage = () => {
   );
 
   const header = (
-    <DashboardHeader
-      description={description}
-      fromDate={fromDate}
-      toDate={toDate}
-      effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
-      onChange={applyRange}
-      preset={preset}
-      onClear={clearRange}
-      showYear={false}
-      clearable={!(fromDate === defaultDateRange.from && toDate === defaultDateRange.to)}
-    />
+    <SectionErrorBoundary>
+      <DashboardHeader
+        description={description}
+        fromDate={fromDate}
+        toDate={toDate}
+        effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
+        onChange={applyRange}
+        preset={preset}
+        onClear={clearRange}
+        showYear={false}
+        clearable={!(fromDate === defaultDateRange.from && toDate === defaultDateRange.to)}
+      />
+    </SectionErrorBoundary>
   );
 
   if (isError) {
@@ -207,9 +213,18 @@ const BranchDashboardPage = () => {
             />
           ) : null}
           {showSide ? (
+            // Ustundagi har karta o'z chegarasida: «Faol paketlar» yiqilsa «Kuryerlar» joyida qoladi (QKCeGZ3N).
             <div className="flex min-w-0 flex-col gap-4 max-md:gap-3">
-              {visibility.packages ? <ActivePackagesCard packages={dashboard.packages} canOpenBatches={canOpenBatches} /> : null}
-              {visibility.couriers ? <CouriersCard couriers={dashboard.couriers} /> : null}
+              {visibility.packages ? (
+                <SectionErrorBoundary>
+                  <ActivePackagesCard packages={dashboard.packages} canOpenBatches={canOpenBatches} />
+                </SectionErrorBoundary>
+              ) : null}
+              {visibility.couriers ? (
+                <SectionErrorBoundary>
+                  <CouriersCard couriers={dashboard.couriers} />
+                </SectionErrorBoundary>
+              ) : null}
             </div>
           ) : null}
         </CardRow>
@@ -218,39 +233,50 @@ const BranchDashboardPage = () => {
       {!isLoading ? (
         <div className="grid gap-4 lg:grid-cols-3 max-md:gap-3">
           {!isStatsUnavailable && visibility.markets ? (
-            <MarketsBreakdownCard markets={dashboard.markets} className="lg:col-span-2" />
+            <SectionErrorBoundary className="lg:col-span-2">
+              <MarketsBreakdownCard markets={dashboard.markets} className="lg:col-span-2" />
+            </SectionErrorBoundary>
           ) : null}
-          {hasFailedPart(failedParts, "topBranches") ? (
-            <DashboardPartError
-              data-testid="ranking-branches"
-              className={rankingClassName}
-              title={tDash("v2Dashboard.top.branches")}
-              onRetry={() => void refetch()}
-              retrying={isFetching}
-            />
-          ) : (
-            <TopRankCard
-              data-testid="ranking-branches"
-              className={rankingClassName}
-              title={tDash("v2Dashboard.top.branches")}
-              description={rankingDescription(t("v2.top.sub"), meta, (count) => tDash("v2Dashboard.top.periodLastDays", { count }))}
-              items={items}
-              pinned={pinned}
-              pinnedLabel={t("v2.top.ownRankAria")}
-              expandable
-              // Bo'sh — ixcham holat (9zbSDkUI): «Bu davrda reyting uchun buyurtma yo'q».
-              empty={<EmptyState size="inline" icon={Trophy} title={tDash("v2Dashboard.top.emptyPeriod")} />}
-              note={
-                items.length > 0 && (isLowDataRanking(rows.slice(0, 5), meta) || items.length < 5)
-                  ? tDash("v2Dashboard.top.limited")
-                  : undefined
-              }
-            />
-          )}
+          <SectionErrorBoundary className={rankingClassName}>
+            {hasFailedPart(failedParts, "topBranches") ? (
+              <DashboardPartError
+                data-testid="ranking-branches"
+                className={rankingClassName}
+                title={tDash("v2Dashboard.top.branches")}
+                onRetry={() => void refetch()}
+                retrying={isFetching}
+              />
+            ) : (
+              <TopRankCard
+                data-testid="ranking-branches"
+                className={rankingClassName}
+                title={tDash("v2Dashboard.top.branches")}
+                description={rankingDescription(t("v2.top.sub"), meta, (count) => tDash("v2Dashboard.top.periodLastDays", { count }))}
+                items={items}
+                pinned={pinned}
+                pinnedLabel={t("v2.top.ownRankAria")}
+                expandable
+                // Bo'sh — ixcham holat (9zbSDkUI): «Bu davrda reyting uchun buyurtma yo'q».
+                empty={<EmptyState size="inline" icon={Trophy} title={tDash("v2Dashboard.top.emptyPeriod")} />}
+                note={
+                  items.length > 0 && (isLowDataRanking(rows.slice(0, 5), meta) || items.length < 5)
+                    ? tDash("v2Dashboard.top.limited")
+                    : undefined
+                }
+              />
+            )}
+          </SectionErrorBoundary>
         </div>
       ) : null}
     </div>
   );
 };
 
-export default memo(BranchDashboardPage);
+/** Sahifa sukuti: `queryKeys` siz bo'lim chegaralari (kartalar to'ri ham) — filial paneli so'rovi (QKCeGZ3N). */
+const BranchDashboard = () => (
+  <SectionRetryScope queryKeys={PAGE_RETRY_KEYS}>
+    <BranchDashboardPage />
+  </SectionRetryScope>
+);
+
+export default memo(BranchDashboard);

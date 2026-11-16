@@ -18,6 +18,7 @@ import type { RootState } from "../../app/config/store";
 import { fetchMyProfile } from "../../auth/authService";
 import { canCreateOrders, canViewOrders } from "../../app/lib/access";
 import { useDashboard } from "../../entities/dashboard";
+import { DASHBOARD_QUERY_KEY } from "../../entities/dashboard/lib/queryKeys";
 import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
 import {
   comparisonHint,
@@ -36,6 +37,7 @@ import {
   buildDashboardDateParams,
   getEffectiveAllTimeRange,
 } from "../../entities/dashboard/lib/allTime";
+import { EXTRA_COST_APPROVALS_QUERY_KEY } from "../../entities/orders/queryKeys";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import {
@@ -47,6 +49,7 @@ import {
 } from "../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import { ChartLegend } from "../../shared/ui/charts";
+import SectionErrorBoundary, { SectionRetryScope } from "../../shared/ui/SectionErrorBoundary";
 import {
   Button,
   Card,
@@ -77,6 +80,13 @@ import { ExtraCostApprovals } from "./ui/ExtraCostApprovals";
 import { AutoApprovedExtraCosts } from "./ui/AutoApprovedExtraCosts";
 import MarketSalesCard from "./ui/MarketSalesCard";
 import QuickActions from "./ui/QuickActions";
+
+/**
+ * Bo'lim xato chegaralari (QKCeGZ3N): har widget o'z chegarasida. «Qayta urinish» — to'rlar, sarlavha, «Marketlar
+ * bo'yicha sotuv foizi» va tezkor amallar — `analytics/dashboard`; qo'shimcha xarajat kartalari — o'z so'rovlari.
+ */
+const PAGE_RETRY_KEYS = [DASHBOARD_QUERY_KEY];
+const EXTRA_COST_RETRY_KEYS = [EXTRA_COST_APPROVALS_QUERY_KEY];
 
 /**
  * BOSH SAHIFA — market (maketlar `market-dashboard-home`, `market-dashboard-extra-cost-approvals`).
@@ -320,25 +330,33 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
-      <DashboardHeader
-        description={
-          marketName
-            ? t("v2Market.headerSub", { name: marketName })
-            : isOperator
-              ? t("v2Market.operatorScope", { period: periodHeadline(t, period) })
-              : periodHeadline(t, period)
-        }
-        fromDate={fromDate}
-        toDate={toDate}
-        effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
-        onChange={applyRange}
-        preset={preset}
-        onClear={clearRange}
-        primaryAction={createOrderButton}
-      />
+      <SectionErrorBoundary>
+        <DashboardHeader
+          description={
+            marketName
+              ? t("v2Market.headerSub", { name: marketName })
+              : isOperator
+                ? t("v2Market.operatorScope", { period: periodHeadline(t, period) })
+                : periodHeadline(t, period)
+          }
+          fromDate={fromDate}
+          toDate={toDate}
+          effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
+          onChange={applyRange}
+          preset={preset}
+          onClear={clearRange}
+          primaryAction={createOrderButton}
+        />
+      </SectionErrorBoundary>
 
-      <ExtraCostApprovals />
-      {isOperator ? null : <AutoApprovedExtraCosts />}
+      <SectionErrorBoundary queryKeys={EXTRA_COST_RETRY_KEYS}>
+        <ExtraCostApprovals />
+      </SectionErrorBoundary>
+      {isOperator ? null : (
+        <SectionErrorBoundary queryKeys={EXTRA_COST_RETRY_KEYS}>
+          <AutoApprovedExtraCosts />
+        </SectionErrorBoundary>
+      )}
 
       {dashboardError || statsFailed ? (
         <Card>
@@ -514,27 +532,38 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
         </CardRow>
       ) : null}
 
-      {widgets.performanceChart && !dashboardError && !isLoading && salesFailed ? (
-        <DashboardPartError
-          data-testid={salesRankingFailed ? "market-ranking-failed" : "performance-markets-failed"}
-          title={t("v2Market.sales.title")}
-          onRetry={retryDashboard}
-          retrying={dashboardFetching}
-        />
-      ) : null}
-      {widgets.performanceChart && !dashboardError && !isLoading && !salesFailed ? (
-        <MarketSalesCard rows={salesRows} selfId={selfId} />
-      ) : null}
+      <SectionErrorBoundary>
+        {widgets.performanceChart && !dashboardError && !isLoading && salesFailed ? (
+          <DashboardPartError
+            data-testid={salesRankingFailed ? "market-ranking-failed" : "performance-markets-failed"}
+            title={t("v2Market.sales.title")}
+            onRetry={retryDashboard}
+            retrying={dashboardFetching}
+          />
+        ) : null}
+        {widgets.performanceChart && !dashboardError && !isLoading && !salesFailed ? (
+          <MarketSalesCard rows={salesRows} selfId={selfId} />
+        ) : null}
+      </SectionErrorBoundary>
 
       {!dashboardError && !isLoading ? (
-        <QuickActions
-          canAddOrder={canAddOrder}
-          orders={isOperator ? (ordersOpen ? "list" : null) : "intake"}
-          createMode={isOperator ? "ai" : "any"}
-        />
+        <SectionErrorBoundary>
+          <QuickActions
+            canAddOrder={canAddOrder}
+            orders={isOperator ? (ordersOpen ? "list" : null) : "intake"}
+            createMode={isOperator ? "ai" : "any"}
+          />
+        </SectionErrorBoundary>
       ) : null}
     </div>
   );
 };
 
-export default memo(MarketDashboardPage);
+/** Sahifa sukuti: `queryKeys` siz bo'lim chegaralari (KPI va kartalar to'rlari ham) — `analytics/dashboard` (QKCeGZ3N). */
+const MarketDashboard = (props: { variant?: "market" | "operator" }) => (
+  <SectionRetryScope queryKeys={PAGE_RETRY_KEYS}>
+    <MarketDashboardPage {...props} />
+  </SectionRetryScope>
+);
+
+export default memo(MarketDashboard);

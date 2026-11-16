@@ -83,8 +83,11 @@ export const toDmDeliveryReport = (payload: unknown): DmDeliveryReport => {
   };
 };
 
+/** Kalit prefiksi — bo'lim «Qayta urinish»i (QKCeGZ3N). */
+export const DM_DELIVERY_QUERY_KEY = ["telegram-dm-delivery"] as const;
+
 export const dmDeliveryKey = (params: DmDeliveryParams) =>
-  ["telegram-dm-delivery", params.from ?? "", params.to ?? ""] as const;
+  [...DM_DELIVERY_QUERY_KEY, params.from ?? "", params.to ?? ""] as const;
 
 export const fetchDmDelivery = async (params: DmDeliveryParams): Promise<DmDeliveryReport> => {
   const query: Record<string, string> = {};

@@ -3,6 +3,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { readPartialFailure } from "./lib/partialFailure";
 import { readAppliedRange, type AppliedRange } from "./lib/allTime";
+import { DASHBOARD_QUERY_KEY, KPI_QUERY_KEY, REVENUE_QUERY_KEY } from "./lib/queryKeys";
 import {
   readDashboardPrevious,
   readDashboardSeries,
@@ -25,8 +26,6 @@ export type {
   KpiPrevious,
   KpiSeriesPoint,
 } from "./lib/trend";
-
-const dashboard = "dashboard";
 
 export interface AnalyticsDateParams {
   start_day?: string;
@@ -817,7 +816,7 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
 
 const useGetDashboard = (params?: AnalyticsDateParams, enabled = true, scope = "anonymous") =>
   useQuery<DashboardResponse>({
-    queryKey: [dashboard, scope, cleanAnalyticsParams(params)],
+    queryKey: [...DASHBOARD_QUERY_KEY, scope, cleanAnalyticsParams(params)],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.ANALYTICS.DASHBOARD, { params: cleanAnalyticsParams(params) })
@@ -831,7 +830,7 @@ const useGetDashboard = (params?: AnalyticsDateParams, enabled = true, scope = "
 
 const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonymous") =>
   useQuery<KpiResponse>({
-    queryKey: ["kpi", scope, cleanAnalyticsParams(params)],
+    queryKey: [...KPI_QUERY_KEY, scope, cleanAnalyticsParams(params)],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.ANALYTICS.KPI, { params: cleanAnalyticsParams(params) })
@@ -845,7 +844,7 @@ const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonym
 
 const useGetRevenue = (params: RevenueParams, enabled = true, scope = "anonymous") =>
   useQuery<RevenueResponse>({
-    queryKey: ["revenue", scope, cleanAnalyticsParams(params)],
+    queryKey: [...REVENUE_QUERY_KEY, scope, cleanAnalyticsParams(params)],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.ANALYTICS.REVENUE, { params: cleanAnalyticsParams(params) })

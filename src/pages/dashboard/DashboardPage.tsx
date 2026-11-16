@@ -5,6 +5,12 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
 import { useDashboard } from "../../entities/dashboard";
+import {
+  ANALYTICS_KPI_QUERY_KEY,
+  DASHBOARD_QUERY_KEY,
+  KPI_QUERY_KEY,
+  REVENUE_QUERY_KEY,
+} from "../../entities/dashboard/lib/queryKeys";
 import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
 import {
   comparisonHint,
@@ -22,6 +28,8 @@ import {
 import { inProgressCount, readProfileBranchName } from "../../entities/dashboard/lib/profile";
 import { clampedAllTimeWindow, getEffectiveAllTimeRange } from "../../entities/dashboard/lib/allTime";
 import { seriesValues } from "../../entities/dashboard/lib/trend";
+import { MY_CASHBOX_QUERY_KEY } from "../../entities/payments";
+import { REGION_STATS_QUERY_KEY } from "../../entities/region";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
 import { InstallAppCard } from "../../features/pwa-install";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
@@ -35,6 +43,7 @@ import {
 } from "../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import DeferredMount from "../../shared/ui/DeferredMount";
+import SectionErrorBoundary, { SectionRetryScope } from "../../shared/ui/SectionErrorBoundary";
 import { Sparkline } from "../../shared/ui/charts";
 import { Card, EmptyState, ErrorState, StatCard } from "../../shared/ui/primitives";
 import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
@@ -54,6 +63,7 @@ import {
 import { isLowDataRanking, rankingDescription } from "../../widgets/dashboard-top-performers/model/ranking";
 import TopRankCard from "../../widgets/dashboard-top-performers/ui/TopRankCard";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
+import { DM_DELIVERY_QUERY_KEY } from "../../widgets/dm-delivery/api/dmDelivery";
 import DmDeliveryCard from "../../widgets/dm-delivery/ui/DmDeliveryCard";
 import CourierCashCard from "./ui/CourierCashCard";
 import CourierPlanCard from "./ui/CourierPlanCard";
@@ -61,6 +71,17 @@ import DeliveryQualityCard from "./ui/DeliveryQualityCard";
 import DeliveryResultsCard from "./ui/DeliveryResultsCard";
 
 const AnalyticsKpiSection = lazy(() => import("./ui/AnalyticsKpiSection"));
+
+/**
+ * Bo'lim xato chegaralari (QKCeGZ3N): har widget o'z chegarasida — bittasi yiqilsa faqat uning o'rnida «Bo'lim
+ * xatosi», qolganlari ishlayveradi. «Qayta urinish» — o'sha bo'lim so'rovlari qayta yuboriladi: to'rlar (`KpiRow`,
+ * `CardRow`), sarlavha va reytinglar — sahifa sukuti (dashboard, kpi, kuryer kassasi), alohida widgetlar — o'zinikilar.
+ */
+const PAGE_RETRY_KEYS = [DASHBOARD_QUERY_KEY, KPI_QUERY_KEY, MY_CASHBOX_QUERY_KEY];
+const FINANCIAL_RETRY_KEYS = [REVENUE_QUERY_KEY];
+const REGION_RETRY_KEYS = [REGION_STATS_QUERY_KEY];
+const ANALYTICS_KPI_RETRY_KEYS = [ANALYTICS_KPI_QUERY_KEY];
+const DM_DELIVERY_RETRY_KEYS = [DM_DELIVERY_QUERY_KEY];
 
 /**
  * BOSH SAHIFA — superadmin, admin, registrator, kuryer (va operator). Market — `MarketDashboardPage`,
@@ -586,101 +607,124 @@ const DashboardPage = () => {
             <CourierCashCard />
           </CardRow>
         ) : null}
-        {courierRankingFailed ? partError(t("v2Dashboard.top.couriers"), "courier-ranking-failed") : null}
-        {!courierRankingFailed && topCouriers.length > 0 ? (
-          <TopRankCard
-            data-testid="courier-ranking"
-            title={t("v2Dashboard.top.couriers")}
-            description={t("v2Dashboard.top.courierSub", {
-              scope: branchName ? `${branchName} · ` : "",
-              period: periodText.toLocaleLowerCase(),
-            })}
-            icon={Trophy}
-            items={courierItems}
-            expandable
-            empty={null}
-            footer={
-              myRank ? (
-                <p className="m-0 flex w-full flex-wrap items-center justify-between gap-2 text-[13px] text-text-muted">
-                  <span>{t("v2Dashboard.top.yourPlace")}</span>
-                  <span className="text-text">
-                    <span className="font-bold">{t("v2Dashboard.top.place", { rank: myRank })}</span>
-                    {gap != null && myRank > 1
-                      ? ` · ${t("v2Dashboard.top.gapToNext", {
-                          rank: myRank - 1,
-                          gap: t("v2Dashboard.pp", { value: formatNumberLocalized(gap, { language, fractionDigits: 1 }) }),
-                        })}`
-                      : null}
-                  </span>
-                </p>
-              ) : undefined
-            }
-            note={isLowDataRanking(courierRows(topCouriers), meta) || topCouriers.length < 5 ? t("v2Dashboard.top.limited") : undefined}
-          />
-        ) : null}
+        <SectionErrorBoundary>
+          {courierRankingFailed ? partError(t("v2Dashboard.top.couriers"), "courier-ranking-failed") : null}
+          {!courierRankingFailed && topCouriers.length > 0 ? (
+            <TopRankCard
+              data-testid="courier-ranking"
+              title={t("v2Dashboard.top.couriers")}
+              description={t("v2Dashboard.top.courierSub", {
+                scope: branchName ? `${branchName} · ` : "",
+                period: periodText.toLocaleLowerCase(),
+              })}
+              icon={Trophy}
+              items={courierItems}
+              expandable
+              empty={null}
+              footer={
+                myRank ? (
+                  <p className="m-0 flex w-full flex-wrap items-center justify-between gap-2 text-[13px] text-text-muted">
+                    <span>{t("v2Dashboard.top.yourPlace")}</span>
+                    <span className="text-text">
+                      <span className="font-bold">{t("v2Dashboard.top.place", { rank: myRank })}</span>
+                      {gap != null && myRank > 1
+                        ? ` · ${t("v2Dashboard.top.gapToNext", {
+                            rank: myRank - 1,
+                            gap: t("v2Dashboard.pp", { value: formatNumberLocalized(gap, { language, fractionDigits: 1 }) }),
+                          })}`
+                        : null}
+                    </span>
+                  </p>
+                ) : undefined
+              }
+              note={isLowDataRanking(courierRows(topCouriers), meta) || topCouriers.length < 5 ? t("v2Dashboard.top.limited") : undefined}
+            />
+          ) : null}
+        </SectionErrorBoundary>
       </>
     );
   };
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
-      <DashboardHeader
-        description={description}
-        fromDate={fromDate}
-        toDate={toDate}
-        onChange={applyRange}
-        preset={preset}
-        onClear={clearRange}
-        showYear={!isCourier}
-        rangePlaceholder={isCourier ? t("v2Dashboard.header.rangeCourier") : undefined}
-        effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
-      />
+      <SectionErrorBoundary>
+        <DashboardHeader
+          description={description}
+          fromDate={fromDate}
+          toDate={toDate}
+          onChange={applyRange}
+          preset={preset}
+          onClear={clearRange}
+          showYear={!isCourier}
+          rangePlaceholder={isCourier ? t("v2Dashboard.header.rangeCourier") : undefined}
+          effectiveRange={getEffectiveAllTimeRange(fromDate, toDate, data?.data?.appliedRange)}
+        />
+      </SectionErrorBoundary>
       {/* KI-2 (ega javobi KI-S3): «Ilovani o'rnatish» — faqat kuryer bosh sahifasida, bir marta (yopiladi, shu
           qurilmada eslab qolinadi). Maketda sarlavha va davr filtri orasida; `DashboardHeader` umumiy widget —
           tegilmaydi, shuning uchun karta sarlavha blokidan keyin (telefonda davr filtri ostida). */}
-      {isCourier ? <InstallAppCard placement="dashboard" /> : null}
+      {isCourier ? (
+        <SectionErrorBoundary>
+          <InstallAppCard placement="dashboard" />
+        </SectionErrorBoundary>
+      ) : null}
       {renderCourier()}
       {renderStats()}
       {widgets.financial && isAnalyticsAdmin ? (
-        <FinancialAnalysis
-          // «Barchasi» ↔ oraliq: davr tanlovi qaytadan (barcha davrda sukut — oylik), solishtirish holati saqlanadi.
-          key={isAllTime ? "all" : "range"}
-          startDate={hasDateFilter ? fromDate : ""}
-          endDate={hasDateFilter ? toDate : ""}
-          allTime={isAllTime}
-          analyticsScope={analyticsScope}
-          // NIFAnCvf: yuqoridagi KPI va kartalar yuklangach — aks holda plot skeletlar ostida ekranga tushadi.
-          layoutReady={!isLoading && !kpiLoading}
-        />
+        <SectionErrorBoundary queryKeys={FINANCIAL_RETRY_KEYS}>
+          <FinancialAnalysis
+            // «Barchasi» ↔ oraliq: davr tanlovi qaytadan (barcha davrda sukut — oylik), solishtirish holati saqlanadi.
+            key={isAllTime ? "all" : "range"}
+            startDate={hasDateFilter ? fromDate : ""}
+            endDate={hasDateFilter ? toDate : ""}
+            allTime={isAllTime}
+            analyticsScope={analyticsScope}
+            // NIFAnCvf: yuqoridagi KPI va kartalar yuklangach — aks holda plot skeletlar ostida ekranga tushadi.
+            layoutReady={!isLoading && !kpiLoading}
+          />
+        </SectionErrorBoundary>
       ) : null}
       {renderRankings()}
       {widgets.region && canShowCompanyBlocks ? (
-        <DeferredMount minHeight={560}>
-          <RegionOverviewCard
-            startDate={hasDateFilter ? fromDate : ""}
-            endDate={hasDateFilter ? toDate : ""}
-            periodText={periodText.toLocaleLowerCase()}
-            periodLabel={periodText}
-            variant={isRegistrator ? "registrator" : "full"}
-          />
-        </DeferredMount>
+        <SectionErrorBoundary queryKeys={REGION_RETRY_KEYS}>
+          <DeferredMount minHeight={560}>
+            <RegionOverviewCard
+              startDate={hasDateFilter ? fromDate : ""}
+              endDate={hasDateFilter ? toDate : ""}
+              periodText={periodText.toLocaleLowerCase()}
+              periodLabel={periodText}
+              variant={isRegistrator ? "registrator" : "full"}
+            />
+          </DeferredMount>
+        </SectionErrorBoundary>
       ) : null}
       {/* F2NzXpMv: SLA va «Analitika KPI» — faqat superadmin, Ops → «Tizim» dan ko'chgan (kodi alohida bo'lakda). */}
       {normalizedRole === "superadmin" ? (
-        <DeferredMount minHeight={360}>
-          <Suspense fallback={null}>
-            <AnalyticsKpiSection />
-          </Suspense>
-        </DeferredMount>
+        <SectionErrorBoundary queryKeys={ANALYTICS_KPI_RETRY_KEYS}>
+          <DeferredMount minHeight={360}>
+            <Suspense fallback={null}>
+              <AnalyticsKpiSection />
+            </Suspense>
+          </DeferredMount>
+        </SectionErrorBoundary>
       ) : null}
       {/* 2crjWf7v: «Kvitansiya yetkazilishi» — faqat superadmin (`GET /telegram/dm-delivery`, boshqa rolga 403). */}
-      <DmDeliveryCard
-        enabled={normalizedRole === "superadmin"}
-        from={hasDateFilter ? fromDate : ""}
-        to={hasDateFilter ? toDate : ""}
-      />
+      <SectionErrorBoundary queryKeys={DM_DELIVERY_RETRY_KEYS}>
+        <DmDeliveryCard
+          enabled={normalizedRole === "superadmin"}
+          from={hasDateFilter ? fromDate : ""}
+          to={hasDateFilter ? toDate : ""}
+        />
+      </SectionErrorBoundary>
     </div>
   );
 };
 
-export default memo(DashboardPage);
+/** Sahifa sukuti: `queryKeys` siz bo'lim chegaralari (KPI va kartalar to'rlari, sarlavha, reytinglar) — QKCeGZ3N. */
+const Dashboard = () => (
+  <SectionRetryScope queryKeys={PAGE_RETRY_KEYS}>
+    <DashboardPage />
+  </SectionRetryScope>
+);
+
+export default memo(Dashboard);

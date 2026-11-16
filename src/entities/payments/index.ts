@@ -8,6 +8,8 @@ import type { PaymentCorrectable, PaymentCorrection } from "./paymentCorrection"
 export const cashbox = "cashbox";
 export const shift = "shift";
 export const financeHistory = "finance-history";
+/** Kuryer kassasi («Kassangiz», bosh sahifa) kalit prefiksi — bo'lim «Qayta urinish»i (QKCeGZ3N). */
+export const MY_CASHBOX_QUERY_KEY = [cashbox, "my-cashbox"] as const;
 
 export interface FinanceHistoryActor {
   id: string | number;
@@ -454,7 +456,7 @@ export const useCashBox = () => {
   /** `silentError` — blok xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
   const useGetCashboxMyCashbox = (params?: any, options?: { silentError?: boolean }) =>
     useQuery({
-      queryKey: [cashbox, "my-cashbox", params],
+      queryKey: [...MY_CASHBOX_QUERY_KEY, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.MY_CASHBOX, { params }).then((res) => res.data),
       ...(options?.silentError ? { meta: { silentError: true } } : {}),

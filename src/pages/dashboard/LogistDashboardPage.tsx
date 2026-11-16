@@ -11,18 +11,25 @@ import {
   share,
   type DashboardQuickKey,
 } from "../../entities/dashboard/lib/period";
-import { useRegionStats } from "../../entities/region";
+import { REGION_STATS_QUERY_KEY, useRegionStats } from "../../entities/region";
 import { cx } from "../../shared/lib/cx";
 import { formatNumberLocalized, formatPercentLocalized } from "../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import { LegendKey, Meter, SegBar } from "../../shared/ui/charts";
 import { Button, Card, EmptyState, ErrorState, StatCard, TONE_SOFT } from "../../shared/ui/primitives";
+import SectionErrorBoundary, { SectionRetryScope } from "../../shared/ui/SectionErrorBoundary";
 import DashboardHeader from "../../widgets/dashboard-statistics/ui/DashboardHeader";
 import { KpiRow, LoadingChartCard } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
 import SuccessRateCard from "../../widgets/dashboard-statistics/ui/SuccessRateCard";
 import { buildLogistDashboard, regionStatsParams } from "./model/logistDashboard";
 import { LogistRegionSuccessCard } from "./ui/LogistRegionSuccessCard";
 import { LogistRegionsTable } from "./ui/LogistRegionsTable";
+
+/**
+ * Bo'lim xato chegaralari (QKCeGZ3N): har widget o'z chegarasida — bittasi yiqilsa faqat uning o'rnida «Bo'lim
+ * xatosi». «Qayta urinish» — sahifaning yagona so'rovi (`region/stats/all`) qayta yuboriladi.
+ */
+const PAGE_RETRY_KEYS = [REGION_STATS_QUERY_KEY];
 
 /** KPI pastidagi «Jamidan ulushi · 69,6%» + ingichka o'lchagich (maket `.el-kpi` pastki qismi). */
 const ShareMeter = ({
@@ -132,15 +139,17 @@ const LogistDashboardPage = () => {
       : t("v2Logist.headerSubGeneric");
 
   const header = (
-    <DashboardHeader
-      description={description}
-      fromDate={fromDate}
-      toDate={toDate}
-      onChange={applyRange}
-      preset={preset}
-      onClear={clearRange}
-      showYear={false}
-    />
+    <SectionErrorBoundary>
+      <DashboardHeader
+        description={description}
+        fromDate={fromDate}
+        toDate={toDate}
+        onChange={applyRange}
+        preset={preset}
+        onClear={clearRange}
+        showYear={false}
+      />
+    </SectionErrorBoundary>
   );
 
   if (isError) {
@@ -318,16 +327,20 @@ const LogistDashboardPage = () => {
           </>
         ) : (
           <>
-            <SuccessRateCard
-              className="min-w-0 flex-[1_1_340px]"
-              rate={summary.rate}
-              sold={summary.delivered}
-              cancelled={summary.cancelled}
-              description={t("v2Logist.success.sub", { period: periodText, count: summary.regionCount })}
-              gaugeLabel={t("v2Dashboard.success.gaugeAccepted")}
-              showThreshold={false}
-            />
-            <LogistRegionSuccessCard model={model} className="min-w-0 flex-[2_1_480px]" />
+            <SectionErrorBoundary className="min-w-0 flex-[1_1_340px]">
+              <SuccessRateCard
+                className="min-w-0 flex-[1_1_340px]"
+                rate={summary.rate}
+                sold={summary.delivered}
+                cancelled={summary.cancelled}
+                description={t("v2Logist.success.sub", { period: periodText, count: summary.regionCount })}
+                gaugeLabel={t("v2Dashboard.success.gaugeAccepted")}
+                showThreshold={false}
+              />
+            </SectionErrorBoundary>
+            <SectionErrorBoundary className="min-w-0 flex-[2_1_480px]">
+              <LogistRegionSuccessCard model={model} className="min-w-0 flex-[2_1_480px]" />
+            </SectionErrorBoundary>
           </>
         )}
       </div>
@@ -335,10 +348,19 @@ const LogistDashboardPage = () => {
       {loading ? (
         <LoadingChartCard title={t("v2Logist.table.title")} />
       ) : (
-        <LogistRegionsTable model={model} period={period} periodText={periodText} />
+        <SectionErrorBoundary>
+          <LogistRegionsTable model={model} period={period} periodText={periodText} />
+        </SectionErrorBoundary>
       )}
     </div>
   );
 };
 
-export default memo(LogistDashboardPage);
+/** Sahifa sukuti: `queryKeys` siz bo'lim chegaralari (KPI to'ri ham) — `region/stats/all` (QKCeGZ3N). */
+const LogistDashboard = () => (
+  <SectionRetryScope queryKeys={PAGE_RETRY_KEYS}>
+    <LogistDashboardPage />
+  </SectionRetryScope>
+);
+
+export default memo(LogistDashboard);
