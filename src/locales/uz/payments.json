@@ -1202,7 +1202,6 @@
     "settings": {
       "title": "Kassa smenasi sozlamalari",
       "subtitle": "Asosiy kassa va filiallar · faqat superadmin o'zgartiradi",
-      "back": "Asosiy kassa",
       "save": "Saqlash",
       "saving": "Saqlanmoqda…",
       "saved": "Sozlamalar saqlandi",

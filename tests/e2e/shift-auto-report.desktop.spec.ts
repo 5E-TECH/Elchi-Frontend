@@ -8,7 +8,7 @@ import { mockShiftAutoReport } from "./support/shiftAutoReport";
  */
 test("superadmin: hisobot yuborish sozlamalari saqlanadi; avtomatik yopish — Ops «Kun tartibi»da", async ({ page }) => {
   const mock = await mockShiftAutoReport(page);
-  await page.goto("/payments/shift-settings");
+  await page.goto("/ops?tab=shift-settings");
   const recipients = page.getByRole("table", { name: "Hisobot qabul qiluvchilari" });
   await expect(recipients).toBeVisible();
   await expect(page.getByRole("switch", { name: "Smenani avtomatik yopish" })).toHaveCount(0);

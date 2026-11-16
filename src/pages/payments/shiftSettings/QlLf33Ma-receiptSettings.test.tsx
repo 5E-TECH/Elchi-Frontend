@@ -35,7 +35,7 @@ const receiptPatches = () => http.patch.mock.calls.filter(([url]) => url === REC
 const shiftPatches = () => http.patch.mock.calls.filter(([url]) => url === SHIFT_URL);
 
 const open = async () => {
-  renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+  renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
   await screen.findByText("Chek rasmi va AI tahlili");
   await screen.findAllByRole("switch", { name: "Qo'lda chiqim: chek rasmi majburiy" });
 };
@@ -146,7 +146,7 @@ describe("Chek rasmi va AI tahlili kartasi (QlLf33Ma)", () => {
       if (url === RECEIPT_URL) throw Object.assign(new Error("500"), { response: { status: 500, data: {} } });
       return shiftOnly?.(url, ...rest);
     });
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
 
     expect(await screen.findByRole("button", { name: /Qayta urinish/ })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Smena yopishda har karta qoldig'i majburiy" })).toBeInTheDocument();

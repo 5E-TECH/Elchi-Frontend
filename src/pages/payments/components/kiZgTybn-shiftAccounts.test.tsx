@@ -296,7 +296,7 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     // (izoh maydonidagi «(ixtiyoriy)» — yorliq ichida; bu yerda skrinshot maydoni tekshiriladi)
     expect(within(row(dialog, "3")).getByText("(ixtiyoriy)", { ignore: "label span, script, style" })).toBeInTheDocument();
     // Superadmin — «Sozlamalar» havolasi.
-    expect(within(section).getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/payments/shift-settings");
+    expect(within(section).getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/ops?tab=shift-settings");
 
     // BE-A: ikki kartada skrinshot majburiy va yuklanmagan — «Smenani yopish» o'chiq, sababi tugmalar ustida.
     const submit = within(dialog).getByRole("button", { name: CLOSE_SHIFT });

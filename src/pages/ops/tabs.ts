@@ -22,6 +22,13 @@ export interface OpsTabMeta {
 /** «Xarajat kategoriyalari» tabi kaliti — `/ops?tab=expense-categories` («Kassadan xarajat» havolasi ham shu). */
 export const EXPENSE_CATEGORIES_TAB = "expense-categories";
 
+/**
+ * «Kassa smenasi» tabi kaliti — `/ops?tab=shift-settings` (ega 2026-11-16): kartalar qoldig'ini tasdiqlash, chek rasmi
+ * va AI, smena hisobotini yuborish, to'lovlarni tuzatish muddati. Eski `/payments/shift-settings` shu tabga yo'naltiradi;
+ * smena yopish oynasi, smena hisoboti, chek maydoni va tarix tafsilotidagi havolalar ham shu yerga olib keladi.
+ */
+export const SHIFT_SETTINGS_TAB = "shift-settings";
+
 /** «Yetkazish narxi» tabi kaliti — `/ops?tab=delivery-pricing` (tariflar, hisob qoidalari, hajm chegarasi). */
 export const DELIVERY_PRICING_TAB = "delivery-pricing";
 
@@ -48,6 +55,17 @@ export const OPS_TABS: OpsTabMeta[] = [
     key: EXPENSE_CATEGORIES_TAB,
     labelKey: "tabs.expenseCategories",
     pageDir: "expense-categories",
+  },
+  {
+    /**
+     * Kassa smenasi sozlamalari (ega 2026-11-16: «ops vositalarida bo'lishi kerak, alohida tab sifatida») — ilgari
+     * «To'lovlar» ostidagi alohida sahifa (`/payments/shift-settings`, «← Asosiy kassa») edi; moliya guruhida,
+     * «Xarajat kategoriyalari» dan keyin. `legacyPath` yo'q: eski yo'l `pages/<pageDir>` naqshiga tushmaydi
+     * (`/payments/shift-settings` ≠ `/payments/shiftSettings`) — yo'naltirish `routes.tsx` da.
+     */
+    key: SHIFT_SETTINGS_TAB,
+    labelKey: "tabs.shiftSettings",
+    pageDir: "payments/shiftSettings",
   },
   {
     key: "investors",

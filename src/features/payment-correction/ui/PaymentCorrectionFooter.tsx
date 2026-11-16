@@ -24,7 +24,7 @@ export type PaymentCorrectionFooterProps = {
   onClose: () => void;
   onReverse: () => void;
   onCorrect: () => void;
-  /** «Muddatni o'zgartirish» manzili (sahifa beradi — `/payments/shift-settings`). */
+  /** «Muddatni o'zgartirish» manzili (sahifa beradi — `/ops?tab=shift-settings`). */
   changeWindowTo: string;
 };
 

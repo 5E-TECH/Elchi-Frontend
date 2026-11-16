@@ -18,6 +18,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { opsTabPath, SHIFT_SETTINGS_TAB } from "../../../ops/tabs";
 import { canManageShiftSettings } from "../../../../app/lib/access";
 import { cx } from "../../../../shared/lib/cx";
 import { formatTimeLocalized } from "../../../../shared/lib/formatDateTime";
@@ -36,6 +37,9 @@ import {
 import { AiStatusBadge, AiTimedOutBadge, EnteredMismatchBadge } from "./aiStatus";
 import { cardSubtitle } from "./aiStatusMeta";
 import type { ShiftAccountRow, ShiftAccountsForm } from "./useShiftAccountsForm";
+
+/** Kassa smenasi sozlamalari — Ops vositalari → «Kassa smenasi» tabi (ega 2026-11-16). */
+const SHIFT_SETTINGS_PATH = opsTabPath(SHIFT_SETTINGS_TAB);
 
 /**
  * «KARTALAR VA HISOB RAQAMLAR» — smena yopish oynasining bo'limi (maket
@@ -381,7 +385,7 @@ const ShiftAccountsSection = ({ form, submitted }: { form: ShiftAccountsForm; su
           <Badge tone="neutral">{form.rows.length}</Badge>
         </h3>
         {canOpenSettings ? (
-          <Link to="/payments/shift-settings" className={buttonClasses({ variant: "ghost", size: "sm" })}>
+          <Link to={SHIFT_SETTINGS_PATH} className={buttonClasses({ variant: "ghost", size: "sm" })}>
             <Settings aria-hidden="true" size={16} />
             {t("shiftCheck.accounts.settings")}
           </Link>
