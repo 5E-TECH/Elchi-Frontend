@@ -238,6 +238,8 @@
   "metaPost": "Post",
   "metaCourier": "Courier",
   "metaCourierNone": "Not assigned yet",
+  "metaOperator": "Operator",
+  "metaOperatorNone": "Not selected",
   "metaHolder": "Currently held by",
   "metaHolderHQ": "At head office (HQ)",
   "metaHolderBranch": "At branch: {{name}}",
@@ -571,6 +573,8 @@
       "cancelledPostReturnedToNamedBranch": "{{actor}} returned the cancelled order from HQ to {{branch}}",
       "cancelledPostReturnedShort": "{{actor}} returned the cancelled order from HQ to the sending branch",
       "courierReturnRequested": "{{actor}} reported the order did not arrive — a return request was sent",
+      "operatorAssigned": "{{actor}} assigned an operator: {{operator}}",
+      "operatorAssignedShort": "{{actor}} assigned an operator",
       "branchReturnRequested": "{{actor}} reported the order did not arrive at the branch — a return request was sent"
     },
     "roleValue": {
@@ -633,6 +637,7 @@
       "returnRequested": "Return requested",
       "returnedToMarket": "Handed to market",
       "warehouseReturned": "Returned to warehouse",
+      "operatorAssigned": "Operator assigned",
       "postBranchReassigned": "Moved to another branch",
       "cancelledPostReturned": "Returned to branch",
       "courierReturnRequested": "Not arrived — return requested",
@@ -1075,6 +1080,18 @@
     "pickedHint": "The order and commission are credited to this operator",
     "otherLabel": "Operator not on the list",
     "loadFailed": "Couldn't load the operator list — type the name manually"
+  },
+  "operatorAssign": {
+    "open": "Assign",
+    "title": "Assign operator · #{{id}}",
+    "hint": "Pick one of the order market's active operators. It can't be changed after assigning.",
+    "placeholder": "Select an operator",
+    "submit": "Assign",
+    "required": "Select an operator",
+    "empty": "This market has no active operators — add an operator to the market first.",
+    "loadFailed": "Couldn't load the operator list — refresh the page and try again.",
+    "success": "Operator assigned",
+    "successEarning": "Operator assigned — the sold order's share was credited to the operator"
   },
   "fulfillment": {
     "tag": "From warehouse",

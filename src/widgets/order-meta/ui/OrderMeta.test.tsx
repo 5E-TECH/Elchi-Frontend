@@ -215,6 +215,43 @@ describe("OrderMeta", () => {
     expect(row("meta-courier")).toHaveTextContent("#93");
     expect(within(row("meta-courier")).queryByText(/Courier/)).not.toBeInTheDocument();
   });
+
+  describe("2026-11-16 «Operator» qatori", () => {
+    it("⭐ operator tanlangan — ismi, biriktirish amali yo'q bo'lsa tugma ham yo'q", () => {
+      renderWithProviders(
+        <OrderMeta order={{ ...ORDER_95, operator_id: "412", operator: "Aziza Karimova" }} role="admin" />,
+      );
+      expect(row("meta-operator")).toHaveTextContent("Operator");
+      expect(row("meta-operator")).toHaveTextContent("Aziza Karimova");
+    });
+
+    it("⭐ operator yo'q — «Tanlanmagan» + sahifa bergan amal (Biriktirish)", () => {
+      renderWithProviders(
+        <OrderMeta
+          order={{ ...ORDER_95, operator_id: null, operator: null }}
+          role="registrator"
+          operatorAction={<button data-testid="assign-btn">Biriktirish</button>}
+        />,
+      );
+      expect(row("meta-operator")).toHaveTextContent("Tanlanmagan");
+      expect(screen.getByTestId("assign-btn")).toBeInTheDocument();
+    });
+
+    it("erkin matn (ro'yxatdan tanlanmagan) — matn ko'rinadi", () => {
+      renderWithProviders(<OrderMeta order={{ ...ORDER_95, operator: "Qo'lda Yozilgan" }} role="market" />);
+      expect(row("meta-operator")).toHaveTextContent("Qo'lda Yozilgan");
+    });
+
+    it("integratsiya buyurtmasi (`external_…`) va kuryer — qator yo'q", () => {
+      const { unmount } = renderWithProviders(
+        <OrderMeta order={{ ...ORDER_95, operator: "external_uzum" }} role="admin" />,
+      );
+      expect(screen.queryByTestId("meta-operator")).toBeNull();
+      unmount();
+      renderWithProviders(<OrderMeta order={{ ...ORDER_95, operator: "Aziza" }} role="courier" />);
+      expect(screen.queryByTestId("meta-operator")).toBeNull();
+    });
+  });
 });
 
 describe("OrderParentBanner", () => {

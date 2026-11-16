@@ -30,4 +30,6 @@ export const actionLabelMap: Record<string, string> = {
   // Filial menejeri o'z filialiga jo'natilgan o'tkazma pochtasidagi buyurtma kelmaganini bildirdi — qaytarish so'rovi
   // (holat o'zgarmaydi — yo'lda; ega qarori 2026-11-04).
   branch_return_requested: "tracking.action.branchReturnRequested",
+  // 2026-11-16: operatori yo'q buyurtmaga keyin operator biriktirildi (`PUT /orders/:id/operator`, holat o'zgarmaydi).
+  operator_assigned: "tracking.action.operatorAssigned",
 };

@@ -38,6 +38,11 @@ export interface OrderMetaData {
   };
   /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy (ota) buyurtma. */
   parentOrderId: string | null;
+  /**
+   * Market operatori: `operator_id` — ro'yxatdan tanlangan (komissiya shunga), `operator` — ismi yoki erkin matn.
+   * Integratsiya buyurtmasida `operator` = `external_…` (hamkor holat sinxroni kaliti) — ism emas: `external`.
+   */
+  operator: { id: string | null; name: string | null; external: boolean };
 }
 
 const record = (value: unknown): Record<string, unknown> | null =>
@@ -77,6 +82,8 @@ export const readOrderMeta = (raw: unknown): OrderMetaData | null => {
   const market = record(order.market);
   const branch = record(order.branch);
   const holder = text(order.holder_type)?.toUpperCase() ?? null;
+  const operatorText = text(order.operator);
+  const externalOperator = operatorText?.startsWith("external_") ?? false;
   const where = text(order.where_deliver);
 
   return {
@@ -100,6 +107,11 @@ export const readOrderMeta = (raw: unknown): OrderMetaData | null => {
       branchShare: amount(order.branch_share),
     },
     parentOrderId: id(order.parent_order_id),
+    operator: {
+      id: id(order.operator_id),
+      name: externalOperator ? null : operatorText,
+      external: externalOperator,
+    },
   };
 };
 
@@ -129,6 +141,15 @@ export const visibleTariffs = (role: string | null | undefined): TariffField[] =
       return [];
   }
 };
+
+/**
+ * «Operator» qatorini ko'radigan rollar — yaratish formasida «Operator» tanlovini ko'radiganlar (`GET
+ * /market-operators/selectable` rollari). Kuryer va boshqalar — yo'q.
+ */
+export const canSeeOrderOperator = (role: string | null | undefined) =>
+  ["superadmin", "admin", "registrator", "manager", "branch", "market", "market_operator"].includes(
+    (role ?? "").toLowerCase(),
+  );
 
 /** Kuryer kontaktini (`GET users/:id`) so'ray oladigan rollar — backend ruxsati bilan bir xil. */
 export const canLookupUsers = (role: string | null | undefined) =>

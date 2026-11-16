@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Check, PackageCheck, RotateCcw, Trash2, Undo2, X } from "lucide-react";
+import { Check, PackageCheck, RotateCcw, Trash2, Undo2, UserPlus, X } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import {
   isWarehouseReturn,
@@ -23,6 +23,7 @@ import {
   usePendingExtraCostApprovals,
 } from "../../../entities/orders/extraCostApproval";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../entities/orders/sellPayment";
+import { AssignOperatorDialog, canAssignOrderOperator } from "../../../features/order-operator-assign";
 import { InitiateReturnModal, MarkReturnedModal } from "../../../features/order-return";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
@@ -122,8 +123,18 @@ const NewOrderUpdate = () => {
   // lQjt6sKP: almashtirish banneri (yangi buyurtma — eski №EL-… o'rniga; eski buyurtma — qaytarma holati).
   const replacement = useMemo(() => (order ? readOrderReplacement(order) : null), [order]);
   const trackingAccess = useMemo(() => buildTrackingAccess(order), [order]);
+  const orderMeta = useMemo(() => readOrderMeta(order), [order]);
   /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy buyurtma id'si. */
-  const parentOrderId = useMemo(() => readOrderMeta(order)?.parentOrderId ?? null, [order]);
+  const parentOrderId = orderMeta?.parentOrderId ?? null;
+  /** Buyurtma marketi — «Operator biriktirish» ro'yxati shu market bo'yicha. */
+  const orderMarketId = orderMeta?.market?.id ?? (order?.market_id != null ? String(order.market_id) : null);
+  // 2026-11-16: operatori yo'q buyurtmaga keyin operator biriktirish («Buyurtma ma'lumotlari» → «Operator»).
+  const canAssignOperator = canAssignOrderOperator(
+    role,
+    orderMeta
+      ? { operatorId: orderMeta.operator.id, operatorExternal: orderMeta.operator.external, marketId: orderMarketId }
+      : null,
+  );
   /** Kuryer biriktirgan dalillar — bo'sh bo'lsa karta umuman chiqmaydi. */
   const proofKeys = useMemo(() => readProofFiles(order?.proof_files), [order]);
 
@@ -134,6 +145,7 @@ const NewOrderUpdate = () => {
   const [isRollbackOpen, setIsRollbackOpen] = useState(false);
   const [isInitiateReturnOpen, setIsInitiateReturnOpen] = useState(false);
   const [isMarkReturnedOpen, setIsMarkReturnedOpen] = useState(false);
+  const [isAssignOperatorOpen, setIsAssignOperatorOpen] = useState(false);
   // Market tasdig'iga tushgan amal: oyna yopilmaydi, holat ko'rsatiladi.
   const [isApprovalRequested, setIsApprovalRequested] = useState(false);
   // Tarix (tracking) o'zi qayta so'ralmaydi — amaldan keyin qayta mount.
@@ -409,6 +421,20 @@ const NewOrderUpdate = () => {
         self={user}
         canOpenMails={canOpenMails}
         handoverAt={handoverAt}
+        operatorAction={
+          canAssignOperator ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              leftIcon={UserPlus}
+              onClick={() => setIsAssignOperatorOpen(true)}
+              className="-my-1 max-md:-my-2.5"
+              data-testid="meta-operator-assign"
+            >
+              {t("operatorAssign.open", { ns: "orders" })}
+            </Button>
+          ) : null
+        }
         className={className}
       />
     );
@@ -616,6 +642,18 @@ const NewOrderUpdate = () => {
           orderId={order.id}
           marketId={order.market_id != null ? String(order.market_id) : null}
           onClose={() => setIsMarkReturnedOpen(false)}
+          onDone={refreshTracking}
+        />
+      ) : null}
+      {/* Ochiq oyna 409 dan keyin buyurtma yangilanib `canAssignOperator` o'chsa ham xabar bilan turadi. */}
+      {isAssignOperatorOpen && order && orderMarketId ? (
+        <AssignOperatorDialog
+          open
+          orderId={order.id}
+          orderNumber={orderMeta?.orderNumber}
+          marketId={orderMarketId}
+          role={role}
+          onClose={() => setIsAssignOperatorOpen(false)}
           onDone={refreshTracking}
         />
       ) : null}

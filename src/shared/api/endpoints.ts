@@ -162,6 +162,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
     TRACKING: (id: string | number) => `orders/${id}/tracking`, // GET history timeline
+    OPERATOR: (id: string | number) => `orders/${id}/operator`, // PUT — operatori yo'q buyurtmaga operator biriktirish
     SETTLEMENT_STATE: (id: string | number) => `orders/${id}/settlement`, // GET per-order settlement state
     QR_CODE: (token: string | number) => `orders/qr-code/${token}`,
     ASSIGN_COURIER: "orders/assign-to-courier", // POST manager bulk-assign

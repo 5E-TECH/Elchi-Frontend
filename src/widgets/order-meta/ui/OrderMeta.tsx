@@ -14,6 +14,7 @@ import {
   PackageCheck,
   Store,
   Truck,
+  UserRound,
 } from "lucide-react";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
@@ -31,6 +32,7 @@ import {
 import {
   canLookupBranches,
   canLookupUsers,
+  canSeeOrderOperator,
   readOrderMeta,
   telHref,
   visibleTariffs,
@@ -62,6 +64,11 @@ interface OrderMetaProps {
    * (`last_handover_at` ni `mark-returned-to-market` yangilamaydi). Berilmasa — vaqtsiz.
    */
   handoverAt?: unknown;
+  /**
+   * «Operator» qatoridagi amal — operatori yo'q buyurtmada «Biriktirish» tugmasi (2026-11-16). Sahifa beradi (ruxsat
+   * va oyna `features/order-operator-assign` da); berilmasa qator faqat ko'rsatadi.
+   */
+  operatorAction?: ReactNode;
   className?: string;
 }
 
@@ -122,7 +129,7 @@ const TARIFF_LABEL: Record<TariffField, string> = {
   branchShare: "metaShareBranch",
 };
 
-const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, className }: OrderMetaProps) => {
+const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, operatorAction, className }: OrderMetaProps) => {
   const { t } = useTranslation("orders");
   const [showTariffs, setShowTariffs] = useState(false);
   const meta = readOrderMeta(order);
@@ -206,6 +213,9 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, classN
   })();
 
   const tariffFields = visibleTariffs(role);
+  /** Integratsiya buyurtmasida `operator` — hamkor kaliti (ism emas): qator chiqmaydi. */
+  const showOperator = canSeeOrderOperator(role) && !meta.operator.external;
+  const operatorName = meta.operator.name ?? (meta.operator.id ? `#${meta.operator.id}` : null);
 
   // rwAy8Qyk: sarlavha bilan bir xil raqam — `order_number` (yorliqdagi «#EL-100081»), zaxira — ichki id.
   const copyId = () => {
@@ -256,6 +266,24 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, classN
           >
             <Fit>{meta.market.name ?? "—"}</Fit>
             {meta.market.phone ? <PhoneLink phone={meta.market.phone} /> : null}
+          </Row>
+        ) : null}
+
+        {showOperator ? (
+          <Row
+            icon={<UserRound size={15} aria-hidden="true" />}
+            label={t("metaOperator")}
+            testId="meta-operator"
+            title={operatorName ?? undefined}
+          >
+            {operatorName ? (
+              <Fit>{operatorName}</Fit>
+            ) : (
+              <Fit>
+                <span className="font-normal text-text-muted">{t("metaOperatorNone")}</span>
+              </Fit>
+            )}
+            {operatorAction ? <span className="inline-flex shrink-0">{operatorAction}</span> : null}
           </Row>
         ) : null}
 

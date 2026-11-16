@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { canLookupBranches, canLookupUsers, readOrderMeta, telHref, visibleTariffs } from "./orderMeta";
+import {
+  canLookupBranches,
+  canLookupUsers,
+  canSeeOrderOperator,
+  readOrderMeta,
+  telHref,
+  visibleTariffs,
+} from "./orderMeta";
 
 /** Karta dalilidagi `GET /orders/95` javobi (kerakli maydonlar). */
 const ORDER_95 = {
@@ -98,5 +105,29 @@ describe("tarif ko'rinishi — ROL bo'yicha", () => {
 describe("telHref", () => {
   it("bo'shliq va belgilar olib tashlanadi, `+` qoladi", () => {
     expect(telHref("+998 99 222-22-22")).toBe("tel:+998992222222");
+  });
+});
+
+describe("2026-11-16 readOrderMeta — operator", () => {
+  it("⭐ operator_id + ism; yo'q — null; `external_…` — ism emas, integratsiya belgisi", () => {
+    expect(readOrderMeta({ id: "1", operator_id: 412, operator: " Aziza " })?.operator).toEqual({
+      id: "412",
+      name: "Aziza",
+      external: false,
+    });
+    expect(readOrderMeta({ id: "1" })?.operator).toEqual({ id: null, name: null, external: false });
+    expect(readOrderMeta({ id: "1", operator: "external_uzum" })?.operator).toEqual({
+      id: null,
+      name: null,
+      external: true,
+    });
+  });
+
+  it("«Operator» qatorini ko'radigan rollar — selectable rollari; kuryer yo'q", () => {
+    for (const role of ["superadmin", "admin", "registrator", "manager", "branch", "market", "market_operator"]) {
+      expect(canSeeOrderOperator(role)).toBe(true);
+    }
+    expect(canSeeOrderOperator("courier")).toBe(false);
+    expect(canSeeOrderOperator(null)).toBe(false);
   });
 });

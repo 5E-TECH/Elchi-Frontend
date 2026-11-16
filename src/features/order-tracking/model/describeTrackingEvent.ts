@@ -10,6 +10,7 @@ import {
   Store,
   Truck,
   Undo2,
+  UserCheck,
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
@@ -557,6 +558,11 @@ const getSentenceTemplate = (
   if (isCourierReturnRequestedEvent(event)) return dynamic("courierReturnRequested");
   if (isBranchReturnRequestedEvent(event)) return dynamic("branchReturnRequested");
   // Jo'natilgan pochta boshqa filialga o'tkazildi (holat o'zgarmaydi): metadata `{ from_branch_name, to_branch_name }`.
+  // 2026-11-16: operatori yo'q buyurtmaga keyin operator biriktirildi — holat o'zgarmaydi (sotilganda «sotdi» emas).
+  if (normalizeKey(event.action) === "operator_assigned") {
+    const operator = typeof event.new_value?.operator === "string" ? event.new_value.operator.trim() : "";
+    return operator ? dynamic("operatorAssigned", { operator }) : dynamic("operatorAssignedShort");
+  }
   if (normalizeKey(event.action) === "post_branch_reassigned") {
     const metadata = isRecord(event.metadata) ? event.metadata : {};
     const from = cleanBranchLabel(metadata.from_branch_name);
@@ -624,6 +630,9 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
       return Clock;
     case "tracking.dynamic.createdByActor":
       return Plus;
+    case "tracking.dynamic.operatorAssigned":
+    case "tracking.dynamic.operatorAssignedShort":
+      return UserCheck;
     default: {
       const key = resolveDisplayOrderStatus(event.new_value?.status ?? event.to_status);
       return key ? ORDER_STATUS_REGISTRY[key].icon : CircleDot;
