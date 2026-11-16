@@ -1405,7 +1405,6 @@
   "receipt": {
     "field": {
       "label": "Chek rasmi",
-      "settings": "Sozlamalar",
       "upload": "Chek rasmini yuklash",
       "formats": "JPG, PNG yoki WEBP · 5 MB gacha",
       "pickAnother": "Bosing va boshqa rasm tanlang",

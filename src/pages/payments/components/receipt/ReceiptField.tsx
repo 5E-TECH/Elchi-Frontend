@@ -1,17 +1,12 @@
 // dizayn-v2: superadmin-payments-main-cashbox-expense-receipt-dialog, superadmin-payments-main-cashbox-expense-receipt-states, admin-payments-cashbox-form-dialog-receipt, manager-payments-cashbox-form-dialog-receipt, superadmin-payments-cash-detail-courier-receipt, superadmin-payments-cash-detail-branch-receipt
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { CircleAlert, CircleCheck, CircleX, ImagePlus, Info, RefreshCw, Settings, WifiOff, X } from "lucide-react";
+import { CircleAlert, CircleCheck, CircleX, ImagePlus, Info, RefreshCw, WifiOff, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import { opsTabPath, SHIFT_SETTINGS_TAB } from "../../../ops/tabs";
-import { canManageShiftSettings } from "../../../../app/lib/access";
 import { RECEIPT_PHOTO_ACCEPT, RECEIPT_PHOTO_MAX_BYTES } from "../../../../entities/payments";
 import { cx } from "../../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import {
   Button,
-  buttonClasses,
   Field,
   IconButton,
   Pressable,
@@ -21,14 +16,15 @@ import {
 import ReceiptViewerDialog from "./ReceiptViewerDialog";
 import type { ReceiptFieldController } from "./useReceiptField";
 
-/** Kassa smenasi sozlamalari — Ops vositalari → «Kassa smenasi» tabi (ega 2026-11-16). */
-const SHIFT_SETTINGS_PATH = opsTabPath(SHIFT_SETTINGS_TAB);
-
 /**
  * «CHEK RASMI» MAYDONI (QlLf33Ma; maketlar `…-expense-receipt-dialog`, `…-expense-receipt-states`). Holatlar: bo'sh
  * (tanlash maydoni), sozlama yuklanmoqda (skelet), tayyorlanmoqda / yuklanmoqda (foiz, «To'xtatish»), yuklandi (eskiz →
  * ko'ruvchi, «Almashtirish», «Olib tashlash»), yuklab bo'lmadi («Qayta urinish»), internet yo'q. Xato matni — `Field`
- * ostida. Superadminga «Sozlamalar» havolasi (`/ops?tab=shift-settings`). Holat — `useReceiptField`.
+ * ostida. Holat — `useReceiptField`.
+ *
+ * Ega 2026-11-17: «Sozlamalar» havolasi (superadmin, `/ops?tab=shift-settings`) olib tashlandi — chek sozlamalari endi
+ * Ops vositalari → «Kassa smenasi» tabida, to'lov oynalarida (kuryer / filial / «Marketga o'tkazma», asosiy kassa)
+ * havola kerak emas.
  */
 
 const receiptSizeText = (bytes: number, language: string) => {
@@ -62,7 +58,6 @@ export const ReceiptAttachedValue = () => {
 const ReceiptField = ({ receipt, viewerDescription }: { receipt: ReceiptFieldController; viewerDescription?: string }) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const canOpenSettings = useSelector(canManageShiftSettings);
   const fieldId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -119,14 +114,6 @@ const ReceiptField = ({ receipt, viewerDescription }: { receipt: ReceiptFieldCon
       labelAs="span"
       label={t("receipt.field.label")}
       required={receipt.required}
-      labelAside={
-        canOpenSettings ? (
-          <Link to={SHIFT_SETTINGS_PATH} className={buttonClasses({ variant: "ghost", size: "sm", className: "-mr-1" })}>
-            <Settings aria-hidden="true" size={16} />
-            {t("receipt.field.settings")}
-          </Link>
-        ) : undefined
-      }
       hint={hint}
       error={error}
       data-testid="receipt-field"

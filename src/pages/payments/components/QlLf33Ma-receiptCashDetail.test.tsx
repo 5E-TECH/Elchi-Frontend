@@ -190,10 +190,12 @@ describe("HQ'ga «O'tkazma» qabuli — chek rasmi (QlLf33Ma)", () => {
 
     await chooseMethod(user, "O'tkazma");
     expect(await screen.findByRole("button", { name: /Chek rasmini yuklash/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Sozlamalar" })).toBeInTheDocument();
+    // Ega 2026-11-17: «Sozlamalar» havolasi olib tashlandi — chek sozlamalari Ops → «Kassa smenasi» tabida.
+    expect(screen.queryByRole("link", { name: "Sozlamalar" })).not.toBeInTheDocument();
 
     await chooseMethod(user, "Marketga o'tkazma");
     expect(await screen.findByRole("button", { name: /Chek rasmini yuklash/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Sozlamalar" })).not.toBeInTheDocument();
 
     await chooseMethod(user, "Naqd");
     expect(screen.queryByText("Chek rasmi")).not.toBeInTheDocument();

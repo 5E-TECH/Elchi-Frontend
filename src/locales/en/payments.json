@@ -1407,7 +1407,6 @@
   "receipt": {
     "field": {
       "label": "Receipt photo",
-      "settings": "Settings",
       "upload": "Upload receipt photo",
       "formats": "JPG, PNG or WEBP · up to 5 MB",
       "pickAnother": "Tap to choose another photo",

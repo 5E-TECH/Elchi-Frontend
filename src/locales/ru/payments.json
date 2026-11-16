@@ -1411,7 +1411,6 @@
   "receipt": {
     "field": {
       "label": "Фото чека",
-      "settings": "Настройки",
       "upload": "Загрузить фото чека",
       "formats": "JPG, PNG или WEBP · до 5 МБ",
       "pickAnother": "Нажмите и выберите другое фото",
