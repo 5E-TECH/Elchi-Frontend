@@ -893,7 +893,7 @@
     },
     {
       "path": "/replacement-returns",
-      "entry": "yon menyu → «Ish» → «Almashtirishlar» (superadmin, admin); /orders sarlavhasidagi «Almashtirishlar» tugmasi (superadmin, admin, market)",
+      "entry": "/orders sarlavhasidagi «Almashtirishlar» tugmasi (superadmin, admin, market); ega qarori 2026-11-16 — yon menyuda YO'Q, sahifada «Buyurtmalar» faol",
       "section": "orders",
       "title": "Almashtirish qaytarmalari — almashtirishga tanlangan eski buyurtmalar",
       "components": ["src/pages/replacement-returns/index.tsx", "src/pages/replacement-returns/model/replacementReturnsView.ts", "src/entities/order/api/replacementReturns.ts"],

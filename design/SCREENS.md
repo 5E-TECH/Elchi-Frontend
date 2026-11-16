@@ -419,7 +419,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Fayllar:** `src/pages/replacement-returns/index.tsx` · `src/pages/replacement-returns/model/replacementReturnsView.ts` · `src/entities/order/api/replacementReturns.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewReplacementReturns` (access.ts → canViewReplacementReturns)
 - **Rollar:** superadmin, admin, market (o'z buyurtmalari (token); menyuda yo'q)
-- **Menyuda:** «Almashtirishlar» (`replacements`) — superadmin, admin
+- **Menyuda:** yo'q — /orders sarlavhasidagi «Almashtirishlar» tugmasi (superadmin, admin, market); ega qarori 2026-11-16 — yon menyuda YO'Q, sahifada «Buyurtmalar» faol
 - **Holat:** v2
 - **Izoh:** lQjt6sKP (BeePost replacement-returns): GET orders/replacement/returns?market_id&state&page&limit — almashtirishga tanlangan ESKI buyurtmalar (mahsuloti mijozdan olinib marketga qaytariladi). Ustunlar: eski buyurtma, yangi buyurtma (holati bilan; o'chirilgan bo'lsa — «Yangi buyurtma o'chirilgan»), mijoz, mahsulot, holat («Kutilmoqda — kuryer olishi kerak» / «Olingan — marketga ketmoqda» / «Marketga qaytarildi», olingan sanasi bilan), sotilgan sana; telefonda kartalar. Filtrlar «Holat: …» va (superadmin/admin) «Market: …» — URL ?state&market, o'zgarsa sahifa 1. Faqat o'qish: backend'da «Marketga topshirildi» amali va old_returned ga o'tkazuvchi oqim yo'q — «Qaytarildi» filtri hozircha bo'sh.
 
@@ -3925,7 +3925,6 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `superadmin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+3) |
-| Almashtirishlar | `replacements` | `/replacement-returns` | `/replacement-returns` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+6) |
@@ -3948,7 +3947,6 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `admin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `admin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `admin-batches-new` (+2) |
-| Almashtirishlar | `replacements` | `/replacement-returns` | `/replacement-returns` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+4) |

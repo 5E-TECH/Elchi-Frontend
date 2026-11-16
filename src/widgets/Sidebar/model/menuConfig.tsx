@@ -13,7 +13,6 @@ import {
   MapPinned,
   Inbox,
   Package,
-  Repeat,
   Receipt,
   CreditCard,
   Wallet,
@@ -93,8 +92,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/batches", icon: Package, label: "batches" },
     // Ega 2026-11-16: «Qaytarishlar» (/returns) yon menyuda yo'q — «Pochta» da ham bor. Sahifa URL va paket
     // tafsilotidagi «← Qaytarishlar» havolasi orqali ochiladi (superadmin, admin, menejer).
-    // lQjt6sKP: «Almashtirishlar» — almashtirishga tanlangan eski buyurtmalar (BeePost menyusidagidek; `roles.json`, «Ish»).
-    { to: "/replacement-returns", icon: Repeat, label: "replacements" },
+    // Ega 2026-11-16: «Almashtirishlar» (/replacement-returns, lQjt6sKP) yon menyuda yo'q — /orders sarlavhasidagi
+    // «Almashtirishlar» tugmasi orqali ochiladi; sahifada «Buyurtmalar» faol (`navSections` ACTIVE_ALIASES_BY_PATH).
     { to: "/products", icon: Tag, label: "products" },
     // yXC91RRx: «Ombor» — viloyat filiallaridagi omborlar (maket `roles.json`, «Ma'lumotnoma», Mahsulotlardan keyin).
     { to: "/warehouses", icon: Warehouse, label: "warehouse" },
@@ -120,8 +119,6 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/mails", icon: Mail, label: "mails" },
     { to: "/batches", icon: Package, label: "batches" },
-    // lQjt6sKP: «Almashtirishlar» (BeePost: superadmin, admin; registrator backend'da 403 — menyusida yo'q).
-    { to: "/replacement-returns", icon: Repeat, label: "replacements" },
     { to: "/products", icon: Tag, label: "products" },
     // yXC91RRx: «Ombor» (maket `roles.json`).
     { to: "/warehouses", icon: Warehouse, label: "warehouse" },
@@ -447,8 +444,6 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/dispatch": 'work',
   "/courier-bulk": 'work',
   "/batches": 'work',
-  // lQjt6sKP: almashtirish qaytarmalari.
-  "/replacement-returns": 'work',
   // GykuOz8f: qo'shimcha xarajatli buyurtmalar.
   "/extra-costs": 'work',
   // Moliya
