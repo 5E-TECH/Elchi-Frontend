@@ -1,6 +1,35 @@
 import { expect, test, type Page } from "@playwright/test";
 import { SCANNER_KEY_GAP_MS } from "../../src/shared/lib/useKeyboardScanner";
-import { mockCancelledApi, openHandover, pendingOrder, usbScan } from "./support/cancelledHandover";
+import {
+  CANCELLED_ORDERS,
+  mockCancelledApi,
+  openHandover,
+  pendingOrder,
+  usbScan,
+  type HandoverBody,
+} from "./support/cancelledHandover";
+
+/** Kartadagi takrorlash: bekor buyurtma QR'i `CANCEL-…-3g5o4c` (+ yonma-yon «go» — skaner tezligi sharti uchun). */
+const ORDER_TOKEN_WITH_GO = "CANCEL-10235-go-3g5o4c";
+
+/**
+ * №10235 ning QR tokeni «…go…g5o…» — ro'yxat shu bilan keladi (`page.route` umumiy soxta backend'dan ustun);
+ * topshirilgani ro'yxatdan chiqadi (umumiy soxta backend kabi). GET'dan boshqasi (OPTIONS) — umumiy ishlovchiga.
+ */
+const withGoOrderToken = (page: Page, handovers: HandoverBody[]) =>
+  page.route(/\/orders\/markets\/201\/cancelled(\?|$)/, (route) => {
+    if (route.request().method() !== "GET") return route.fallback();
+    const handed = new Set(handovers.flatMap((body) => body.order_ids));
+    const data = CANCELLED_ORDERS.filter((order) => !handed.has(order.id)).map((order) =>
+      order.id === "10235" ? { ...order, qr_code_token: ORDER_TOKEN_WITH_GO } : order,
+    );
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "http://127.0.0.1:4173", "access-control-allow-credentials": "true" },
+      body: JSON.stringify({ statusCode: 200, message: "ok", data }),
+    });
+  });
 
 /**
  * Ovozsiz: birinchi `keydown` skan ovozini «ochadi» (`shared/lib/scanner/feedback.ts` — `AudioContext` yaratiladi),
@@ -33,9 +62,10 @@ test.describe("Sarlavha tezkor tugmalari va USB skaner — 1440px", () => {
   /** «G»+«O», «g»+«o» va kartadagi «…g5o…» — hammasi bitta skaner oqimida. */
   const MARKET_QR_WITH_GO = "MCR-201-GOgo-3g5o4c";
 
-  test("⭐ skaner oqimidagi «G» → «O» sahifani o'zgartirmaydi; skan o'tadi, ro'yxat joyida", async ({ page }) => {
+  test("⭐ skaner oqimidagi «G» → «O» sahifani o'zgartirmaydi; skan o'tadi, buyurtma tanlanadi", async ({ page }) => {
     await withoutAudio(page);
-    const { leaked, scanned } = await mockCancelledApi(page);
+    const { leaked, scanned, handovers } = await mockCancelledApi(page);
+    await withGoOrderToken(page, handovers);
     await openHandover(page);
     await expect(page.getByText("Market QR kerak")).toBeVisible();
 
@@ -52,6 +82,13 @@ test.describe("Sarlavha tezkor tugmalari va USB skaner — 1440px", () => {
     await expect(page).toHaveURL(/\/new-orders\/cancelled\/201$/);
     await expect(page.getByRole("heading", { level: 1, name: "Baraka Shop" })).toBeVisible();
     await expect(pendingOrder(page, "10235")).toBeVisible();
+
+    // Buyurtma QR'i ham «…go…g5o…» (kartadagi takrorlash): sahifa joyida, buyurtma tanlanadi — skan = topshirish.
+    await usbScan(page, ORDER_TOKEN_WITH_GO);
+    await expect(pendingOrder(page, "10235")).toHaveCount(0);
+    await expect(page.getByTestId("handed-over-card").getByText(/№10235(?!\d)/).first()).toBeVisible();
+    expect(handovers.map((body) => body.order_ids)).toEqual([["10235"]]);
+    await expect(page).toHaveURL(/\/new-orders\/cancelled\/201$/);
     expect(leaked).toEqual([]);
   });
 
