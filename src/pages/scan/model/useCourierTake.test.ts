@@ -47,6 +47,8 @@ describe("kuryer «O'zimga olish» — xulosa", () => {
   });
 
   it("boshqa kuryer — backend matnidan (sabab kodi ochiq emas)", () => {
+    expect(isOtherCourierError({ kind: "message", message: "Buyurtma allaqachon boshqa kuryerga biriktirilgan" })).toBe(true);
+    // Eski backend matni (MWYaqprw dan oldin) ham tanilsin.
     expect(isOtherCourierError({ kind: "message", message: "Order allaqachon boshqa courierga biriktirilgan" })).toBe(true);
     expect(isOtherCourierError({ kind: "message", message: "Buyurtma boshqa kuryerda" })).toBe(true);
     expect(isOtherCourierError({ kind: "message", message: "Buyurtma paketga joylangan" })).toBe(false);

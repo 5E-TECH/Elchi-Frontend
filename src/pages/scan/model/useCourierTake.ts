@@ -42,7 +42,7 @@ import { isCourierReceivableStatus } from "./courierReceive";
  *     yangilanadi. Rejim almashganda hook o'chmaydi (`enabled: false`) — kesh «Tugatish» yoki chiqishda.
  */
 
-/** Backend matni: «Order allaqachon boshqa courierga biriktirilgan» (sabab kodi ochiq emas). */
+/** Backend matni: «Buyurtma allaqachon boshqa kuryerga biriktirilgan» (MWYaqprw; eskisi «Order … boshqa courierga …»). Sabab kodi ochiq emas. */
 const OTHER_COURIER_PATTERN = /boshqa\s+(courier|kuryer)/i;
 
 export const isOtherCourierError = (error: TgScanErrorInfo) =>
