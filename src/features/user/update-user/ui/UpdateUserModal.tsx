@@ -174,9 +174,11 @@ const FormSection = ({
  *
  * FY-1: market — «Market nomi *» va «AI narxi (1 buyurtma)» (`superadmin-users-edit-market-ai`; faqat superadmin/
  * admin — backend boshqasiga 403; bo'sh → `null`, ya'ni global narx; sukut 300 ko'rsatilmaydi — FY-S5); logist —
- * «Maosh va to'lov kuni»; kuryer — «Ish hududi» faqat o'qish (viloyat; tuman — backend kerak, maket
- * `superadmin-users-edit-courier-district` qisman), filial «Boshqa filialga o'tkazish» orqali (FY-S4). O'lik
- * `region_id` maydoni olib tashlandi (identity `updateUser` uni e'tiborsiz qoldiradi).
+ * «Maosh va to'lov kuni»; kuryer — «Ish hududi»: viloyat faqat o'qish (filial biriktiruvidan), «Tuman» —
+ * `CourierDistrictField` (shu viloyat tumanlari, ixtiyoriy; o'zgargan bo'lsa `PATCH /users/:id` `district_id`,
+ * tozalansa `null`; DtKKY0V8, PvxiVwQO, maket `superadmin-users-edit-courier-district`), filial «Boshqa filialga
+ * o'tkazish» orqali (FY-S4). O'lik `region_id` maydoni olib tashlandi (identity `updateUser` uni e'tiborsiz
+ * qoldiradi).
  *
  * FY-2 (K3scaE0W): superadmin uchun yuqorida «Rol» bo'limi (`features/user/change-role`; faqat admin ⇄ menejer ⇄
  * ro'yxatchi ⇄ logist, o'zini emas). Saqlash: tasdiq «Rolni o'zgartirasizmi?» → avval `PATCH /users/:id/role`, keyin
