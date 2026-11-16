@@ -888,7 +888,7 @@
         "admin": ["returns-list"],
         "manager": ["returns-list"]
       },
-      "note": "Superadmin uchun ro'yxat ostida «Qaytarish so'rovlari» (pages/logistics-ops, maket superadmin-ops-logistics, Ops'dan ko'chgan, F2NzXpMv). Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2)."
+      "note": "Ega qarori 2026-11-16: yon menyuda YO'Q («Pochta» da ham bor) — sahifa URL va paket tafsilotidagi «← Qaytarishlar» orqali ochiladi. Superadmin uchun ro'yxat ostida «Qaytarish so'rovlari» (pages/logistics-ops, maket superadmin-ops-logistics, Ops'dan ko'chgan, F2NzXpMv). Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2)."
     },
     {
       "path": "/replacement-returns",

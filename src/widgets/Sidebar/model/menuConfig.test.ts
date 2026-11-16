@@ -93,7 +93,6 @@ describe("sidebar menu config", () => {
       "/mails",
       "/extra-costs",
       "/batches",
-      "/returns",
       "/products",
       "/warehouses",
       "/all-users",
@@ -107,7 +106,6 @@ describe("sidebar menu config", () => {
       "/new-orders",
       "/extra-costs",
       "/batches",
-      "/returns",
       "/products",
       "/all-users",
       "/regions",
@@ -124,7 +122,6 @@ describe("sidebar menu config", () => {
       "/mails",
       "/extra-costs",
       "/batches",
-      "/returns",
       "/products",
       "/all-users",
       "/payments",
@@ -447,16 +444,33 @@ describe("market operatori menyusi (MO-2, MO-3)", () => {
   });
 });
 
+describe("«Qaytarishlar» yon menyuda yo'q (ega 2026-11-16 — «Pochta» da bor)", () => {
+  it.each([
+    ["superadmin", undefined],
+    ["admin", undefined],
+    ["manager", "HQ"],
+    ["manager", "HYBRID"],
+    ["manager", "REGIONAL"],
+    ["manager", "PICKUP"],
+    ["registrator", "HQ"],
+  ] as const)("%s %s: /returns menyuda yo'q, «Pochta» bor joyda qoladi", (role, type) => {
+    const paths = getSidebarConfigForUser(role, type ? userWithBranchType(type) : null).map((item) => item.to);
+    expect(paths).not.toContain("/returns");
+    expect(SIDEBAR_GROUP_BY_PATH["/returns"]).toBeUndefined();
+  });
+});
+
 describe("«Almashtirishlar» bandi (lQjt6sKP)", () => {
   const paths = (role: string, type?: BranchType) =>
     getSidebarConfigForUser(role, type ? userWithBranchType(type) : null).map((item) => item.to);
 
-  it("superadmin va adminda — «Qaytarishlar» dan keyin, «Ish» guruhida, `Repeat` ikonkasi bilan (BeePost menyusi)", () => {
+  it("superadmin va adminda — «Paketlar» dan keyin, «Ish» guruhida, `Repeat` ikonkasi bilan (BeePost menyusi)", () => {
     for (const role of ["superadmin", "admin"]) {
       const items = getSidebarConfigForUser(role, null);
       const index = items.findIndex((item) => item.to === "/replacement-returns");
       expect(index, role).toBeGreaterThan(-1);
-      expect(items[index - 1].to, role).toBe("/returns");
+      // Ega 2026-11-16: «Qaytarishlar» menyudan olindi — endi «Paketlar» dan keyin.
+      expect(items[index - 1].to, role).toBe("/batches");
       expect(items[index]).toMatchObject({ label: "replacements", icon: Repeat });
     }
     expect(SIDEBAR_GROUP_BY_PATH["/replacement-returns"]).toBe("work");

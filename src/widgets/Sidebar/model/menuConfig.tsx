@@ -13,7 +13,6 @@ import {
   MapPinned,
   Inbox,
   Package,
-  RotateCcw,
   Repeat,
   Receipt,
   CreditCard,
@@ -92,7 +91,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     // fix3 CODE-21: marshrut guardi (`canViewBatchesPage`/`canViewReturnsPage`)
     // superadminga ochiq edi, lekin menyuda yo'q edi — faqat URL orqali.
     { to: "/batches", icon: Package, label: "batches" },
-    { to: "/returns", icon: RotateCcw, label: "returns" },
+    // Ega 2026-11-16: «Qaytarishlar» (/returns) yon menyuda yo'q — «Pochta» da ham bor. Sahifa URL va paket
+    // tafsilotidagi «← Qaytarishlar» havolasi orqali ochiladi (superadmin, admin, menejer).
     // lQjt6sKP: «Almashtirishlar» — almashtirishga tanlangan eski buyurtmalar (BeePost menyusidagidek; `roles.json`, «Ish»).
     { to: "/replacement-returns", icon: Repeat, label: "replacements" },
     { to: "/products", icon: Tag, label: "products" },
@@ -120,7 +120,6 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/mails", icon: Mail, label: "mails" },
     { to: "/batches", icon: Package, label: "batches" },
-    { to: "/returns", icon: RotateCcw, label: "returns" },
     // lQjt6sKP: «Almashtirishlar» (BeePost: superadmin, admin; registrator backend'da 403 — menyusida yo'q).
     { to: "/replacement-returns", icon: Repeat, label: "replacements" },
     { to: "/products", icon: Tag, label: "products" },
@@ -296,7 +295,6 @@ const MANAGER_MENU_ORDER: { item: NavItem; capability: ManagerCapability | null 
   // kuryerlari va o'zi yozgan xarajatlar).
   { item: { to: "/extra-costs", icon: Receipt, label: "extraCosts" }, capability: null },
   { item: { to: "/batches", icon: Package, label: "batches" }, capability: 'intake' },
-  { item: { to: "/returns", icon: RotateCcw, label: "returns" }, capability: 'intake' },
   // Mahsulotlar — menejer filiali uchun mahsulot qo'sha oladi (registrator
   // menyusidagidek shartsiz; backend POST /product MANAGER ga ruxsat beradi).
   { item: { to: "/products", icon: Tag, label: "products" }, capability: null },
@@ -449,7 +447,6 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/dispatch": 'work',
   "/courier-bulk": 'work',
   "/batches": 'work',
-  "/returns": 'work',
   // lQjt6sKP: almashtirish qaytarmalari.
   "/replacement-returns": 'work',
   // GykuOz8f: qo'shimcha xarajatli buyurtmalar.

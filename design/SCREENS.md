@@ -952,9 +952,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Fayllar:** `src/pages/returns/index.tsx` · `src/pages/returns/model/returnBatches.ts` · `src/pages/logistics-ops/index.tsx` · `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` · `src/pages/ops/ui/OpsSection.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewReturns` (access.ts → canViewReturnsPage)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID)
-- **Menyuda:** «Qaytarishlar» (`returns`) — superadmin, admin, manager (HQ · PICKUP · HYBRID)
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Superadmin uchun ro'yxat ostida «Qaytarish so'rovlari» (pages/logistics-ops, maket superadmin-ops-logistics, Ops'dan ko'chgan, F2NzXpMv). Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2).
+- **Izoh:** Ega qarori 2026-11-16: yon menyuda YO'Q («Pochta» da ham bor) — sahifa URL va paket tafsilotidagi «← Qaytarishlar» orqali ochiladi. Superadmin uchun ro'yxat ostida «Qaytarish so'rovlari» (pages/logistics-ops, maket superadmin-ops-logistics, Ops'dan ko'chgan, F2NzXpMv). Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -3924,7 +3924,6 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `superadmin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+3) |
-| Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` (+3) |
 | Almashtirishlar | `replacements` | `/replacement-returns` | `/replacement-returns` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
@@ -3948,7 +3947,6 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `admin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `admin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `admin-batches-new` (+2) |
-| Qaytarishlar | `returns` | `/returns` | `/returns` | — | `admin-returns-list` |
 | Almashtirishlar | `replacements` | `/replacement-returns` | `/replacement-returns` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
@@ -3973,7 +3971,6 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Pochta | `mails` | `/mails` | `/mails/today` | HQ · REGIONAL · HYBRID | `manager-mails-today` |
 | Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | barchasi | izohga qarang |
 | Paketlar | `batches` | `/batches` | `/batches` | HQ · PICKUP · HYBRID | `manager-batches-new` (+2) |
-| Qaytarishlar | `returns` | `/returns` | `/returns` | HQ · PICKUP · HYBRID | `manager-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | barchasi | `manager-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | REGIONAL · HYBRID | izohga qarang |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | HQ · PICKUP · REGIONAL · HYBRID | `manager-users-list` |
