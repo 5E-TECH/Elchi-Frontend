@@ -6,6 +6,7 @@ import type { SellOrderPayload } from "./sellPayment";
 import type { ExtraCostRejectReason } from "./extraCostDecision";
 import type { ExtraCostItem, ExtraCostMode } from "./extraCostRequest";
 import type { RollbackTarget } from "./rollbackTarget";
+import { EXTRA_COST_APPROVALS_QUERY_KEY, todayOrdersByMarketKey } from "./queryKeys";
 
 export {
   EXTRA_COST_REJECT_REASONS,
@@ -219,7 +220,7 @@ export const useOrders = () => {
     enabled = true,
   ) =>
     useQuery<ExtraCostApprovalsResponse>({
-      queryKey: [orders, "extra-cost-approvals", status],
+      queryKey: [...EXTRA_COST_APPROVALS_QUERY_KEY, status],
       queryFn: () =>
         api
           .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status } })
@@ -242,7 +243,7 @@ export const useOrders = () => {
    */
   const useAutoApprovedExtraCostApprovals = (enabled = true) =>
     useQuery<ExtraCostApprovalsResponse>({
-      queryKey: [orders, "extra-cost-approvals", "approved", "auto"],
+      queryKey: [...EXTRA_COST_APPROVALS_QUERY_KEY, "approved", "auto"],
       queryFn: () =>
         api
           .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status: "approved", auto_approved: true } })
@@ -309,7 +310,7 @@ export const useOrders = () => {
     enabled: boolean = true,
   ) =>
     useQuery({
-      queryKey: [orders, marketId, params],
+      queryKey: [...todayOrdersByMarketKey(marketId), params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId), { params }).then((res) => res.data),
       enabled: enabled && Boolean(marketId),
