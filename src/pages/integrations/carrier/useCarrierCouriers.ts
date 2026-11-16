@@ -1,7 +1,11 @@
-import { keepPreviousData, useQueries, useQuery, type QueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useQueries, useQuery, type QueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { cashboxByUserQuery } from "../../../entities/payments";
-import { userDetailQuery, fetchUserList, user, type IUserFilter } from "../../../entities/user/api/userApi";
+import { userDetailQuery, user, type IUserFilter } from "../../../entities/user/api/userApi";
+import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
+import { queryKeys } from "../../../shared/config/queryKeys";
 import { unwrapUserResponse } from "../../../entities/user/lib/normalizeUser";
 import { toCarrierCourier, type CarrierCourier, type CourierInfo } from "./carrierModel";
 
@@ -47,9 +51,9 @@ export const useLinkedCouriers = (ids: readonly string[], enabled: boolean) => {
 };
 
 /**
- * Server kuryerni rad etdi (400 «Kurier faol emas» / 404 «Kurier topilmadi») yoki band (409) — shu kuryerning
- * tafsiloti va kuryer tanlovi ro'yxatlari eskirgan: holat belgisi va qator holati («Faol») server javobiga mos
- * kelishi uchun darhol qayta so'raladi (aks holda 30 s `staleTime` davomida eski holat qolardi).
+ * Server kuryerni rad etdi (400 «Kurier faol emas» / 404 «Kurier topilmadi» / 400 `courier_not_hq`) yoki band
+ * (409) — shu kuryerning tafsiloti va kuryer tanlovi ro'yxatlari eskirgan: holat belgisi va qator holati («Faol»)
+ * server javobiga mos kelishi uchun darhol qayta so'raladi (aks holda 30 s `staleTime` davomida eski holat qolardi).
  */
 export const invalidateCarrierCourier = (client: QueryClient, courierId: string) => {
   void client.invalidateQueries({ queryKey: [user, "detail", courierId] });
@@ -61,6 +65,11 @@ export const invalidateCarrierCourier = (client: QueryClient, courierId: string)
         Boolean(params) && typeof params === "object" && (params as IUserFilter).role === "courier"
       );
     },
+  });
+  // «Yangi tashqi yetkazuvchi» tanlovi (HQ kuryerlari — `queryKeys.branches.carrierCouriers`).
+  void client.invalidateQueries({
+    queryKey: queryKeys.branches.all,
+    predicate: ({ queryKey }) => queryKey[3] === "carrier-couriers",
   });
 };
 
@@ -115,29 +124,70 @@ export const useCourierReceivable = (
   return { state: "ready", value: readCourierReceivable(query.data) };
 };
 
-/** Yangi akkaunt uchun kuryerlar (`GET users?role=courier`, server qidiruvi; 50 tagacha). */
-export const COURIER_PICKER_LIMIT = 50;
+/**
+ * Yangi akkaunt uchun kuryerlar — FAQAT HQ'da ochilganlari (ega qarori 2026-11-15; backend `POST admin/carriers`
+ * boshqasini 400 `courier_not_hq` bilan rad etadi): `GET branches/:hqId/users` (SUPERADMIN, ADMIN — konsol huquqi
+ * bilan bir xil), `role: COURIER` qatorlari. Ro'yxat to'liq keladi — qidiruv mijoz tomonida (ism va telefon
+ * raqamlari bo'yicha): avvalgi «barcha kuryerlarning birinchi 50 tasi» bo'shlig'i yo'q.
+ * Kalit `["branches", hqId, "employees", …]` — filial xodimlari o'zgarganda (qo'shish / olib tashlash / kuryerni
+ * o'tkazish — `["branches"]` invalidatsiyasi) bu ro'yxat ham yangilanadi.
+ */
+const readHqCouriers = (payload: unknown, hqBranchId: string): CarrierCourier[] => {
+  const body = payload as { data?: unknown } | unknown[] | null | undefined;
+  const rows = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+  const couriers: CarrierCourier[] = [];
+  for (const raw of rows) {
+    if (!raw || typeof raw !== "object") continue;
+    const row = raw as Record<string, unknown>;
+    if (String(row.role ?? "").toUpperCase() !== "COURIER") continue;
+    const userRaw = row.user && typeof row.user === "object" ? (row.user as Record<string, unknown>) : null;
+    // Identity'da topilmagan (o'chirilgan) foydalanuvchi — tanlovga chiqmaydi.
+    if (!userRaw) continue;
+    const courier = toCarrierCourier({ ...userRaw, id: userRaw.id ?? row.user_id, branch: { id: hqBranchId } });
+    if (courier) couriers.push(courier);
+  }
+  return couriers;
+};
 
-export const useCourierCandidates = (search: string, enabled: boolean) => {
-  const params: IUserFilter = {
-    role: "courier",
-    limit: COURIER_PICKER_LIMIT,
-    ...(search ? { search } : {}),
-  };
+const digitsOf = (value: string) => value.replace(/\D+/g, "");
+
+/** Qidiruv: ism (katta-kichik harfsiz) yoki telefon raqamlari (bo'shliq va `+` siz). */
+export const matchCourierSearch = (courier: CarrierCourier, search: string) => {
+  const query = search.trim().toLowerCase();
+  if (!query) return true;
+  if (courier.name.toLowerCase().includes(query)) return true;
+  const digits = digitsOf(query);
+  return digits.length > 0 && digitsOf(courier.phone).includes(digits);
+};
+
+export const useHqCourierCandidates = (
+  hqBranchId: string | null,
+  hqName: string,
+  search: string,
+  enabled: boolean,
+) => {
   const query = useQuery({
-    queryKey: [user, params],
-    queryFn: () => fetchUserList(params),
-    enabled,
-    placeholderData: keepPreviousData,
+    queryKey: queryKeys.branches.carrierCouriers(hqBranchId ?? ""),
+    queryFn: async () => {
+      const response = await api.get(API_ENDPOINTS.BRANCHES.USERS(hqBranchId as string));
+      return readHqCouriers(response.data, hqBranchId as string);
+    },
+    enabled: enabled && Boolean(hqBranchId),
+    staleTime: 30_000,
     meta: { silentError: true },
   });
-  const couriers: CarrierCourier[] = (query.data?.data.items ?? [])
-    .map((item) => toCarrierCourier(item))
-    .filter((item): item is CarrierCourier => item !== null);
+  const couriers = useMemo<CarrierCourier[]>(
+    () =>
+      (query.data ?? [])
+        .filter((courier) => matchCourierSearch(courier, search))
+        .map((courier) => ({ ...courier, branch: { id: courier.branch?.id ?? "", name: hqName } })),
+    [hqName, query.data, search],
+  );
   return {
     couriers,
-    isLoading: query.isPending && enabled,
+    isLoading: query.isPending && enabled && Boolean(hqBranchId),
     isFetching: query.isFetching,
     isError: query.isError,
+    refetch: query.refetch,
   };
 };

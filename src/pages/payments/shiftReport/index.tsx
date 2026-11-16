@@ -20,6 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
+import { opsTabPath, SHIFT_SETTINGS_TAB } from "../../ops/tabs";
 import { canManageShiftSettings } from "../../../app/lib/access";
 import {
   useResendShiftReport,
@@ -60,6 +61,9 @@ import LatePhotoDialog from "./LatePhotoDialog";
 import { LateUploadedBadge, PhotoStatusBadge } from "./PhotoStatus";
 import { useLateDeadlineText } from "./photoStatusMeta";
 import ReportDeliveries from "./ReportDeliveries";
+
+/** Kassa smenasi sozlamalari — Ops vositalari → «Kassa smenasi» tabi (ega 2026-11-16). */
+const SHIFT_SETTINGS_PATH = opsTabPath(SHIFT_SETTINGS_TAB);
 
 /**
  * SMENA HISOBOTI — `/payments/shifts/:id` (maket `superadmin-payments-shift-report`, kiZgTybn).
@@ -608,7 +612,7 @@ const ShiftReportPage = () => {
         actions={
           canOpenSettings ? (
             <>
-              <Link to="/payments/shift-settings" className={buttonClasses({ variant: "secondary" })}>
+              <Link to={SHIFT_SETTINGS_PATH} className={buttonClasses({ variant: "secondary" })}>
                 <Settings aria-hidden="true" size={18} />
                 {t("shiftCheck.accounts.settings")}
               </Link>

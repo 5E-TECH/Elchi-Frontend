@@ -200,7 +200,7 @@ describe("FinanceHistoryDetailPopup — tuzatish pastki qismi (superadmin)", () 
     expect(within(footer).getByRole("button", { name: "Yopish" })).not.toHaveClass("max-md:hidden");
     expect(footer).not.toHaveTextContent("Qaytarish yoki tahrirlash mumkin");
     const link = within(footer).queryByRole("link", { name: "Muddatni o'zgartirish" });
-    if (code === "WINDOW_EXPIRED") expect(link).toHaveAttribute("href", "/payments/shift-settings");
+    if (code === "WINDOW_EXPIRED") expect(link).toHaveAttribute("href", "/ops?tab=shift-settings");
     else expect(link).toBeNull();
   });
 

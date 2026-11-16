@@ -34,6 +34,14 @@ vi.mock("../../../entities/mails", () => ({
   useReceiveCanceledPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReturnCanceledOrders: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDispatchPostToBranch: () => ({ mutateAsync: vi.fn(), isPending: false, reset: vi.fn() }),
+  useDispatchPostToCourier: () => ({ mutateAsync: vi.fn(), isPending: false, reset: vi.fn() }),
+  getPostCourierDestinations: vi.fn().mockResolvedValue({
+    post_id: "",
+    region_id: "",
+    is_hq_region: false,
+    couriers: [],
+    carrier_lookup_failed: false,
+  }),
   useDeleteOrdersFromPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReassignPostToBranch: () => ({ mutateAsync: mocks.reassign, isPending: false }),
 }));

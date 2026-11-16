@@ -6,10 +6,12 @@ import { ArrowRightLeft, CircleX, Info, Lock, RotateCcw, Trash2, TriangleAlert }
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import {
+  getPostCourierDestinations,
   useDeleteOrdersFromPost,
   useMails,
   useMailDetail,
   type CanceledPostActionResult,
+  type CourierDestination,
   type PostOrder,
   type RequestOrderReturnResult,
   useReceiveCanceledPost,
@@ -64,7 +66,7 @@ import { getMailTabPath, normalizeMailTab, type MailTab } from "../lib/navigatio
 import MailStatCards from "./ui/MailStatCards";
 import OrdersTable, { type OrdersTableColumn } from "./ui/OrdersTable";
 import SendButton from "./ui/SendButton";
-import SendPostModal from "./ui/SendPostModal";
+import SendPostModal, { type SendKind } from "./ui/SendPostModal";
 import TransferPostBranchModal from "./ui/TransferPostBranchModal";
 import DeleteFromPostDialog from "./ui/DeleteFromPostDialog";
 import { DuplicatePhonesAlert } from "./ui/DuplicatePhonesAlert";
@@ -115,7 +117,8 @@ import { resolveReceiveAccess } from "./model/receiveAccess";
  * POCHTA TAFSILOTI — `/mails/:id` (dizayn v2, sahifa shell ichida).
  *
  * Rejim rol va URL/holatdan (`?type=refused`, `?view=old`, `?view=old-all-batches`; URL tozalanib holatda saqlanadi):
- *  - jo'natish (superadmin/admin/HQ registratori) — «Pochtani jo'natish — n ta» → «Filialni tanlang» oynasi;
+ *  - jo'natish (superadmin/admin/HQ registratori) — «Pochtani jo'natish — n ta» → «Manzilni tanlang» oynasi
+ *    (filial yoki HQ kuryeri, ega qarori 2026-11-15);
  *  - qabul (kuryer, filial menejeri) — faqat yo'ldagi buyurtmalar, «Pochtani qabul qilish — n ta»;
  *    kuryer telefonida tugma pastki menyu ustidagi panelda;
  *  - rad etilgan pochtani qabul qilish — info ogohlantirish, `POST post/cancel/receive/:id`;
@@ -201,6 +204,25 @@ const MANAGER_COLUMNS: readonly OrdersTableColumn[] = [
   "amount",
 ];
 const MANAGER_TABLET_HIDDEN: readonly OrdersTableColumn[] = ["districtAddress", "market"];
+
+/**
+ * «Manzilni tanlang» oynasining ro'yxatlari (bosilganda olinadi): `null` — olinmadi, xato — `*Error` da (axios xatosi,
+ * oynadagi `ErrorState` turi va matni shundan).
+ */
+type SendTargets = {
+  branches: Branch[] | null;
+  branchesError: unknown;
+  couriers: CourierDestination[] | null;
+  couriersError: unknown;
+  carrierLookupFailed: boolean;
+};
+const EMPTY_SEND_TARGETS: SendTargets = {
+  branches: null,
+  branchesError: null,
+  couriers: null,
+  couriersError: null,
+  carrierLookupFailed: false,
+};
 
 /** Skan-qabul: pochta to'liq qabul qilingach kelingan ro'yxatga shuncha kutib qaytiladi (BeePost kabi). */
 const SCAN_RECEIVE_DONE_BACK_MS = 1500;
@@ -852,7 +874,8 @@ const MailDetailPage = () => {
   // ─── Modal state (faqat courier bo'lmaganlar uchun) ────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCheckingCouriers, setIsCheckingCouriers] = useState(false);
-  const [branchRecipients, setBranchRecipients] = useState<Branch[]>([]);
+  const [sendTargets, setSendTargets] = useState<SendTargets>(EMPTY_SEND_TARGETS);
+  const [retryingSendTarget, setRetryingSendTarget] = useState<SendKind | null>(null);
 
   // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
   const receivePost = useReceivePost();
@@ -1644,40 +1667,91 @@ const MailDetailPage = () => {
     }
   }, [clearSelection, navigate, refetchRegularDetail, selectedIds]);
 
-  // ─── «Filialni tanlang» oynasini ochish (jo'natish) ───────────────────────
+  // ─── «Manzilni tanlang» oynasini ochish (jo'natish) ──────────────────────
+  // Manzil filiallar (faol REGIONAL/HYBRID, menejeri bilan) bitta so'rovda. Avvalgi GET /branches +
+  // GET /managers faqat superadmin/admin uchun edi — HQ registratori 403 olardi.
+  const loadSendBranches = useCallback(
+    () =>
+      getDispatchDestinations({ region_id: String(regionId) }).then((response) =>
+        // Himoya: backend filtrlaydi, lekin viloyat va faollik shu yerda ham tekshiriladi.
+        (response?.data ?? []).filter(
+          (branch) => String(branch.region?.id ?? "") === String(regionId) && branch.status === "active",
+        ),
+      ),
+    [regionId],
+  );
+
+  // Ega qarori 2026-11-15: filial ham, HQ kuryeri ham — ikkala ro'yxat FAQAT bosilganda, parallel olinadi (sahifa
+  // ochilganda so'rov yo'q). Oyna kamida bittasi bo'sh bo'lmasa ochiladi; xato bo'lgan ro'yxat o'z tabida
+  // «Qayta urinish» bilan. Ikkalasi bo'sh — «faol filial ham, HQ kuryeri ham yo'q»; ikkalasi xato yoki biri xato,
+  // ikkinchisi bo'sh — backend xabari (zaxira: «Filiallarni / Kuryerlarni yuklab bo'lmadi»).
   const handleSend = useCallback(() => {
     if (selectedIds.size === 0 || !postId || !regionId || isCheckingCouriers) return;
 
     setIsCheckingCouriers(true);
 
-    // Manzil filiallar (faol REGIONAL/HYBRID, menejeri bilan) bitta so'rovda.
-    // Avvalgi GET /branches + GET /managers faqat superadmin/admin uchun edi —
-    // HQ registratori 403 olardi.
-    getDispatchDestinations({ region_id: String(regionId) })
-      .then((response) => {
-        // Himoya: backend filtrlaydi, lekin viloyat va faollik shu yerda ham tekshiriladi.
-        const branches = (response?.data ?? []).filter(
-          (branch) => String(branch.region?.id ?? "") === String(regionId) && branch.status === "active",
-        );
+    void Promise.allSettled([loadSendBranches(), getPostCourierDestinations(postId)])
+      .then(([branchResult, courierResult]) => {
+        const branches = branchResult.status === "fulfilled" ? branchResult.value : null;
+        const destinations = courierResult.status === "fulfilled" ? courierResult.value : null;
+        const branchesError = branchResult.status === "rejected" ? (branchResult.reason as unknown) ?? {} : null;
+        const couriersError = courierResult.status === "rejected" ? (courierResult.reason as unknown) ?? {} : null;
+        const couriers = destinations?.couriers ?? null;
 
-        if (branches.length === 0) {
-          notify.error(t("common:error"), { description: t("noActiveBranchInRegion") });
+        if ((branches?.length ?? 0) === 0 && (couriers?.length ?? 0) === 0) {
+          // 403 va boshqa rad javoblarda backend xabari ko'rinadi.
+          const description =
+            branchesError !== null
+              ? (getBackendErrorMessage(branchesError) ?? t("branchesLoadError"))
+              : couriersError !== null
+                ? (getBackendErrorMessage(couriersError) ?? t("couriersLoadError"))
+                : t("noRecipientInRegion");
+          notify.error(t("common:error"), { description });
           return;
         }
 
-        setBranchRecipients(branches);
-        setIsModalOpen(true);
-      })
-      .catch((error: unknown) => {
-        // 403 va boshqa rad javoblarda backend xabari ko'rinadi.
-        notify.error(t("common:error"), {
-          description: getBackendErrorMessage(error) ?? t("branchesLoadError"),
+        setSendTargets({
+          branches,
+          branchesError,
+          couriers,
+          couriersError,
+          carrierLookupFailed: destinations?.carrier_lookup_failed ?? false,
         });
+        setIsModalOpen(true);
       })
       .finally(() => {
         setIsCheckingCouriers(false);
       });
-  }, [selectedIds, postId, regionId, isCheckingCouriers, t]);
+  }, [selectedIds, postId, regionId, isCheckingCouriers, loadSendBranches, t]);
+
+  /** Oynadagi «Qayta urinish»: faqat xato bo'lgan ro'yxat qayta so'raladi. */
+  const handleRetrySendTarget = useCallback(
+    (kind: SendKind) => {
+      if (!postId || retryingSendTarget) return;
+      setRetryingSendTarget(kind);
+      const request =
+        kind === "branch"
+          ? loadSendBranches().then((branches) =>
+              setSendTargets((prev) => ({ ...prev, branches, branchesError: null })),
+            )
+          : getPostCourierDestinations(postId).then((destinations) =>
+              setSendTargets((prev) => ({
+                ...prev,
+                couriers: destinations.couriers,
+                couriersError: null,
+                carrierLookupFailed: destinations.carrier_lookup_failed,
+              })),
+            );
+      void request
+        .catch((error: unknown) =>
+          setSendTargets((prev) =>
+            kind === "branch" ? { ...prev, branchesError: error ?? {} } : { ...prev, couriersError: error ?? {} },
+          ),
+        )
+        .finally(() => setRetryingSendTarget(null));
+    },
+    [postId, retryingSendTarget, loadSendBranches],
+  );
 
   // ─── Eski pochta → «Filialga o'tkazish» ───────────────────────────────────
   // HQ pochtani adashib boshqa filialga jo'natgan, u filial hali qabul qilmagan (pochta «Jo'natilgan», kuryersiz,
@@ -2295,13 +2369,19 @@ const MailDetailPage = () => {
         </>
       ) : null}
 
-      {/* Pochta jo'natish oynasi — filial tanlash */}
+      {/* Pochta jo'natish oynasi — filial yoki HQ kuryeri */}
       {canDispatchToBranch && !isCourierLikeReceiver && !isEffectiveRefusedDetail && !isOldDetail && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           postId={postId ?? ""}
-          branches={branchRecipients}
+          branches={sendTargets.branches}
+          branchesError={sendTargets.branchesError}
+          couriers={sendTargets.couriers}
+          couriersError={sendTargets.couriersError}
+          carrierLookupFailed={sendTargets.carrierLookupFailed}
+          onRetry={handleRetrySendTarget}
+          retrying={retryingSendTarget}
           selectedIds={selectedIds}
           onSuccess={handleSendSuccess}
           regionName={regionLabel}

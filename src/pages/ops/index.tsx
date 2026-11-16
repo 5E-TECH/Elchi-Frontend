@@ -4,7 +4,14 @@ import { useTranslation } from "react-i18next";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Card, getPanelId, getTabId, PageHeader, Select, SkeletonLines, Tabs } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
-import { DAILY_SCHEDULE_TAB, DELIVERY_PRICING_TAB, EXPENSE_CATEGORIES_TAB, MOVED_OPS_TABS, OPS_TABS } from "./tabs";
+import {
+  DAILY_SCHEDULE_TAB,
+  DELIVERY_PRICING_TAB,
+  EXPENSE_CATEGORIES_TAB,
+  MOVED_OPS_TABS,
+  OPS_TABS,
+  SHIFT_SETTINGS_TAB,
+} from "./tabs";
 import { OpsTabBoundary } from "./ui/OpsToolPage";
 
 /**
@@ -21,6 +28,8 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  * «Filiallar» — `/batches` ichida (F2NzXpMv, faqat superadmin): eski yo'l ham, `?tab=` ham o'sha yerga olib boradi.
  * Hub ichida tug'ilgan tab («Xarajat kategoriyalari», `pages/expense-categories`) — eski yo'lsiz, faqat shu yerda.
  * «Yetkazish narxi» (`pages/delivery-tariffs`) — «Hududlar» bo'limining sahifasi, hub uni ham `embedded` bilan chizadi.
+ * «Kassa smenasi» (`pages/payments/shiftSettings`, ega 2026-11-16) — ilgari `/payments/shift-settings` sahifasi; eski yo'l
+ * shu tabga yo'naltiradi.
  *
  * Desktop/planshet — `Tabs` (title = «Eski manzil: /finance-operators»; eski yo'li yo'q tabda — yo'q), telefon —
  * `Select` («Ops bo'limi: <tab>»). Faol tab `?tab=` da; noma'lum qiymat — oxirgi tanlangan yoki birinchi tab.
@@ -31,6 +40,7 @@ type OpsPanel = ComponentType<{ embedded?: boolean }>;
 
 const FinanceOperatorsPage = lazy(() => import("../finance-operators"));
 const ExpenseCategoriesPage = lazy(() => import("../expense-categories"));
+const ShiftSettingsPage = lazy(() => import("../payments/shiftSettings"));
 const InvestorsOpsPage = lazy(() => import("../investors-ops"));
 const IdentityOpsPage = lazy(() => import("../identity-ops"));
 const SystemOpsPage = lazy(() => import("../system-ops"));
@@ -42,6 +52,7 @@ const DailySchedulePage = lazy(() => import("../daily-schedule"));
 const CONTENT: Record<string, OpsPanel> = {
   finance: FinanceOperatorsPage,
   [EXPENSE_CATEGORIES_TAB]: ExpenseCategoriesPage,
+  [SHIFT_SETTINGS_TAB]: ShiftSettingsPage,
   investors: InvestorsOpsPage,
   [DELIVERY_PRICING_TAB]: DeliveryPricingPage,
   [DAILY_SCHEDULE_TAB]: DailySchedulePage,

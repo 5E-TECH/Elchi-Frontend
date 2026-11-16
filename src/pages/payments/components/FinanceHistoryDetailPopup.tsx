@@ -4,6 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, Shop
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { opsTabPath, SHIFT_SETTINGS_TAB } from "../../ops/tabs";
 import { canCorrectPayments, canViewOrders } from "../../../app/lib/access";
 import type { RootState } from "../../../app/config/store";
 import { OrderStatusBadge } from "../../../entities/order";
@@ -60,6 +61,9 @@ import { PaymentCorrectionSection } from "./PaymentCorrectionSection";
 import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { paymentAckAudienceOf, toPaymentAck } from "./paymentAck";
 import ReceiptSection from "./receipt/ReceiptSection";
+
+/** Kassa smenasi sozlamalari — Ops vositalari → «Kassa smenasi» tabi (ega 2026-11-16). */
+const SHIFT_SETTINGS_PATH = opsTabPath(SHIFT_SETTINGS_TAB);
 
 /**
  * KASSA TARIXI YOZUVI TAFSILOTI — «Moliya» sahifalarining umumiy oynasi (dizayn v2).
@@ -599,7 +603,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
               onClose={onClose}
               onReverse={() => startCorrection("reverse")}
               onCorrect={() => startCorrection("edit")}
-              changeWindowTo="/payments/shift-settings"
+              changeWindowTo={SHIFT_SETTINGS_PATH}
             />
           )
         }

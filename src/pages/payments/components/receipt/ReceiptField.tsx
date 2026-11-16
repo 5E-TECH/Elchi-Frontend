@@ -4,6 +4,7 @@ import { CircleAlert, CircleCheck, CircleX, ImagePlus, Info, RefreshCw, Settings
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { opsTabPath, SHIFT_SETTINGS_TAB } from "../../../ops/tabs";
 import { canManageShiftSettings } from "../../../../app/lib/access";
 import { RECEIPT_PHOTO_ACCEPT, RECEIPT_PHOTO_MAX_BYTES } from "../../../../entities/payments";
 import { cx } from "../../../../shared/lib/cx";
@@ -20,11 +21,14 @@ import {
 import ReceiptViewerDialog from "./ReceiptViewerDialog";
 import type { ReceiptFieldController } from "./useReceiptField";
 
+/** Kassa smenasi sozlamalari — Ops vositalari → «Kassa smenasi» tabi (ega 2026-11-16). */
+const SHIFT_SETTINGS_PATH = opsTabPath(SHIFT_SETTINGS_TAB);
+
 /**
  * «CHEK RASMI» MAYDONI (QlLf33Ma; maketlar `…-expense-receipt-dialog`, `…-expense-receipt-states`). Holatlar: bo'sh
  * (tanlash maydoni), sozlama yuklanmoqda (skelet), tayyorlanmoqda / yuklanmoqda (foiz, «To'xtatish»), yuklandi (eskiz →
  * ko'ruvchi, «Almashtirish», «Olib tashlash»), yuklab bo'lmadi («Qayta urinish»), internet yo'q. Xato matni — `Field`
- * ostida. Superadminga «Sozlamalar» havolasi (`/payments/shift-settings`). Holat — `useReceiptField`.
+ * ostida. Superadminga «Sozlamalar» havolasi (`/ops?tab=shift-settings`). Holat — `useReceiptField`.
  */
 
 const receiptSizeText = (bytes: number, language: string) => {
@@ -117,7 +121,7 @@ const ReceiptField = ({ receipt, viewerDescription }: { receipt: ReceiptFieldCon
       required={receipt.required}
       labelAside={
         canOpenSettings ? (
-          <Link to="/payments/shift-settings" className={buttonClasses({ variant: "ghost", size: "sm", className: "-mr-1" })}>
+          <Link to={SHIFT_SETTINGS_PATH} className={buttonClasses({ variant: "ghost", size: "sm", className: "-mr-1" })}>
             <Settings aria-hidden="true" size={16} />
             {t("receipt.field.settings")}
           </Link>

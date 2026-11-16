@@ -5,8 +5,9 @@ import { transferCourierToBranch } from "./courierTransferApi";
 
 /**
  * O'tkazishdan keyin eskirishi mumkin bo'lgan hamma narsa: ikkala filial
- * (ro'yxat, tafsilot, xodimlar), kuryer ro'yxatlari, foydalanuvchi
- * sahifasi/ro'yxati, viloyat bo'yicha kuryerlar (hudud o'zgaradi) va tekshiruv.
+ * (ro'yxat, tafsilot, xodimlar — HQ kuryerlari tanlovi ham), kuryer ro'yxatlari,
+ * foydalanuvchi sahifasi/ro'yxati va tekshiruv. Pochtaning «HQ kuryeriga»
+ * ro'yxati keshlanmaydi (oynani ochishda so'raladi).
  */
 const invalidateCourierTransferQueries = (queryClient: QueryClient) =>
   Promise.all([
@@ -14,7 +15,6 @@ const invalidateCourierTransferQueries = (queryClient: QueryClient) =>
     queryClient.invalidateQueries({ queryKey: ["couriers"] }),
     queryClient.invalidateQueries({ queryKey: ["user"] }),
     queryClient.invalidateQueries({ queryKey: queryKeys.users.all }),
-    queryClient.invalidateQueries({ queryKey: ["mails", "couriers-by-region"] }),
     queryClient.invalidateQueries({ queryKey: queryKeys.courierTransfer.all }),
   ]);
 

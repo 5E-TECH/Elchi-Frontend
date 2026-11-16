@@ -47,7 +47,7 @@ const receiptPatches = () => http.patch.mock.calls.filter(([url]) => url === REC
 const correctionGets = () => http.get.mock.calls.filter(([url]) => url === CORRECTION_URL);
 
 const open = async () => {
-  renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+  renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
   const card = await screen.findByRole("region", { name: "To'lovlarni tuzatish muddati" });
   return card;
 };

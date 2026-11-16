@@ -347,7 +347,6 @@ describe("TransferCourierModal — o'tkazish", () => {
         ["couriers"],
         ["user"],
         ["users"],
-        ["mails", "couriers-by-region"],
         ["courier-transfer"],
       ]),
     );

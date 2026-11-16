@@ -64,7 +64,7 @@ describe("Shift settings (kiZgTybn)", () => {
 
   it("saves only the changed keys; turning a card photo off turns its AI off; AI needs a photo", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     const save = await screen.findByRole("button", { name: /Saqlash/ });
     expect(save).toBeDisabled();
     expect(screen.getAllByText("Tasdiqlash o'chiq — smena avvalgidek yopiladi").length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ describe("Shift settings (kiZgTybn)", () => {
   });
 
   it("old backend without report: the report card is not drawn; the shift schedule link is always there", async () => {
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     await screen.findByRole("button", { name: /Saqlash/ });
     expect(screen.queryByText("Smena hisobotini yuborish")).not.toBeInTheDocument();
     expect(screen.getByText("Smena jadvali")).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe("Shift settings (kiZgTybn)", () => {
       }),
     );
     const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     await user.click(await screen.findByRole("switch", { name: "Rasm talab qilish" }));
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
     expect(await screen.findByText("Smena sozlamalarini faqat superadmin o'zgartiradi")).toBeInTheDocument();
@@ -143,7 +143,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
   });
 
   it("draws both switches with their server values; the subtitle no longer claims «all cashboxes»", async () => {
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     const main = await screen.findByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" });
     const branch = screen.getByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" });
     expect(main).toHaveAttribute("aria-checked", "true");
@@ -163,7 +163,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
 
   it("PATCH carries only the changed switch: branch on → `branch_account_check_enabled`, main off → `account_check_enabled`", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
     await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
@@ -172,7 +172,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
 
   it("main off — only `account_check_enabled: false`; card rows say confirmation is off", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     await user.click(await screen.findByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" }));
     const table = screen.getByRole("table", { name: "Kartalar bo'yicha smena kalitlari" });
     expect(within(table).getAllByText("Tasdiqlash o'chiq — smena avvalgidek yopiladi")).toHaveLength(2);
@@ -184,7 +184,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
   it("a realtime card change re-reads the settings without dropping unsaved switches; the new card row appears", async () => {
     const user = userEvent.setup();
     const { queryClient } = renderWithProviders(<ShiftSettingsPage />, {
-      route: "/payments/shift-settings",
+      route: "/ops?tab=shift-settings",
       preloadedState: superadmin,
     });
     await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
@@ -239,7 +239,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
       return { data: { statusCode: 200, data: {} } };
     });
     const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
     const save = screen.getByRole("button", { name: /Saqlash/ });
     await user.click(save);
@@ -258,7 +258,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
       }),
     );
     const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
     expect(
@@ -277,7 +277,7 @@ describe("Shift settings — report sending and the shift schedule link (gWI4gYk
     http.get.mockImplementation(async () => ({
       data: { statusCode: 200, data: { ...SETTINGS, auto_open: { enabled: false, times: ["08:00"], scope: "main" } } },
     }));
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     expect(
       await screen.findByText(
         "Smenani avtomatik ochish va yopish vaqtlari, vaqtida ochilmasa yoki yopilmasa superadminlarga xabar — endi Ops → «Kun tartibi»da.",
@@ -304,7 +304,7 @@ describe("Shift settings — report sending and the shift schedule link (gWI4gYk
 
   it("«Avtomatik yopish» Ops → «Kun tartibi»ga ko'chdi (2026-11-10): karta yo'q, havola bor; PATCH da `auto_close` yo'q", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     await screen.findByRole("table", { name: "Hisobot qabul qiluvchilari" });
     expect(screen.queryByRole("switch", { name: "Smenani avtomatik yopish" })).not.toBeInTheDocument();
     expect(screen.queryByText("Avtomatik yopish")).not.toBeInTheDocument();
@@ -319,7 +319,7 @@ describe("Shift settings — report sending and the shift schedule link (gWI4gYk
 
   it("report sending: recipient × channel switches and the PDF / Excel format → only the changed report keys", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/payments/shift-settings", preloadedState: superadmin });
+    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     const table = await screen.findByRole("table", { name: "Hisobot qabul qiluvchilari" });
     expect(within(table).getByRole("switch", { name: "Superadmin: Telegram" })).toHaveAttribute("aria-checked", "true");
     await user.click(within(table).getByRole("switch", { name: "Kuryerlar: tizim bildirishnomasi" }));

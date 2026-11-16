@@ -1203,7 +1203,6 @@
     "settings": {
       "title": "Cashbox shift settings",
       "subtitle": "Main cashbox and branches · only a superadmin can change",
-      "back": "Main cashbox",
       "save": "Save",
       "saving": "Saving…",
       "saved": "Settings saved",

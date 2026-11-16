@@ -12,6 +12,7 @@
   "tabs": {
     "finance": "Finance operators",
     "expenseCategories": "Expense categories",
+    "shiftSettings": "Cash shift",
     "investors": "Investors",
     "deliveryPricing": "Delivery pricing",
     "dailySchedule": "Daily schedule",

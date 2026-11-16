@@ -353,7 +353,7 @@ describe("Kassadan xarajat — chek rasmi (QlLf33Ma)", () => {
     const dialog = await openDialog(user);
 
     const superadminLink = await within(dialog).findByRole("link", { name: "Sozlamalar" });
-    expect(superadminLink).toHaveAttribute("href", "/payments/shift-settings");
+    expect(superadminLink).toHaveAttribute("href", "/ops?tab=shift-settings");
     await user.click(saveButton(dialog));
     expect(await within(dialog).findByText("Chek rasmini yuklang")).toBeInTheDocument();
     expect(spendCalls()).toHaveLength(0);

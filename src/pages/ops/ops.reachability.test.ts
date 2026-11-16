@@ -47,12 +47,22 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
  * `daily-schedule`   — «Kun tartibi» (2026-11-10): buyurtma yaratish / qabul
  *                      chegaralari, kun almashishi, smena jadvali. Hub ichida
  *                      tug'ilgan — eski yo'li yo'q.
+ * `payments/shiftSettings` — «Kassa smenasi» (ega 2026-11-16): ilgari
+ *                      `/payments/shift-settings` sahifasi, endi hub tabi;
+ *                      eski yo'l `routes.tsx` da tabga yo'naltiradi.
  *
  * ⚠️ Bu ro'yxat QO'LDA to'ldiriladi, `*-ops` esa avtomatik sanaladi. Ya'ni
  * yangi `*-ops` papka qo'shilsa va unga tab berilmasa, test HAMON yiqiladi —
  * yetim sahifa kafolati buzilmaydi.
  */
-const extraOpsPages = ["finance-operators", "logs", "expense-categories", "delivery-tariffs", "daily-schedule"];
+const extraOpsPages = [
+  "finance-operators",
+  "logs",
+  "expense-categories",
+  "payments/shiftSettings",
+  "delivery-tariffs",
+  "daily-schedule",
+];
 
 /** Hub'dan ish sahifasiga ko'chgan vositalar (F2NzXpMv): yetim emas, `/returns` va `/batches` ichida chiziladi. */
 const movedOpsPages = ["logistics-ops", "branch-ops"];
@@ -96,13 +106,14 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
     }
   });
 
-  it("eski yo'lsiz tablar — «Xarajat kategoriyalari» (hub ichida tug'ilgan, moliya guruhida), «Yetkazish narxi» (Hududlar sahifasi) va «Kun tartibi» (hub ichida tug'ilgan, 2026-11-10)", () => {
+  it("eski yo'lsiz tablar — «Xarajat kategoriyalari» (hub ichida tug'ilgan, moliya guruhida), «Kassa smenasi» (ega 2026-11-16, yo'naltirish routes.tsx da), «Yetkazish narxi» (Hududlar sahifasi) va «Kun tartibi» (hub ichida tug'ilgan, 2026-11-10)", () => {
     expect(OPS_TABS.filter((tab) => tab.legacyPath === undefined).map((tab) => tab.key)).toEqual([
       "expense-categories",
+      "shift-settings",
       "delivery-pricing",
       "daily-schedule",
     ]);
-    expect(OPS_TABS.map((tab) => tab.key).slice(0, 2)).toEqual(["finance", "expense-categories"]);
+    expect(OPS_TABS.map((tab) => tab.key).slice(0, 3)).toEqual(["finance", "expense-categories", "shift-settings"]);
   });
 });
 

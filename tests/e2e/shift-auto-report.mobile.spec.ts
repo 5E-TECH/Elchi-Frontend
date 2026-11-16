@@ -7,7 +7,7 @@ import { mockShiftAutoReport } from "./support/shiftAutoReport";
  */
 test("390: hisobot yuborish va «Smena jadvali» kartalari, avtomatik yopilgan smena hisoboti", async ({ page }) => {
   const mock = await mockShiftAutoReport(page);
-  await page.goto("/payments/shift-settings");
+  await page.goto("/ops?tab=shift-settings");
   await expect(page.getByRole("heading", { name: "Smena hisobotini yuborish" })).toBeVisible();
   const telegram = page.getByRole("switch", { name: "Marketlar: Telegram" });
   await expect(telegram).toBeVisible();

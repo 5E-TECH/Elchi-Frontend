@@ -132,6 +132,7 @@ export const V2_SCOPES = Object.freeze([
   "src/features/notification-dispatch",
   "src/features/notification-inbox",
   "src/features/notification-toggle",
+  "src/features/order-operator-assign",
   "src/features/order-return",
   "src/features/order-tracking",
   // T6 N2: to'lovni qaytarish va summasini tuzatish (faqat superadmin) — rangsiz model + oynalar.

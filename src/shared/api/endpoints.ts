@@ -111,6 +111,9 @@ export const API_ENDPOINTS = {
     // (pul, qo'ldagi buyurtma, qaytarilmagan pochta), keyin o'tkazish.
     TRANSFER_CHECK: (id: string | number) => `couriers/${id}/transfer-check`, // GET
     BRANCH: (id: string | number) => `couriers/${id}/branch`, // PATCH { branch_id }
+    // «Xizmat viloyatlari» (super-kuryer, hEjjuJaT; superadmin/admin): GET — bayroqlar + viloyatlar (tarif bilan);
+    // PUT { is_super_courier, serves_all_regions, regions: [{ region_id, tariff_home, tariff_center }] } — to'liq almashtiradi.
+    REGIONS: (id: string | number) => `couriers/${id}/regions`,
   },
 
   // ── Logistics: Regions / Districts (admin/registrator; superadmin delete) ─
@@ -159,6 +162,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
     TRACKING: (id: string | number) => `orders/${id}/tracking`, // GET history timeline
+    OPERATOR: (id: string | number) => `orders/${id}/operator`, // PUT — operatori yo'q buyurtmaga operator biriktirish
     SETTLEMENT_STATE: (id: string | number) => `orders/${id}/settlement`, // GET per-order settlement state
     QR_CODE: (token: string | number) => `orders/qr-code/${token}`,
     ASSIGN_COURIER: "orders/assign-to-courier", // POST manager bulk-assign
@@ -557,6 +561,11 @@ export const API_ENDPOINTS = {
     POST_DISPATCH: (postId: string | number) => `branches/posts/${postId}/dispatch`,
     // POST {destination_branch_id} — jo'natilgan, hali qabul qilinmagan pochta boshqa filialga (superadmin/admin)
     POST_REASSIGN: (postId: string | number) => `branches/posts/${postId}/reassign`,
+    // Pochta → HQ kuryeri (ega qarori 2026-11-15; superadmin/admin/HQ registratori): GET — pochta viloyatiga xizmat
+    // qiladigan faol HQ kuryerlari (`region_match`, tashqi yetkazuvchi belgisi); POST {courier_id, order_ids} —
+    // tanlanganlar kuryerning bugungi pochtasiga o'tadi (filialga bormaydi).
+    POST_COURIER_DESTINATIONS: (postId: string | number) => `branches/posts/${postId}/courier-destinations`,
+    POST_DISPATCH_TO_COURIER: (postId: string | number) => `branches/posts/${postId}/dispatch-to-courier`,
     // Pochta jo'natish oynasi uchun manzil filiallar (superadmin/admin/HQ registratori)
     DISPATCH_DESTINATIONS: "branches/dispatch-destinations",
     // Markaziy ombor (Pa1KaXmj): HQ filiali — «Ombor ochish» oynasi uchun (SUPERADMIN/ADMIN, pul maydonlarisiz;

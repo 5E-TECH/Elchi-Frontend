@@ -139,7 +139,7 @@ describe("ShiftReportPage (kiZgTybn)", () => {
     expect(screen.getByText("14 ta")).toBeInTheDocument();
     expect(screen.getByText("+6 970 000 so'm")).toBeInTheDocument(); // sof oqim
     // Superadmin — sozlamalar havolasi.
-    expect(screen.getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/payments/shift-settings");
+    expect(screen.getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/ops?tab=shift-settings");
   });
 
   it("manager: no settings link; a shift without card checks shows the empty state", async () => {

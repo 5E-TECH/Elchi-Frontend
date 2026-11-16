@@ -91,18 +91,26 @@ describe("courierEligibility — frontend biladigan qoidalar", () => {
     account(),
     account({ id: "1", name: "Vodiy Kargo", courier_user_id: "77", is_active: false }),
   ];
+  const HQ = "1";
 
-  it("bog'lanmagan faol kuryer — tanlash mumkin (HQ bo'lmasa ham)", () => {
+  it("bog'lanmagan faol HQ kuryeri — tanlash mumkin", () => {
+    expect(courierEligibility(courier({ id: "90" }), accounts, HQ)).toEqual({ ok: true });
+  });
+
+  it("ega qarori 2026-11-15: HQ'da bo'lmagan kuryer — «Bog'lab bo'lmaydi» (notHq)", () => {
     expect(
-      courierEligibility(
-        courier({ id: "90", branch: { id: "9", name: "Samarqand filiali" } }),
-        accounts,
-      ),
-    ).toEqual({ ok: true });
+      courierEligibility(courier({ id: "90", branch: { id: "9", name: "Samarqand filiali" } }), accounts, HQ),
+    ).toEqual({ ok: false, reason: "notHq" });
+    // Filiali noma'lum yoki HQ aniqlanmagan — yopiq (fail-closed).
+    expect(courierEligibility(courier({ id: "90", branch: null }), accounts, HQ)).toEqual({
+      ok: false,
+      reason: "notHq",
+    });
+    expect(courierEligibility(courier({ id: "90" }), accounts, null)).toEqual({ ok: false, reason: "notHq" });
   });
 
   it("yoqiq akkauntga bog'langan kuryer — o'chirilgan, akkaunt bilan", () => {
-    expect(courierEligibility(courier(), accounts)).toEqual({
+    expect(courierEligibility(courier(), accounts, HQ)).toEqual({
       ok: false,
       reason: "bound",
       account: accounts[0],
@@ -110,12 +118,12 @@ describe("courierEligibility — frontend biladigan qoidalar", () => {
   });
 
   it("to'xtatilgan akkauntga bog'langan kuryer ham bo'shamaydi", () => {
-    const result = courierEligibility(courier({ id: "77" }), accounts);
+    const result = courierEligibility(courier({ id: "77" }), accounts, HQ);
     expect(result).toMatchObject({ ok: false, reason: "bound" });
   });
 
-  it("nofaol kuryer — «Nofaol»", () => {
-    expect(courierEligibility(courier({ id: "91", status: "inactive" }), accounts)).toEqual({
+  it("nofaol HQ kuryeri — «Nofaol»", () => {
+    expect(courierEligibility(courier({ id: "91", status: "inactive" }), accounts, HQ)).toEqual({
       ok: false,
       reason: "inactive",
     });
@@ -123,6 +131,16 @@ describe("courierEligibility — frontend biladigan qoidalar", () => {
 });
 
 describe("classifyCarrierError — backend kod bermaydi, status + matn", () => {
+  it("400 `data.reason: courier_not_hq` — «kuryer HQ'da emas» (matndagi «kuryer» dan oldin)", () => {
+    const error = httpError(400, "Tashqi yetkazuvchiga faqat HQ'da ochilgan kuryer bog'lanadi — bu kuryer HQ'da emas");
+    (error.response as { data: Record<string, unknown> }).data.data = {
+      reason: "courier_not_hq",
+      details: { courier_id: "88", branch_id: null },
+    };
+    expect(classifyCarrierError(error)).toBe("notHq");
+    expect(classifyCarrierError(error, { serverErrorUnknown: true })).toBe("notHq");
+  });
+
   it("409 → kuryer band", () => {
     expect(
       classifyCarrierError(

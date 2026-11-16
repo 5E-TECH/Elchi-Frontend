@@ -33,6 +33,12 @@ vi.mock("../daily-schedule", () => ({
   ),
 }));
 
+vi.mock("../payments/shiftSettings", () => ({
+  default: ({ embedded }: { embedded?: boolean }) => (
+    <p>Kassa smenasi tabi{embedded ? " (hub ichida)" : ""}</p>
+  ),
+}));
+
 vi.mock("../expense-categories", () => ({
   default: ({ embedded }: { embedded?: boolean }) => (
     <p>Xarajat kategoriyalari tabi{embedded ? " (hub ichida)" : ""}</p>
@@ -94,7 +100,7 @@ describe("Ops page — tablar (dizayn v2)", () => {
     vi.restoreAllMocks();
   });
 
-  it("8 ta tab: nomlar real menyu bilan to'qnashmaydi, «Xarajat kategoriyalari» moliya guruhida; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
+  it("9 ta tab: nomlar real menyu bilan to'qnashmaydi, «Xarajat kategoriyalari» va «Kassa smenasi» moliya guruhida; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
     renderWithProviders(<OpsPage />, { route: "/ops?tab=system" });
 
     const tablist = screen.getByRole("tablist", { name: "Ops bo'limlari" });
@@ -102,6 +108,7 @@ describe("Ops page — tablar (dizayn v2)", () => {
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       "Moliya operatorlari",
       "Xarajat kategoriyalari",
+      "Kassa smenasi",
       "Investorlar",
       "Yetkazish narxi",
       "Kun tartibi",
@@ -142,6 +149,26 @@ describe("Ops page — tablar (dizayn v2)", () => {
     await user.click(screen.getByRole("tab", { name: "Xarajat kategoriyalari" }));
     expect(screen.getByTestId("location")).toHaveTextContent("/ops?tab=expense-categories");
     expect(await screen.findByText(/Xarajat kategoriyalari tabi/)).toBeInTheDocument();
+  });
+
+  it("«Kassa smenasi» (ega 2026-11-16) — `?tab=shift-settings` smena sozlamalarini hub ichida (`embedded`) ochadi, eski manzil maslahatisiz; tab bosilsa URL'da", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <OpsPage />
+        <LocationProbe />
+      </>,
+      { route: "/ops?tab=shift-settings" },
+    );
+    const tab = screen.getByRole("tab", { name: "Kassa smenasi" });
+    expect(tab).toHaveAttribute("aria-selected", "true");
+    expect(tab).not.toHaveAttribute("title");
+    expect(await screen.findByText("Kassa smenasi tabi (hub ichida)")).toBeInTheDocument();
+    expect(screen.getByRole("tabpanel", { name: "Kassa smenasi" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Tizim holati" }));
+    await user.click(screen.getByRole("tab", { name: "Kassa smenasi" }));
+    expect(screen.getByTestId("location")).toHaveTextContent("/ops?tab=shift-settings");
   });
 
   it("«Kun tartibi» (2026-11-10) — `?tab=daily-schedule` sahifani hub ichida (`embedded`) ochadi, eski manzil maslahatisiz", async () => {

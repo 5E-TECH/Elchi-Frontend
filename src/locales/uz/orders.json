@@ -238,6 +238,8 @@
   "metaPost": "Pochta",
   "metaCourier": "Kuryer",
   "metaCourierNone": "Hali biriktirilmagan",
+  "metaOperator": "Operator",
+  "metaOperatorNone": "Tanlanmagan",
   "metaHolder": "Hozir kimda",
   "metaHolderHQ": "Bosh ofisda (HQ)",
   "metaHolderBranch": "Filialda: {{name}}",
@@ -571,6 +573,8 @@
       "cancelledPostReturnedToNamedBranch": "{{actor}} bekor qilingan buyurtmani HQ'dan {{branch}}ga qaytardi",
       "cancelledPostReturnedShort": "{{actor}} bekor qilingan buyurtmani HQ'dan jo'natgan filialga qaytardi",
       "courierReturnRequested": "{{actor}} buyurtma kelmaganini bildirdi — qaytarish so'rovi yuborildi",
+      "operatorAssigned": "{{actor}} buyurtmaga operator biriktirdi: {{operator}}",
+      "operatorAssignedShort": "{{actor}} buyurtmaga operator biriktirdi",
       "branchReturnRequested": "{{actor}} buyurtma filialga kelmaganini bildirdi — qaytarish so'rovi yuborildi"
     },
     "roleValue": {
@@ -633,6 +637,7 @@
       "returnRequested": "Qaytarish so'raldi",
       "returnedToMarket": "Marketga topshirildi",
       "warehouseReturned": "Omborga qaytdi",
+      "operatorAssigned": "Operator biriktirildi",
       "postBranchReassigned": "Boshqa filialga o'tkazildi",
       "cancelledPostReturned": "Filialga qaytarildi",
       "courierReturnRequested": "Kelmagan — qaytarish so'raldi",
@@ -1067,6 +1072,18 @@
     "pickedHint": "Buyurtma va komissiya shu operatorga yoziladi",
     "otherLabel": "Ro'yxatda yo'q operator",
     "loadFailed": "Operatorlar ro'yxati yuklanmadi — ismini qo'lda yozing"
+  },
+  "operatorAssign": {
+    "open": "Biriktirish",
+    "title": "Operator biriktirish · #{{id}}",
+    "hint": "Buyurtma marketining faol operatorlaridan birini tanlang. Biriktirilgandan keyin almashtirib bo'lmaydi.",
+    "placeholder": "Operatorni tanlang",
+    "submit": "Biriktirish",
+    "required": "Operatorni tanlang",
+    "empty": "Bu marketda faol operator yo'q — avval marketga operator qo'shing.",
+    "loadFailed": "Operatorlar ro'yxati yuklanmadi — sahifani yangilab, qayta urinib ko'ring.",
+    "success": "Operator biriktirildi",
+    "successEarning": "Operator biriktirildi — sotilgan buyurtma ulushi operatorga yozildi"
   },
   "fulfillment": {
     "tag": "Ombordan",

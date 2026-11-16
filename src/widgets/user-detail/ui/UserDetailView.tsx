@@ -33,6 +33,7 @@ import {
   type DataTableColumn,
   type Tone,
 } from "../../../shared/ui/primitives";
+import { CourierRegionsCard } from "./CourierRegionsCard";
 import { MarketTelegramGroupsCard } from "./MarketTelegramGroupsCard";
 
 const STATUS_TONE: Record<UserStatus, Tone> = { active: "success", inactive: "neutral", blocked: "danger" };
@@ -250,6 +251,8 @@ export interface UserDetailViewProps {
  * TG-B (`*-users-detail-telegram`): market tafsilotida superadmin va admin uchun «Telegram guruhi» kartasi
  * (`MarketTelegramGroupsCard`: har tur holati va «Ulash», «Guruhda mijoz ismi va telefoni» kaliti — «Ruxsatlar»
  * dan ko'chdi). Menejer va ro'yxatchi kartani ham, kalitni ham ko'rmaydi (maket `manager-users-detail`).
+ * Kuryer tafsilotida superadmin va admin uchun «Xizmat viloyatlari» kartasi (`CourierRegionsCard`, ega qarori
+ * 2026-11-15; maket yo'q — eng yaqini `superadmin-users-detail`).
  */
 export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailViewProps) => {
   const { t, i18n } = useTranslation(["users", "common"]);
@@ -288,6 +291,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   // «Telegram guruhi» (holat, «Ulash», PII kaliti) — superadmin va admin (ega javobi tg-link S2; backend
   // `GET /notifications` va `POST /telegram/link-code` ikkalasiga ochiq).
   const showMarketTelegramGroups = isMarket && canManagePrivilegedToggles;
+  // «Xizmat viloyatlari» (`GET / PUT couriers/:id/regions` — SUPERADMIN, ADMIN): HQ kuryeri shu viloyatlar
+  // pochtasida «HQ kuryeriga» ro'yxatida chiqadi (ega qarori 2026-11-15).
+  const showCourierRegions = isCourier && canManagePrivilegedToggles;
   const proofConditions = useMemo(
     () => (Array.isArray(user.expense_proof_conditions) ? user.expense_proof_conditions : []),
     [user.expense_proof_conditions],
@@ -632,6 +638,8 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const sideCards = [
     profileCard,
     tariffCard,
+    // Ega qarori 2026-11-15: «Xizmat viloyatlari» — kuryerda, faqat superadmin/admin (backend ham shunday).
+    showCourierRegions ? <CourierRegionsCard key={`courier-regions-${user.id}`} user={user} /> : null,
     showMarketTelegramGroups ? (
       // `key`: boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) oyna holati qolmaydi.
       <MarketTelegramGroupsCard key={`tg-group-${user.id}`} user={user} mode="staff" />

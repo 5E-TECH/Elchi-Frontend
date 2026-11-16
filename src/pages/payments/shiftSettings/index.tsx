@@ -19,11 +19,11 @@ import {
   buttonClasses,
   Card,
   DataTable,
-  PageHeader,
   QueryBoundary,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
-import { DAILY_SCHEDULE_TAB, opsTabPath } from "../../ops/tabs";
+import { DAILY_SCHEDULE_TAB, opsTabPath, SHIFT_SETTINGS_TAB } from "../../ops/tabs";
+import { OpsIntro, OpsToolPage } from "../../ops/ui/OpsToolPage";
 import { cardSubtitle } from "../components/shiftCheck/aiStatusMeta";
 import { CardTitle, ReportSendCard } from "./AutomationCards";
 import { CellSwitch } from "./CellSwitch";
@@ -34,8 +34,11 @@ import { diffShiftSettings, rebaseDraft, toDraft, type Draft } from "./settingsD
 import { SwitchRow } from "../../settings/ui/settingsUi";
 
 /**
- * KASSA SMENASI SOZLAMALARI — `/payments/shift-settings`, faqat superadmin (maket `superadmin-payments-shift-settings`,
- * kiZgTybn). «Kartalar qoldig'ini tasdiqlash» kartasi: kalitlar va «Har karta bo'yicha» jadvali (asosiy kassa kartalari).
+ * KASSA SMENASI SOZLAMALARI — Ops vositalari → «Kassa smenasi» (`/ops?tab=shift-settings`), faqat superadmin (maket
+ * `superadmin-payments-shift-settings`, kiZgTybn). Ega 2026-11-16: alohida sahifa (`/payments/shift-settings`, «← Asosiy
+ * kassa») o'rniga Ops'da alohida tab — eski yo'l shu tabga yo'naltiradi. Hub sarlavhasi «Ops vositalari» bo'lgani uchun
+ * maketdagi `PageHeader` (nom, izoh, «Saqlash») o'rnida kirish kartasi (`OpsIntro`, «Kun tartibi» naqshi): nom, izoh va
+ * «Saqlash» o'ngda. «Kartalar qoldig'ini tasdiqlash» kartasi: kalitlar va «Har karta bo'yicha» jadvali (asosiy kassa kartalari).
  * BE-A (2026-11-10): tasdiqlash ikki kalit — «Asosiy kassa — qoldiq tasdiqlash» (`account_check_enabled`, sukut yoqiq) va
  * «Filiallar — qoldiq tasdiqlash» (`branch_account_check_enabled`, sukut o'chiq; eski backend bermasa chizilmaydi, asosiy
  * kalit esa avvalgi nomi bilan — u yerda u barcha kassalarga amal qiladi); rasm / AI — global master kalitlar
@@ -201,18 +204,17 @@ const SettingsForm = ({
 
   return (
     <>
-      <PageHeader
-        back="/payments/main-cashbox"
-        backLabel={t("shiftCheck.settings.back")}
+      <OpsIntro
         title={t("shiftCheck.settings.title")}
         description={t("shiftCheck.settings.subtitle")}
-        actions={
+        aside={
           <Button
             leftIcon={Save}
             onClick={() => void save()}
             disabled={!dirty || invalid}
             loading={saving}
             loadingText={t("shiftCheck.settings.saving")}
+            className="max-md:w-full"
           >
             {t("shiftCheck.settings.save")}
           </Button>
@@ -303,18 +305,19 @@ const SettingsForm = ({
   );
 };
 
-const ShiftSettingsPage = () => {
+/** `embedded` — Ops hub ichida (sarlavhasiz panel); hubsiz chizilsa «Kassa smenasi» sarlavhasi + «← Ops vositalari». */
+const ShiftSettingsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const query = useShiftCheckSettings();
   const receipts = useReceiptSettingsDraft();
   const correction = usePaymentCorrectionDraft();
   return (
-    <div className="flex flex-col gap-6 max-md:gap-4">
+    <OpsToolPage tabKey={SHIFT_SETTINGS_TAB} embedded={embedded}>
       {/* QueryBoundary o'zi bitta `div` — kartalar orasidagi 24 / 16 px oraliq shu o'ramda (maketdagidek). */}
       <QueryBoundary query={query} skeleton="lines" isEmpty={() => false} className="flex flex-col gap-6 max-md:gap-4">
         {/* Forma qayta boshlanmaydi: yangi sozlama qoralamaga ko'chiriladi (`rebaseDraft`). */}
         {(settings) => <SettingsForm settings={settings} receipts={receipts} correction={correction} />}
       </QueryBoundary>
-    </div>
+    </OpsToolPage>
   );
 };
 

@@ -4,10 +4,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useEffect, useMemo } from "react";
 import { Building2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../shared/api/instance";
-import { API_ENDPOINTS } from "../../../shared/api";
-import { queryKeys } from "../../../shared/config/queryKeys";
+import { useRegionOptions } from "../../../entities/region";
 import { notify } from "../../../shared/lib/notify";
 import { branchSchema } from "../model/schema";
 import type { CreateBranchDto } from "../model/types";
@@ -21,39 +18,6 @@ import {
   useParentBranchOptions,
 } from "../../branch/lib/branchFormOptions";
 import { BranchFormDialog } from "../../branch/ui/BranchFormDialog";
-
-type RegionOption = {
-  id: string;
-  name: string;
-  districts?: Array<{ id: string; name: string }>;
-};
-
-const extractRegionOptions = (payload: unknown): RegionOption[] => {
-  const response = payload as {
-    data?: RegionOption[] | { data?: RegionOption[]; items?: RegionOption[] };
-    items?: RegionOption[];
-  };
-
-  if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray((response?.data as { data?: RegionOption[] } | undefined)?.data)) {
-    return (response.data as { data: RegionOption[] }).data;
-  }
-  if (Array.isArray((response?.data as { items?: RegionOption[] } | undefined)?.items)) {
-    return (response.data as { items: RegionOption[] }).items;
-  }
-  if (Array.isArray(response?.items)) return response.items;
-
-  return [];
-};
-
-const useRegionOptions = () =>
-  useQuery({
-    queryKey: queryKeys.regions.options,
-    queryFn: async () => {
-      const response = await api.get(API_ENDPOINTS.REGIONS.BASE);
-      return extractRegionOptions(response.data);
-    },
-  });
 
 /**
  * «YANGI FILIAL» oynasi (maket `superadmin-branches-create-dialog`) — ko'rinish `BranchFormDialog` (v2).

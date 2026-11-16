@@ -77,12 +77,6 @@
      }
     },
     {
-     "key": "replacements",
-     "label": "Almashtirishlar",
-     "icon": "Repeat",
-     "group": "Ish"
-    },
-    {
      "key": "payments",
      "label": "To'lovlar",
      "icon": "i7",
@@ -242,12 +236,6 @@
       "ru": "Пакеты",
       "en": "Batches"
      }
-    },
-    {
-     "key": "replacements",
-     "label": "Almashtirishlar",
-     "icon": "Repeat",
-     "group": "Ish"
     },
     {
      "key": "payments",

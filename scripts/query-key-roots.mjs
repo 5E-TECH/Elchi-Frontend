@@ -41,7 +41,6 @@ const ENDPOINT = /^API_ENDPOINTS\.([A-Z_]+)\.([A-Z_0-9]+)$/;
 export const SHARED_ROOTS_RATCHET = {
   "ANALYTICS.KPI": ["kpi", "misc-cov"],
   "BRANCHES.DISPATCH_DESTINATIONS": ["branches", "courier-transfer"],
-  "COURIERS.BY_REGION": ["identity-cov", "mails"],
   "DISTRICTS.BASE": ["district-sato", "region-district-catalog"],
   "INTEGRATIONS.RECEIVABLES": ["integ-cov", "integration-settlement"],
   "MANAGERS.BASE": ["identity-cov", "managers"],
