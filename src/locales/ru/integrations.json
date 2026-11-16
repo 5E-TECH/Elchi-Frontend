@@ -115,6 +115,7 @@
   "woNoStatus": "нет статуса",
   "woUnmapped": "статуса нет в карте",
   "woInactive": "подключение отключено",
+  "woWebhookDisabled": "входящий вебхук отключён",
   "fNameLabel": "Название",
   "fNameHint": "Оператор увидит это название в списке",
   "fWebhookUrlLabel": "Адрес вебхука",

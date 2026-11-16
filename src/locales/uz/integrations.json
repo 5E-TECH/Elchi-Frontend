@@ -115,6 +115,7 @@
   "woNoStatus": "statusi yo'q",
   "woUnmapped": "status xaritada yo'q",
   "woInactive": "ulanish o'chirilgan",
+  "woWebhookDisabled": "kiruvchi webhook o'chirilgan",
   "fNameLabel": "Nomi",
   "fNameHint": "Operator ro'yxatda shu nomni ko'radi",
   "fWebhookUrlLabel": "Webhook manzili",

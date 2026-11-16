@@ -6,6 +6,7 @@ import { renderWithProviders } from "../../test/test-utils";
 import { loginSuccess, logout } from "../../entities/user/model/slice";
 import { queryKeys } from "../../shared/config/queryKeys";
 import { BASE_URL } from "../../shared/const";
+import { notify, toastStore } from "../../shared/lib/notify";
 import {
   isRealtimeConnected,
   OFFLINE_POLL_MS,
@@ -162,6 +163,65 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
     expect(screen.queryByText("Holat 1")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Ochish" }));
     expect(await screen.findByText("inbox-sahifasi")).toBeInTheDocument();
+  });
+
+  describe("TC-17 (G6F68ti6, 17-band): «N ta yangi bildirishnoma» ochiq turganda keyingi partiyalar songa qo'shiladi", () => {
+    const fire = (...ids: string[]) =>
+      act(() => {
+        for (const id of ids) lastSocket().fire("notification:new", { id, title: `Xabar ${id}`, category: "finance" });
+      });
+    /** Ochiq (yopilmayotgan) xabarlar — «bitta xabar» tekshiruvi uchun. */
+    const openToasts = () => toastStore.getSnapshot().filter((toast) => !toast.closing);
+
+    it("⭐ 3 qator → 400 ms → 2 qator → «5 ta yangi bildirishnoma», xabar bitta", async () => {
+      renderSync();
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+
+      fire("a-1", "a-2", "a-3");
+      expect(await screen.findByText("3 ta yangi bildirishnoma")).toBeInTheDocument();
+
+      fire("a-4", "a-5");
+      expect(await screen.findByText("5 ta yangi bildirishnoma")).toBeInTheDocument();
+      expect(screen.queryByText("2 ta yangi bildirishnoma")).not.toBeInTheDocument();
+      expect(screen.queryByText("3 ta yangi bildirishnoma")).not.toBeInTheDocument();
+      expect(openToasts().map((toast) => toast.id)).toEqual(["elchi-realtime-batch"]);
+    });
+
+    it("ochiq «N ta» xabariga bitta qator ham qo'shiladi (alohida xabar emas); takror `id` ikki marta sanalmaydi", async () => {
+      renderSync();
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+
+      fire("b-1", "b-2", "b-3");
+      expect(await screen.findByText("3 ta yangi bildirishnoma")).toBeInTheDocument();
+
+      fire("b-4");
+      expect(await screen.findByText("4 ta yangi bildirishnoma")).toBeInTheDocument();
+      expect(screen.queryByText("Xabar b-4")).not.toBeInTheDocument();
+
+      // Qayta yuborilgan (socket + push) qator — son o'zgarmaydi, yangisi qo'shiladi.
+      fire("b-2", "b-5");
+      expect(await screen.findByText("5 ta yangi bildirishnoma")).toBeInTheDocument();
+      expect(openToasts().map((toast) => toast.id)).toEqual(["elchi-realtime-batch"]);
+    });
+
+    it("xabar yopilgach sanoq boshidan: 2 qator — «2 ta», bitta qator — o'z xabari", async () => {
+      renderSync();
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+
+      fire("c-1", "c-2", "c-3");
+      expect(await screen.findByText("3 ta yangi bildirishnoma")).toBeInTheDocument();
+      act(() => notify.dismiss("elchi-realtime-batch"));
+      await waitFor(() => expect(screen.queryByText("3 ta yangi bildirishnoma")).not.toBeInTheDocument());
+
+      fire("c-4", "c-5");
+      expect(await screen.findByText("2 ta yangi bildirishnoma")).toBeInTheDocument();
+      act(() => notify.dismiss("elchi-realtime-batch"));
+      await waitFor(() => expect(screen.queryByText("2 ta yangi bildirishnoma")).not.toBeInTheDocument());
+
+      fire("c-6");
+      expect(await screen.findByText("Xabar c-6")).toBeInTheDocument();
+      expect(screen.queryByText(/ta yangi bildirishnoma/)).not.toBeInTheDocument();
+    });
   });
 
   it("⭐ TC7: bitta hodisa ikki marta kelsa (socket + push / qayta yuborish) — xabar bitta", async () => {

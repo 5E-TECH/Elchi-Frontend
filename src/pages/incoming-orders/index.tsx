@@ -290,10 +290,10 @@ const IncomingOrdersPage = () => {
     const text = partial
       ? t("incoming.partialScan", { bag: bag.label, arrived: bag.arrived, size: bag.size })
       : t("incomingBatchMarked", { size: total, count: marked });
-    // Qop to'liq emas — xato ohangi (ibora tur bo'yicha); to'liq — «Qo'shildi»: hali faqat ro'yxatda, serverda qabul
-    // «Qabul qilish» tugmasida.
-    if (partial) void playScanFeedback("error", text);
-    else void playScanFeedback("success", text, undefined, { voice: "added" });
+    // Ikkala holda ham posilkalar ro'yxatga QO'SHILDI (serverda qabul «Qabul qilish» tugmasida) — ibora «Qo'shildi».
+    // Qop to'liq emas — ohang xato (S5, ogohlantirish), lekin tur bo'yicha «Xatolik bo'ldi» aytilmaydi: operator skan
+    // o'tmadi deb qayta skanerlab, «Allaqachon skanerlangan» olardi (DamKku7C).
+    void playScanFeedback(partial ? "error" : "success", text, undefined, { voice: "added" });
     setLastBag({ memberIds: members.map((order) => order.id), total });
     setMessage({
       tone: marked < total ? "warn" : "success",
