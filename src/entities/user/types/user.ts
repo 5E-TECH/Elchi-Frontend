@@ -23,7 +23,9 @@ export type ExpenseProofCondition =
   | "sell_zero_total"
   | "cancel_any"
   | "cancel_extra_cost"
-  | "cancel_zero_total";
+  | "cancel_zero_total"
+  // 2026-11-16 (Dilshod): faqat qisman sotishda (soni yoki narxi kamaytirilib); to'liq sotuvga ta'sir qilmaydi.
+  | "partly_sell";
 
 export interface OrderItem {
   id: string;

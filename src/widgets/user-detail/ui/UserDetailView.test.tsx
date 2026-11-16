@@ -409,6 +409,34 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
     );
   });
 
+  it("market: «Qisman sotishda isbot» — `partly_sell` qo'shiladi va olib tashlanadi (2026-11-16)", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market", { expense_proof_conditions: ["sell_extra_cost"] }), "superadmin");
+
+    const toggle = screen.getByRole("switch", { name: "Qisman sotishda isbot" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText("Qisman sotuvda (soni yoki narxi kamaytirilsa) rasm yoki video majburiy")).toBeInTheDocument();
+    await user.click(toggle);
+    await waitFor(() =>
+      expect(mocks.updateMarketExpenseProof).toHaveBeenLastCalledWith({
+        id: "201",
+        expense_proof_conditions: ["sell_extra_cost", "partly_sell"],
+      }),
+    );
+  });
+
+  it("market: «Qisman sotishda isbot» yoqilgan bo'lsa — o'chiradi", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market", { expense_proof_conditions: ["partly_sell", "sell_any"] }), "superadmin");
+
+    const toggle = screen.getByRole("switch", { name: "Qisman sotishda isbot" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    await user.click(toggle);
+    await waitFor(() =>
+      expect(mocks.updateMarketExpenseProof).toHaveBeenLastCalledWith({ id: "201", expense_proof_conditions: ["sell_any"] }),
+    );
+  });
+
   it("kuryer: «Qo'shimcha xarajat» — `can_add_extra_cost`", async () => {
     const user = userEvent.setup();
     renderView(makeUser("courier", { can_add_extra_cost: false }), "admin");

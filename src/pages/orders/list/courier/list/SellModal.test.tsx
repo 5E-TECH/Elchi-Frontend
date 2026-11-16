@@ -604,6 +604,29 @@ describe("SellModal — market dalil sharti", () => {
     expect(screen.getByRole("button", { name: /^Sotish$/ })).toBeDisabled();
   });
 
+  it("⭐ `partly_sell` (2026-11-16) — to'liq sotuvda isbot so'ralmaydi, «Qisman sotish» yoqilganda majburiy", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({
+      order: {
+        ...order,
+        product_quantity: 2,
+        items: [{ id: "i1", quantity: 2, product: { id: "24", name: "Krossovka", image_url: null } }],
+        market: { name: "Zamon Market", expense_proof_conditions: ["partly_sell"] },
+      },
+      onPartlySell,
+    });
+
+    expect(screen.queryByText("Sotishda rasm yoki video majburiy")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Sotish$/ })).toBeEnabled();
+
+    await user.click(screen.getByRole("switch", { name: /Qisman sotish/ }));
+    expect(screen.getAllByText("Sotishda rasm yoki video majburiy").length).toBeGreaterThan(0);
+    await user.type(screen.getAllByPlaceholderText("0")[0], "90000");
+    expect(screen.getByRole("button", { name: /^Sotish$/ })).toBeDisabled();
+    expect(onPartlySell).not.toHaveBeenCalled();
+  });
+
   it("shart yo'q (`market: { name: \"-\" }` — eski holat) — majburiylik ko'rinmaydi", () => {
     renderSell();
     expect(screen.queryByText("Sotishda rasm yoki video majburiy")).not.toBeInTheDocument();

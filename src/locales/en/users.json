@@ -390,6 +390,8 @@
       "sellExtraProofHint": "Proof is required when an extra cost is added on sale",
       "cancelExtraProof": "Extra cost proof on cancellation",
       "cancelExtraProofHint": "Proof is required when an extra cost is added on cancellation",
+      "partlySellProof": "Proof on partial sale",
+      "partlySellProofHint": "Photo or video is required when an order is sold partially (fewer items or a lower price)",
       "extraCost": "Extra cost",
       "extraCostHint": "The courier can add an extra cost to an order",
       "sellCancel": "Sell / cancel",

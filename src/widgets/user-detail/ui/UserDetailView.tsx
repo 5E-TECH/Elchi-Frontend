@@ -536,6 +536,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
                       ["cancel_any", "cancelProof"],
                       ["sell_extra_cost", "sellExtraProof"],
                       ["cancel_extra_cost", "cancelExtraProof"],
+                      ["partly_sell", "partlySellProof"],
                     ] as const
                   ).map(([condition, key]) => (
                     <SettingSwitch

@@ -230,6 +230,7 @@ const SellDialog = ({
       action: "sell",
       extraCost: effectiveExtraCost,
       totalPrice: operationTotal,
+      partly: isPartial,
     });
   const isProofMissing = sellRequiresMedia && !proof;
 

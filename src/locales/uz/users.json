@@ -390,6 +390,8 @@
       "sellExtraProofHint": "Sotuvda qo'shimcha xarajat yozilsa, isbot majburiy",
       "cancelExtraProof": "Bekor qilishda qo'shimcha xarajat isboti",
       "cancelExtraProofHint": "Bekor qilishda qo'shimcha xarajat yozilsa, isbot majburiy",
+      "partlySellProof": "Qisman sotishda isbot",
+      "partlySellProofHint": "Qisman sotuvda (soni yoki narxi kamaytirilsa) rasm yoki video majburiy",
       "extraCost": "Qo'shimcha xarajat",
       "extraCostHint": "Kuryer buyurtmaga qo'shimcha xarajat yoza oladi",
       "sellCancel": "Sotish / bekor qilish",
