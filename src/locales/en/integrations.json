@@ -115,6 +115,7 @@
   "woNoStatus": "no status",
   "woUnmapped": "status not in map",
   "woInactive": "connection disabled",
+  "woWebhookDisabled": "incoming webhook disabled",
   "fNameLabel": "Name",
   "fNameHint": "The operator sees this name in the list",
   "fWebhookUrlLabel": "Webhook URL",

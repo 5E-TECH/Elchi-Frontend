@@ -121,6 +121,15 @@ export const webhookOutcome = (row: WebhookLogRow): { labelKey: string; tone: To
   if (!row.signature_valid) return { labelKey: "woBadSignature", tone: "danger" };
   if (row.status === "rejected") return { labelKey: "woRejected", tone: "danger" };
 
+  /**
+   * KIRUVCHI WEBHOOK O'CHIQ (DOZ6dtJn) — operator «Ish rejimi»da kiruvchi oqimni to'xtatgan: backend hodisani
+   * `status = skipped_disabled`, `error = "apply: webhook_disabled — …"` bilan yozadi, lekin qo'llamaydi. Bu xato
+   * emas, tanlangan holat — neytral; aks holda `error` matni tufayli qizil «xato» chiqib, operator uni yiqilgan
+   * hodisa deb o'ylardi. `error` bo'sh kelsa ham `status` bo'yicha taniladi.
+   */
+  const disabled = { labelKey: "woWebhookDisabled", tone: "neutral" } as const;
+  if (row.status === "skipped_disabled") return disabled;
+
   const raw = row.error ?? "";
   const match = /apply:\s*([a-z_]+)/.exec(raw);
   const outcome = match?.[1] ?? "";
@@ -144,6 +153,7 @@ export const webhookOutcome = (row: WebhookLogRow): { labelKey: string; tone: To
     no_status: { labelKey: "woNoStatus", tone: "warning" },
     unmapped: { labelKey: "woUnmapped", tone: "warning" },
     integration_inactive: { labelKey: "woInactive", tone: "neutral" },
+    webhook_disabled: disabled,
   };
 
   if (outcome && MAP[outcome]) return MAP[outcome];
