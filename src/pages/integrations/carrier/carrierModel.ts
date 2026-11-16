@@ -4,6 +4,7 @@ import {
   type CarrierAccount,
 } from "../../../entities/integrations/carriers";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { getBackendReason } from "../../../shared/lib/backendReason";
 import type { Tone } from "../../../shared/ui/primitives";
 
 /**
@@ -12,7 +13,9 @@ import type { Tone } from "../../../shared/ui/primitives";
  * Ma'lumot manbalari (hammasi haqiqiy endpoint):
  *  - akkaunt — `GET admin/carriers` (`is_active`, `courier_user_id`, `ip_allowlist`, sanalar);
  *  - bog'langan kuryer — `GET users/:id` (ism, telefon, `status`, `branch {id, name}`, tariflar; 404 — o'chirilgan);
- *  - HQ — `GET branches/hq` (kuryer filiali HQ'mi — naqdni kim qabul qiladi);
+ *  - HQ — `GET branches/hq` (yangi akkauntga FAQAT HQ'da ochilgan kuryer bog'lanadi — ega qarori 2026-11-15;
+ *    eski akkauntlar tafsilotida — naqdni kim qabul qiladi);
+ *  - yangi akkaunt kuryerlari — `GET branches/:hqId/users` (HQ xodimlari, `role: COURIER`);
  *  - «Qabul qilinishi kerak» — `GET finance/cashbox/user/:id?cashbox_type=couriers&with_history=true` (`olinishi_kerak`:
  *    HQ kuryeri va filial savdosi kutilmayotgan bo'lsa musbat balans, aks holda 0 — «Kuryer kassasi» sahifasidagi bilan
  *    bir xil; `with_history` siz backend bu maydonni qo'shmaydi).
@@ -111,20 +114,26 @@ export const keyBlocked = (state: CarrierAccountState) =>
  * KURYER TANLOVI — frontend biladigan qoidalar (maket «Bog'lash mumkin · N» / «Bog'lab bo'lmaydi · N»):
  *  - shu kuryer allaqachon akkauntga bog'langan (`GET admin/carriers` → `courier_user_id`) — yoqiq akkaunt yoki
  *    to'xtatilgan (kuryer bo'shamaydi: o'chirish backendda yo'q);
+ *  - kuryer HQ'da emas (`branch.id !== hqBranchId`; HQ aniqlanmagan bo'lsa ham — yopiq) — ega qarori 2026-11-15:
+ *    «faqat HQ ga ochilgan o'z kurieri bo'lsagina biriktirish mumkin» (backend ham 400 `courier_not_hq`);
  *  - kuryer `status !== active` — «Nofaol».
- * Qolgani (kuryer tanlangach bloklangan, roli o'zgargan, poyga) — server javobi bilan (409 / 400 / 404).
+ * Qolgani (kuryer tanlangach bloklangan, roli o'zgargan, boshqa filialga o'tkazilgan, poyga) — server javobi bilan
+ * (409 / 400 / 404).
  */
 export type CourierEligibility =
   | { ok: true }
   | { ok: false; reason: "bound"; account: CarrierAccount }
+  | { ok: false; reason: "notHq" }
   | { ok: false; reason: "inactive" };
 
 export const courierEligibility = (
   courier: CarrierCourier,
   accounts: readonly CarrierAccount[],
+  hqBranchId: string | null,
 ): CourierEligibility => {
   const bound = accounts.find((account) => account.courier_user_id === courier.id);
   if (bound) return { ok: false, reason: "bound", account: bound };
+  if (!hqBranchId || courier.branch?.id !== hqBranchId) return { ok: false, reason: "notHq" };
   if (!isCourierActive(courier)) return { ok: false, reason: "inactive" };
   return { ok: true };
 };
@@ -139,8 +148,9 @@ export const initialsOf = (name: string) =>
     .join("") || "?";
 
 /**
- * SERVER XATOLARI — backend kod bermaydi (faqat matn), shu bois status + backend matnidagi «kurier» so'zi
+ * SERVER XATOLARI — backend asosan kod bermaydi (faqat matn), shu bois status + backend matnidagi «kurier» so'zi
  * (`carrier-account.service.ts`: «Kurier topilmadi», «Kurier faol emas», «Bu foydalanuvchi kurier emas»):
+ *  - `notHq` — 400 `data.reason: courier_not_hq` (kuryer HQ'da emas — matndagi «kuryer» dan OLDIN tekshiriladi);
  *  - `busy` — 409 (kuryer boshqa akkauntga bog'langan);
  *  - `courier` — kuryer tekshiruvdan o'tmadi (404 / 400 + «kurier»);
  *  - `unavailable` — 503 (identity javob bermadi, hech narsa yozilmadi);
@@ -150,7 +160,7 @@ export const initialsOf = (name: string) =>
  *    dan keyin `findOrFail`), oddiy xato xabari o'rniga «ro'yxatni yangilang / qayta yangilang» yo'li;
  *  - `other` — qolgani (backend matni bilan xabar).
  */
-export type CarrierErrorKind = "busy" | "courier" | "unavailable" | "unknown" | "other";
+export type CarrierErrorKind = "busy" | "notHq" | "courier" | "unavailable" | "unknown" | "other";
 
 export const classifyCarrierError = (
   error: unknown,
@@ -162,6 +172,7 @@ export const classifyCarrierError = (
   if (!status) return "unknown";
   if (status === 502 || status === 504) return "unknown";
   if (status === 500 && options?.serverErrorUnknown) return "unknown";
+  if (getBackendReason(error) === "courier_not_hq") return "notHq";
   if (status === 409) return "busy";
   if (status === 503) return "unavailable";
   const message = (getBackendErrorMessage(error) ?? "").toLowerCase();

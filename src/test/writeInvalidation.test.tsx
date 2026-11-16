@@ -9,7 +9,7 @@ import {
   useSendTransferBatch,
 } from "../entities/batch";
 import { useBranchCoverage } from "../entities/branch/branchCoverage";
-import { useDispatchPostToBranch, useMails, useReceivePost } from "../entities/mails";
+import { useDispatchPostToBranch, useDispatchPostToCourier, useMails, useReceivePost } from "../entities/mails";
 import { useOrders as useOrderActions } from "../entities/orders";
 import { useOrders as useOrderApi } from "../entities/order/api/orderApi";
 import { useAiConfirm } from "../entities/ai-order/api";
@@ -111,6 +111,41 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
     expectKeys(keys, [["mails", "detail", "7"], ["mails", "new"], ["mails", "old"], ["orders"]]);
   });
 
+  it("pochtani HQ kuryeriga berish — filialga jo'natish bilan bir xil kalitlar; tana { courier_id, order_ids }; 125 s", async () => {
+    apiMock.post.mockClear();
+    const keys = await run(useDispatchPostToCourier, (m) =>
+      m.mutateAsync({ postId: "7", payload: { courierId: "77", orderIds: ["1", "2"] } }),
+    );
+    // Brauzer gateway'dan (`BATCH_RPC_TIMEOUT_MS` = 120 s) uzoqroq kutadi — 20 s sukutida katta pochta
+    // «So'rov vaqti tugadi» bo'lib, buyurtmalar baribir kuryerga o'tardi.
+    expect(apiMock.post).toHaveBeenCalledWith(
+      "branches/posts/7/dispatch-to-courier",
+      { courier_id: "77", order_ids: ["1", "2"] },
+      { timeout: 125_000 },
+    );
+    expectKeys(keys, [["mails", "detail", "7"], ["mails", "new"], ["mails", "old"], ["orders"]]);
+  });
+
+  it("HQ kuryeriga berish rad etilsa: tanlov eskirgan (409 order_not_in_post / 400 post_not_sendable) — faqat tafsilot", async () => {
+    const rejectWith = (status: number, reason: string) =>
+      apiMock.post.mockRejectedValueOnce({ response: { status, data: { message: "x", data: { reason } } } });
+    for (const [status, reason] of [
+      [409, "order_not_in_post"],
+      [400, "post_not_sendable"],
+    ] as const) {
+      rejectWith(status, reason);
+      const stale = await run(useDispatchPostToCourier, (m) =>
+        m.mutateAsync({ postId: "7", payload: { courierId: "77", orderIds: ["1"] } }).catch(() => undefined),
+      );
+      expect(stale).toEqual([JSON.stringify(["mails", "detail", "7"])]);
+    }
+    rejectWith(403, "courier_region_not_served");
+    const other = await run(useDispatchPostToCourier, (m) =>
+      m.mutateAsync({ postId: "7", payload: { courierId: "77", orderIds: ["1"] } }).catch(() => undefined),
+    );
+    expect(other).toEqual([]);
+  });
+
   it("pochtani qabul qilish — buyurtmalar ham", async () => {
     const keys = await run(useReceivePost, (m) =>
       m.mutateAsync({ postId: "7", payload: { order_ids: ["1"] } }),
@@ -210,7 +245,7 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
     await waitFor(() => expectKeys(keys(), [["cashbox"], ["finance-history"]]));
   });
 
-  it("foydalanuvchi holati / o'chirish — marketlar, buyurtma aloqasi, filiallar, logist, investor, pochta kuryerlari", async () => {
+  it("foydalanuvchi holati / o'chirish — marketlar, buyurtma aloqasi, filiallar, logist, investor", async () => {
     const keys = await run(useUser, (m) =>
       m.updateUserStatus.mutateAsync({ id: "3", status: "inactive" as never }),
     );
@@ -224,7 +259,6 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
       ["logists"],
       ["region-logists"],
       ["investors"],
-      ["mails", "couriers-by-region"],
     ]);
   });
 

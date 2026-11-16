@@ -45,6 +45,13 @@ vi.mock("./MarketTelegramGroupsCard", () => ({
   ),
 }));
 
+// «Xizmat viloyatlari» ham o'z so'rovlarini yuboradi (o'z testi — `CourierRegionsCard.test.tsx`); bu yerda kim ko'radi.
+vi.mock("./CourierRegionsCard", () => ({
+  CourierRegionsCard: ({ user }: { user: User }) => (
+    <section aria-label="Xizmat viloyatlari" data-courier-id={user.id} />
+  ),
+}));
+
 vi.mock("../../../features/courier-transfer-branch", () => ({
   TransferCourierButton: ({
     courierId,
@@ -520,6 +527,23 @@ describe("UserDetailView — «Telegram guruhi» kartasi (TG-B, `*-users-detail-
   it.each<UserRole>(["courier", "manager", "customer"])("%s foydalanuvchida karta yo'q", (role) => {
     renderView(makeUser(role), "superadmin");
     expect(screen.queryByRole("region", { name: "Telegram guruhi" })).not.toBeInTheDocument();
+  });
+});
+
+describe("UserDetailView — «Xizmat viloyatlari» kartasi (ega qarori 2026-11-15)", () => {
+  it.each(["superadmin", "admin"])("%s: kuryer tafsilotida karta (shu kuryer bilan)", (role) => {
+    renderView(makeUser("courier", { id: "77", name: "Ali Valiyev" }), role);
+    expect(screen.getByRole("region", { name: "Xizmat viloyatlari" })).toHaveAttribute("data-courier-id", "77");
+  });
+
+  it("menejer kuryer tafsilotida kartani ko'rmaydi (backend SUPERADMIN, ADMIN)", () => {
+    renderView(makeUser("courier", { id: "77" }), "manager", "Toshkent HQ");
+    expect(screen.queryByRole("region", { name: "Xizmat viloyatlari" })).not.toBeInTheDocument();
+  });
+
+  it.each<UserRole>(["market", "manager", "customer"])("%s foydalanuvchida karta yo'q", (role) => {
+    renderView(makeUser(role), "superadmin");
+    expect(screen.queryByRole("region", { name: "Xizmat viloyatlari" })).not.toBeInTheDocument();
   });
 });
 

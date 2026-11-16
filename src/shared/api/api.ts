@@ -19,6 +19,13 @@ export const LONG_REQUEST_TIMEOUT_MS = 120_000;
  * yo'lda qolmasin. Vaqt tugasa natija noma'lum («Natija noma'lum» oynasi, qayta yuborilmaydi).
  */
 export const MERGE_REQUEST_TIMEOUT_MS = 125_000;
+/**
+ * Paket amallari — gateway `BATCH_RPC_TIMEOUT_MS` = 120 s kutadi (logistics har buyurtmani alohida yozadi): masalan,
+ * pochtani HQ kuryeriga berish (`POST branches/posts/:id/dispatch-to-courier`, qaytarib bo'lmaydi). Brauzer gatewaydan
+ * 5 s ko'proq kutadi — aks holda katta pochtada 20 s da «So'rov vaqti tugadi» chiqib, buyurtmalar baribir kuryerga
+ * o'tardi va operator qayta bosardi.
+ */
+export const BATCH_REQUEST_TIMEOUT_MS = 125_000;
 
 declare module "axios" {
   interface AxiosRequestConfig {

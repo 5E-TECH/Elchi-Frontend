@@ -1,8 +1,9 @@
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../shared/api/api";
+import { api, BATCH_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
+import { getBackendReason } from "../../shared/lib/backendReason";
 import { getCurrentBranchId } from "../../shared/lib/currentBranch";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 import type { PostOrderMembership } from "./lib/postHistory";
@@ -679,75 +680,138 @@ export const useRefusedMailDetail = (postId: string) =>
     retry: false,
   });
 
-// ─── Courier Types ────────────────────────────────────────────────────────────
-export interface CourierItem {
-  id: string;
-  name: string;
-  phone_number: string;
-  username: string;
-  status: string;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CouriersByRegionResponse {
-  statusCode: number;
-  message: string;
-  data: {
-    items: CourierItem[];
-    meta: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  };
-}
-
-// ─── Send Post Payload ────────────────────────────────────────────────────────
-export interface SendPostPayload {
-  orderIds: string[];
-  courierId: string;
-}
-
+// ─── Pochta → HQ kuryeri (ega qarori 2026-11-15) ──────────────────────────────
 export interface DispatchPostToBranchPayload {
   destinationBranchId: string;
   orderIds: string[];
 }
 
-export const fetchCouriersByRegion = (regionId: string) =>
-  api
-    .get(API_ENDPOINTS.COURIERS.BY_REGION(regionId), {
-      params: { status: "active", limit: 100 },
-    })
-    .then((res) => res.data as CouriersByRegionResponse);
+/**
+ * Kuryer pochta viloyatiga NIMA uchun xizmat qiladi (`GET branches/posts/:id/courier-destinations`):
+ *  - `hq_region` — pochta viloyati HQ viloyatining o'zi (har HQ kuryeri);
+ *  - `home` — kuryerning o'z viloyati (`admins.region_id`);
+ *  - `listed` — «Xizmat viloyatlari»da belgilangan (`courier_regions`);
+ *  - `all_regions` — «Barcha viloyatlar» (`serves_all_regions`).
+ */
+export type CourierRegionMatch = "hq_region" | "home" | "listed" | "all_regions";
 
-// ─── GET: Viloyat bo'yicha courierlar ─────────────────────────────────────────
-export const useGetCouriersByRegion = (regionId: string, enabled: boolean) =>
-  useQuery<CouriersByRegionResponse>({
-    queryKey: [MAILS_KEY, "couriers-by-region", regionId],
-    queryFn: () => fetchCouriersByRegion(regionId),
-    enabled: !!regionId && enabled,
-    staleTime: 0,
-  });
+/** Pochta viloyatiga xizmat qiladigan faol HQ kuryeri. `carrier_*` — bog'lanmagan yoki aniqlanmagan bo'lsa `null`. */
+export interface CourierDestination {
+  courier_user_id: string;
+  name: string;
+  phone: string;
+  region_match: CourierRegionMatch;
+  carrier_name: string | null;
+  carrier_active: boolean | null;
+}
 
-// ─── PATCH: Pochtani courierga jo'natish ──────────────────────────────────────
-export const useSendPost = () => {
+export interface PostCourierDestinations {
+  post_id: string;
+  region_id: string;
+  is_hq_region: boolean;
+  /** Faqat faol kuryerlar, nom bo'yicha o'sish tartibida (backend). */
+  couriers: CourierDestination[];
+  /** Tashqi yetkazuvchi ma'lumoti olinmadi (integratsiya javob bermadi) — `carrier_*` hammasida `null`. */
+  carrier_lookup_failed: boolean;
+}
+
+export interface DispatchPostToCourierPayload {
+  courierId: string;
+  orderIds: string[];
+}
+
+/** `POST branches/posts/:id/dispatch-to-courier` javobi (`data`). */
+export interface DispatchPostToCourierResult {
+  post_id: string;
+  courier_id: string;
+  courier_post_id: string;
+  courier_post_created: boolean;
+  moved_order_ids: string[];
+  moved_orders_count: number;
+  skipped_order_ids: string[];
+  post_deleted: boolean;
+}
+
+const REGION_MATCHES: readonly CourierRegionMatch[] = ["hq_region", "home", "listed", "all_regions"];
+
+const asText = (value: unknown) =>
+  typeof value === "string" ? value.trim() : typeof value === "number" && Number.isFinite(value) ? String(value) : "";
+
+const toCourierDestination = (raw: unknown): CourierDestination | null => {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  const id = asText(row.courier_user_id);
+  if (!id) return null;
+  const match = asText(row.region_match) as CourierRegionMatch;
+  const carrierName = asText(row.carrier_name);
+  return {
+    courier_user_id: id,
+    name: asText(row.name),
+    phone: asText(row.phone),
+    region_match: REGION_MATCHES.includes(match) ? match : "home",
+    carrier_name: carrierName || null,
+    carrier_active: typeof row.carrier_active === "boolean" ? row.carrier_active : null,
+  };
+};
+
+/**
+ * Pochta viloyatiga xizmat qiladigan faol HQ kuryerlari — faqat «Pochtani jo'natish» bosilganda so'raladi
+ * (sahifa ochilganda emas). Javob `{ statusCode, data: {…} }`; kutilmagan shakl (eski backend) — bo'sh ro'yxat.
+ */
+export const getPostCourierDestinations = async (postId: string): Promise<PostCourierDestinations> => {
+  const response = await api.get(API_ENDPOINTS.BRANCHES.POST_COURIER_DESTINATIONS(postId));
+  const body = (response.data ?? {}) as { data?: unknown };
+  const data = (body.data && typeof body.data === "object" && !Array.isArray(body.data) ? body.data : {}) as Record<
+    string,
+    unknown
+  >;
+  const couriers = (Array.isArray(data.couriers) ? data.couriers : [])
+    .map(toCourierDestination)
+    .filter((item): item is CourierDestination => item !== null);
+  return {
+    post_id: asText(data.post_id) || String(postId),
+    region_id: asText(data.region_id),
+    is_hq_region: data.is_hq_region === true,
+    couriers,
+    carrier_lookup_failed: data.carrier_lookup_failed === true,
+  };
+};
+
+/** Pochta holati o'zgargan (boshqa operator jo'natgan / tanlov eskirgan) — tafsilot qayta so'raladi. */
+const STALE_POST_REASONS = new Set(["order_not_in_post", "post_not_sendable"]);
+
+/**
+ * Pochta buyurtmalarini HQ kuryeriga berish: `POST branches/posts/:id/dispatch-to-courier { courier_id, order_ids }`.
+ * Buyurtmalar kuryerning bugungi pochtasiga o'tadi, filialga bormaydi — qaytarib bo'lmaydi (oynada tasdiq bosqichi).
+ * Muvaffaqiyatda filialga jo'natish bilan bir xil kalitlar eskiradi; 409 `order_not_in_post` / 400
+ * `post_not_sendable` da — pochta tafsiloti (tanlov eskirgan). Brauzer gateway'dan (120 s) uzoqroq kutadi
+ * (`BATCH_REQUEST_TIMEOUT_MS`): katta pochta 20 s dan oshsa ham natija yo'lda qolmasin.
+ */
+export const useDispatchPostToCourier = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      postId,
-      payload,
-    }: {
-      postId: string;
-      payload: SendPostPayload;
-    }) => api.patch(API_ENDPOINTS.POSTS.BY_ID(postId), payload).then((res) => res.data),
+    mutationFn: ({ postId, payload }: { postId: string; payload: DispatchPostToCourierPayload }) =>
+      api
+        .post(
+          API_ENDPOINTS.BRANCHES.POST_DISPATCH_TO_COURIER(postId),
+          { courier_id: payload.courierId, order_ids: payload.orderIds },
+          { timeout: BATCH_REQUEST_TIMEOUT_MS },
+        )
+        .then((res) => res.data as { statusCode?: number; message?: string; data?: DispatchPostToCourierResult }),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],
       });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (error, { postId }) => {
+      const reason = getBackendReason(error);
+      if (reason && STALE_POST_REASONS.has(reason)) {
+        queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
+      }
     },
   });
 };

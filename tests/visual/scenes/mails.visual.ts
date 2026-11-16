@@ -1,7 +1,8 @@
 import { defineScene, expect, fixture } from "../support/test";
 
 /**
- * «Pochta» sahnalari: menejerning bugungi pochtalari (sonli tablar) va kuryerning pochta qabul ekrani.
+ * «Pochta» sahnalari: menejerning bugungi pochtalari (sonli tablar), kuryerning pochta qabul ekrani va superadmin
+ * «Manzilni tanlang» oynasi (filial / HQ kuryeri, ega qarori 2026-11-15).
  * Ma'lumot sintetik (`tests/visual/fixtures/<sahna>/`), vaqtlar muzlatilgan soatdan oldin.
  */
 
@@ -40,5 +41,32 @@ defineScene({
       await expect(row).toBeChecked();
     }
     await expect(page.getByRole("button", { name: /Pochtani qabul qilish — 2 ta/ }).first()).toBeEnabled();
+  },
+});
+
+defineScene({
+  id: "mail-send-dialog",
+  route: "/mails/74",
+  role: "superadmin",
+  // Ega qarori 2026-11-15: «Manzilni tanlang» — filial HAM, HQ kuryeri HAM. Maket yo'q — eng yaqinlari.
+  maket: ["superadmin-mails-detail-send-dialog", "registrator-dispatch-courier-select-dialog"],
+  api: {
+    // Jo'natilmagan (`new`) HQ pochtasi, 4 ta «Qabul qilingan» buyurtma, viloyat — Samarqand (6).
+    "GET post/orders/74": fixture("mail-send-dialog/post-74.json"),
+    // «Pochtani jo'natish» bosilganda (sahifa ochilganda emas) — ikkala ro'yxat parallel.
+    "GET branches/dispatch-destinations": fixture("mail-send-dialog/dispatch-destinations.json"),
+    "GET branches/posts/:id/courier-destinations": fixture("mail-send-dialog/courier-destinations.json"),
+  },
+  // Oyna (telefonda pastki varaqa) — faqat ko'rinadigan oyna suratga olinadi.
+  capture: "viewport",
+  act: async (page) => {
+    await page.getByRole("button", { name: "Barchasini tanlash" }).click();
+    await page.getByRole("button", { name: /Pochtani jo'natish — 4 ta/ }).first().click();
+    const dialog = page.getByRole("dialog", { name: "Manzilni tanlang" });
+    await expect(dialog).toBeVisible();
+    // Kuryer tabi: tashqi yetkazuvchi belgisi bilan kuryer tanlangan, to'xtatilgan akkaunt — o'chiq karta.
+    await dialog.getByRole("radio", { name: /HQ kuryeriga · 3/ }).click();
+    await dialog.getByRole("radio", { name: /FastPost kuryeri/ }).check();
+    await expect(dialog.getByRole("button", { name: "Kuryerga berish — 4 ta" })).toBeEnabled();
   },
 });

@@ -643,6 +643,23 @@
     "piiSaveError": "Not saved",
     "piiSaveErrorText": "Could not save the setting. Please try again."
   },
+  "courierRegions": {
+    "title": "Service regions",
+    "empty": "Own region only",
+    "edit": "Change",
+    "dialogTitle": "Service regions",
+    "hint": "The HQ courier appears in the «To HQ courier» list for mail of these regions",
+    "dialogHint": "A kept region keeps its tariff; a new region uses the courier's general tariff.",
+    "listLabel": "Regions",
+    "allRegions": "All regions",
+    "allRegionsHint": "The courier appears in mail of every region, regardless of the list.",
+    "regionFallback": "Region #{{id}}",
+    "save": "Save",
+    "success": "Regions saved",
+    "saveError": "Couldn't save the regions",
+    "loadError": "Couldn't load service regions",
+    "regionsLoadError": "Couldn't load the region list"
+  },
   "tgBot": {
     "column": "Telegram bot",
     "columnHint": "Personal Elchi bot connection",

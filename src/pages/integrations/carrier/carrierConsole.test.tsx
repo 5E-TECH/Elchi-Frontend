@@ -125,7 +125,32 @@ const USERS: Record<string, Record<string, unknown>> = {
   },
 };
 
+/**
+ * HQ xodimlari (`GET branches/1/users`) — «Yangi tashqi yetkazuvchi» kuryer tanlovining manbai (ega qarori
+ * 2026-11-15: faqat HQ'da ochilgan kuryer). 99 (Rustam, Samarqand filiali) va 91 (Sanjar, Farg'ona) bu ro'yxatda
+ * YO'Q — tanlovga chiqmaydi. 92 — HQ'dagi nofaol kuryer; menejer qatori filtrlanadi.
+ */
+const HQ_EXTRA_USERS: Record<string, Record<string, unknown>> = {
+  "92": {
+    id: "92",
+    name: "Bobur Nofaolov",
+    phone_number: "+998901112233",
+    status: "inactive",
+    role: "courier",
+  },
+  "93": { id: "93", name: "HQ menejeri", phone_number: "+998901110000", status: "active", role: "manager" },
+};
+let hqUsers: Array<Record<string, unknown>> = [];
+const resetHqUsers = () => {
+  hqUsers = [
+    ...["55", "66", "88"].map((id) => ({ id: `bu${id}`, branch_id: "1", user_id: id, role: "COURIER", user: USERS[id] })),
+    { id: "bu92", branch_id: "1", user_id: "92", role: "COURIER", user: HQ_EXTRA_USERS["92"] },
+    { id: "bu93", branch_id: "1", user_id: "93", role: "MANAGER", user: HQ_EXTRA_USERS["93"] },
+  ];
+};
+
 let accounts = ACCOUNTS;
+let hqFails = false;
 
 const routeGet = (url: string, config?: { params?: Record<string, unknown> }) => {
   if (url === "admin/carriers")
@@ -133,9 +158,13 @@ const routeGet = (url: string, config?: { params?: Record<string, unknown> }) =>
       data: { statusCode: 200, message: "carrier accounts", data: accounts },
     });
   if (url === "branches/hq")
-    return Promise.resolve({
-      data: { statusCode: 200, data: { id: "1", name: "Toshkent HQ", type: "HQ" } },
-    });
+    return hqFails
+      ? Promise.reject(httpError(500, "Filial xizmati javob bermadi"))
+      : Promise.resolve({
+          data: { statusCode: 200, data: { id: "1", name: "Toshkent HQ", type: "HQ" } },
+        });
+  if (url === "branches/1/users")
+    return Promise.resolve({ data: { statusCode: 200, message: "Branch users", data: hqUsers } });
   if (url === "users") {
     return Promise.resolve({
       data: {
@@ -248,6 +277,8 @@ const REFRESH_ERROR = "Ro'yxatni yangilab bo'lmadi — ko'rsatilgan ma'lumot esk
 describe("Tashqi yetkazuvchilar konsoli", () => {
   beforeEach(() => {
     accounts = ACCOUNTS;
+    hqFails = false;
+    resetHqUsers();
     mocks.get.mockReset();
     mocks.post.mockReset();
     mocks.patch.mockReset();
@@ -334,15 +365,16 @@ describe("Tashqi yetkazuvchilar konsoli", () => {
         name: /FastPost kuryeri.*Allaqachon «FastPost Logistics» akkauntiga bog'langan/,
       }),
     ).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("option", { name: /Sanjar Xudoyberdiyev.*Nofaol/ })).toHaveAttribute(
+    expect(screen.getByRole("option", { name: /Bobur Nofaolov.*Nofaol/ })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
-    expect(
-      screen.getByRole("option", {
-        name: /Rustam Qodirov.*HQ emas — naqdni filial menejeri oladi/,
-      }),
-    ).not.toHaveAttribute("aria-disabled");
+    // Ega qarori 2026-11-15: faqat HQ kuryerlari — boshqa filial kuryeri (Rustam, Sanjar) va HQ menejeri ro'yxatda yo'q.
+    expect(screen.queryByRole("option", { name: /Rustam Qodirov/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Sanjar Xudoyberdiyev/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /HQ menejeri/ })).not.toBeInTheDocument();
+    expect(mocks.get).toHaveBeenCalledWith("branches/1/users");
+    expect(getCalls("users")).toBe(0);
     await user.click(screen.getByRole("option", { name: /Shahar Kargo kuryeri/ }));
     expect(
       within(dialog).getByText(
@@ -470,6 +502,64 @@ describe("Tashqi yetkazuvchilar konsoli", () => {
     );
     expect(screen.queryByRole("dialog", { name: "Yangi tashqi yetkazuvchi" })).not.toBeInTheDocument();
     expect(mocks.post).toHaveBeenCalledTimes(1);
+  });
+
+  it("⭐ yaratishda 400 courier_not_hq — «kuryer HQ'da emas» xatosi, tanlov ro'yxati qayta so'raladi", async () => {
+    const user = userEvent.setup();
+    const notHq = httpError(400, "Tashqi yetkazuvchiga faqat HQ'da ochilgan kuryer bog'lanadi — bu kuryer HQ'da emas");
+    (notHq.response as { data: Record<string, unknown> }).data.data = {
+      reason: "courier_not_hq",
+      details: { courier_id: "88", branch_id: "9" },
+    };
+    mocks.post.mockRejectedValue(notHq);
+    open("?scope=carrier&new=1");
+    const dialog = await screen.findByRole("dialog", { name: "Yangi tashqi yetkazuvchi" });
+    await fillCreate(user, dialog);
+    const before = getCalls("branches/1/users");
+    await user.click(within(dialog).getByRole("button", { name: "Yaratish va kalit olish" }));
+
+    const title = await within(dialog).findByText("Yaratilmadi: kuryer HQ'da emas");
+    expect(title.closest("[role=alert]")).toHaveTextContent(
+      "Tashqi yetkazuvchiga faqat Toshkent HQ'da ochilgan kuryer bog'lanadi. Kuryerni Toshkent HQ'da oching yoki unga o'tkazing.",
+    );
+    // «kurier» matni bo'lsa ham `courier` (faol emas / topilmadi) xatosi emas.
+    expect(within(dialog).queryByText("Yaratilmadi: kuryer faol emas yoki topilmadi")).not.toBeInTheDocument();
+    await waitFor(() => expect(getCalls("branches/1/users")).toBeGreaterThan(before));
+  });
+
+  it("HQ aniqlanmasa — kuryer maydoni va «Yaratish» o'chiq, «Qayta urinish» HQ'ni qayta so'raydi", async () => {
+    const user = userEvent.setup();
+    hqFails = true;
+    open("?scope=carrier&new=1");
+    const dialog = await screen.findByRole("dialog", { name: "Yangi tashqi yetkazuvchi" });
+    expect(
+      await within(dialog).findByText("HQ filialini aniqlab bo'lmadi — kuryerlar ro'yxati yuklanmadi."),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("combobox", { name: /Kuryer/ })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Yaratish va kalit olish" })).toBeDisabled();
+    expect(getCalls("branches/1/users")).toBe(0);
+
+    hqFails = false;
+    await user.click(within(dialog).getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(within(dialog).getByRole("combobox", { name: /Kuryer/ })).toBeEnabled());
+    expect(
+      within(dialog).queryByText("HQ filialini aniqlab bo'lmadi — kuryerlar ro'yxati yuklanmadi."),
+    ).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/Faqat Toshkent HQ kuryeri bog'lanadi/)).toBeInTheDocument();
+  });
+
+  it("kuryer qidiruvi mijoz tomonida — ism yoki telefon raqamlari bo'yicha", async () => {
+    const user = userEvent.setup();
+    open("?scope=carrier&new=1");
+    const dialog = await screen.findByRole("dialog", { name: "Yangi tashqi yetkazuvchi" });
+    await user.click(within(dialog).getByRole("combobox", { name: /Kuryer/ }));
+    expect(await screen.findByRole("option", { name: /Shahar Kargo kuryeri/ })).toBeInTheDocument();
+    await user.keyboard("93 555");
+    await waitFor(() =>
+      expect(screen.queryByRole("option", { name: /FastPost kuryeri/ })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("option", { name: /Shahar Kargo kuryeri/ })).toBeInTheDocument();
+    expect(getCalls("branches/1/users")).toBe(1);
   });
 
   it("yaratishda 503 — «Kuryerni tekshirib bo'lmadi», hech narsa yaratilmadi", async () => {

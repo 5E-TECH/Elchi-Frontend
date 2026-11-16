@@ -175,14 +175,16 @@ export const canViewDispatchPage: Predicate = anyOf(
 );
 
 /**
- * Pochtani filialga jo'natish (pochta sahifasidagi "Pochtani jo'natish"
- * tugmasi va filial tanlash oynasi).
+ * Pochtani jo'natish (pochta sahifasidagi "Pochtani jo'natish" tugmasi va
+ * «Manzilni tanlang» oynasi) — filialga HAM, HQ kuryeriga HAM (ega qarori
+ * 2026-11-15).
  *
- * Backend bilan AYNAN bir xil: GET /branches/dispatch-destinations va
- * POST /branches/posts/:postId/dispatch faqat superadmin/admin yoki HQ
- * filialidagi registratorga ruxsat beradi. REGIONAL/HYBRID/PICKUP
- * registratorlari va menejerlar tugmani ko'rmaydi — ular uchun server doim
- * 403 qaytaradi.
+ * Backend bilan AYNAN bir xil: GET /branches/dispatch-destinations,
+ * POST /branches/posts/:postId/dispatch, GET /branches/posts/:postId/courier-destinations
+ * va POST /branches/posts/:postId/dispatch-to-courier faqat superadmin/admin yoki
+ * HQ filialidagi registratorga ruxsat beradi (`assertNewPostsRequester`).
+ * REGIONAL/HYBRID/PICKUP registratorlari va menejerlar tugmani ko'rmaydi —
+ * ular uchun server doim 403 qaytaradi.
  */
 /** Jo'natilgan, hali qabul qilinmagan pochtani boshqa filialga o'tkazish — faqat superadmin/admin (backend bilan bir xil). */
 export const canReassignPostToBranch: Predicate = hasRole("superadmin", "admin");
