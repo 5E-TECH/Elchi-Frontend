@@ -906,6 +906,8 @@
     "toastDesc_other": "{{count}} debts closed · {{amount}} posted to the main cashbox",
     "replayTitle": "The payment was already recorded",
     "replayDesc": "{{payment}} — recorded on the previous attempt and not recorded again. Nothing was posted to the main cashbox a second time.",
+    "replayOtherTitle": "The entered amount was not recorded",
+    "replayOtherDesc": "A payment was recorded on the previous unanswered attempt: {{payment}}. {{amount}} was not recorded. If this is a new payment, press “Record” again. If the previous one is wrong, cancel it in “Received payments”.",
     "uncertainTitle": "No response received",
     "uncertainDesc": "The payment may have been recorded — the balance and cashbox were refreshed, please check. If you press “Record” again, the payment will not be recorded twice.",
     "advanceTitle": "{{amount}} moved to the advance",

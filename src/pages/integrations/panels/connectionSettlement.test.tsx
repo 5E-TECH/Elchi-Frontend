@@ -327,6 +327,9 @@ describe("ConnectionSettlement — Idempotency-Key (ZE5zqXxu)", () => {
   /** Javob umuman kelmadi (axios: `response` yo'q). */
   const networkError = () => Object.assign(new Error("Network Error"), { code: "ERR_NETWORK" });
   const gatewayTimeout = () => Object.assign(new Error("504"), { response: { status: 504, data: {} } });
+  /** Javobsiz qolgan to'lov kalitlari (`sessionStorage`). */
+  const stored = () =>
+    JSON.parse(sessionStorage.getItem("elchi:pending-remittance-keys") ?? "{}") as Record<string, string>;
 
   it("⭐ ikki marta bosish — bitta so'rov, `Idempotency-Key` sarlavhasi bilan", async () => {
     let resolve: (value: unknown) => void = () => {};
@@ -397,14 +400,44 @@ describe("ConnectionSettlement — Idempotency-Key (ZE5zqXxu)", () => {
     const reopened = await screen.findByRole("dialog", { name: "Tashuvchidan olingan to'lov" });
     // Yopilganda ogohlantirish o'chadi (kalit esa saqlanadi).
     expect(within(reopened).queryByText("Javob kelmadi")).not.toBeInTheDocument();
-    await user.type(within(reopened).getByRole("textbox", { name: /Summa/ }), "1600000");
+    const amount = within(reopened).getByRole("textbox", { name: /Summa/ });
+    await user.type(amount, "1600000");
     await user.click(within(reopened).getByRole("button", { name: "Yozish" }));
 
-    expect(await screen.findByText("To'lov avval yozilgan edi")).toBeInTheDocument();
-    // Server birinchi to'lovni qaytardi — tuzatilgan summa emas.
-    expect(norm(screen.getByText(/avvalgi urinishda yozilgan/).textContent)).toContain("1 500 000 so'm");
+    // Server birinchi to'lovni qaytardi (tuzatilgan summa emas) — kiritilgan summa YOZILMADI: oyna ochiq qoladi va
+    // buni aytadi («avval yozilgan» xabari bilan yopilib, yangi to'lov yozildi deb o'ylatmaydi).
+    const replayAlert = (await within(reopened).findByText("Kiritilgan summa yozilmadi")).closest("[data-tone]") as HTMLElement;
+    expect(replayAlert).toHaveAttribute("data-tone", "warning");
+    expect(replayAlert).toHaveAttribute("role", "alert");
+    expect(norm(replayAlert.textContent)).toContain("№82 · 1 500 000 so'm. 1 600 000 so'm esa yozilmadi");
+    expect(screen.queryByText("To'lov avval yozilgan edi")).not.toBeInTheDocument();
+    expect(screen.queryByText("To'lov yozildi")).not.toBeInTheDocument();
+    expect(amount).toHaveValue("1 600 000");
     expect(sentKey(1)).toBe(sentKey(0));
     expect(ledger.size).toBe(1);
+    expect(stored()).toEqual({});
+
+    // Bu yangi to'lov — qayta «Yozish» YANGI kalit bilan ketadi va yoziladi.
+    await user.click(within(reopened).getByRole("button", { name: "Yozish" }));
+    expect(await screen.findByText("To'lov yozildi")).toBeInTheDocument();
+    expect(apiPostMock).toHaveBeenCalledTimes(3);
+    expect(sentKey(2)).not.toBe(sentKey(0));
+    expect(ledger.size).toBe(2);
+    expect(apiPostMock.mock.calls[2]?.[1]).toEqual({ amount: 1_600_000 });
+  });
+
+  it("takroriy javob summasi kiritilganiga teng — «avval yozilgan edi» xabari, oyna yopiladi (tiyin farqisiz)", async () => {
+    fakeServer((call) => (call === 0 ? networkError() : null));
+    const { user, dialog } = await openPayDialog();
+    await user.type(within(dialog).getByRole("textbox", { name: /Summa/ }), "1500000");
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+    expect(await within(dialog).findByText("Javob kelmadi")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+    expect(await screen.findByText("To'lov avval yozilgan edi")).toBeInTheDocument();
+    expect(screen.queryByText("Kiritilgan summa yozilmadi")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).not.toBeInTheDocument(),
+    );
   });
 
   it("⭐ muvaffaqiyatdan keyin keyingi to'lov — yangi kalit (ikkinchi haqiqiy to'lov yutilmaydi)", async () => {

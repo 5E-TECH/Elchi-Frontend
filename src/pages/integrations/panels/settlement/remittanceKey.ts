@@ -13,8 +13,9 @@ import { createIdempotencyKey } from "../../../../entities/warehouse/lib/idempot
  *
  * Kalit summaga bog'lanmaydi (kuryer to'lovlaridagi barmoq izidan farqli — `pages/payments/components/lib/
  * paymentIdempotency.ts`): javobsiz urinishdan keyin summa tuzatilib qayta yuborilsa ham server birinchi to'lovni
- * qaytaradi — ikkinchi kirim yozilmaydi, ekran «avval yozilgan» deb aytadi va qaytgan summani ko'rsatadi (xato
- * summa — «Olingan to'lovlar» da bekor qilinadi). Ulanishlar bo'yicha alohida: backend ham kalitni hamkor ichida
+ * qaytaradi — ikkinchi kirim yozilmaydi. Qaytgan summa kiritilganidan farq qilsa, oyna ochiq qoladi va «Kiritilgan
+ * summa yozilmadi» deydi (yangi to'lov bo'lsa — qayta «Yozish», yangi kalit bilan; xato summa — «Olingan to'lovlar»
+ * da bekor qilinadi); summa bir xil bo'lsa — «To'lov avval yozilgan edi» xabari. Ulanishlar bo'yicha alohida: backend ham kalitni hamkor ichida
  * qidiradi.
  */
 const STORAGE_KEY = "elchi:pending-remittance-keys";

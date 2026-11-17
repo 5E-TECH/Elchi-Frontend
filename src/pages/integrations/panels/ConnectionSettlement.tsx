@@ -74,7 +74,8 @@ import { focusRemittancesSection } from "./settlement/remittancesAnchor";
  * to'lovga bitta, javob kelguncha o'zgarmaydi. Ikki marta bosish — bitta so'rov; javobsiz xatodan (tarmoq, 502–504)
  * keyin oyna ichida «Javob kelmadi» ogohlantirishi, qoldiq va kassa qayta o'qiladi, qayta «Yozish» o'sha kalit bilan
  * ketadi va backend birinchi to'lovni qaytaradi (`idempotent_replay`) — xabar «To'lov avval yozilgan edi», ikkinchi
- * kirim yo'q. Maket yo'q — eng yaqini: ogohlantirish `*-settlement-cancel-dialog` (server xatosi oyna ichida) va
+ * kirim yo'q. Qaytgan to'lov summasi kiritilganidan farq qilsa — oyna ochiq qoladi, ichida «Kiritilgan summa
+ * yozilmadi» (yangi to'lov jimgina «avval yozilgan» bo'lib qolmasin; keyingi «Yozish» — yangi kalit). Maket yo'q — eng yaqini: ogohlantirish `*-settlement-cancel-dialog` (server xatosi oyna ichida) va
  * `*-pay-overpay-dialog` (warning alert); xabar `*-settlement-pay-dialog` «Boshqa holatlar» (natija — xabar bilan).
  */
 
@@ -460,6 +461,13 @@ const PayDialog = ({
    * oyna yopilganda o'chadi.
    */
   const [uncertain, setUncertain] = useState(false);
+  /**
+   * Takroriy kalitga backend BOSHQA summali avvalgi to'lovni qaytardi (javobi yo'qolgan urinishdan keyin summa
+   * tuzatildi yoki bu yangi to'lov): kiritilgan summa YOZILMADI. Oyna kiritilgan qiymatlar bilan ochiq qoladi va buni
+   * aytadi — «avval yozilgan edi» xabari bilan yopilsa, operator yangi to'lovni yozildi deb o'ylardi. Kalit esa
+   * yopilgan: keyingi «Yozish» — yangi to'lov.
+   */
+  const [replayedOther, setReplayedOther] = useState<{ payment: string; amount: string } | null>(null);
 
   const value = Number(amount);
   const amountError = !touched
@@ -486,6 +494,7 @@ const PayDialog = ({
     setNote("");
     setTouched(false);
     setUncertain(false);
+    setReplayedOther(null);
   };
 
   const close = () => {
@@ -502,6 +511,7 @@ const PayDialog = ({
     if (createRemittance.isPending || submittingRef.current) return;
     submittingRef.current = true;
     setUncertain(false);
+    setReplayedOther(null);
     const trimmedReference = reference.trim() || undefined;
     try {
       const result = await createRemittance.mutateAsync({
@@ -516,17 +526,22 @@ const PayDialog = ({
       settleRemittanceKey(connection.id);
       // Summa MAIN kassaga ham yozildi — kassa, moliya tarixi, bosh sahifa, daromad, KPI, marketlar.
       void refreshCashboxQueries(client);
+      /** «№82 · 1 500 000 so'm» — serverdagi (birinchi) to'lov. */
+      const replayedPayment = [result.remittanceId ? `№${result.remittanceId}` : null, money(result.remitted)]
+        .filter(Boolean)
+        .join(" · ");
+      if (result.replayed && Math.round(result.remitted * 100) !== Math.round(value * 100)) {
+        // Backend kiritilgan summani emas, avvalgi to'lovni qaytardi — kiritilgani yozilmadi: oyna ochiq qoladi.
+        setReplayedOther({ payment: replayedPayment, amount: money(value) });
+        return;
+      }
       reset();
       onClose();
       if (result.replayed) {
         // To'lov avvalgi (javobi yo'qolgan) urinishda yozilgan — «yozildi» deyilmaydi; summa — serverdagi birinchi
-        // to'lovniki (tuzatilgan summa emas), ikkinchi kirim yo'q.
+        // to'lovniki, ikkinchi kirim yo'q.
         notify.warning(t("settlementPay.replayTitle"), {
-          description: t("settlementPay.replayDesc", {
-            payment: [result.remittanceId ? `№${result.remittanceId}` : null, money(result.remitted)]
-              .filter(Boolean)
-              .join(" · "),
-          }),
+          description: t("settlementPay.replayDesc", { payment: replayedPayment }),
           duration: 10_000,
         });
       } else if (isExactRemittance(result)) {
@@ -582,6 +597,10 @@ const PayDialog = ({
           /* Maket yo'q — eng yaqini `*-settlement-cancel-dialog` (server xatosi oyna ichida) va `*-pay-overpay-dialog`. */
           <InlineAlert tone="warning" role="alert" title={t("settlementPay.uncertainTitle")}>
             {t("settlementPay.uncertainDesc")}
+          </InlineAlert>
+        ) : replayedOther ? (
+          <InlineAlert tone="warning" role="alert" title={t("settlementPay.replayOtherTitle")}>
+            {t("settlementPay.replayOtherDesc", replayedOther)}
           </InlineAlert>
         ) : overpay ? null : (
           <InlineAlert tone="info" role="status" title={t("stlPayCashboxTitle")}>
