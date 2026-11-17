@@ -455,6 +455,56 @@
           "hint": "Batafsil sabab server jurnalida"
         }
       },
+      "bot": {
+        "label": "Telegram bot holati",
+        "tokenRejected": {
+          "title": "Telegram bot tokeni rad etildi",
+          "titleStatus": "Telegram bot tokeni rad etildi ({{status}})",
+          "text": "BotFather'dan yangi token oling, serverdagi .env.production fayliga yozing va bildirishnoma xizmatini (notification-service) qayta ishga tushiring."
+        },
+        "network": {
+          "title": "Server Telegram'ga ulana olmayapti",
+          "text": "Server internetini tekshiring. Tarmoq tiklangach bot 5 daqiqa ichida o'zi tiklanadi."
+        },
+        "timeout": {
+          "title": "Server Telegram'ga ulana olmayapti",
+          "text": "Telegram belgilangan vaqtda javob bermadi. Tarmoq tiklangach bot 5 daqiqa ichida o'zi tiklanadi."
+        },
+        "telegramError": {
+          "title": "Telegram xato qaytardi",
+          "titleStatus": "Telegram xato qaytardi ({{status}})",
+          "rateLimit": "So'rovlar juda ko'p — biroz kutib, qayta tekshiring.",
+          "server": "Nosozlik Telegram tomonida — odatda o'zi tiklanadi. Birozdan keyin qayta tekshiring.",
+          "other": "Birozdan keyin qayta tekshiring. Xato takrorlansa, texnik sababni dasturchiga yuboring."
+        },
+        "unknown": {
+          "title": "Kutilmagan xato",
+          "text": "Bot tekshiruvi kutilmagan xato bilan tugadi. Texnik sababni dasturchiga yuboring."
+        },
+        "pending": {
+          "title": "Tekshiruv hali tugamagan",
+          "text": "Bildirishnoma xizmati bot tokenini hali tekshirmagan. Birozdan keyin qayta tekshiring."
+        },
+        "disabled": {
+          "title": "Bot o'chiq — token sozlanmagan",
+          "text": "BotFather'dan token oling, serverdagi .env.production fayliga yozing va bildirishnoma xizmatini (notification-service) qayta ishga tushiring."
+        },
+        "technical": "Texnik sabab:",
+        "checkedAt": "Oxirgi tekshiruv: {{time}}",
+        "neverChecked": "Tekshiruv hali bo'lmagan",
+        "restartRequired": "Qayta ishga tushirish kerak",
+        "recheck": "Qayta tekshirish",
+        "rechecking": "Tekshirilmoqda",
+        "result": {
+          "healthy": "Bot ishlayapti",
+          "healthyUser": "Telegram @{{username}} botini tasdiqladi",
+          "failing": "Bot hali ham tekshiruvdan o'tmadi",
+          "error": "Qayta tekshirib bo'lmadi",
+          "unavailable": "Bildirishnoma xizmati javob bermadi. Birozdan keyin qayta urinib ko'ring.",
+          "tooMany": "So'rovlar juda ko'p — biroz kutib, qayta urinib ko'ring.",
+          "retryLater": "Birozdan keyin qayta urinib ko'ring."
+        }
+      },
       "error": {
         "title": "Tizim holatini olib bo'lmadi",
         "text": "Holat so'rovi javobsiz qoldi. Xizmatlar ishlayotgan yoki ishlamayotganini hozir aytib bo'lmaydi — birozdan keyin qayta urining.",

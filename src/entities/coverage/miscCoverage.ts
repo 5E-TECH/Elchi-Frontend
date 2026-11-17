@@ -10,6 +10,9 @@ type QueryParams = Record<string, unknown>;
 /** Readiness: 200 — hammasi ishlayapti, 503 — kamida bittasi ishlamayapti (ikkalasi ham javob). */
 const isReadinessStatus = (status: number) => status === 200 || status === 503;
 
+/** «Tizim holati» readiness so'rovi kaliti (bot «Qayta tekshirish» dan keyin ham shu qayta o'qiladi). */
+export const HEALTH_READINESS_QUERY_KEY = ["misc-cov", "health-readiness"] as const;
+
 export const useMiscCoverage = () => {
   const client = useQueryClient();
 
@@ -133,7 +136,7 @@ export const useMiscCoverage = () => {
    */
   const useGetHealthReadiness = (options?: SilentErrorOption) =>
     useQuery({
-      queryKey: ["misc-cov", "health-readiness"],
+      queryKey: HEALTH_READINESS_QUERY_KEY,
       queryFn: () =>
         api
           .get(API_ENDPOINTS.HEALTH.READINESS, { validateStatus: isReadinessStatus })

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { CRITICAL, PARTIAL, healthCard, mockSystemOpsApi, openSystemOps, readiness } from "./support/systemOps";
+import { toast } from "./support/toast";
+import { CRITICAL, PARTIAL, botHealth, healthCard, mockSystemOpsApi, openSystemOps, readiness } from "./support/systemOps";
 
 /**
  * OPS → TIZIM (/ops?tab=system, OS-1 — maketlar `superadmin-ops-system[-partial|-critical|-error|-down]`):
@@ -65,5 +66,65 @@ test.describe("Ops → Tizim — Tizim holati — 1440px", () => {
     await card.getByRole("button", { name: "Qayta urinish" }).click();
     await expect(card.getByText("Hamma xizmatlar ishlayapti")).toBeVisible();
     expect(calls.health).toBe(3);
+  });
+
+  test("⭐ BOT-DIAG: token rad etildi — aniq sabab va keyingi qadam, «Qayta ishga tushirish kerak», tugma yo'q", async ({ page }) => {
+    const { leaked } = await mockSystemOpsApi(page, {
+      health: [PARTIAL],
+      bot: [
+        botHealth({
+          error_kind: "token_rejected",
+          error_status: 401,
+          error_text: "Telegram getMe failed (401): Unauthorized",
+          restart_required: true,
+        }),
+      ],
+    });
+    await openSystemOps(page);
+    const card = healthCard(page);
+    const panel = card.getByRole("region", { name: "Telegram bot holati" });
+    await expect(panel.getByText("Telegram bot tokeni rad etildi (401)")).toBeVisible();
+    await expect(panel.getByText(/BotFather'dan yangi token oling/)).toBeVisible();
+    await expect(panel.getByText(/^Oxirgi tekshiruv: Bugun, \d{2}:\d{2}$/)).toBeVisible();
+    await expect(panel.getByText("Qayta ishga tushirish kerak")).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Qayta tekshirish" })).toHaveCount(0);
+    const row = card.getByRole("table", { name: "Xizmatlar holati" }).locator("tbody tr").nth(0);
+    await expect(row).toContainText("Telegram bot tokeni rad etildi (401)");
+    await expect(row).not.toContainText("Bot tokeni yoki bog'liq tizim");
+    expect(leaked).toEqual([]);
+  });
+
+  test("⭐ BOT-DIAG: «Qayta tekshirish» — bot tiklandi: xabar, readiness qayta o'qiladi, blok yo'qoladi", async ({ page }) => {
+    const { leaked, calls } = await mockSystemOpsApi(page, {
+      health: [PARTIAL, readiness({ SEARCH: { status: "down", latency_ms: 1502, error: "Timeout has occurred" } })],
+      bot: [botHealth()],
+      recheck: [botHealth({ healthy: true, error_kind: null, error_text: null, username: "elchi_bot" }, { rechecked: true })],
+    });
+    await openSystemOps(page);
+    const card = healthCard(page);
+    const panel = card.getByRole("region", { name: "Telegram bot holati" });
+    await expect(panel.getByText("Server Telegram'ga ulana olmayapti")).toBeVisible();
+    await expect(panel.getByText("Telegram getMe failed (0): fetch failed (ENOTFOUND)")).toBeVisible();
+    await panel.getByRole("button", { name: "Qayta tekshirish" }).click();
+    await expect(toast(page, "Bot ishlayapti", { tone: "success" })).toContainText("Telegram @elchi_bot botini tasdiqladi");
+    await expect(card.getByRole("region", { name: "Telegram bot holati" })).toHaveCount(0);
+    await expect(card.getByText("1 ta xizmat javob bermayapti")).toBeVisible();
+    expect(calls.recheck).toBe(1);
+    expect(calls.health).toBe(2);
+    expect(leaked).toEqual([]);
+  });
+
+  test("BOT-DIAG: endpoint 404 (backend hali deploy qilinmagan) — umumiy matn, sahifa buzilmaydi", async ({ page }) => {
+    const { leaked } = await mockSystemOpsApi(page, {
+      health: [PARTIAL],
+      bot: [{ status: 404, body: { statusCode: 404, message: "Cannot GET /health/notification-bot" } }],
+    });
+    await openSystemOps(page);
+    const card = healthCard(page);
+    const row = card.getByRole("table", { name: "Xizmatlar holati" }).locator("tbody tr").nth(0);
+    await expect(row).toContainText("Bot tokeni yoki bog'liq tizim tekshiruvdan o'tmagan bo'lishi mumkin");
+    await expect(card.getByRole("region", { name: "Telegram bot holati" })).toHaveCount(0);
+    await expect(page.getByText(/Cannot GET/)).toHaveCount(0);
+    expect(leaked).toEqual([]);
   });
 });
