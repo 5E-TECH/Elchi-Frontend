@@ -6,8 +6,9 @@ import { mockUniversalScanModesApi, REFUSED_MAIL_QR, SEND_ORDER_TOKEN } from "./
 
 /**
  * 390px: universal skaner `/scan` rejimlari (Trello v1eLN2tV 3-bosqich).
- *   - kuryer: 3 ta rejim («O'zimga olish», «Qabul qilish», «Ma'lumot»); sukut «O'zimga olish» — har kod
- *     `POST orders/scan-assign`, kamera yopilmaydi, ro'yxat, «Tugatish» → xulosa («Qabul qilish» —
+ *   - kuryer: 2 ta rejim («O'zimga olish», «Ma'lumot»; COURIER-SCAN — skan = qabul, «Qabul qilish» rejimi yo'q);
+ *     sukut «O'zimga olish» — har kod
+ *     `POST orders/scan-assign`, kamera yopilmaydi, ro'yxat, «Tugatish» → xulosa (skan = qabul → sotish —
  *     `scanner-courier-receive.mobile.spec.ts`);
  *   - HQ menejeri: «Qabul qilish» → market varag'i → `/new-orders/:id`, kamera O'SHA sahifada ochiq (skan = qabul);
  *   - superadmin (5 rejim — «Rejim: … ▾» varag'i, vNcGDnNh 2-band): «Pochtani jo'natish» (varaq → `/mails/:id`, skan =
@@ -25,8 +26,8 @@ test.describe("Universal skaner rejimlari, 390px", () => {
     const camera = page.locator("body");
     await expect(page.getByRole("heading", { name: "O'zimga olish" })).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole("radio", { name: "O'zimga olish" })).toHaveAttribute("aria-checked", "true");
-    // 2026-11-07: kuryerda 3 ta rejim (yangi «Qabul qilish») — 390px'da segment sig'adi, gorizontal scroll yo'q.
-    await expect(page.getByRole("radio")).toHaveText(["O'zimga olish", "Qabul qilish", "Ma'lumot"]);
+    // COURIER-SCAN (ega, 2026-11-17): kuryerda 2 ta rejim — «Qabul qilish» olib tashlandi (skan = qabul).
+    await expect(page.getByRole("radio")).toHaveText(["O'zimga olish", "Ma'lumot"]);
     await expectNoHorizontalScroll(page);
 
     const [first, second] = Object.keys(COURIER_TOKENS);

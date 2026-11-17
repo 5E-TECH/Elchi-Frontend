@@ -518,3 +518,80 @@ describe("describeTrackingEvent — operator biriktirildi", () => {
     expect(sentence(v)).toBe("Ro'yxatchi Bobur Xolmatov buyurtmaga operator biriktirdi");
   });
 });
+
+/**
+ * COURIER-SCAN (ega, 2026-11-17): kuryer skani = qabul — `courier_scan_received` («… buyurtmani skan bilan oldi»,
+ * «pochtani qabul qildi» emas) va o'tkazma pochtasidan olishda `branch_post_received_by_courier_scan`.
+ */
+describe("describeTrackingEvent — kuryer skani (COURIER-SCAN)", () => {
+  const courier = { name: "Ali Valiyev", role: "courier" };
+
+  it("⭐ courier_scan_received (on the road → waiting): «Kuryer Ali Valiyev buyurtmani skan bilan oldi»", () => {
+    const v = view({
+      action: "courier_scan_received",
+      changed_by: "44",
+      changed_by_role: "courier",
+      actor: courier,
+      from_status: "on the road",
+      to_status: "waiting",
+      note: "Order skan orqali courierga biriktirildi",
+      description: "Kuryer Ali Valiyev skan bilan oldi",
+      metadata: { post_id: "77", courier_name: "Ali Valiyev" },
+    });
+    expect(sentence(v)).toBe("Kuryer Ali Valiyev buyurtmani skan bilan oldi");
+    expect(sentence(v)).not.toContain("pochtani qabul qildi");
+    expect(v.actionName).toBe("Kuryer skan bilan oldi");
+    expect(v.note).toBe("");
+    expect(v.details).toEqual([]);
+  });
+
+  it("filial qabul qilgan buyurtma (waiting → waiting, kuryer almashdi) — xuddi shu jumla", () => {
+    const v = view({
+      action: "courier_scan_received",
+      changed_by: "44",
+      changed_by_role: "courier",
+      actor: courier,
+      from_status: "waiting",
+      to_status: "waiting",
+      old_value: { courier_id: null },
+      new_value: { courier_id: "44" },
+      metadata: { post_id: "77", courier_name: "Ali Valiyev" },
+    });
+    expect(sentence(v)).toBe("Kuryer Ali Valiyev buyurtmani skan bilan oldi");
+  });
+
+  it("⭐ branch_post_received_by_courier_scan: «Kuryer Ali Valiyev skani bilan buyurtma filialga qabul qilindi — <filial>»", () => {
+    const v = view(
+      {
+        action: "branch_post_received_by_courier_scan",
+        changed_by: "44",
+        changed_by_role: "courier",
+        actor: courier,
+        from_status: "on the road",
+        to_status: "waiting",
+        metadata: { post_id: "42", branch_name: "Andijon filiali", courier_name: "Ali Valiyev" },
+      },
+      { branchName: "HQ Toshkent" },
+    );
+    expect(sentence(v)).toBe("Kuryer Ali Valiyev skani bilan buyurtma filialga qabul qilindi — Andijon filiali");
+    expect(v.actionName).toBe("Filialga qabul (kuryer skani)");
+    expect(v.details).toEqual([]);
+  });
+
+  it("ru / en: kuryer skani jumlasi tarjimada", async () => {
+    await i18n.loadLanguages(["ru", "en"]);
+    const event = {
+      ...base,
+      action: "courier_scan_received",
+      changed_by_role: "courier",
+      actor: courier,
+      from_status: "on the road",
+      to_status: "waiting",
+      metadata: { post_id: "77", courier_name: "Ali Valiyev" },
+    } as unknown as TrackingEvent;
+    const ru = describeTrackingEvent(event, i18n.getFixedT("ru", "orders") as never, null);
+    const en = describeTrackingEvent(event, i18n.getFixedT("en", "orders") as never, null);
+    expect(`${ru.actor}${ru.sentence.after}`).toBe("Ali Valiyev взял(а) заказ сканированием");
+    expect(`${en.actor}${en.sentence.after}`).toBe("Ali Valiyev took the order by scan");
+  });
+});

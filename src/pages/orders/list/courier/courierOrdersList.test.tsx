@@ -631,38 +631,46 @@ describe("Kuryer buyurtmalari — telefon (< 768)", () => {
   });
 });
 
-describe("Kuryer buyurtmalari — yo'ldagi buyurtmani qabul qilish (2026-11-07)", () => {
+describe("Kuryer buyurtmalari — COURIER-SCAN: kuryer skani = qabul, «Qabul qilish» tugmasi yo'q (2026-11-17)", () => {
   let patchSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    patchSpy = vi.spyOn(api, "patch").mockResolvedValue({
-      data: { received_order_ids: ["1001"], already_received_order_ids: [], not_received_order_ids: [], failures: [] },
-    } as never);
+    patchSpy = vi.spyOn(api, "patch").mockResolvedValue({ data: {} } as never);
     state.rows = [
+      // Skan bilan olingan — darhol «Kutilmoqda» va kuryerda (yorliq «Kuryerda»).
+      order("1005", "Skan bilan olingan", { status: "waiting", courier_id: "u-1", holder_type: "COURIER" }),
+      // Menejer biriktirgan, hali yo'lda (pochtasi bor) va mijoz kutilmoqda — ham faqat «Sotish / Bekor».
       order("1001", "Yo'ldagi mijoz", { status: "on_the_road", post_id: "p-7" }),
-      order("1002", "Pochtasiz yo'ldagi", { status: "on_the_road", post_id: null }),
+      order("1006", "Shahzod Valiyev", { status: "waiting_customer", post_id: "p-7" }),
       order("1003", "Kutilayotgan mijoz"),
     ];
   });
 
   afterEach(() => patchSpy.mockRestore());
 
-  it("yo'ldagi qatorda «Qabul qilish» VA «Sotish / Bekor» (2026-11-12); pochtasiz yoki kutilayotgan — avvalgidek", () => {
+  it("⭐ faol qatorlarda faqat «Sotish» + «Bekor qilish»; «Qabul qilish» hech qayerda yo'q", () => {
     renderPage();
 
-    const road = screen.getByText("Yo'ldagi mijoz").closest("tr")!;
-    expect(within(road).getByRole("button", { name: "№1001 ni qabul qilish" })).toHaveTextContent("Qabul qilish");
-    expect(within(road).getByRole("button", { name: "№1001 ni sotish" })).toHaveTextContent("Sotish");
-    expect(within(road).getByRole("button", { name: "№1001 ni bekor qilish" })).toBeInTheDocument();
+    for (const [id, name] of [
+      ["1005", "Skan bilan olingan"],
+      ["1001", "Yo'ldagi mijoz"],
+      ["1006", "Shahzod Valiyev"],
+      ["1003", "Kutilayotgan mijoz"],
+    ] as const) {
+      const row = screen.getByText(name).closest("tr")!;
+      expect(within(row).getByRole("button", { name: `№${id} ni sotish` })).toHaveTextContent("Sotish");
+      expect(within(row).getByRole("button", { name: `№${id} ni bekor qilish` })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: /qabul qilish/i })).toBeNull();
+    expect(screen.queryByText("Qabul qilish")).toBeNull();
+  });
 
-    const noPost = screen.getByText("Pochtasiz yo'ldagi").closest("tr")!;
-    expect(within(noPost).getByRole("button", { name: "№1002 ni sotish" })).toBeInTheDocument();
-    expect(within(noPost).queryByRole("button", { name: /qabul qilish/ })).toBeNull();
+  it("⭐ kuryerdagi tayyor buyurtma yorlig'i — «Kuryerda» (kuryersiz «Kutilmoqda» o'zgarmaydi)", () => {
+    renderPage();
 
-    const waiting = screen.getByText("Kutilayotgan mijoz").closest("tr")!;
-    expect(within(waiting).getByRole("button", { name: "№1003 ni sotish" })).toBeInTheDocument();
-    expect(within(waiting).getByRole("button", { name: "№1003 ni bekor qilish" })).toBeInTheDocument();
-    expect(within(waiting).queryByRole("button", { name: /qabul qilish/ })).toBeNull();
+    const taken = screen.getByText("Skan bilan olingan").closest("tr")!;
+    expect(within(taken).getByText("Kuryerda")).toBeInTheDocument();
+    expect(within(taken).queryByText("Yo'lda")).toBeNull();
   });
 
   it("⭐ yo'ldagi qatorda «Sotish» / «Bekor» — oyna ochiladi, FE qabul so'rovini yubormaydi (backend o'zi qabul qiladi)", async () => {
@@ -681,88 +689,26 @@ describe("Kuryer buyurtmalari — yo'ldagi buyurtmani qabul qilish (2026-11-07)"
     expect(patchSpy).not.toHaveBeenCalled();
   });
 
-  it("«Qabul qilish» → `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, xabar va ro'yxat yangilanadi", async () => {
-    const user = userEvent.setup();
-    const { queryClient } = renderPage();
-    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
-
-    await user.click(screen.getByRole("button", { name: "№1001 ni qabul qilish" }));
-
-    expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["1001"], scan: true });
-    expect(await screen.findByText("№1001 qabul qilindi")).toBeInTheDocument();
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["orders"] });
-  });
-
-  it("«Barchasi» tabida ham — yo'ldagi qatorda «Qabul qilish»", async () => {
+  it("«Barchasi» tabida ham — «Qabul qilish» yo'q", async () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(screen.getByRole("tab", { name: "Barchasi" }));
 
     const road = screen.getByText("Yo'ldagi mijoz").closest("tr")!;
-    await user.click(within(road).getByRole("button", { name: "№1001 ni qabul qilish" }));
-    expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["1001"], scan: true });
+    expect(within(road).getByRole("button", { name: "№1001 ni sotish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /qabul qilish/i })).toBeNull();
   });
 
-  it("⭐ ikki qator tez ketma-ket — birinchisi javobini kutib turganda ikkinchisi bosiladi: ikkala xabar, aylanish to'xtaydi", async () => {
-    const user = userEvent.setup();
-    state.rows = [
-      order("1001", "Yo'ldagi mijoz", { status: "on_the_road", post_id: "p-7" }),
-      order("1004", "Ikkinchi yo'ldagi", { status: "on_the_road", post_id: "p-7" }),
-    ];
-    const body = (id: string) => ({
-      data: { received_order_ids: [id], already_received_order_ids: [], not_received_order_ids: [], failures: [] },
-    });
-    let finishFirst: (value: unknown) => void = () => {};
-    patchSpy
-      .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
-      .mockResolvedValueOnce(body("1004") as never);
-    renderPage();
-
-    await user.click(screen.getByRole("button", { name: "№1001 ni qabul qilish" }));
-    await user.click(screen.getByRole("button", { name: "№1004 ni qabul qilish" }));
-    await act(async () => {
-      finishFirst(body("1001"));
-    });
-
-    // Ilgari (`mutate(vars, { onSuccess, onSettled })`): ikkinchi bosish birinchisining callbacklarini uzardi —
-    // №1001 xabarsiz, uning tugmasi esa abadiy «kutilmoqda».
-    expect(await screen.findByText("№1001 qabul qilindi")).toBeInTheDocument();
-    expect(await screen.findByText("№1004 qabul qilindi")).toBeInTheDocument();
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "№1001 ni qabul qilish" })).not.toHaveAttribute("aria-busy"),
-    );
-  });
-
-  it("backend qabul qilmasa — «Buyurtma qabul qilinmadi» va sababi", async () => {
-    const user = userEvent.setup();
-    patchSpy.mockResolvedValueOnce({
-      data: {
-        received_order_ids: [],
-        already_received_order_ids: [],
-        not_received_order_ids: ["1001"],
-        failures: [{ order_id: "1001", error: "Pochta hali jo'natilmagan" }],
-      },
-    } as never);
-    renderPage();
-
-    await user.click(screen.getByRole("button", { name: "№1001 ni qabul qilish" }));
-
-    expect(await screen.findByText("Buyurtma qabul qilinmadi")).toBeInTheDocument();
-    expect(screen.getByText("Pochta hali jo'natilmagan")).toBeInTheDocument();
-  });
-
-  it("telefon kartasi: yo'ldagida «Qabul qilish» va «Sotish / Bekor» (2026-11-12)", async () => {
-    const user = userEvent.setup();
+  it("telefon kartasi: faqat «Sotish | Bekor qilish» (tepada «Qabul qilish» yo'q)", () => {
     const restore = mockPhone(true);
     try {
       renderPage();
       const list = screen.getByRole("list", { name: "Kutilayotgan buyurtmalar" });
       expect(within(list).getByRole("button", { name: "Yo'ldagi mijoz: sotish" })).toBeInTheDocument();
       expect(within(list).getByRole("button", { name: "Yo'ldagi mijoz: bekor qilish" })).toBeInTheDocument();
-      expect(within(list).getByRole("button", { name: "Pochtasiz yo'ldagi: sotish" })).toBeInTheDocument();
-
-      await user.click(within(list).getByRole("button", { name: "Yo'ldagi mijoz: qabul qilish" }));
-      expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["1001"], scan: true });
+      expect(within(list).getByRole("button", { name: "Skan bilan olingan: sotish" })).toBeInTheDocument();
+      expect(within(list).queryByRole("button", { name: /qabul qilish/i })).toBeNull();
+      expect(patchSpy).not.toHaveBeenCalled();
     } finally {
       restore();
     }

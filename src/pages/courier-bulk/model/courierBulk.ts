@@ -89,8 +89,7 @@ export const getCourierBulkCounts = (
     (accumulator, order) => {
       const action = getCourierBulkOrderAction(order.id, actions);
       accumulator.total += 1;
-      // Pochtasi qabul qilinmagan posilka (6qypMFeT) hech qaysi natijaga kirmaydi — so'rov ketmaydi.
-      if (isCourierBulkAwaitingPost(order) || action === null) return accumulator;
+      if (action === null) return accumulator;
       // lQjt6sKP: eski mahsulot olinmagan almashtirish bu yerdan sotilmaydi — «Sotiladi»ga qo'shilmaydi
       // (tasdiq oynasidagi soldCount bilan bir xil); «Kutilayotgan» (total) da qoladi — buyurtma WAITING.
       // Menejerda kuryer qo'lidagi buyurtma ham shunday (LC-04).
@@ -108,19 +107,11 @@ export const getCourierBulkOrderAction = (
   actions: Record<string, CourierBulkAction>,
 ): CourierBulkAction | null => actions[orderId] ?? null;
 
-const normalizeStatus = (value: unknown) =>
-  typeof value === "string" ? value.trim().toLowerCase().replaceAll("_", " ") : "";
-
-/**
- * Pochtasi hali qabul qilinmagan posilka (6qypMFeT): kuryer uni skan bilan o'zi olgan — ro'yxatga «Kutilayotgan» bilan
- * birga keladi, lekin holati ON_THE_ROAD. Backend sotishda ham, bekor qilishda ham WAITING talab qiladi (400 «…kutilmoqda
- * (waiting) holatida emas») — bunday qator uchun so'rov YUBORILMAYDI, belgilab ham bo'lmaydi. Holati kelmagan qator —
- * kutilmoqda (ro'yxat `status=waiting` bilan so'raladi).
+/*
+ * COURIER-SCAN (ega, 2026-11-17): kuryer skani = qabul — skan bilan olingan posilka darhol «Kutilmoqda» (WAITING).
+ * 6qypMFeT dagi «pochtasi qabul qilinmagan» (ON_THE_ROAD) to'sig'i olib tashlandi: kuryerning o'z buyurtmalari
+ * to'siqsiz belgilanadi (sotish / bekor yo'ldagini backend o'zi qabul qiladi).
  */
-export const isCourierBulkAwaitingPost = (order: unknown) => {
-  const status = normalizeStatus((order as { status?: unknown } | null)?.status);
-  return status !== "" && status !== "waiting";
-};
 
 /** Nega buyurtma bu yerdan sotilmaydi: almashtirish (lQjt6sKP) yoki menejerda kuryer qo'lida (LC-04). */
 export type CourierBulkSellBlock = "replacement" | "courierHeld";
@@ -162,8 +153,6 @@ export type CourierBulkKept<T> = {
   replacement: T[];
   /** «Sotildi», lekin menejerda kuryer qo'lida — kuryerning o'zi sotadi. */
   courierHeld: T[];
-  /** Pochtasi qabul qilinmagan — belgidan qat'i nazar o'zgarmaydi. */
-  awaitingPost: T[];
 };
 
 /**
@@ -175,12 +164,8 @@ export const getCourierBulkKept = <T extends { id: string }>(
   actions: Record<string, CourierBulkAction>,
   viewer: CourierBulkViewer = "courier",
 ): CourierBulkKept<T> => {
-  const kept: CourierBulkKept<T> = { unmarked: [], tomorrow: [], replacement: [], courierHeld: [], awaitingPost: [] };
+  const kept: CourierBulkKept<T> = { unmarked: [], tomorrow: [], replacement: [], courierHeld: [] };
   orders.forEach((order) => {
-    if (isCourierBulkAwaitingPost(order)) {
-      kept.awaitingPost.push(order);
-      return;
-    }
     const action = getCourierBulkOrderAction(order.id, actions);
     if (action === null) {
       kept.unmarked.push(order);
@@ -209,7 +194,7 @@ export const getCourierBulkKept = <T extends { id: string }>(
  * «sotildi» bo'lib ketardi, 10 tasini «Sotildi» belgilab yakunlasa, qolgan belgilanmaganlari ham sotilardi.
  *
  * Eski mahsulot olinmagan almashtirish buyurtmasi (menejerda — kuryer qo'lidagi ham) «sotildi» bo'lib yuborilmaydi
- * (`isCourierBulkSellBlocked`); pochtasi qabul qilinmagan posilka umuman yuborilmaydi (`isCourierBulkAwaitingPost`).
+ * (`isCourierBulkSellBlocked`).
  */
 export const getCourierBulkFinalizeTasks = <T extends { id: string }>(
   orders: T[],
@@ -217,7 +202,6 @@ export const getCourierBulkFinalizeTasks = <T extends { id: string }>(
   viewer: CourierBulkViewer = "courier",
 ): Array<CourierBulkFinalizeTask<T>> =>
   orders.flatMap((order) => {
-    if (isCourierBulkAwaitingPost(order)) return [];
     const action = getCourierBulkOrderAction(order.id, actions);
     if (action === null || action === "tomorrow") return [];
     if (action === "sold" && isCourierBulkSellBlocked(order, viewer)) return [];
@@ -244,14 +228,13 @@ export const isCourierBulkOrderMarked = (orderId: string, actions: Record<string
 
 /**
  * Belgilanmagan buyurtmalar soni — yakunlashda o'zgarmaydiganlar (`getCourierBulkKept().unmarked` bilan bir xil):
- * «Sotiladi» kartasi izohi, tasdiq oynasi va kameradagi «Belgilanmagan N ta — o'zgarmaydi». Pochtasi qabul
- * qilinmagan posilka kirmaydi — uni belgilab bo'lmaydi, o'z izohi bor. «Belgilanmagan» natija filtri va qatordagi
- * belgi ham shu ta'rif bilan (`filterCourierBulkOrders`, `CourierBulkOrders`).
+ * «Sotiladi» kartasi izohi, tasdiq oynasi va kameradagi «Belgilanmagan N ta — o'zgarmaydi». «Belgilanmagan» natija
+ * filtri va qatordagi belgi ham shu ta'rif bilan (`filterCourierBulkOrders`, `CourierBulkOrders`).
  */
 export const getCourierBulkUnmarkedCount = (
   orders: Array<{ id: string }>,
   actions: Record<string, CourierBulkAction>,
-) => orders.filter((order) => !isCourierBulkOrderMarked(order.id, actions) && !isCourierBulkAwaitingPost(order)).length;
+) => orders.filter((order) => !isCourierBulkOrderMarked(order.id, actions)).length;
 
 /** «Natija» filtri: barchasi · sotiladi · bekor · ertaga · belgilanmagan (mijoz tomonida). */
 export type CourierBulkResultFilter = "all" | CourierBulkAction | "unmarked";
@@ -260,9 +243,9 @@ const digitsOf = (value: string) => value.replace(/\D/g, "");
 
 /**
  * Qidiruv (ism, telefon yoki buyurtma raqami) va «Natija» filtri — faqat mijoz tomonida, yangi API parametrisiz.
- * Telefon raqamlar bo'yicha ham solishtiriladi («90 214» → `+998902146631`). Pochtasi qabul qilinmagan posilka
- * natijasi yo'q — u faqat «Barchasi»da chiqadi; bu yerdan sotilmaydigani («sotildi» belgisi bilan) «Sotiladi» ga
- * kirmaydi — kartalardagi sonlar bilan bir xil. «Belgilanmagan» — hech qanday belgi qo'yilmaganlar.
+ * Telefon raqamlar bo'yicha ham solishtiriladi («90 214» → `+998902146631`). Bu yerdan sotilmaydigani («sotildi»
+ * belgisi bilan) «Sotiladi» ga kirmaydi — kartalardagi sonlar bilan bir xil. «Belgilanmagan» — hech qanday belgi
+ * qo'yilmaganlar.
  */
 export const filterCourierBulkOrders = <T extends CourierBulkOrder>(
   orders: T[],
@@ -277,7 +260,6 @@ export const filterCourierBulkOrders = <T extends CourierBulkOrder>(
   const needleDigits = digitsOf(needle);
 
   return orders.filter((order) => {
-    if (result !== "all" && isCourierBulkAwaitingPost(order)) return false;
     if (
       result === "sold" &&
       getCourierBulkOrderAction(order.id, actions) === "sold" &&

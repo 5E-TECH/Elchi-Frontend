@@ -11,7 +11,6 @@ import {
   getCourierBulkKept,
   getCourierBulkSellBlock,
   getCourierBulkUnmarkedCount,
-  isCourierBulkAwaitingPost,
   getCourierBulkRetryKind,
   withCourierBulkRetry,
   type CourierBulkAction,
@@ -24,11 +23,13 @@ import {
  *
  * Sabablar (lokal stekda takrorlangan):
  *  A) kuryer skan bilan olgan, pochtasi qabul qilinmagan posilka (6qypMFeT) ro'yxatga «Kutilayotgan» bilan keladi,
- *     holati ON_THE_ROAD — backend sotishni ham, bekor qilishni ham 400 bilan rad etadi;
+ *     holati ON_THE_ROAD — backend sotishni ham, bekor qilishni ham 400 bilan rad etadi. COURIER-SCAN (ega,
+ *     2026-11-17): skan = qabul — skan bilan olingan posilka darhol WAITING, to'siq olib tashlandi (to'siqsiz
+ *     belgilanadi va yuboriladi);
  *  B) menejer kuryer qo'lidagi buyurtmani sotmaydi (LC-04, backend 400);
  *  C) xato bergan qator natija oynasi yopilgach belgisiz «Sotildi» bo'lib, o'zgarmagandek ko'rinardi; bajarilganlar
  *     ro'yxat yangilanguncha belgisiz qolardi.
- * Endi A va B uchun so'rov yuborilmaydi (qatorda va tasdiq oynasida sababi), C — qatorda backend sababi, bajarilganlar
+ * Endi B uchun so'rov yuborilmaydi (qatorda va tasdiq oynasida sababi), C — qatorda backend sababi, bajarilganlar
  * darhol ro'yxatdan chiqadi.
  *
  * Ega qoidasi (2026-11-05, keyinroq): sukut natija YO'Q — «10 tasini «Sotildi» belgilab yakunlasam, belgilanmagan
@@ -68,8 +69,8 @@ const order = (id: string, name: string, over: Record<string, unknown> = {}) => 
   ...over,
 });
 
-/** Kuryer skan bilan olgan, pochtasi qabul qilinmagan posilka (6qypMFeT). */
-const SCAN_TAKEN = { status: "on the road", holder_type: "COURIER", holder_courier_id: "328" };
+/** Kuryer skan bilan olgan posilka — COURIER-SCAN: skan = qabul, darhol «Kutilmoqda» va kuryerda. */
+const SCAN_TAKEN = { status: "waiting", holder_type: "COURIER", holder_courier_id: "328", courier_id: "328" };
 /** Kuryer qo'lidagi kutilayotgan buyurtma (menejer ro'yxatida). */
 const COURIER_HELD = { holder_type: "COURIER", holder_courier_id: "328", courier_id: "328" };
 /** Filialda turgan kutilayotgan buyurtma. */
@@ -125,15 +126,6 @@ beforeEach(() => {
 });
 
 describe("courierBulk model — yopilmaydigan qatorlar", () => {
-  it("pochtasi qabul qilinmagan: holat ON_THE_ROAD (har qanday yozilishda); holatsiz qator — kutilmoqda", () => {
-    expect(isCourierBulkAwaitingPost({ status: "on the road" })).toBe(true);
-    expect(isCourierBulkAwaitingPost({ status: "ON_THE_ROAD" })).toBe(true);
-    expect(isCourierBulkAwaitingPost({ status: "waiting" })).toBe(false);
-    expect(isCourierBulkAwaitingPost({ status: "WAITING" })).toBe(false);
-    expect(isCourierBulkAwaitingPost({ id: "1" })).toBe(false);
-    expect(isCourierBulkAwaitingPost(null)).toBe(false);
-  });
-
   it("sotish bloki: menejerda kuryer qo'lidagi — `courierHeld` (almashtirish ham), kuryerda — almashtirish", () => {
     const held = { id: "1", ...COURIER_HELD };
     expect(getCourierBulkSellBlock(held, "manager")).toBe("courierHeld");
@@ -173,36 +165,36 @@ describe("courierBulk model — yopilmaydigan qatorlar", () => {
       tomorrow: [orders[2]],
       replacement: [],
       courierHeld: [orders[0]],
-      awaitingPost: [],
     });
     // Kuryerning o'zi uchun aniq belgilanganlarning hammasi yuboriladi (avvalgidek); belgisizlar — yo'q.
     expect(getCourierBulkFinalizeTasks(orders, actions).map((task) => task.order.id)).toEqual(["1", "2", "4"]);
     expect(getCourierBulkCounts(orders, actions)).toEqual({ cancel: 1, sold: 2, tomorrow: 1, total: 6 });
   });
 
-  it("pochtasi qabul qilinmagan qator — belgidan qat'i nazar so'rovsiz, faqat «Barchasi» filtrida", () => {
+  it("COURIER-SCAN: skan bilan olingan (kutilmoqda, kuryerda) qator — to'siqsiz: belgilanadi, yuboriladi, filtrlarda", () => {
     const orders = [
       { id: "1", status: "waiting" },
       { id: "2", ...SCAN_TAKEN },
       { id: "3", ...SCAN_TAKEN },
-      { id: "4", ...SCAN_TAKEN },
+      // Deploy oynasidagi eski qator (hali «yo'lda») — ham to'siqsiz: sotish / bekor uni backend o'zi qabul qiladi.
+      { id: "4", ...SCAN_TAKEN, status: "on the road" },
       { id: "5", status: "waiting" },
     ];
-    // 2 — belgisiz, 3 — «bekor», 4 — «sotildi»: uchalasi ham so'rovsiz. 5 — kutilayotgan, belgisiz: o'zgarmaydi.
     const actions: Record<string, CourierBulkAction> = { "1": "sold", "3": "cancel", "4": "sold" };
-    expect(getCourierBulkFinalizeTasks(orders, actions)).toEqual([{ order: orders[0], action: "sold" }]);
-    expect(getCourierBulkCounts(orders, actions)).toEqual({ cancel: 0, sold: 1, tomorrow: 0, total: 5 });
-    // Pochtasi qabul qilinmagan belgisiz qator «belgilanmagan»ga kirmaydi (uni belgilab bo'lmaydi, o'z izohi bor).
-    expect(getCourierBulkUnmarkedCount(orders, actions)).toBe(1);
-    const kept = getCourierBulkKept(orders, actions);
-    expect(kept.awaitingPost).toEqual([orders[1], orders[2], orders[3]]);
-    expect(kept.unmarked).toEqual([orders[4]]);
+    expect(getCourierBulkFinalizeTasks(orders, actions)).toEqual([
+      { order: orders[0], action: "sold" },
+      { order: orders[2], action: "cancel" },
+      { order: orders[3], action: "sold" },
+    ]);
+    expect(getCourierBulkCounts(orders, actions)).toEqual({ cancel: 1, sold: 2, tomorrow: 0, total: 5 });
+    expect(getCourierBulkUnmarkedCount(orders, actions)).toBe(2);
+    expect(getCourierBulkKept(orders, actions).unmarked).toEqual([orders[1], orders[4]]);
     const ids = (result: "all" | "sold" | "cancel" | "unmarked") =>
       filterCourierBulkOrders(orders as unknown as CourierBulkOrder[], actions, { query: "", result }).map((item) => item.id);
     expect(ids("all")).toEqual(["1", "2", "3", "4", "5"]);
-    expect(ids("sold")).toEqual(["1"]);
-    expect(ids("cancel")).toEqual([]);
-    expect(ids("unmarked")).toEqual(["5"]);
+    expect(ids("sold")).toEqual(["1", "4"]);
+    expect(ids("cancel")).toEqual(["3"]);
+    expect(ids("unmarked")).toEqual(["2", "5"]);
   });
 
   it("«Sotiladi» filtri bu yerdan sotilmaydiganni chiqarmaydi (menejerda kuryer qo'lidagi); «Belgilanmagan» — barcha belgisizlar", () => {
@@ -300,21 +292,20 @@ describe("courierBulk model — yopilmaydigan qatorlar", () => {
 });
 
 describe("CourierBulkPage — 30 ta: 20 sotildi, 5 bekor, 5 ertaga", () => {
-  it("⭐ 20 ta «sotildi» (3 tasi pochtasi qabul qilinmagan), 5 bekor, 5 ertaga — har biri to'g'ri yakunlanadi", async () => {
-    // Foydalanuvchi ssenariysi: 20 tadan 3 tasi skan bilan olingan, pochtasi qabul qilinmagan (holat «yo'lda») —
-    // tuzatishgacha ular ham «sotildi» bo'lib ketardi va backend rad etardi (ro'yxatda eski holatida qolardi).
-    // Sukut natija yo'q: qolgan 17 tasi qatordagi «Sotildi» bilan aniq belgilanadi; pochtasi qabul qilinmagan 3 tasini
-    // belgilab bo'lmaydi.
-    const awaitingIds = ["128", "129", "130"];
+  it("⭐ 20 ta «sotildi» (3 tasi skan bilan olingan), 5 bekor, 5 ertaga — har biri to'g'ri yakunlanadi", async () => {
+    // Foydalanuvchi ssenariysi: 20 tadan 3 tasi skan bilan olingan. COURIER-SCAN (ega, 2026-11-17): skan = qabul —
+    // ular ham «Kutilmoqda» va kuryerda, boshqalari kabi to'siqsiz sotiladi (ilgari «pochtasi qabul qilinmagan» deb
+    // bloklanardi). Sukut natija yo'q: 20 tasi qatordagi «Sotildi» bilan aniq belgilanadi.
+    const scanTakenIds = ["128", "129", "130"];
     const orders = Array.from({ length: 30 }, (_, index) => {
       const id = String(101 + index);
-      return order(id, `Mijoz ${id}`, awaitingIds.includes(id) ? SCAN_TAKEN : {});
+      return order(id, `Mijoz ${id}`, scanTakenIds.includes(id) ? SCAN_TAKEN : {});
     });
     const cancelIds = ["101", "102", "103", "104", "105"];
     const tomorrowIds = ["106", "107", "108", "109", "110"];
     mocks.get.mockResolvedValueOnce(page(orders));
-    // Yakunlashdan keyin serverda faqat ertaga qoldirilganlar va pochtasi qabul qilinmaganlar qoladi.
-    mocks.get.mockResolvedValue(page(orders.filter((item) => [...tomorrowIds, ...awaitingIds].includes(item.id))));
+    // Yakunlashdan keyin serverda faqat ertaga qoldirilganlar qoladi.
+    mocks.get.mockResolvedValue(page(orders.filter((item) => tomorrowIds.includes(item.id))));
     const user = userEvent.setup();
     const { queryClient } = renderWithProviders(<CourierBulkPage />);
     // Haqiqiy `SellOrder` / `CancelOrder` kabi: javob tarmoqdan keladi (kamida bitta macrotask), keyin ["orders"] eskiradi.
@@ -327,45 +318,39 @@ describe("CourierBulkPage — 30 ta: 20 sotildi, 5 bekor, 5 ertaga", () => {
     mocks.cancel.mockImplementation(succeed);
 
     expect(await screen.findByText("Mijoz 127")).toBeInTheDocument();
-    for (const id of awaitingIds) {
-      expect(within(rowOf(`Mijoz ${id}`)).getByTestId("courier-bulk-awaiting-post")).toBeInTheDocument();
-      expect(radio(`Mijoz ${id}`, "Sotildi")).toBeDisabled();
+    for (const id of scanTakenIds) {
+      expect(within(rowOf(`Mijoz ${id}`)).queryByTestId("courier-bulk-awaiting-post")).not.toBeInTheDocument();
+      expect(radio(`Mijoz ${id}`, "Sotildi")).toBeEnabled();
     }
-    const soldIds = orders
-      .map((item) => item.id)
-      .filter((id) => ![...cancelIds, ...tomorrowIds, ...awaitingIds].includes(id));
-    expect(soldIds).toHaveLength(17);
+    const soldIds = orders.map((item) => item.id).filter((id) => ![...cancelIds, ...tomorrowIds].includes(id));
+    expect(soldIds).toHaveLength(20);
     await markSold(user, soldIds.map((id) => `Mijoz ${id}`));
     for (const id of cancelIds) await user.click(radio(`Mijoz ${id}`, "Bekor"));
     for (const id of tomorrowIds) await user.click(radio(`Mijoz ${id}`, "Ertaga"));
-    expect(screen.getByRole("group", { name: "Kun yakuni" })).toHaveTextContent(/Sotiladi\s*17\s*ta/);
+    expect(screen.getByRole("group", { name: "Kun yakuni" })).toHaveTextContent(/Sotiladi\s*20\s*ta/);
 
     const dialog = await finalize(user);
     expect(dialog).toHaveTextContent("30 ta buyurtma: quyidagilar bajariladi");
-    expect(dialog).toHaveTextContent("17 ta sotilgan deb belgilanadi");
+    expect(dialog).toHaveTextContent("20 ta sotilgan deb belgilanadi");
     expect(dialog).toHaveTextContent("Sotilgan holatiga o'tadi");
     expect(dialog).toHaveTextContent("5 ta bekor qilinadi");
     expect(dialog).toHaveTextContent("5 tasi ertaga qoladi");
-    expect(dialog).toHaveTextContent("3 ta buyurtma pochtasi qabul qilinmagan");
-    // Hammasi belgilangan (pochtasi qabul qilinmaganlar «belgilanmagan»ga kirmaydi).
+    expect(dialog).not.toHaveTextContent("pochtasi qabul qilinmagan");
     expect(dialog).not.toHaveTextContent("belgilanmagan");
-    expect(within(dialog).getByRole("note")).toHaveTextContent("22 ta buyurtma holati darhol o'zgaradi.");
+    expect(within(dialog).getByRole("note")).toHaveTextContent("25 ta buyurtma holati darhol o'zgaradi.");
     const getsBefore = mocks.get.mock.calls.length;
     await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
 
-    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(17));
+    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(20));
     expect(mocks.cancel).toHaveBeenCalledTimes(5);
     expect(mocks.sell.mock.calls.map(([call]) => call.orderId).sort()).toEqual(soldIds);
     expect(mocks.cancel.mock.calls.map(([call]) => call.orderId).sort()).toEqual(cancelIds);
-    expect(await screen.findByText(/22 ta buyurtma muvaffaqiyatli yakunlandi/)).toBeInTheDocument();
+    expect(await screen.findByText(/25 ta buyurtma muvaffaqiyatli yakunlandi/)).toBeInTheDocument();
 
-    // Ro'yxatda: ertaga qoldirilganlar belgisi bilan (kuryer nimani tanlagani ko'rinib tursin), pochtasi qabul
-    // qilinmaganlar sababi bilan; bajarilganlar yo'q.
+    // Ro'yxatda: ertaga qoldirilganlar belgisi bilan (kuryer nimani tanlagani ko'rinib tursin); bajarilganlar yo'q.
     await waitFor(() => expect(screen.queryByText("Mijoz 127")).not.toBeInTheDocument());
     for (const id of tomorrowIds) expect(radio(`Mijoz ${id}`, "Ertaga")).toBeChecked();
-    for (const id of awaitingIds) {
-      expect(within(rowOf(`Mijoz ${id}`)).getByTestId("courier-bulk-awaiting-post")).toBeInTheDocument();
-    }
+    for (const id of scanTakenIds) expect(screen.queryByText(`Mijoz ${id}`)).not.toBeInTheDocument();
     expect(screen.queryByText("Mijoz 101")).not.toBeInTheDocument();
     // Yakunlash paytida ro'yxat har muvaffaqiyatdan keyin qayta so'ralmaydi — oxirida bir marta.
     expect(mocks.get.mock.calls.length - getsBefore).toBeLessThanOrEqual(1);
@@ -405,7 +390,7 @@ describe("CourierBulkPage — 30 ta: 20 sotildi, 5 bekor, 5 ertaga", () => {
     expect(screen.queryByTestId("courier-bulk-row-error")).not.toBeInTheDocument();
   });
 
-  it("xato oynasi so'rovsiz qoldirilganlarni ham aytadi (belgilanmagan, ertaga, pochtasi qabul qilinmagan)", async () => {
+  it("xato oynasi so'rovsiz qoldirilganlarni ham aytadi (belgilanmagan, ertaga)", async () => {
     respondWith([
       order("10", "Ali"),
       order("11", "Vali"),
@@ -428,9 +413,10 @@ describe("CourierBulkPage — 30 ta: 20 sotildi, 5 bekor, 5 ertaga", () => {
     expect(mocks.sell.mock.calls.map(([call]) => call.orderId).sort()).toEqual(["10", "11"]);
     expect(mocks.cancel).not.toHaveBeenCalled();
     expect(result).toHaveTextContent("2 ta buyurtma yakunlanmadi");
-    expect(result).toHaveTextContent("1 ta belgilanmagan buyurtma o'zgarmadi.");
+    // COURIER-SCAN: Soli (skan bilan olingan, kutilmoqda) — oddiy belgilanmagan qator.
+    expect(result).toHaveTextContent("2 ta belgilanmagan buyurtma o'zgarmadi.");
     expect(result).toHaveTextContent("1 ta buyurtma ertaga qoldirildi.");
-    expect(result).toHaveTextContent("1 ta buyurtma pochtasi qabul qilinmagan — «Pochta»da qabul qilgach yakunlang.");
+    expect(result).not.toHaveTextContent("pochtasi qabul qilinmagan");
     expect(result).not.toHaveTextContent("muvaffaqiyatli yakunlandi");
   });
 
@@ -575,79 +561,48 @@ describe("CourierBulkPage — sukut natija yo'q (ega 2026-11-05)", () => {
   }, 30_000);
 });
 
-describe("CourierBulkPage — pochtasi qabul qilinmagan posilka (kuryer)", () => {
+describe("CourierBulkPage — skan bilan olingan posilka (kuryer, COURIER-SCAN)", () => {
   beforeEach(() => {
     respondWith([order("10", "Ali"), order("11", "Vali"), order("12", "Soli", SCAN_TAKEN)]);
   });
 
-  it("⭐ qatorda sabab, natija o'chiq; tasdiq oynasi aytadi; so'rov faqat kutilayotganlarga", async () => {
+  it("⭐ skan bilan olingan qator to'siqsiz: sababsiz, natija faol, «Belgilanmagan»; tanlansa yuboriladi", async () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
     expect(await screen.findByText("Soli")).toBeInTheDocument();
-    expect(within(rowOf("Soli")).getByTestId("courier-bulk-awaiting-post")).toHaveTextContent(
-      "Pochta hali qabul qilinmagan — avval «Pochta»da qabul qiling",
-    );
-    expect(radio("Soli", "Bekor")).toBeDisabled();
-    expect(radio("Soli", "Sotildi")).toBeDisabled();
-    expect(within(rowOf("Soli")).queryByText("Belgilanmagan")).not.toBeInTheDocument();
-    // Sukut natija yo'q: kutilayotganlar belgilanmagan, «Sotiladi» — 0.
-    expectNoResult("Ali");
-    expectNoResult("Vali");
-    expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument();
+    expect(within(rowOf("Soli")).queryByTestId("courier-bulk-awaiting-post")).not.toBeInTheDocument();
+    expect(radio("Soli", "Bekor")).toBeEnabled();
+    expect(radio("Soli", "Sotildi")).toBeEnabled();
+    expect(within(rowOf("Soli")).getByText("Belgilanmagan")).toBeInTheDocument();
     const summary = screen.getByRole("group", { name: "Kun yakuni" });
     expect(summary).toHaveTextContent(/Kutilayotgan\s*3/);
-    expect(summary).toHaveTextContent(/Sotiladi\s*0\s*ta/);
-    expect(summary).toHaveTextContent("Belgilanmagan: 2 ta — o'zgarmaydi");
-    // Kamera eslatmasi belgilanmaganlarni sanaydi (pochtasi qabul qilinmagani kirmaydi) — ular o'zgarmaydi.
-    expect(getActiveScanTarget()?.listNote).toBe("Belgilanmagan 2 ta buyurtma o'zgarmaydi.");
+    expect(summary).toHaveTextContent("Belgilanmagan: 3 ta — o'zgarmaydi");
+    expect(getActiveScanTarget()?.listNote).toBe("Belgilanmagan 3 ta buyurtma o'zgarmaydi.");
 
-    await markSold(user, ["Ali"]);
-    // Belgilanmagan qatorda «Sotildi» bosilsa — oddiy tanlov kabi aniq belgi qo'yiladi.
-    expect(radio("Ali", "Sotildi")).toBeChecked();
-    expectNoResult("Vali");
-    expect(getActiveScanTarget()?.listNote).toBe("Belgilanmagan 1 ta buyurtma o'zgarmaydi.");
-    await markSold(user, ["Vali"]);
+    await markSold(user, ["Ali", "Soli"]);
+    await user.click(radio("Vali", "Bekor"));
     expect(summary).toHaveTextContent(/Sotiladi\s*2\s*ta/);
-    expect(within(rowOf("Ali")).queryByText("Belgilanmagan")).not.toBeInTheDocument();
 
     const dialog = await finalize(user);
     expect(dialog).toHaveTextContent("2 ta sotilgan deb belgilanadi");
-    expect(dialog).not.toHaveTextContent("belgilanmagan");
-    expect(dialog).toHaveTextContent("1 ta buyurtma pochtasi qabul qilinmagan");
-    expect(dialog).toHaveTextContent("O'zgarmaydi — avval «Pochta»da pochtani qabul qiling");
-    expect(dialog).not.toHaveTextContent("ertaga qoladi");
+    expect(dialog).toHaveTextContent("1 ta bekor qilinadi");
+    expect(dialog).not.toHaveTextContent("pochtasi qabul qilinmagan");
     await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
 
     await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(2));
-    expect(mocks.sell).not.toHaveBeenCalledWith(expect.objectContaining({ orderId: "12" }));
-    expect(mocks.cancel).not.toHaveBeenCalled();
-    expect(
-      await screen.findByText(/1 ta buyurtma pochtasi qabul qilinmagan — «Pochta»da qabul qilgach yakunlang\./),
-    ).toBeInTheDocument();
-    expect(mocks.sell).toHaveBeenCalledTimes(2);
+    expect(mocks.sell).toHaveBeenCalledWith(expect.objectContaining({ orderId: "12" }));
+    expect(mocks.cancel).toHaveBeenCalledWith(expect.objectContaining({ orderId: "11" }));
   });
 
-  it("skan: pochtasi qabul qilinmagan posilka belgilanmaydi, ogohlantirish chiqadi", async () => {
+  it("skan: skan bilan olingan posilka ham belgilanadi (ogohlantirishsiz)", async () => {
     renderWithProviders(<CourierBulkPage />);
 
     expect(await screen.findByText("Soli")).toBeInTheDocument();
     await scan("tok-12-qr");
-    expect(await screen.findByText("Pochta hali qabul qilinmagan")).toBeInTheDocument();
-    expect(radio("Soli", "Bekor")).not.toBeChecked();
-    expect(mocks.feedback).toHaveBeenCalledWith("error", "Pochta hali qabul qilinmagan — avval «Pochta»da qabul qiling");
-  });
-
-  it("faqat pochtasi qabul qilinmaganlar qolsa — so'rov yo'q, sababi aytiladi", async () => {
-    respondWith([order("12", "Soli", SCAN_TAKEN)]);
-    const user = userEvent.setup();
-    renderWithProviders(<CourierBulkPage />);
-
-    expect(await screen.findByText("Soli")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
-    expect(await screen.findByText(/Yakunlanadigan buyurtma yo'q\. 1 ta buyurtma pochtasi qabul qilinmagan/)).toBeInTheDocument();
-    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-    expect(mocks.sell).not.toHaveBeenCalled();
+    await waitFor(() => expect(within(rowOf("Soli")).queryByText("Belgilanmagan")).not.toBeInTheDocument());
+    expect(screen.queryByText("Pochta hali qabul qilinmagan")).not.toBeInTheDocument();
+    expect(mocks.feedback).not.toHaveBeenCalledWith("error", expect.anything());
   });
 });
 
