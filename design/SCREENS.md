@@ -910,7 +910,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Paketlar» (`batches`) — superadmin, admin, manager (HQ · PICKUP · HYBRID)
 - **Holat:** v2
-- **Izoh:** Tab URL'da: ?tab=new|old|return. Superadmin uchun ro'yxat ostida «Filiallar — operatsiyalar» (pages/branch-ops, maket superadmin-ops-branches, Ops'dan ko'chgan, F2NzXpMv).
+- **Izoh:** Tab URL'da: ?tab=new|old|return. Superadmin uchun ro'yxat ostida «Filiallar — operatsiyalar» (pages/branch-ops, maket superadmin-ops-branches, Ops'dan ko'chgan, F2NzXpMv). oP02jE2P (2026-11-17): maketdagi «Paketni bekor qilish» kartasi (qo'lda paket raqami + sabab) olib tashlandi — raqamda adashib boshqa paket bekor qilinmasin; bekor qilish faqat /batches/:id da. «Yangi buyurtmali filiallar» jadvali qoldi, qator / karta — filial sahifasiga (/branches/:id) havola.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -928,12 +928,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/batches/:id` — Paket tafsiloti (menejer: asosiy filialga jo'natish yoki faqat o'qish; qaytarish paketi ham shu sahifa)
 
-- **Fayllar:** `src/pages/batches/ui/BatchDetailPage.tsx` · `src/pages/batches/ui/BatchInfoCard.tsx` · `src/pages/batches/ui/BatchQrCard.tsx` · `src/pages/batches/ui/BatchHistoryCard.tsx` · `src/pages/batches/ui/BatchPrintMenu.tsx` · `src/pages/batches/lib/batchReceipt.ts` · `src/pages/batches/ui/BatchQrCode.tsx` · `src/pages/batches/lib/batchOrderMailAdapter.ts` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts`
+- **Fayllar:** `src/pages/batches/ui/BatchDetailPage.tsx` · `src/pages/batches/ui/BatchInfoCard.tsx` · `src/pages/batches/ui/BatchQrCard.tsx` · `src/pages/batches/ui/BatchHistoryCard.tsx` · `src/pages/batches/ui/BatchPrintMenu.tsx` · `src/pages/batches/lib/batchReceipt.ts` · `src/pages/batches/ui/BatchQrCode.tsx` · `src/pages/batches/lib/batchOrderMailAdapter.ts` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts` · `src/pages/batches/ui/CancelBatchDialog.tsx` · `src/pages/batches/model/batchCancel.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBatches` (access.ts → canViewBatchesPage)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi. Buyurtmalar kartasi, statistika va jo'natish tugmasi /mails/:id bilan umumiy (pages/mails/detail/ui — batchOrderMailAdapter.ts orqali). Filial nomlari (3HKvAyhm, backend 0507e22) — GET transfer-batches/:id javobidagi source_branch / destination_branch {id, name} dan, barcha rollarda (menejer ham), GET branches/:id chaqirilmaydi; «Tarix» — GET transfer-batches/:id/history (eng yangisi tepada, bajargan — user.name, noma'lum harakat — action_label; o'z yuklanish/xato holati; logistda so'ralmaydi — 403). Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
+- **Izoh:** Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi. Buyurtmalar kartasi, statistika va jo'natish tugmasi /mails/:id bilan umumiy (pages/mails/detail/ui — batchOrderMailAdapter.ts orqali). Filial nomlari (3HKvAyhm, backend 0507e22) — GET transfer-batches/:id javobidagi source_branch / destination_branch {id, name} dan, barcha rollarda (menejer ham), GET branches/:id chaqirilmaydi; «Tarix» — GET transfer-batches/:id/history (eng yangisi tepada, bajargan — user.name, noma'lum harakat — action_label; o'z yuklanish/xato holati; logistda so'ralmaydi — 403). Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Paketni bekor qilish (Trello oP02jE2P, backend #684): sarlavhada «Paketni bekor qilish» (danger-soft, telefonda oxirgi qator, to'liq enli) — faqat «Yangi» (PENDING) paketda va bekor qila oladigan rolda: superadmin, admin, manba filial menejeri / registratori (ko'ruvchi filiali ma'lum va boshqa bo'lsa — yo'q; noma'lum bo'lsa — ko'rsatiladi, backend 403). Oyna: «Paketni bekor qilasizmi?», «Paket B-… · Yaratilgan: …», Qayerdan → Qayerga, holat, buyurtmalar soni, summa, oqibatlar, «Sabab *» (≥ 10 belgi), «Orqaga» · «Paketni bekor qilish» → POST transfer-batches/:id/cancel { reason }. 409 / batch_in_transit — «Paket yo'lda — jo'natilgan paketni bekor qilib bo'lmaydi»; batch_received / batch_already_cancelled / batch_not_cancellable / 403 / 404 — o'z matni, tugma o'chadi; boshqa 4xx — backend matni (holat kodisiz); tarmoq / 5xx — umumiy matn. Rad etilsa ham paket qayta o'qiladi. Maket yo'q — eng yaqini: superadmin-integrations-settlement-cancel-dialog.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -3328,6 +3328,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/batches/lib/batchFormat.ts` | `/batches` |
 | `src/pages/batches/lib/batchOrderMailAdapter.ts` | `/batches/:id` |
 | `src/pages/batches/lib/batchReceipt.ts` | `/batches/:id` |
+| `src/pages/batches/model/batchCancel.ts` | `/batches/:id` |
 | `src/pages/batches/model/batchView.ts` | `/batches` |
 | `src/pages/batches/ui/BatchDetailPage.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchHistoryCard.tsx` | `/batches/:id` |
@@ -3336,6 +3337,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/batches/ui/BatchQrCard.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchQrCode.tsx` | `/batches/:id` |
 | `src/pages/batches/ui/BatchesPage.tsx` | `/batches` |
+| `src/pages/batches/ui/CancelBatchDialog.tsx` | `/batches/:id` |
 | `src/pages/branch-dashboard/index.tsx` | `/branch-dashboard` |
 | `src/pages/branch-dashboard/ui/BranchCards.tsx` | `/branch-dashboard` |
 | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | `/branch-dashboard` |

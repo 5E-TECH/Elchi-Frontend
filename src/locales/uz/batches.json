@@ -114,5 +114,42 @@
       "hint": "Ofis printeri"
     },
     "sheetDescription": "Paket cheki chop etiladi: termal yorliq yoki A5 varaq"
+  },
+  "cancel": {
+    "action": "Paketni bekor qilish",
+    "title": "Paketni bekor qilasizmi?",
+    "subtitle": "Paket {{id}} · Yaratilgan: {{date}}",
+    "status": "Holat",
+    "orders": "Buyurtmalar",
+    "amount": "Summa",
+    "consequenceOrders": "{{value}} ta buyurtma paketdan chiqariladi va yana «Yangi» holatiga qaytadi",
+    "consequenceOrdersReturn": "{{value}} ta buyurtma paketdan chiqariladi",
+    "consequenceKeep": "Paket o'chirilmaydi — ro'yxatda «Bekor qilingan» bo'lib qoladi",
+    "reason": "Sabab",
+    "reasonHint": "{{count}} ta belgi · kamida {{min}} ta",
+    "reasonRequired": "Sababni yozing — kamida {{min}} ta belgi",
+    "reasonTooShort": "Sabab kamida {{min}} ta belgidan iborat bo'lishi kerak (hozir {{count}} ta)",
+    "back": "Orqaga",
+    "confirm": "Paketni bekor qilish",
+    "cancelling": "Bekor qilinmoqda…",
+    "success": "Paket bekor qilindi",
+    "successDescription": "Paket {{id}} · {{value}} ta buyurtma paketdan chiqarildi",
+    "errors": {
+      "inTransitTitle": "Paket yo'lda — jo'natilgan paketni bekor qilib bo'lmaydi",
+      "inTransit": "Buyurtmalarni manzil filial qabul qiladi. Paket holati yangilandi.",
+      "receivedTitle": "Qabul qilingan paketni bekor qilib bo'lmaydi",
+      "received": "Paket manzil filialda qabul qilingan. Paket holati yangilandi.",
+      "alreadyCancelledTitle": "Paket allaqachon bekor qilingan",
+      "alreadyCancelled": "Paket holati yangilandi.",
+      "notCancellableTitle": "Bu holatdagi paketni bekor qilib bo'lmaydi",
+      "notCancellable": "Faqat hali jo'natilmagan (yangi) paket bekor qilinadi. Paket holati yangilandi.",
+      "forbiddenTitle": "Bu paketni bekor qilishga ruxsatingiz yo'q",
+      "forbidden": "Paketni uni yig'gan filialning menejeri yoki registratori, admin yoki superadmin bekor qiladi.",
+      "notFoundTitle": "Paket topilmadi",
+      "notFound": "Paket o'chirilgan yoki havola noto'g'ri. Paketlar ro'yxatidan qayta oching.",
+      "failedTitle": "Paketni bekor qilib bo'lmadi",
+      "rejected": "So'rov rad etildi. Paket holatini tekshirib, qayta urinib ko'ring.",
+      "failed": "Server yoki tarmoq xatosi. Qayta urinib ko'ring."
+    }
   }
 }
