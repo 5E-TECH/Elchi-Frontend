@@ -32,19 +32,6 @@ const withGoOrderToken = (page: Page, handovers: HandoverBody[]) =>
   });
 
 /**
- * Ovozsiz: birinchi `keydown` skan ovozini «ochadi» (`shared/lib/scanner/feedback.ts` — `AudioContext` yaratiladi),
- * headless Chromium'da bu bosh oqimni ~100 ms band qiladi va skan oqimining 1-belgisi bilan 2-si orasida skaner
- * oralig'idan katta tanaffus paydo bo'ladi (sahifa skaneri 1-belgini tashlab yuboradi). Test tezkor tugmalar haqida —
- * ovozni o'chirib, vaqt aniq bo'ladi.
- */
-const withoutAudio = (page: Page) =>
-  page.addInitScript(() => {
-    for (const key of ["AudioContext", "webkitAudioContext"]) {
-      Object.defineProperty(window, key, { value: undefined, configurable: true, writable: true });
-    }
-  });
-
-/**
  * SARLAVHA TEZKOR TUGMALARI va USB SKANER (XctTEplG) — 1440px, haqiqiy shell (`widgets/header/ui/Header.tsx`).
  *
  * Muammo (prod, 2026-10-26): skaner kodni klaviatura kabi «yozadi»; QR matnida «g» dan keyin «o» bo'lsa, G → O
@@ -54,6 +41,10 @@ const withoutAudio = (page: Page) =>
  *
  * Sahifa — «Bekor qilinganlar → marketga topshirish» (`/new-orders/cancelled/:marketId`): market QR'i shu yerda
  * sahifada (maydonsiz) USB skaner bilan o'qiladi. Superadmin — buyurtmalar ochiladigan rol (G → O ruxsat).
+ *
+ * Ovoz yoqiq (kYa7c3sh): skan ovozi qulfi (`shared/lib/scanner/feedback.ts`) `AudioContext` ni skan oqimida
+ * yaratmaydi — avval birinchi `keydown` da yaratilib, bosh oqimni ~100–300 ms band qilardi va oqimning 1-belgisi
+ * bilan 2-si orasida skaner oralig'idan katta tanaffus paydo bo'lardi (shuning uchun bu test ovozsiz yurardi).
  */
 test.describe("Sarlavha tezkor tugmalari va USB skaner — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
@@ -63,7 +54,6 @@ test.describe("Sarlavha tezkor tugmalari va USB skaner — 1440px", () => {
   const MARKET_QR_WITH_GO = "MCR-201-GOgo-3g5o4c";
 
   test("⭐ skaner oqimidagi «G» → «O» sahifani o'zgartirmaydi; skan o'tadi, buyurtma tanlanadi", async ({ page }) => {
-    await withoutAudio(page);
     const { leaked, scanned, handovers } = await mockCancelledApi(page);
     await withGoOrderToken(page, handovers);
     await openHandover(page);
@@ -93,7 +83,6 @@ test.describe("Sarlavha tezkor tugmalari va USB skaner — 1440px", () => {
   });
 
   test("⭐ odam tezligida G, keyin O — buyurtmalar ochiladi (skandan keyin ham)", async ({ page }) => {
-    await withoutAudio(page);
     await mockCancelledApi(page);
     await openHandover(page);
 
