@@ -22,6 +22,9 @@
 //              tab ochish): `--click 'role=button[name="Barchasini tanlash"]' --click 'text=HQ kuryeriga'`. Bosishdan
 //              keyin surat faqat oyna balandligida (dialog ko'rinishi), sahifa cho'zilmaydi. --tag <nom> — fayl nomiga
 //              qo'shiladi (bir route'ning bir nechta holati: `mails-74-courier--desktop-light.png`).
+//            · --fill '<Playwright selektori>::<qiymat>' (takrorlanadi) — maydonga yozish, `--click` lar bilan bitta
+//              ketma-ketlikda (masalan formani o'zgartirib, keyin «Saqlash» → tasdiq oynasi):
+//              `--fill 'role=textbox[name="Narxni yaxlitlash"]::1000' --click 'role=button[name="Qoidalarni saqlash"]'`.
 // Natija: design/shots/app/<route>--<qurilma>-<mavzu>.png (rol/til sukutdan farq qilsa nomga qo'shiladi:
 // <route>-<rol>[-<filial turi>]-<til>--…; filial turi faqat sukutdan farq qilsa). design/shots git'ga kirmaydi.
 // Har shot uchun JSON hisobot:
@@ -61,7 +64,7 @@ const MOCK_API = 'http://api.app-shot.test';
 
 // ───────────── argumentlar ─────────────
 const args = process.argv.slice(2);
-const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait', '--branch-type', '--width', '--sessions', '--click', '--tag'];
+const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait', '--branch-type', '--width', '--sessions', '--click', '--fill', '--tag'];
 const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
 const fail = (message) => { console.error(message); process.exit(1); };
 const device = opt('--device');
@@ -74,8 +77,15 @@ const branchTypeArg = opt('--branch-type');
 const widthArg = opt('--width');
 const sessionsArg = opt('--sessions');
 const tagArg = opt('--tag');
-/** `--click` qiymatlari (takrorlanadi) — yozilgan tartibda. */
-const clicks = args.flatMap((a, i) => (a === '--click' && args[i + 1] ? [args[i + 1]] : []));
+/** `--click` / `--fill` amallari (takrorlanadi) — yozilgan tartibda. */
+const clicks = args.flatMap((a, i) => {
+  const value = args[i + 1];
+  if (!value) return [];
+  if (a === '--click') return [{ selector: value }];
+  if (a !== '--fill') return [];
+  const at = value.lastIndexOf('::');
+  return at > 0 ? [{ selector: value.slice(0, at), fill: value.slice(at + 2) }] : [];
+});
 const width = widthArg ? Number(widthArg) : 0;
 const branchType = branchTypeArg === 'none' ? null : (branchTypeArg ?? DEFAULT_BRANCH_TYPE[role] ?? null);
 const routes = args.filter((a, i) => !a.startsWith('--') && !FLAGS.includes(args[i - 1]));
@@ -308,13 +318,37 @@ const DELIVERY_TARIFF_ROWS = [
   id: String(index + 1), tariff_id, base_price, extra_per_kg, days_min, days_max,
   valid_from: '2026-10-08T00:00:00+05:00', createdAt: '2026-10-08T09:00:00+05:00', is_current: true, is_scheduled: false,
 }));
+/**
+ * B0ILd7YI: kelajakdagi versiyalar — «Markazgacha» rejalashtirilgan (jadval ostida «Bekor qilish»), «Uygacha»
+ * bekor qilingan (tarixda «Bekor qilingan»). Oynani ochish:
+ *   npm run app:shot -- /delivery-tariffs --tag cancel --click 'role=button[name=/rejalashtirilgan tarifni bekor qilish/]'
+ */
+const inDays = (days) => new Date(Date.now() + days * 86_400_000).toISOString();
+const DELIVERY_TARIFF_FUTURE = [
+  {
+    id: '9', tariff_id: 'center', base_price: 40000, extra_per_kg: 4500, days_min: 1, days_max: 2, valid_from: inDays(7),
+    createdAt: inDays(-1), created_by_name: 'Ilova skrinshoti', is_current: false, is_scheduled: true, is_cancelled: false,
+  },
+  {
+    id: '8', tariff_id: 'address', base_price: 65000, extra_per_kg: 5000, days_min: 2, days_max: 3, valid_from: inDays(3),
+    createdAt: inDays(-2), created_by_name: 'Ilova skrinshoti', is_active: false, cancelled_at: inDays(-1),
+    cancelled_by_name: 'Ilova skrinshoti', is_current: false, is_scheduled: false, is_cancelled: true,
+  },
+];
 const DELIVERY_SETTINGS = {
   id: '2', volumetric_divisor: 5000, volumetric_from_kg: 3, first_kg_included: 1, min_billable_kg: 0.1,
   billable_step_kg: 0.1, round_to: 500, pickup_fee: 20000, pickup_free_from_count: 10, express_multiplier: 1.4,
+  min_delivery_price: 15000, extra_cost_limit_amount: null,
 };
 const deliveryPricingMock = (path) => {
   if (path === 'delivery/tariffs') {
-    return { statusCode: 200, data: { current: Object.fromEntries(DELIVERY_TARIFF_ROWS.map((row) => [row.tariff_id, row])), versions: DELIVERY_TARIFF_ROWS } };
+    return {
+      statusCode: 200,
+      data: {
+        current: Object.fromEntries(DELIVERY_TARIFF_ROWS.map((row) => [row.tariff_id, row])),
+        versions: [...DELIVERY_TARIFF_FUTURE, ...DELIVERY_TARIFF_ROWS],
+      },
+    };
   }
   if (path === 'delivery/pricing-settings') return { statusCode: 200, data: DELIVERY_SETTINGS };
   if (path === 'delivery/pricing-settings/history') {
@@ -750,13 +784,12 @@ try {
           .catch(() => false);
         if (!ready) errors.push(`wait: ${waitFor ?? '<main> kontenti'} 30 s ichida chiqmadi (splash yoki xato sahifasi)`);
         else await page.waitForTimeout(300);
-        // `--click`: oyna / tab ochish (tartib bilan); topilmasa — hisobotda xato, surat baribir olinadi.
-        for (const selector of clicks) {
-          await page
-            .locator(selector)
-            .first()
-            .click({ timeout: 15000 })
-            .catch((e) => errors.push(`click ${selector}: ${String(e.message ?? e).split('\n')[0]}`));
+        // `--click` / `--fill`: oyna / tab ochish, maydonga yozish (tartib bilan); topilmasa — hisobotda xato, surat
+        // baribir olinadi.
+        for (const { selector, fill } of clicks) {
+          const target = page.locator(selector).first();
+          await (fill === undefined ? target.click({ timeout: 15000 }) : target.fill(fill, { timeout: 15000 }))
+            .catch((e) => errors.push(`${fill === undefined ? 'click' : 'fill'} ${selector}: ${String(e.message ?? e).split('\n')[0]}`));
           await page.waitForTimeout(500);
         }
         // Bo'lim yuklanish chizig'i (shell `RouteProgress`) so'nguncha — u suratda qolmasin.
