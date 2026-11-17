@@ -14,6 +14,12 @@ import { metricsKey } from "./metrics";
  * (javobda `cashbox_posted`), bekor qilinsa — teskari chiqim. Ekran operatorga buni aytadi: pulni kassaga qo'lda
  * qayta kiritsa, u ikki marta yoziladi.
  *
+ * ⚠️ «TO'LOV OLINDI» `Idempotency-Key` BILAN (ZE5zqXxu): pul kassaga yozilgani uchun qayta bosish yoki javobi
+ * kelmagan urinishni (tarmoq, 502–504) qayta yuborish ikkinchi kirim yozmasligi kerak. Backend (gateway
+ * `POST integrations/:id/remittances` + integration-service, N3yNa6rO) ayni kalitli takror so'rovga birinchi
+ * to'lovni qaytaradi (`idempotent_replay: true`, 200) — kassaga ikkinchi marta yozmaydi. Kalitni sahifa beradi
+ * (`pages/integrations/panels/settlement/remittanceKey.ts`): bitta mantiqiy to'lovga bitta, javob kelguncha o'zgarmaydi.
+ *
  * Qoldiq (`receivable-balance`): `outstanding_amount` — yopilmagan qarz, `advance_balance` — oldingi to'lovlardan
  * ortib qolgan hamkor avansi, `payable_amount = max(0, outstanding − advance)` — to'lanishi kerak.
  *
@@ -146,6 +152,11 @@ export interface RemittanceInput {
   amount: number;
   reference?: string;
   note?: string;
+  /**
+   * `Idempotency-Key` sarlavhasi (tanaga kirmaydi). Bitta mantiqiy to'lovga bitta kalit: qayta yuborishda AYNI kalit
+   * — backend birinchi to'lovni qaytaradi, kassaga ikkinchi kirim yozilmaydi.
+   */
+  idempotencyKey: string;
 }
 
 /**
@@ -154,6 +165,8 @@ export interface RemittanceInput {
  *   `unapplied_amount = amount + advance_applied − settled_amount` — musbat bo'lsa hamkorning YANGI avansi bo'ladi;
  *   `advance_balance` — to'lovdan keyingi hamkor avansi; `cashbox_posted` — summa MAIN kassaga kirim bo'lib yozildimi
  *   (`false` — yozilmadi, operator kassa tarixini tekshirishi kerak). Javobda `created_at` yo'q — vaqt mijoz vaqti.
+ *   `idempotent_replay: true` — shu `Idempotency-Key` bilan to'lov AVVAL yozilgan (javobi yo'qolgan urinish): backend
+ *   birinchi to'lovni qaytaradi, yangisini yozmaydi (summa — birinchisiniki; `advance_balance` bu javobda yo'q).
  *   `warning` (xom o'zbekcha matn) ataylab o'qilmaydi — ekran faqat i18n matn ko'rsatadi.
  */
 export interface RemittanceResult {
@@ -170,6 +183,8 @@ export interface RemittanceResult {
   advanceBalance: number | null;
   /** `true` — MAIN kassaga kirim yozildi; `false`/`null` — yozilmadi yoki noma'lum. */
   cashboxPosted: boolean | null;
+  /** Takroriy `Idempotency-Key` — to'lov avvalgi urinishda yozilgan, bu so'rov hech narsa yozmadi. */
+  replayed: boolean;
 }
 
 const optionalAmount = (v: unknown): number | null =>
@@ -188,6 +203,7 @@ export const normalizeRemittanceResult = (raw: unknown, sentAmount: number): Rem
     advanceApplied: Math.max(0, toAmount(data.advance_applied as string | number | undefined)),
     advanceBalance: optionalAmount(data.advance_balance),
     cashboxPosted: typeof posted === "boolean" ? posted : null,
+    replayed: data.idempotent_replay === true,
   };
 };
 
@@ -235,18 +251,26 @@ export const overpayPreview = (amount: number, summary: BalanceSummary | null): 
  * qoldig'i) va ulanish ko'rsatkichlari (`metricsKey` — «Umumiy holat» dagi COD «To'langan») yangilanadi. Summa MAIN kassaga ham yoziladi — kassa, moliya tarixi, bosh sahifa, daromad, KPI va
  * marketlar kalitlarini sahifa `refreshCashboxQueries` (entities/payments) bilan yangilaydi (entity'lar bir-birini
  * import qilmaydi).
+ *
+ * Xatoda ham hisob-kitob qayta o'qiladi (kutilmaydi — xabar darhol chiqsin): javobi kelmagan urinishda (tarmoq,
+ * 502–504) to'lov serverda yozilgan bo'lishi mumkin — qoldiq eskisicha qolib, operator ko'r-ko'rona qayta bosmasin.
+ * `retry` yo'q (mutatsiya sukuti) — qayta yuborish faqat qo'lda va AYNI `Idempotency-Key` bilan.
  */
 export const useCreateRemittance = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ integrationId, ...body }: RemittanceInput) =>
+    mutationFn: ({ integrationId, idempotencyKey, ...body }: RemittanceInput) =>
       api
-        .post(API_ENDPOINTS.INTEGRATIONS.REMITTANCES(integrationId), body)
+        .post(API_ENDPOINTS.INTEGRATIONS.REMITTANCES(integrationId), body, {
+          headers: { "Idempotency-Key": idempotencyKey },
+        })
         .then((res) => normalizeRemittanceResult(res.data, body.amount)),
-    onSuccess: () => {
+    onSettled: (_result, error) => {
       // Ko'rsatkichlar (24/48 soatlik) kutilmaydi — «Yozish» faqat hisob-kitob qayta o'qilguncha band.
       void client.invalidateQueries({ queryKey: metricsKey });
-      return client.invalidateQueries({ queryKey: [settlementKey] });
+      const refresh = client.invalidateQueries({ queryKey: [settlementKey] });
+      // Xatoda kutilmaydi — xabar darhol chiqsin.
+      return error ? undefined : refresh;
     },
   });
 };

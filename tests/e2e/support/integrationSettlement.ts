@@ -10,6 +10,9 @@ import { expect, type Page, type Route } from "@playwright/test";
  * IS-3: «Olingan to'lovlar» — `GET integrations/7/remittances` (`REMITTANCES`, maket qatorlari; `status` filtri
  * hisobga olinadi, so'rov parametrlari `remittanceQueries` ga), bekor qilish `POST …/remittances/:id/cancel` —
  * tanasi `cancels` ga, javobi `cancelResponse` (status bilan).
+ * ZE5zqXxu: har `POST …/remittances` ning `Idempotency-Key` sarlavhasi `remittanceKeys` ga; backend kabi ayni kalitli
+ * takror so'rovga birinchi to'lov qaytadi (`idempotent_replay: true`, 200). `dropFirstRemittance` — birinchi to'lov
+ * «yoziladi», lekin javobi yo'qoladi (tarmoq uzildi).
  * ⚠️ Hech qanday so'rov serverga KETMAYDI.
  */
 const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
@@ -98,9 +101,13 @@ export const mockSettlementApi = async (
     remittanceResponse = EXACT_RESPONSE as Record<string, unknown>,
     remittanceRows = REMITTANCES as Record<string, unknown>[],
     cancelResponse = { status: 200, body: wrap(CANCEL_RESPONSE) as unknown },
+    dropFirstRemittance = false,
   } = {},
 ) => {
   const remittances: Record<string, unknown>[] = [];
+  const remittanceKeys: string[] = [];
+  /** Yozilgan to'lovlar — `Idempotency-Key` bo'yicha (backend `idempotency_key` ustuni kabi). */
+  const recordedKeys = new Set<string>();
   const cancels: { id: string; body: Record<string, unknown> }[] = [];
   const remittanceQueries: Record<string, string>[] = [];
   const leaked: string[] = [];
@@ -146,6 +153,11 @@ export const mockSettlementApi = async (
     }
     if (path === "integrations/7/remittances" && request.method() === "POST") {
       remittances.push(request.postDataJSON() as Record<string, unknown>);
+      const key = request.headers()["idempotency-key"] ?? "";
+      remittanceKeys.push(key);
+      if (key && recordedKeys.has(key)) return reply(route, wrap({ ...remittanceResponse, idempotent_replay: true }), 200);
+      if (key) recordedKeys.add(key);
+      if (dropFirstRemittance && remittanceKeys.length === 1) return route.abort("connectionreset");
       return reply(route, wrap(remittanceResponse), 201);
     }
     if (request.method() !== "GET") {
@@ -168,7 +180,7 @@ export const mockSettlementApi = async (
     },
     { t: theme, r: role },
   );
-  return { remittances, cancels, remittanceQueries, leaked };
+  return { remittances, remittanceKeys, cancels, remittanceQueries, leaked };
 };
 
 export const openSettlement = async (page: Page) => {
