@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-regions-delivery-tariffs, admin-regions-delivery-tariffs
 import { useEffect, useId, useMemo } from "react";
-import { Info, Lock, Scale } from "lucide-react";
+import { ArrowRight, Check, Globe, History, Info, Lock, Scale, Zap } from "lucide-react";
 import { Controller, useForm, useWatch, type Control, type FieldErrors } from "react-hook-form";
 import type { UseQueryResult } from "@tanstack/react-query";
 import {
@@ -26,13 +26,16 @@ import {
   SkeletonLines,
   TextInput,
   TONE_SOFT,
+  useConfirm,
 } from "../../../shared/ui/primitives";
 import {
+  diffRules,
   parseRuleValue,
   RULES,
+  toPatchBody,
   toRulesForm,
-  toSettingsPatch,
   validateRule,
+  type RuleChange,
   type RulesField,
   type RulesFormValues,
 } from "../model/rulesForm";
@@ -65,6 +68,12 @@ export type PricingRulesCardProps = {
  * chegarasi» (`volumetric_from_kg`, ega 2026-10-25; maketda yo'q — eng yaqini shu kartaning maydon + misol naqshi)
  * jonli misol bilan. «Qoidalarni saqlash» — `PATCH /delivery/pricing-settings`, faqat o'zgargan maydonlar; «Bekor
  * qilish» — saqlangan qiymatlarga qaytaradi.
+ *
+ * B0ILd7YI: «Qoidalarni saqlash» faqat tasdiq oynasi orqali (maket yo'q — eng yaqini
+ * `superadmin-users-market-responsibles-settings-confirm`): «eski → yangi» qatorlari, «darhol kuchga kiradi», «sayt
+ * kalkulyatori ham o'zgaradi». Saqlash oyna ichida — yuklanishda tugmalar qulf, xato oynada (qayta bosish o'sha
+ * tanani yuboradi; backend o'zgarishsiz PATCH'da yangi versiya yozmaydi). Oxirida «Sotuvdagi narx chegaralari» —
+ * `min_delivery_price` va `extra_cost_limit_amount` (backend migratsiya 183; maket yo'q — shu kartaning maydon naqshi).
  */
 export const PricingRulesCard = ({ query, tariffs }: PricingRulesCardProps) => {
   const { t } = useTariffText();
@@ -86,8 +95,9 @@ export const PricingRulesCard = ({ query, tariffs }: PricingRulesCardProps) => {
 };
 
 const RulesForm = ({ settings, tariffs }: { settings: DeliveryPricingSettings; tariffs: DeliveryTariffsData | undefined }) => {
-  const { t, language, number, saveError } = useTariffText();
+  const { t, language, number, saveError, ruleValue } = useTariffText();
   const update = useUpdatePricingSettings();
+  const confirm = useConfirm();
   const saved = useMemo(() => toRulesForm(settings, language), [language, settings]);
   const {
     control,
@@ -102,20 +112,73 @@ const RulesForm = ({ settings, tariffs }: { settings: DeliveryPricingSettings; t
   }, [reset, saved]);
 
   const busy = update.isPending;
+  const labelOf: Record<RulesField, string> = {
+    firstKg: t("page.rules.firstKg"),
+    minKg: t("page.rules.minKg"),
+    step: t("page.rules.step"),
+    roundTo: t("page.rules.roundTo"),
+    express: t("page.rules.express"),
+    pickupFee: t("page.rules.pickup"),
+    pickupFree: t("page.rules.pickupFree"),
+    volumetricFrom: t("page.rules.volumetricFrom"),
+    minPrice: t("page.rules.minPrice"),
+    extraLimit: t("page.rules.extraLimit"),
+  };
+  // «Bobur Xolmatov → Nilufar Rashidova» naqshi (maket `*-market-responsibles-settings-confirm`); ekran o'quvchiga
+  // o'q o'rniga to'liq gap: «1,0 kg edi, 2,0 kg bo'ladi».
+  const changeValue = (change: RuleChange) => {
+    const from = ruleValue(change.field, change.from);
+    const to = ruleValue(change.field, change.to);
+    return (
+      <span className="text-sm">
+        <span aria-hidden="true" className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <span className="text-text-muted">{from}</span>
+          <ArrowRight size={14} className="shrink-0 text-text-subtle" />
+          <span className="font-semibold text-text">{to}</span>
+        </span>
+        <span className="sr-only">{t("page.rules.confirm.change", { from, to })}</span>
+      </span>
+    );
+  };
+
   const submit = handleSubmit(async (values) => {
-    const body = toSettingsPatch(values, dirtyFields);
     if (busy) return;
-    if (Object.keys(body).length === 0) {
+    // Faqat soni haqiqatan o'zgargan maydonlar («1,0» → «1» — o'zgarish emas).
+    const changes = diffRules(values, dirtyFields, settings);
+    if (changes.length === 0) {
       notify.info(t("page.rules.noChanges"));
       return;
     }
-    try {
-      const next = await update.mutateAsync(body);
-      if (next) reset(toRulesForm(next, language));
-      notify.success(t("page.rules.success"), { description: t("page.rules.successDescription") });
-    } catch (error) {
-      notify.error(t("page.rules.error"), { description: saveError(error) });
-    }
+    // Tana bosish paytida qotadi: xatodan keyin oynada qayta bosish aynan shu qiymatlarni yuboradi.
+    const body = toPatchBody(changes);
+    const saved = await confirm({
+      title: t("page.rules.confirm.title"),
+      description: t("page.rules.confirm.description", { count: changes.length }),
+      icon: Scale,
+      iconTone: "neutral",
+      rows: changes.map((change) => ({ label: labelOf[change.field], value: changeValue(change), stacked: true })),
+      consequences: [
+        { text: t("page.rules.confirm.immediate"), icon: Zap },
+        { text: t("page.rules.confirm.website"), icon: Globe },
+        { text: t("page.rules.confirm.journal"), icon: History },
+      ],
+      confirmLabel: t("page.rules.save"),
+      confirmIcon: Check,
+      loadingLabel: t("page.rules.saving"),
+      size: "md",
+      // Maket xato qutisi: qalin sarlavha + izoh. Vaqt tugasa ham oyna ochiq — qayta bosish xavfsiz (o'sha tana).
+      errorMessage: (error) => (
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="font-semibold">{t("page.rules.error")}</span>
+          <span>{saveError(error)}</span>
+        </span>
+      ),
+      onConfirm: async () => {
+        const next = await update.mutateAsync(body);
+        if (next) reset(toRulesForm(next, language));
+      },
+    });
+    if (saved) notify.success(t("page.rules.success"), { description: t("page.rules.successDescription") });
   });
 
   return (
@@ -153,6 +216,16 @@ const RulesForm = ({ settings, tariffs }: { settings: DeliveryPricingSettings; t
         <div className="flex min-w-0 flex-wrap items-start gap-4">
           <RuleField control={control} errors={errors} field="volumetricFrom" label={t("page.rules.volumetricFrom")} hint={t("page.rules.volumetricFromHint")} suffix={t("page.rules.unitKg")} readOnly={busy} className="flex-[1_1_260px]" />
           <VolumetricExample control={control} settings={settings} className="flex-[2_1_360px]" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-4 border-t border-border pt-5 max-md:pt-4">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h3 className="m-0 text-sm font-semibold text-text">{t("page.rules.saleTitle")}</h3>
+            <p className="m-0 text-[13px] text-text-muted">{t("page.rules.saleDescription")}</p>
+          </div>
+          <div className="flex min-w-0 flex-wrap items-start gap-4">
+            <RuleField control={control} errors={errors} field="minPrice" label={t("page.rules.minPrice")} hint={t("page.rules.minPriceHint")} mode="money" readOnly={busy} className="flex-[1_1_260px]" />
+            <RuleField control={control} errors={errors} field="extraLimit" label={t("page.rules.extraLimit")} hint={t("page.rules.extraLimitHint")} mode="money" readOnly={busy} className="flex-[1_1_260px]" />
+          </div>
         </div>
       </div>
       <div className="flex flex-wrap justify-end gap-3 border-t border-border px-5 py-4 max-md:px-4">

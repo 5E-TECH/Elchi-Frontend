@@ -81,7 +81,10 @@
       "noTariff": "No active tariff",
       "scheduled": "Scheduled: {{name}} — {{changes}}, from {{date}}.",
       "loading": "Loading tariffs",
-      "loadFailed": "Could not load tariffs"
+      "loadFailed": "Could not load tariffs",
+      "scheduledList": "Scheduled changes",
+      "cancelScheduled": "Cancel",
+      "cancelScheduledAria": "Cancel the scheduled {{name}} tariff from {{date}}"
     },
     "changes": {
       "base": "base price {{from}} → {{to}}",
@@ -175,7 +178,25 @@
         "integer": "Enter a whole number",
         "precision": "At most 3 decimal places"
       },
-      "noChanges": "No changes to the rules"
+      "noChanges": "No changes to the rules",
+      "valueKg": "{{value}} kg",
+      "valueTimes": "×{{value}}",
+      "saleTitle": "Sale price limits",
+      "saleDescription": "Applied when the pricing engine is connected to sales; an empty field uses the default rule.",
+      "minPrice": "Minimum delivery price",
+      "minPriceHint": "If the price calculated at sale is lower, this amount is charged. Empty — no limit (courier and branch shares only).",
+      "minPriceNone": "no limit",
+      "extraLimit": "Courier extra cost limit",
+      "extraLimitHint": "The maximum courier extra cost at sale. Empty — the difference between the «To the door» and «To the centre» base prices.",
+      "extraLimitDefault": "default (base price difference)",
+      "confirm": {
+        "title": "Save the calculation rules?",
+        "description": "The rules apply to all tariffs equally.",
+        "change": "was {{from}}, will be {{to}}",
+        "immediate": "Takes effect immediately — new prices are calculated with these rules",
+        "website": "The price calculator on the website changes immediately too",
+        "journal": "Logged in the journal: previous and new value"
+      }
     },
     "calculator": {
       "title": "Price calculator",
@@ -212,13 +233,33 @@
         "pickupFree": "free pickup {{from}} → {{to}}",
         "express": "express multiplier ×{{from}} → ×{{to}}",
         "pickupNever": "never",
-        "pickupFrom": "from {{count}} parcels"
-      }
+        "pickupFrom": "from {{count}} parcels",
+        "minPrice": "minimum delivery price {{from}} → {{to}}",
+        "extraLimit": "courier extra cost limit {{from}} → {{to}}"
+      },
+      "cancelled": "Cancelled",
+      "cancelledAt": "cancelled {{date}}",
+      "cancelledPlain": "cancelled"
     },
     "saveErrors": {
       "invalid": "Check the data — a value is invalid or the date has already passed.",
       "forbidden": "Only superadmins and admins can do this.",
       "conflict": "No active settings found — refresh the page and try again."
+    },
+    "cancelScheduled": {
+      "title": "Cancel the scheduled tariff?",
+      "description": "This version will not take effect. The current tariff stays the same.",
+      "confirm": "Cancel tariff",
+      "close": "Close",
+      "loading": "Cancelling...",
+      "from": "Was due to take effect from {{date}}",
+      "keepCurrent": "The current price and the website calculator stay the same",
+      "history": "The version stays in the history as «Cancelled» and is logged in the journal",
+      "error": "Could not cancel",
+      "conflict": "The tariff has already taken effect. To change the price, create a new version.",
+      "notFound": "This version was not found — the list has been refreshed.",
+      "success": "Scheduled tariff cancelled",
+      "successDescription": "{{name}}: no change from {{date}}, the current tariff stays in effect"
     }
   }
 }

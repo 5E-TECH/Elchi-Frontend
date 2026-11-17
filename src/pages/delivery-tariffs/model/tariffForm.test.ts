@@ -21,6 +21,8 @@ const CENTER = {
   createdAt: null,
   createdBy: null,
   createdByName: null,
+  cancelledAt: null,
+  cancelledByName: null,
 };
 
 describe("tarif oynasi — forma va tana", () => {
