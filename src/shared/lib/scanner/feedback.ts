@@ -79,9 +79,9 @@ const unlockAudio = async () => {
 };
 
 /**
- * Klaviaturadan keyin ovoz qulfi shuncha (ms) jimlikdan so'ng ochiladi — skaner oqimi (belgilar va Enter, oxirgi
- * belgidan Enter gacha `SCANNER_ENTER_GAP_MS`) tugagach. 1 s dan kam: Safari foydalanuvchi harakatini 1 s gacha
- * bo'lgan taymerga uzatadi — `resume()` baribir harakat ichida.
+ * Enter'siz klaviaturadan keyin (odam yozishi, Enter qo'shmaydigan skaner) ovoz qulfi shuncha (ms) jimlikdan so'ng
+ * ochiladi — oxirgi belgidan Enter gacha bo'lgan oraliqdan (`SCANNER_ENTER_GAP_MS`) uzun: taymer skan belgilari bilan
+ * uning Enter'i orasida otilmaydi. 1 s dan kam: Safari foydalanuvchi harakatini 1 s gacha bo'lgan taymerga uzatadi.
  */
 export const SCAN_AUDIO_KEY_UNLOCK_QUIET_MS = SCANNER_ENTER_GAP_MS + 50;
 /** Dekodlash bo'sh paytni shuncha (ms) dan ortiq kutmaydi (`requestIdleCallback` → `timeout`). */
@@ -109,9 +109,11 @@ const runWhenIdle = (task: () => void) => {
  * keladi va skanning boshi tushib qolardi («tok-10235» → «ok-10235»). Shuning uchun:
  *  - bosish / teginish (`pointerdown`, `touchstart`) — avvalgidek darhol: kontekst yaratiladi va `resume()` shu
  *    ishlovchining o'zida (iOS/Safari talabi; bu skaner oqimi emas);
- *  - klaviatura (`keydown`) — kontekst bo'lsa, `resume()` darhol (arzon); bo'lmasa u tugmalar to'xtagach
- *    (`SCAN_AUDIO_KEY_UNLOCK_QUIET_MS` jimlik) yaratiladi. Taymer tugma ishlovchisida qo'yiladi: Safari harakatni unga
- *    uzatadi, Chrome va Firefox esa sahifadagi avvalgi harakatni (sticky activation) yetarli deb biladi;
+ *  - klaviatura (`keydown`) — kontekst bo'lsa, `resume()` darhol (arzon). Kontekst yo'q bo'lsa, belgi tugmasida u
+ *    yaratilmaydi: Enter'da (skan oqimining oxiri — skaner tinglovchisi `capture` bosqichida, skan bu paytda allaqachon
+ *    o'qilgan) darhol, shu ishlovchining o'zida (iOS/Safari talabi); Enter kelmasa — tugmalar to'xtagach
+ *    (`SCAN_AUDIO_KEY_UNLOCK_QUIET_MS` jimlik). Taymer tugma ishlovchisida qo'yiladi: Safari harakatni unga uzatadi,
+ *    Chrome va Firefox esa sahifadagi avvalgi harakatni (sticky activation) yetarli deb biladi;
  *  - oldindan yuklangan fayllar qulf ochilgach bo'sh paytda dekodlanadi — tugma ishlovchisida emas.
  * Skan natijasi qulfdan oldin kelsa — `playScanSignal` kontekstni o'zi yaratadi (skan allaqachon o'qilgan).
  */
@@ -143,8 +145,9 @@ if (typeof window !== "undefined") {
     });
   };
 
-  const unlockAfterKeys = () => {
-    if (audioContext) {
+  const unlockAfterKeys = (event: KeyboardEvent) => {
+    // Enter — skanning oxiri: qolgan belgi yo'q, band bo'lish skanni buzmaydi; birinchi skan ovozi ham kutmaydi.
+    if (audioContext || event.key === "Enter") {
       unlockNow();
       return;
     }

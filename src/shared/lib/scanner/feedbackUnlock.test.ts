@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SCANNER_KEY_GAP_MS, useKeyboardScanner } from "../useKeyboardScanner";
+import { SCANNER_ENTER_GAP_MS, SCANNER_KEY_GAP_MS, useKeyboardScanner } from "../useKeyboardScanner";
 
 /**
  * OVOZ QULFI va BIRINCHI USB SKAN (kYa7c3sh). `new AudioContext()` bosh oqimni 100–300 ms band qiladi — u skanning
@@ -16,6 +16,8 @@ const BLOCK_MS = 150;
 const UNLOCK_EVENTS = ["pointerdown", "touchstart", "keydown"];
 
 const calls = { created: 0, resumed: 0, decoded: 0 };
+/** Kontekst yaratilgan paytda chaqiriladi — o'sha paytgacha nima o'qilganini tekshirish uchun. */
+let onCreate: (() => void) | null = null;
 let initialState: AudioContextState = "suspended";
 let resumeResult: () => Promise<void> = () => Promise.resolve();
 
@@ -25,6 +27,7 @@ class FakeAudioContext {
   destination = {};
   constructor() {
     calls.created += 1;
+    onCreate?.();
     // Bosh oqim band: shu orada kelgan tugmalar keyinroq ishlanadi.
     vi.setSystemTime(Date.now() + BLOCK_MS);
   }
@@ -82,15 +85,21 @@ const load = async () => {
   return feedback;
 };
 
-const press = (key: string) => window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+/** Brauzerdagidek sahifaga (`body`): `window` dagi skaner (`capture`) qulf tinglovchisidan (`bubble`) oldin ishlaydi. */
+const press = (key: string) => document.body.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
 const tap = (type: "pointerdown" | "touchstart") => window.dispatchEvent(new Event(type));
 
-/** USB skaner: belgilar `gapMs` oraliq bilan, so'ng Enter. */
-const usbScan = (value: string, gapMs = 10) => {
+/** USB skaner belgilari — `gapMs` oraliq bilan, Enter'siz. */
+const typeChars = (value: string, gapMs = 10) => {
   for (const char of value) {
     press(char);
     vi.advanceTimersByTime(gapMs);
   }
+};
+
+/** USB skaner: belgilar, so'ng Enter. */
+const usbScan = (value: string, gapMs = 10) => {
+  typeChars(value, gapMs);
   press("Enter");
 };
 
@@ -105,6 +114,7 @@ beforeEach(() => {
   calls.created = 0;
   calls.resumed = 0;
   calls.decoded = 0;
+  onCreate = null;
   initialState = "suspended";
   resumeResult = () => Promise.resolve();
   idleTasks.length = 0;
@@ -130,20 +140,34 @@ afterEach(() => {
 });
 
 describe("kYa7c3sh — ovoz qulfi birinchi USB skanni buzmaydi", () => {
-  it("sahifa ochilgach birinchi USB skan to'liq o'qiladi: kontekst skan oqimida yaratilmaydi", async () => {
+  it("sahifa ochilgach birinchi USB skan to'liq o'qiladi: kontekst belgilar oqimida emas, Enter'da — skan o'qilgach", async () => {
     await load();
     const scans: string[] = [];
+    let scansAtCreate: string[] | null = null;
+    onCreate = () => {
+      scansAtCreate = [...scans];
+    };
     renderHook(() => useKeyboardScanner({ onScan: (value) => void scans.push(value) }));
 
-    usbScan("tok-10235");
+    typeChars("tok-10235");
+    const createdDuringChars = calls.created;
+    press("Enter");
 
     expect(scans).toEqual(["tok-10235"]);
-    expect(calls.created).toBe(0);
+    expect(createdDuringChars).toBe(0);
+    // Enter — skanning oxiri: kontekst va `resume()` shu tugma ishlovchisida (iOS/Safari), skan esa undan oldin o'qilgan.
+    expect(calls).toMatchObject({ created: 1, resumed: 1 });
+    expect(scansAtCreate).toEqual(["tok-10235"]);
     // Band bo'lish (soxta konstruktor) skaner oralig'idan katta — shart to'g'ri sinalyapti.
     expect(BLOCK_MS).toBeGreaterThan(SCANNER_KEY_GAP_MS);
+
+    // Darhol keyingi skan ham to'liq (kontekst bor — faqat arzon `resume()` yoki tinglovchi yo'q).
+    usbScan("tok-10213");
+    expect(scans).toEqual(["tok-10235", "tok-10213"]);
+    expect(calls.created).toBe(1);
   });
 
-  it("klaviatura: kontekst tugmalar to'xtagach yaratiladi va `resume()` o'sha zahoti; dekodlash — bo'sh paytda", async () => {
+  it("USB skan: dekodlash Enter ishlovchisida emas — qulf ochilgach bo'sh paytda; keyin tinglovchi yo'q", async () => {
     const feedback = await load();
     feedback.preloadScanFeedbackAudio();
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(10));
@@ -151,14 +175,12 @@ describe("kYa7c3sh — ovoz qulfi birinchi USB skanni buzmaydi", () => {
     const scans: string[] = [];
     renderHook(() => useKeyboardScanner({ onScan: (value) => void scans.push(value) }));
 
-    usbScan("MCR-201-e2e-0001");
-    // Skan davomida va Enter'dan keyin jimlik tugaguncha — na kontekst, na dekodlash.
-    vi.advanceTimersByTime(feedback.SCAN_AUDIO_KEY_UNLOCK_QUIET_MS - 1);
-    expect(scans).toEqual(["MCR-201-e2e-0001"]);
+    typeChars("MCR-201-e2e-0001");
+    // Belgilar oqimida — na kontekst, na dekodlash.
     expect(calls).toEqual({ created: 0, resumed: 0, decoded: 0 });
 
-    // Jimlik tugadi: kontekst yaratiladi va `resume()` shu taymerning o'zida (taymer tugma ishlovchisida qo'yilgan).
-    vi.advanceTimersByTime(1);
+    press("Enter");
+    expect(scans).toEqual(["MCR-201-e2e-0001"]);
     expect(calls).toEqual({ created: 1, resumed: 1, decoded: 0 });
 
     // Qulf ochildi — dekodlash bo'sh paytga qo'yildi, hali boshlanmadi.
@@ -169,14 +191,14 @@ describe("kYa7c3sh — ovoz qulfi birinchi USB skanni buzmaydi", () => {
     await flush();
     expect(calls.decoded).toBe(10);
 
-    // Qulf ochiq — keyingi skanlarda tinglovchi yo'q (qayta `resume()` yo'q).
+    // Qulf ochiq — keyingi skanlarda tinglovchi yo'q (qayta `resume()` yo'q, kechikkan taymer ham yo'q).
     usbScan("tok-10235");
     vi.advanceTimersByTime(feedback.SCAN_AUDIO_KEY_UNLOCK_QUIET_MS);
     expect(scans).toEqual(["MCR-201-e2e-0001", "tok-10235"]);
-    expect(calls.resumed).toBe(1);
+    expect(calls).toMatchObject({ created: 1, resumed: 1 });
   });
 
-  it("odam sekin yozsa ham kontekst har tugmada qayta kutiladi — oxirgi tugmadan keyin bitta yaratiladi", async () => {
+  it("Enter'siz klaviatura (odam yozadi): kontekst har tugmada qayta kutiladi — jimlikdan keyin bitta, `resume()` bilan", async () => {
     const feedback = await load();
     for (const char of "abc") {
       press(char);
@@ -184,6 +206,23 @@ describe("kYa7c3sh — ovoz qulfi birinchi USB skanni buzmaydi", () => {
     }
     expect(calls.created).toBe(0);
     vi.advanceTimersByTime(50);
+    // Taymer tugma ishlovchisida qo'yilgan — kontekst va `resume()` o'sha taymerning o'zida.
+    expect(calls).toMatchObject({ created: 1, resumed: 1 });
+  });
+
+  it("sekin Enter: taymer skan belgilari bilan Enter orasida otilmaydi (`SCANNER_ENTER_GAP_MS` dan uzun)", async () => {
+    const feedback = await load();
+    expect(feedback.SCAN_AUDIO_KEY_UNLOCK_QUIET_MS).toBeGreaterThan(SCANNER_ENTER_GAP_MS);
+    expect(feedback.SCAN_AUDIO_KEY_UNLOCK_QUIET_MS).toBeLessThan(1000);
+    const scans: string[] = [];
+    renderHook(() => useKeyboardScanner({ onScan: (value) => void scans.push(value) }));
+
+    // Sekin skaner: Enter oxirgi belgidan `SCANNER_ENTER_GAP_MS` gacha kechikishi mumkin — skan baribir to'liq.
+    typeChars("tok-10235");
+    vi.advanceTimersByTime(SCANNER_ENTER_GAP_MS - 20);
+    expect(calls.created).toBe(0);
+    press("Enter");
+    expect(scans).toEqual(["tok-10235"]);
     expect(calls.created).toBe(1);
   });
 
