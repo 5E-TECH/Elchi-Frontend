@@ -282,12 +282,18 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const canReceiveSellCancelPermission = user.role === "manager";
   // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning uchun yagona kirish joyi shu sahifa.
   const canTransferCourier = isCourier && canManagePrivilegedToggles;
-  // xtXKLUwT: backend bilan bir xil huquq; o'ziga — 403 (o'z parolini profilda almashtiradi). Menejerga begona kuryer
-  // backend tomonida 403 — matni tasdiq oynasida.
-  const canResetPassword = String(viewerId ?? "") !== String(user.id) && canManagePasswordSms(currentRole, user.role);
-  // 2026-11-12: menejer o'zi yaratgan marketni ochadi (faqat ko'rish) — `PATCH /users/:id` unga 403
-  // (market filial a'zosi emas), shuning uchun «Tahrirlash» chizilmaydi.
-  const canEdit = !(isManagerViewer && isMarket);
+  const isSelfView = String(viewerId ?? "") === String(user.id);
+  // KQINMdeQ (ega, 2026-11-17): huquq backend'da — nishonning HOZIRGI filiali bo'yicha (`created_by` emas).
+  // `can_manage` (`GET /users/:id`) — so'rovchi shu foydalanuvchini `PATCH /users/:id` bilan boshqara oladimi:
+  // menejerga o'z filialidagi kuryer va ro'yxatchi; boshqa menejer va o'zi yaratgan market (2026-11-12, faqat
+  // ko'rish) — yo'q. Maydon kelmasa (eski backend) — zaxira: menejer ko'ruvchiga market va boshqa menejerda
+  // «Tahrirlash» yo'q.
+  const canEdit =
+    user.can_manage ?? !(isManagerViewer && (isMarket || (user.role === "manager" && !isSelfView)));
+  // xtXKLUwT: backend bilan bir xil huquq; o'ziga — 403 (o'z parolini profilda almashtiradi). KQINMdeQ: menejer —
+  // o'z filialidagi kuryer va ro'yxatchi; `can_manage: false` (boshqa filialga o'tkazilgan va h.k.) — tugma yo'q.
+  const canResetPassword =
+    !isSelfView && user.can_manage !== false && canManagePasswordSms(currentRole, user.role);
   // «Telegram guruhi» (holat, «Ulash», PII kaliti) — superadmin va admin (ega javobi tg-link S2; backend
   // `GET /notifications` va `POST /telegram/link-code` ikkalasiga ochiq).
   const showMarketTelegramGroups = isMarket && canManagePrivilegedToggles;
@@ -588,7 +594,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const hasAiPrice = aiPrice !== null && Number.isFinite(aiPrice);
   const tariffCard =
     isMarket || isCourier || (user.role === "manager" && hasTariffs) ? (
-      <Card as="section" title={t("v2.detail.tariff")} divided>
+      <Card key="tariff" as="section" title={t("v2.detail.tariff")} divided>
         <dl className="m-0 flex flex-col">
           {isMarket ? (
             <InfoRow
@@ -621,7 +627,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     user.role === "admin" || user.role === "manager" || user.role === "registrator" || user.role === "logist";
   const profileCard =
     !isCustomer && !isMarket && (isStaff || hasSalary || hasPaymentDay || branchName) ? (
-      <Card as="section" title={t("v2.detail.profile")} divided>
+      <Card key="profile" as="section" title={t("v2.detail.profile")} divided>
         <dl className="m-0 flex flex-col">
           {branchName ? <InfoRow label={t("v2.detail.branch")} value={branchName} /> : null}
           {isStaff || hasSalary ? <InfoRow label={t("v2.detail.salary")} value={money(user.salary)} /> : null}

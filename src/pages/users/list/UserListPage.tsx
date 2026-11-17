@@ -67,7 +67,8 @@ const normalizeRole = (value: string) => (value === "marketing" ? "market" : val
  * xodimlar), karta: rol tablari, qidiruv «Ism yoki telefon raqami» + «Holat: Barchasi», jadval, sahifalash;
  * `manager-users-list`: sarlavha «{filial} xodimlari», KPI yo'q, 4 ta tab (Hammasi · Kuryerlar · Ro'yxatchilar ·
  * Menejerlar), amallar o'rnida «Ochish». Ega (2026-11-04): menejer o'z filiali xodimlarini ko'radi — backend
- * `GET /users` ni `branch_users` bo'yicha cheklaydi. 2026-11-12: «Qabul punkti» / «Aralash» menejeri o'zi yaratgan
+ * `GET /users` ni `branch_users` bo'yicha cheklaydi. KQINMdeQ (2026-11-17): tahrir huquqi ham hozirgi filial
+ * bo'yicha (qatorda `can_manage`), `created_by` emas — tahrir tafsilot sahifasida. 2026-11-12: «Qabul punkti» / «Aralash» menejeri o'zi yaratgan
  * marketlarni ham ko'radi — 5-tab «Marketlar» (`getManagerTabs`), «Hammasi» da ham; boshqalar yaratgan market yo'q.
  *
  * FY-1 (`superadmin-users-list-roles`, `-role-select`): superadmin/admin — 9 ta rol tabi (FY-S1); telefonda tablar
@@ -93,8 +94,9 @@ const UserListPage = memo(() => {
   const viewerRole = useSelector((state: RootState) => state.role.role);
   const branchName = useSelector((state: RootState) => readViewerBranch(state.user.user).name);
   const branchType = useSelector((state: RootState) => readViewerBranch(state.user.user).type);
-  // fix3 RBAC-16: holat almashtirish, tahrirlash va o'chirish faqat superadmin/admin
-  // (backend boshqalarga doim 403) — menejer jadvalda ko'rmaydi.
+  // fix3 RBAC-16: qator menyusi (holat almashtirish, tahrirlash, o'chirish) faqat superadmin/admin — menejer jadvalda
+  // ko'rmaydi, faqat «Ochish». KQINMdeQ: menejer o'z filialidagi kuryer/ro'yxatchini tafsilot sahifasidagi
+  // «Tahrirlash» bilan tahrirlaydi (`can_manage`); holat va o'chirish backend'da unga baribir 403.
   const canManageUsers = viewerRole === "superadmin" || viewerRole === "admin";
   const isManager = viewerRole === "manager";
 

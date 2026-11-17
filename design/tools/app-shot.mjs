@@ -548,6 +548,22 @@ const userMock = (path) => {
     };
   }
   if (path === 'region') return { statusCode: 200, data: REGION_CATALOG };
+  // KQINMdeQ: menejer ko'rinishi (`--role manager`) — `/all-users/1101` admin yaratgan kuryer, menejer filialida
+  // (`can_manage: true` — «Tahrirlash» va parol SMS), `/all-users/1102` — shu filialdagi boshqa menejer (`false`).
+  if (path === 'users/1101' || path === 'users/1102') {
+    const manager = path === 'users/1102';
+    return {
+      statusCode: 200,
+      data: {
+        id: manager ? '1102' : '1101', name: manager ? 'Aziz Karimov' : 'Sherzod Alimov',
+        phone_number: manager ? '+998901112233' : '+998901234567', username: manager ? 'aziz_k' : 'sherzod_k',
+        role: manager ? 'manager' : 'courier', status: 'active', salary: 4200000, payment_day: '25',
+        tariff_home: manager ? null : 35000, tariff_center: manager ? null : 25000, default_tariff: 'home',
+        created_by: '9', can_manage: !manager, branch_id: '1', branch: { id: '1', name: 'Namuna filiali' },
+        createdAt: '2026-09-29T09:00:00.000Z', updatedAt: '2026-11-10T09:00:00.000Z',
+      },
+    };
+  }
   return null;
 };
 
