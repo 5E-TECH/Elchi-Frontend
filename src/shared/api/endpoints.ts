@@ -634,6 +634,9 @@ export const API_ENDPOINTS = {
     ROOT: "", // GET / — gateway health via identity service
     LIVENESS: "health",
     READINESS: "health/readiness",
+    // BOT-DIAG: Telegram bot nosozligi sababi (faqat SUPERADMIN; konvertsiz `{ status, bot, timestamp }`)
+    NOTIFICATION_BOT: "health/notification-bot",
+    NOTIFICATION_BOT_RECHECK: "health/notification-bot/recheck", // POST, tanasiz — getMe hozir (≤ 3,5 s)
   },
 
   // ── AI admin (api-gateway `AiGatewayController`, SUPERADMIN/ADMIN) ───────
