@@ -4,11 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 import {
+  useCancelTransferBatch,
   useReceiveTransferBatch,
   useReceiveTransferBatchOrders,
   useSendTransferBatch,
 } from "../entities/batch";
-import { useBranchCoverage } from "../entities/branch/branchCoverage";
 import { useDispatchPostToBranch, useDispatchPostToCourier, useMails, useReceivePost } from "../entities/mails";
 import { useOrders as useOrderActions } from "../entities/orders";
 import { useOrders as useOrderApi } from "../entities/order/api/orderApi";
@@ -97,11 +97,24 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
     expectKeys(part, [["batches"], ["orders"], ["branches", "with-sent-batches"]]);
   });
 
-  it("paketni bekor qilish (superadmin vositasi) — `/batches` ro'yxati va buyurtmalar", async () => {
-    const keys = await run(useBranchCoverage, (m) =>
-      m.cancelBatch.mutateAsync({ id: "5", data: { reason: "x" } }),
+  it("paketni bekor qilish (paket sahifasi, oP02jE2P) — paketlar, buyurtmalar, «Yangi buyurtmali filiallar» va HQ «Filial paketlari»", async () => {
+    apiMock.post.mockClear();
+    const keys = await run(useCancelTransferBatch, (m) =>
+      m.mutateAsync({ batchId: "5", reason: "Noto'g'ri filialga yig'ilgan" }),
     );
-    expectKeys(keys, [["branch-cov"], ["batches"], ["orders"]]);
+    expect(apiMock.post).toHaveBeenCalledWith("transfer-batches/5/cancel", { reason: "Noto'g'ri filialga yig'ilgan" });
+    expectKeys(keys, [["batches"], ["orders"], ["branch-cov"], ["branches", "with-sent-batches"]]);
+  });
+
+  it("paketni bekor qilish rad etilsa (409 batch_in_transit) — faqat paketlar qayta o'qiladi", async () => {
+    apiMock.post.mockImplementationOnce(() =>
+      Promise.reject({ response: { status: 409, data: { statusCode: 409, data: { reason: "batch_in_transit" } } } }),
+    );
+    const { hook, keys } = setup(useCancelTransferBatch);
+    await act(async () => {
+      await hook.result.current.mutateAsync({ batchId: "5", reason: "Noto'g'ri filialga yig'ilgan" }).catch(() => undefined);
+    });
+    expect(keys()).toEqual([JSON.stringify(["batches"])]);
   });
 
   it("pochtani filialga jo'natish — «Bugungi», «Eski» va buyurtmalar", async () => {

@@ -3,7 +3,8 @@ import { expect, type Page, type Route } from "@playwright/test";
 /**
  * «Paketlar va qaytarishlar» (`/batches`, `/batches/:id`, `/returns`) e2e — soxta backend.
  * Menejer (filial turi HQ) — paketlar ro'yxati, yangi paketni asosiy filialga yuborish
- * (`PATCH transfer-batches/:id/send { orderIds }`) va qaytarish paketlari.
+ * (`PATCH transfer-batches/:id/send { orderIds }`) va qaytarish paketlari. Paketni bekor qilish (oP02jE2P):
+ * `POST transfer-batches/172/cancel` — `options.cancel` javobi; muvaffaqiyatdan keyin tafsilot `CANCELLED`.
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -37,13 +38,13 @@ const LIST = [
   },
 ];
 
-const detail = (sent: Set<string>) => ({
+const detail = (sent: Set<string>, status = "PENDING") => ({
   id: "172",
   qr_code_token: "BTB-172",
   source_branch: { id: "7", name: "Urgut filiali", code: "SMQ-URG" },
   destination_branch: { id: "1", name: "Toshkent HQ" },
   direction: "FORWARD",
-  status: "PENDING",
+  status,
   order_count: 3,
   total_price: 864000,
   createdAt: today(9, 20),
@@ -85,11 +86,19 @@ const RETURNS = [
   },
 ];
 
-export const mockBatchesApi = async (page: Page) => {
+export type CancelReply = { status: number; body: unknown };
+
+export const mockBatchesApi = async (
+  page: Page,
+  options: { cancel?: (body: unknown) => CancelReply; branchId?: string } = {},
+) => {
   const leaked: string[] = [];
   const sends: { path: string; body: unknown }[] = [];
+  const cancels: unknown[] = [];
   const listQueries: string[] = [];
   const sent = new Set<string>();
+  let batchStatus = "PENDING";
+  const branchId = options.branchId ?? "7";
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -105,9 +114,9 @@ export const mockBatchesApi = async (page: Page) => {
           role: "manager",
           name: "Ravshan Ortiqov",
           status: "active",
-          branch_id: "7",
+          branch_id: branchId,
           branch_type: "HQ",
-          branch: { id: "7", branch: { id: "7", name: "Urgut filiali", type: "HQ" } },
+          branch: { id: branchId, branch: { id: branchId, name: "Urgut filiali", type: "HQ" } },
         },
       });
     }
@@ -118,7 +127,7 @@ export const mockBatchesApi = async (page: Page) => {
       return reply(route, { statusCode: 200, data: { items, meta: { page: 1, limit: 10, total: items.length } } });
     }
     if ((path === "transfer-batches/172" || path === "transfer-batches/172/remaining") && request.method() === "GET") {
-      return reply(route, detail(sent));
+      return reply(route, detail(sent, batchStatus));
     }
     // 3HKvAyhm: paket tarixi — xronologik (eng eskisi birinchi), bajargan `user.name`.
     if (path === "transfer-batches/172/history" && request.method() === "GET") {
@@ -134,6 +143,13 @@ export const mockBatchesApi = async (page: Page) => {
       body.orderIds.forEach((id) => sent.add(id));
       return reply(route, { statusCode: 200, message: "Sent" });
     }
+    if (path === "transfer-batches/172/cancel" && request.method() === "POST" && options.cancel) {
+      const body = request.postDataJSON();
+      cancels.push(body);
+      const result = options.cancel(body);
+      if (result.status < 300) batchStatus = "CANCELLED";
+      return reply(route, result.body, result.status);
+    }
     if (request.method() !== "GET") {
       leaked.push(`${request.method()} ${path}`);
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
@@ -148,7 +164,7 @@ export const mockBatchesApi = async (page: Page) => {
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
-  return { leaked, sends, listQueries };
+  return { leaked, sends, cancels, listQueries };
 };
 
 export const openBatches = async (page: Page, path = "/batches") => {

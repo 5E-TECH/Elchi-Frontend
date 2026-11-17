@@ -119,5 +119,45 @@
       "hint": "Office printer"
     },
     "sheetDescription": "The batch receipt will be printed: thermal label or A5 sheet"
+  },
+  "cancel": {
+    "action": "Cancel batch",
+    "title": "Cancel this batch?",
+    "subtitle": "Batch {{id}} · Created: {{date}}",
+    "status": "Status",
+    "orders": "Orders",
+    "amount": "Amount",
+    "consequenceOrders_one": "{{value}} order will be removed from the batch and set back to «New»",
+    "consequenceOrders_other": "{{value}} orders will be removed from the batch and set back to «New»",
+    "consequenceOrdersReturn_one": "{{value}} order will be removed from the batch",
+    "consequenceOrdersReturn_other": "{{value}} orders will be removed from the batch",
+    "consequenceKeep": "The batch is not deleted — it stays in the list as «Cancelled»",
+    "reason": "Reason",
+    "reasonHint": "{{count}} characters · at least {{min}}",
+    "reasonRequired": "Enter a reason — at least {{min}} characters",
+    "reasonTooShort": "The reason must be at least {{min}} characters (now {{count}})",
+    "back": "Back",
+    "confirm": "Cancel batch",
+    "cancelling": "Cancelling…",
+    "success": "Batch cancelled",
+    "successDescription_one": "Batch {{id}} · {{value}} order removed from the batch",
+    "successDescription_other": "Batch {{id}} · {{value}} orders removed from the batch",
+    "errors": {
+      "inTransitTitle": "The batch is in transit — a sent batch cannot be cancelled",
+      "inTransit": "The destination branch will receive the orders. The batch status has been refreshed.",
+      "receivedTitle": "A received batch cannot be cancelled",
+      "received": "The batch has already been received at the destination branch. The batch status has been refreshed.",
+      "alreadyCancelledTitle": "The batch is already cancelled",
+      "alreadyCancelled": "The batch status has been refreshed.",
+      "notCancellableTitle": "A batch in this status cannot be cancelled",
+      "notCancellable": "Only a batch that has not been sent yet (new) can be cancelled. The batch status has been refreshed.",
+      "forbiddenTitle": "You are not allowed to cancel this batch",
+      "forbidden": "A batch is cancelled by the manager or registrar of the branch that assembled it, an admin or a superadmin.",
+      "notFoundTitle": "Batch not found",
+      "notFound": "The batch was deleted or the link is wrong. Open it again from the batches list.",
+      "failedTitle": "Could not cancel the batch",
+      "rejected": "The request was rejected. Check the batch status and try again.",
+      "failed": "Server or network error. Please try again."
+    }
   }
 }

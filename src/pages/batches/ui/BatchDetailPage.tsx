@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-batches-detail, admin-batches-detail, manager-batches-detail-send, manager-batches-detail-readonly, manager-returns-batch-detail
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Inbox, Package } from "lucide-react";
+import { ArrowRight, CircleX, Inbox, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useLocation, useParams } from "react-router-dom";
@@ -20,6 +20,7 @@ import {
   type ReceiptPackageSheet,
 } from "../../../features/print-receipts";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -30,6 +31,7 @@ import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
   Badge,
+  Button,
   Card,
   EmptyState,
   ErrorState,
@@ -45,6 +47,7 @@ import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { formatBatchDisplayId } from "../lib/batchFormat";
 import { toBatchReceiptSource } from "../lib/batchReceipt";
 import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
+import { canCancelBatch } from "../model/batchCancel";
 import {
   isPlaceholderBranchName,
   knownText,
@@ -57,6 +60,7 @@ import BatchHistoryCard from "./BatchHistoryCard";
 import BatchInfoCard from "./BatchInfoCard";
 import BatchPrintMenu from "./BatchPrintMenu";
 import BatchQrCard from "./BatchQrCard";
+import CancelBatchDialog from "./CancelBatchDialog";
 
 /** Jo'natish rejimi (maket `manager-batches-detail-send`, `manager-returns-batch-detail`): market ustuni yo'q. */
 const SEND_COLUMNS: readonly OrdersTableColumn[] = ["order", "customer", "address", "delivery", "status", "amount"];
@@ -90,6 +94,10 @@ const HISTORY_ROLES = new Set(["superadmin", "admin", "manager", "registrator", 
  * ochadi). Kamera skani USB bilan aynan bir yo'l — buyurtma faqat tanlanadi («HQ'ga yuborish · Paket B-172 · <filial>»,
  * «6 / 9 ta tanlandi», ro'yxatda «Bekor qilish» va «Bu paketda yo'q · tanlanmadi»); yuborish — sahifadagi tugma.
  * Faqat o'qish rejimida maqsad yo'q (markaziy tugma universal `/scan` ni ochadi).
+ * PAKETNI BEKOR QILISH (oP02jE2P): sarlavhada «Paketni bekor qilish» (danger-soft; telefonda oxirgi qator, to'liq
+ * enli) — faqat `new` (`PENDING`) paketda va bekor qila oladigan rolda (`canCancelBatch`: superadmin, admin, manba
+ * filial menejeri / registratori) → `CancelBatchDialog` (sabab ≥ 10 belgi, tasdiq). Yo'ldagi paketda tugma yo'q,
+ * backend ham 409 qaytaradi. `/batches` pastidagi qo'lda raqam formasi olib tashlangan — bekor qilish faqat shu yerda.
  * Ma'lumot: `GET transfer-batches/:id` va `…/remaining` (buyurtmalar — qolganlari, bo'lmasa hammasi; v1 dagidek).
  * Filial nomlari (3HKvAyhm) — tafsilotdagi `source_branch` / `destination_branch` `{ id, name }` dan, BARCHA rollarda
  * (menejer ham); `GET branches/:id` chaqirilmaydi. «Tarix» — `GET transfer-batches/:id/history` (eng eskisi birinchi
@@ -101,6 +109,7 @@ const BatchDetailPage = () => {
   const { id = "" } = useParams();
   const location = useLocation();
   const role = useSelector((state: RootState) => state.role.role);
+  const viewerBranchId = useSelector(getCurrentBranchId);
   const detailQuery = useBatchDetail(id);
   const remainingQuery = useBatchRemainingDetail(id);
   const sendBatch = useSendTransferBatch();
@@ -110,6 +119,9 @@ const BatchDetailPage = () => {
   const remainingBatch = remainingQuery.data;
   const isLoading = detailQuery.isLoading || remainingQuery.isLoading;
   const canSendToMainBranch = batch?.status === "new" && (role === "manager" || role === "registrator");
+  const canCancel = canCancelBatch({ role, viewerBranchId, batch });
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const isReturn = batch?.direction === "return";
 
   // Filial nomlari — tafsilot javobidan (`source_branch` / `destination_branch`, 3HKvAyhm; `null` — filial topilmadi
@@ -339,6 +351,21 @@ const BatchDetailPage = () => {
     />
   );
 
+  // Telefonda sarlavha amallari teng bo'laklar — bekor qilish oxirgi qatorda, to'liq enda (buzuvchi amal asosiy
+  // amal bilan yonma-yon turmasin).
+  const cancelAction = canCancel ? (
+    <Button
+      ref={cancelButtonRef}
+      variant="danger-soft"
+      leftIcon={CircleX}
+      onClick={() => setCancelOpen(true)}
+      // `!` — sarlavha amallari qutisidagi `[&>*]:flex-1` (basis 0) ustidan.
+      className="max-md:order-last max-md:basis-full!"
+    >
+      {t("cancel.action")}
+    </Button>
+  ) : null;
+
   const qrHint = canSendToMainBranch
     ? isReturn
       ? t("detail.qrHintReturn")
@@ -396,14 +423,18 @@ const BatchDetailPage = () => {
         }
         description={description}
         // Faqat o'qish maketlarida (`*-batches-detail`, `manager-batches-detail-readonly`) sarlavhada amal yo'q —
-        // «Chop etish» QR kartasida. Jo'natish rejimida: «Chop etish» + asosiy tugma.
+        // «Chop etish» QR kartasida. Jo'natish rejimida: «Chop etish» + asosiy tugma. Yangi paketda (bekor qila
+        // oladigan rolda) — «Paketni bekor qilish» (oP02jE2P; maket yo'q).
         actions={
           canSendToMainBranch ? (
             <>
+              {cancelAction}
               <BatchPrintMenu onSelect={print} loading={receiptPrint.printing} />
               {sendButton(false)}
             </>
-          ) : undefined
+          ) : (
+            (cancelAction ?? undefined)
+          )
         }
       />
 
@@ -456,6 +487,17 @@ const BatchDetailPage = () => {
         error={canReadHistory && !historyQuery.data ? historyQuery.error : null}
         onRetry={() => void historyQuery.refetch()}
         retrying={historyQuery.isFetching}
+      />
+
+      <CancelBatchDialog
+        open={cancelOpen}
+        batch={batch}
+        batchId={id}
+        displayId={displayId}
+        fromName={fromName}
+        toName={toName}
+        returnFocus={cancelButtonRef}
+        onClose={() => setCancelOpen(false)}
       />
     </div>
   );

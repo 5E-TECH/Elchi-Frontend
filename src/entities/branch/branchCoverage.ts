@@ -66,17 +66,8 @@ export const useBranchCoverage = () => {
         api.get(API_ENDPOINTS.BRANCHES.TREE, { params }).then((res) => res.data),
     });
 
-  // POST transfer-batches/:id/cancel — paketlar ro'yxati (`/batches`, tab sonlari, tafsilot) va bo'shagan buyurtmalar.
-  const cancelBatch = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
-      api.post(API_ENDPOINTS.BATCHES.CANCEL(id), data),
-    onSuccess: () =>
-      Promise.all([
-        client.invalidateQueries({ queryKey: ["branch-cov"] }),
-        client.invalidateQueries({ queryKey: ["batches"] }),
-        client.invalidateQueries({ queryKey: ["orders"] }),
-      ]),
-  });
+  // Paketni bekor qilish (`POST transfer-batches/:id/cancel`) — `entities/batch` `useCancelTransferBatch` (oP02jE2P:
+  // faqat paket sahifasida, `/batches` pastidagi qo'lda raqam formasi olib tashlandi).
 
   return {
     useGetAnalyticsMarkets,
@@ -86,6 +77,5 @@ export const useBranchCoverage = () => {
     useGetNewOrders,
     postDispatch,
     useGetTree,
-    cancelBatch,
   };
 };
