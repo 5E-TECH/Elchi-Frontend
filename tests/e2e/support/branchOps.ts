@@ -2,7 +2,7 @@ import { expect, type Page, type Route } from "@playwright/test";
 
 /**
  * `/batches` ichidagi «Filiallar — operatsiyalar» e2e uchun soxta backend (superadmin). Hech qanday so'rov
- * serverga ketmaydi; ruxsatsiz yozuvchi so'rov `leaked` ga tushadi.
+ * serverga ketmaydi; har yozuvchi so'rov `leaked` ga tushadi (oP02jE2P dan beri sahifada yozuv amali yo'q).
  */
 /** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
 const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
@@ -21,12 +21,8 @@ export const NEW_ORDER_BRANCHES = [
   { id: "15", name: "Xiva filiali", type: "PICKUP", level: 2, parent_id: "12", code: "XIV", status: "active", new_orders_count: 2 },
 ];
 
-export const mockBranchOpsApi = async (
-  page: Page,
-  options: { cancel?: (body: unknown) => { status: number; body: unknown } } = {},
-) => {
+export const mockBranchOpsApi = async (page: Page) => {
   const leaked: string[] = [];
-  const cancelBodies: unknown[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -39,13 +35,6 @@ export const mockBranchOpsApi = async (
     }
     if (path === "branches/new-orders") {
       return reply(route, { statusCode: 200, message: "Branches with NEW orders", data: NEW_ORDER_BRANCHES });
-    }
-    const cancel = path.match(/^transfer-batches\/([^/]+)\/cancel$/);
-    if (cancel && request.method() === "POST" && options.cancel) {
-      const body = request.postDataJSON();
-      cancelBodies.push(body);
-      const result = options.cancel(body);
-      return reply(route, result.body, result.status);
     }
     if (request.method() !== "GET") {
       leaked.push(`${request.method()} ${path}`);
@@ -61,7 +50,7 @@ export const mockBranchOpsApi = async (
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
-  return { leaked, cancelBodies };
+  return { leaked };
 };
 
 export const openBranchOps = async (page: Page) => {
@@ -69,23 +58,6 @@ export const openBranchOps = async (page: Page) => {
   await expect(page.getByRole("heading", { name: "Filiallar — operatsiyalar" })).toBeVisible({ timeout: 60_000 });
 };
 
-/** Dizayn v2 (maket `superadmin-ops-branches`): jadval qatorlari, forma maydonlari va tugma. */
+/** Dizayn v2 (maket `superadmin-ops-branches`): jadval qatorlari. */
 export const branchRows = (page: Page) =>
   page.getByRole("table", { name: "Yangi buyurtmali filiallar" }).locator("tbody tr");
-export const batchIdInput = (page: Page) => page.getByRole("textbox", { name: /Paket ID/ });
-export const reasonInput = (page: Page) => page.getByRole("textbox", { name: /Bekor qilish sababi/ });
-export const cancelBatchButton = (page: Page) => page.getByRole("button", { name: "Paketni bekor qilish", exact: true });
-
-/**
- * Paketni bekor qilish tasdig'i — dizayn v2 `useConfirm` (`role="alertdialog"`), maket matnlari:
- * «Paketni bekor qilasizmi?» / «Paket bekor qilinadi, undagi barcha buyurtmalar paketdan ajratiladi.» ·
- * «Yo'q» / «Ha, bekor qilish».
- */
-export const confirmBatchCancel = async (page: Page) => {
-  const dialog = page.getByRole("alertdialog", { name: "Paketni bekor qilasizmi?" });
-  await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText("Paket bekor qilinadi, undagi barcha buyurtmalar paketdan ajratiladi.");
-  await expect(dialog.getByRole("button", { name: "Yo'q", exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "Ha, bekor qilish", exact: true }).click();
-  await expect(dialog).toHaveCount(0);
-};

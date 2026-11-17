@@ -337,7 +337,7 @@
   "branches": {
     "intro": {
       "title": "Branches — operations",
-      "description": "Branches with new orders and branch package management."
+      "description": "Branches with new orders. To cancel a batch, open the batch page (only a batch that has not been sent yet)."
     },
     "list": {
       "title": "Branches with new orders",
@@ -346,24 +346,8 @@
       "newOrders": "New orders",
       "empty": "No branches with new orders",
       "emptyHint": "A branch appears here when it receives a new order.",
-      "loadError": "Couldn't load the branch list"
-    },
-    "cancel": {
-      "title": "Cancel package",
-      "description": "A package ID and a reason of at least 10 characters are required; the action runs after confirmation.",
-      "batchId": "Package ID",
-      "batchPrefix": "B-",
-      "reason": "Cancellation reason",
-      "reasonHint": "{{count}} characters · at least {{min}}",
-      "reasonTooShort": "The reason must be at least {{min}} characters (now {{count}})",
-      "submit": "Cancel package",
-      "confirmTitle": "Cancel this package?",
-      "confirmDescription": "The package will be cancelled and all its orders detached from it.",
-      "confirmLabel": "Yes, cancel it",
-      "cancelLabel": "No",
-      "success": "Package cancelled",
-      "error": "Couldn't cancel the package",
-      "rejected": "The batch can't be cancelled in its current status (400): it may already be received or cancelled. Check the batch ID and status."
+      "loadError": "Couldn't load the branch list",
+      "open": "{{name}} — open the branch page"
     }
   },
   "identity": {

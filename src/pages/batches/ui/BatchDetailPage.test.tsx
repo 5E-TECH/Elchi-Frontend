@@ -32,6 +32,7 @@ type ScannerOptions = {
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   patch: vi.fn(),
+  post: vi.fn(),
   scanner: null as ScannerOptions | null,
   playScanFeedback: vi.fn(),
   printPackageReceipt: vi.fn(),
@@ -44,7 +45,7 @@ vi.mock("../../../features/print-receipts", async (importOriginal) => ({
 }));
 
 vi.mock("../../../shared/api/api", () => ({
-  api: { get: mocks.get, post: vi.fn(), patch: mocks.patch, put: vi.fn(), delete: vi.fn() },
+  api: { get: mocks.get, post: mocks.post, patch: mocks.patch, put: vi.fn(), delete: vi.fn() },
   API_TIMEOUT_MS: 20_000,
   LONG_REQUEST_TIMEOUT_MS: 120_000,
 }));
@@ -122,11 +123,11 @@ const respond = (
 };
 const historyCard = () => screen.getByRole("region", { name: "Tarix" });
 
-const stateFor = (role: string) =>
+const stateFor = (role: string, branchId?: string) =>
   ({
     role: { id: `${role}-1`, role, region: null, name: role },
     user: {
-      user: { id: `${role}-1`, role },
+      user: { id: `${role}-1`, role, ...(branchId ? { branch_id: branchId } : {}) },
       isAuthenticated: true,
       accessToken: null,
       loading: false,
@@ -135,12 +136,12 @@ const stateFor = (role: string) =>
     },
   }) as never;
 
-const renderPage = (role = "manager", state?: unknown) =>
+const renderPage = (role = "manager", state?: unknown, branchId?: string) =>
   renderWithProviders(
     <Routes>
       <Route path="/batches/:id" element={<BatchDetailPage />} />
     </Routes>,
-    { route: { pathname: "/batches/172", state }, preloadedState: stateFor(role) },
+    { route: { pathname: "/batches/172", state }, preloadedState: stateFor(role, branchId) },
   );
 
 const ordersCard = () => screen.getByRole("region", { name: "Paketdagi buyurtmalar" });
@@ -153,6 +154,7 @@ beforeEach(() => {
 afterEach(() => {
   mocks.get.mockReset();
   mocks.patch.mockReset();
+  mocks.post.mockReset();
   mocks.playScanFeedback.mockReset();
 });
 
@@ -492,5 +494,170 @@ describe("BatchDetailPage — /batches/:id", () => {
     mocks.get.mockRejectedValue({ response: { status: 500 } });
     renderPage("admin");
     expect(await screen.findByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+  });
+});
+
+/** Backend rad javobi (`{ statusCode, message, data: { reason, details } }`, gateway `publicErrorData`). */
+const cancelRejection = (status: number, message?: string, reason?: string) =>
+  Object.assign(new Error(`Request failed with status code ${status}`), {
+    isAxiosError: true,
+    response: {
+      status,
+      data: {
+        statusCode: status,
+        ...(message ? { message } : {}),
+        ...(reason ? { data: { reason, details: { batch_id: "172", status: "SENT" } } } : {}),
+      },
+    },
+  });
+
+describe("BatchDetailPage — paketni bekor qilish (oP02jE2P)", () => {
+  const cancelButton = () => within(screen.getByRole("banner")).queryByRole("button", { name: "Paketni bekor qilish" });
+  const openDialog = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(cancelButton()!);
+    return screen.findByRole("alertdialog", { name: "Paketni bekor qilasizmi?" });
+  };
+  const reasonBox = (dialog: HTMLElement) => within(dialog).getByRole("textbox", { name: /Sabab/ });
+  const submitButton = (dialog: HTMLElement) => within(dialog).getByRole("button", { name: "Paketni bekor qilish" });
+  const REASON = "Noto'g'ri filialga yig'ilgan";
+
+  it("superadmin, yangi paket: oynada raqam, yo'nalish, holat, son; sabab ≥ 10 belgi — keyin POST { reason }, xabar", async () => {
+    respond(detail({ destination_branch: { id: "1", name: "Toshkent HQ" } }));
+    mocks.post.mockResolvedValue({ data: { statusCode: 200, data: { id: "172", status: "CANCELLED" } } });
+    const user = userEvent.setup();
+    renderPage("superadmin");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    expect(cancelButton()).toBeInTheDocument();
+    const dialog = await openDialog(user);
+
+    expect(dialog).toHaveTextContent(/Paket B-172 · Yaratilgan:/);
+    expect(dialog).toHaveTextContent("Qayerdan");
+    expect(dialog).toHaveTextContent("Urgut filiali");
+    expect(dialog).toHaveTextContent("Toshkent HQ");
+    expect(within(dialog).getByText("Holat").nextSibling).toHaveTextContent("Yangi");
+    expect(within(dialog).getByText("Buyurtmalar").nextSibling).toHaveTextContent("3 ta");
+    expect(within(dialog).getByText("Summa").nextSibling).toHaveTextContent("864 000 so'm");
+    expect(dialog).toHaveTextContent("3 ta buyurtma paketdan chiqariladi va yana «Yangi» holatiga qaytadi");
+    expect(within(dialog).getByRole("button", { name: "Orqaga" })).toBeInTheDocument();
+
+    // Bo'sh va qisqa sabab — so'rov ketmaydi, maydon xatosi.
+    await user.click(submitButton(dialog));
+    expect(await within(dialog).findByText("Sababni yozing — kamida 10 ta belgi")).toBeInTheDocument();
+    await user.type(reasonBox(dialog), "  qisqa  ");
+    await user.click(submitButton(dialog));
+    expect(within(dialog).getByText("Sabab kamida 10 ta belgidan iborat bo'lishi kerak (hozir 5 ta)")).toBeInTheDocument();
+    expect(mocks.post).not.toHaveBeenCalled();
+
+    await user.clear(reasonBox(dialog));
+    await user.type(reasonBox(dialog), `  ${REASON} `);
+    expect(within(dialog).getByText("28 ta belgi · kamida 10 ta")).toBeInTheDocument();
+    await user.click(submitButton(dialog));
+
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("transfer-batches/172/cancel", { reason: REASON }));
+    expect(mocks.post).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("Paket bekor qilindi")).toBeInTheDocument();
+    expect(screen.getByText("Paket B-172 · 3 ta buyurtma paketdan chiqarildi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  });
+
+  it("«Orqaga» — hech narsa yuborilmaydi", async () => {
+    respond();
+    const user = userEvent.setup();
+    renderPage("admin");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    const dialog = await openDialog(user);
+    await user.type(reasonBox(dialog), REASON);
+    await user.click(within(dialog).getByRole("button", { name: "Orqaga" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(mocks.post).not.toHaveBeenCalled();
+  });
+
+  it.each(["SENT", "RECEIVED", "CANCELLED"])("%s paket — tugma hech kimda yo'q (superadmin ham)", async (status) => {
+    respond(detail({ status }));
+    renderPage("superadmin");
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    expect(cancelButton()).not.toBeInTheDocument();
+  });
+
+  it("menejer: o'z (manba) filiali paketida tugma bor, boshqa filial paketida yo'q", async () => {
+    respond();
+    const own = renderPage("manager", undefined, "7");
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    expect(cancelButton()).toBeInTheDocument();
+    // Jo'natish rejimi bilan birga: asosiy tugma joyida qoladi.
+    expect(within(screen.getByRole("banner")).getByRole("button", { name: "HQ'ga yuborish — 0 ta" })).toBeInTheDocument();
+    own.unmount();
+
+    respond();
+    renderPage("manager", undefined, "1");
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    expect(cancelButton()).not.toBeInTheDocument();
+  });
+
+  it("⭐ 409 batch_in_transit — «Paket yo'lda …», tugma o'chadi, paket qayta o'qiladi", async () => {
+    respond();
+    mocks.post.mockRejectedValue(
+      cancelRejection(409, "Paket yo'lda — jo'natilgan paketni bekor qilib bo'lmaydi …", "batch_in_transit"),
+    );
+    const user = userEvent.setup();
+    renderPage("superadmin");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    const detailCalls = () => mocks.get.mock.calls.filter(([url]) => url === "transfer-batches/172").length;
+    const before = detailCalls();
+    const dialog = await openDialog(user);
+    await user.type(reasonBox(dialog), REASON);
+    await user.click(submitButton(dialog));
+
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent("Paket yo'lda — jo'natilgan paketni bekor qilib bo'lmaydi");
+    expect(alert).toHaveTextContent("Buyurtmalarni manzil filial qabul qiladi.");
+    expect(submitButton(dialog)).toBeDisabled();
+    await waitFor(() => expect(detailCalls()).toBeGreaterThan(before));
+    expect(screen.queryByText("Paket bekor qilindi")).not.toBeInTheDocument();
+  });
+
+  it("403 — o'z matnimiz («ruxsatingiz yo'q»), backend «Transfer batch yaratishga …» matni emas", async () => {
+    respond();
+    mocks.post.mockRejectedValue(cancelRejection(403, "Transfer batch yaratishga ruxsat yo'q"));
+    const user = userEvent.setup();
+    renderPage("manager");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    const dialog = await openDialog(user);
+    await user.type(reasonBox(dialog), REASON);
+    await user.click(submitButton(dialog));
+
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent("Bu paketni bekor qilishga ruxsatingiz yo'q");
+    expect(alert).not.toHaveTextContent("Transfer batch");
+    expect(submitButton(dialog)).toBeDisabled();
+  });
+
+  it("boshqa 400 — backend o'zbekcha matni «(400)» siz; 500 — umumiy matn, qayta urinish mumkin", async () => {
+    respond();
+    mocks.post
+      .mockRejectedValueOnce(cancelRejection(400, "Partiya holati mos emas (400)"))
+      .mockRejectedValueOnce(cancelRejection(500, "Internal server error"));
+    const user = userEvent.setup();
+    renderPage("superadmin");
+
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+    const dialog = await openDialog(user);
+    await user.type(reasonBox(dialog), REASON);
+    await user.click(submitButton(dialog));
+
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent("Paketni bekor qilib bo'lmadi");
+    expect(alert).toHaveTextContent("Partiya holati mos emas");
+    expect(alert).not.toHaveTextContent("(400)");
+    expect(submitButton(dialog)).toBeEnabled();
+
+    await user.click(submitButton(dialog));
+    await waitFor(() => expect(within(dialog).getByRole("alert")).toHaveTextContent("Server yoki tarmoq xatosi. Qayta urinib ko'ring."));
+    expect(within(dialog).getByRole("alert")).not.toHaveTextContent("Internal server error");
+    expect(mocks.post).toHaveBeenCalledTimes(2);
   });
 });

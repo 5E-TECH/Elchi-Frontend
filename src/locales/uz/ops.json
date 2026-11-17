@@ -337,7 +337,7 @@
   "branches": {
     "intro": {
       "title": "Filiallar — operatsiyalar",
-      "description": "Yangi buyurtmali filiallar ro'yxati va filial paketlarini boshqarish."
+      "description": "Yangi buyurtmali filiallar ro'yxati. Paketni bekor qilish — paket sahifasida (faqat hali jo'natilmagan paket)."
     },
     "list": {
       "title": "Yangi buyurtmali filiallar",
@@ -346,24 +346,8 @@
       "newOrders": "Yangi buyurtmalar",
       "empty": "Yangi buyurtmali filial yo'q",
       "emptyHint": "Filialga yangi buyurtma kelganda u shu ro'yxatda chiqadi.",
-      "loadError": "Filiallar ro'yxatini olib bo'lmadi"
-    },
-    "cancel": {
-      "title": "Paketni bekor qilish",
-      "description": "Paket ID va kamida 10 ta belgili sabab kerak; amal tasdiqdan keyin bajariladi.",
-      "batchId": "Paket ID",
-      "batchPrefix": "B-",
-      "reason": "Bekor qilish sababi",
-      "reasonHint": "{{count}} ta belgi · kamida {{min}} ta",
-      "reasonTooShort": "Sabab kamida {{min}} ta belgidan iborat bo'lishi kerak (hozir {{count}} ta)",
-      "submit": "Paketni bekor qilish",
-      "confirmTitle": "Paketni bekor qilasizmi?",
-      "confirmDescription": "Paket bekor qilinadi, undagi barcha buyurtmalar paketdan ajratiladi.",
-      "confirmLabel": "Ha, bekor qilish",
-      "cancelLabel": "Yo'q",
-      "success": "Paket muvaffaqiyatli bekor qilindi",
-      "error": "Paketni bekor qilib bo'lmadi",
-      "rejected": "Paket bu holatda bekor qilinmaydi (400): u allaqachon qabul qilingan yoki bekor qilingan bo'lishi mumkin. Paket ID va holatini tekshiring."
+      "loadError": "Filiallar ro'yxatini olib bo'lmadi",
+      "open": "{{name}} — filial sahifasini ochish"
     }
   },
   "identity": {

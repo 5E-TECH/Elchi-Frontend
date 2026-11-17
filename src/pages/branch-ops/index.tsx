@@ -1,55 +1,45 @@
 // dizayn-v2: superadmin-ops-branches
-import { memo, useState, type FormEvent } from "react";
-import { CircleX } from "lucide-react";
+import { memo } from "react";
+import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
 import { useBranchCoverage } from "../../entities/branch/branchCoverage";
 import { extractArray } from "../../entities/branch";
 import {
   Badge,
-  Button,
   Card,
   DataTable,
   EmptyState,
   ErrorState,
-  Field,
   QueryBoundary,
-  TextInput,
-  useConfirm,
   type DataTableColumn,
 } from "../../shared/ui/primitives";
-import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import { OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
 import { useOpsErrorText } from "../ops/lib/opsErrorText";
-import { getErrorStatus } from "../../shared/lib/errorKind";
 
 /**
- * «Filiallar — operatsiyalar» (maket `superadmin-ops-branches`), `/batches` ichida, faqat superadmin (F2NzXpMv): yangi buyurtmali filiallar (`GET branches/new-orders`,
- * konvert `{ statusCode, message, data: [...] }`) va paketni bekor qilish (`POST transfer-batches/:id/cancel`
- * — `{ reason }`, faqat tasdiqdan keyin; sabab kamida 10 belgi — backend shunday rad etadi).
+ * «Filiallar — operatsiyalar» (maket `superadmin-ops-branches`), `/batches` ichida, faqat superadmin (F2NzXpMv):
+ * yangi buyurtmali filiallar (`GET branches/new-orders`, konvert `{ statusCode, message, data: [...] }`).
+ *
+ * oP02jE2P (2026-11-17): maketdagi «Paketni bekor qilish» kartasi (qo'lda paket raqami + sabab) OLIB TASHLANDI —
+ * raqamda adashib boshqa paket bekor qilinmasin; bekor qilish endi faqat paket sahifasida (`/batches/:id`, faqat yangi
+ * paket). Jadval qoldi (ega 2026-10-31 da shu yerga ko'chirgan), qator — filial sahifasiga (`/branches/:id`) havola.
  */
-
-// Backend (branch-service) rejects a cancel without a reason of at least 10 chars.
-const MIN_REASON_LENGTH = 10;
 
 type BranchWithNewOrders = { id: string; name: string; new_orders_count: number };
 
+const branchHref = (row: BranchWithNewOrders) => `/branches/${encodeURIComponent(String(row.id))}`;
+
 const BranchOpsPage = () => {
   const { t } = useTranslation("ops");
-  const { useGetNewOrders, cancelBatch } = useBranchCoverage();
-  const confirm = useConfirm();
+  const navigate = useNavigate();
+  const { useGetNewOrders } = useBranchCoverage();
   // Rad etilgan so'rov — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
   const errorText = useOpsErrorText();
 
   const newOrders = useGetNewOrders(undefined, { silentError: true });
   // Javob konverti `{ statusCode, message, data: [...] }` — massiv `data` ichida.
   const rows = extractArray<BranchWithNewOrders>(newOrders.data);
-
-  const [batchId, setBatchId] = useState("");
-  const [reason, setReason] = useState("");
-
-  const trimmedBatchId = batchId.trim();
-  const trimmedReason = reason.trim();
-  const reasonTooShort = trimmedReason.length > 0 && trimmedReason.length < MIN_REASON_LENGTH;
-  const canCancel = trimmedBatchId.length > 0 && trimmedReason.length >= MIN_REASON_LENGTH;
 
   const count = (value: number) => t("common.count", { count: value });
 
@@ -60,7 +50,15 @@ const BranchOpsPage = () => {
       className: "w-[72px]",
       cell: (row) => <span className="text-text-muted">{row.id}</span>,
     },
-    { id: "name", header: t("branches.list.name"), cell: (row) => <span className="font-semibold">{row.name}</span> },
+    {
+      id: "name",
+      header: t("branches.list.name"),
+      cell: (row) => (
+        <Link to={branchHref(row)} className="font-semibold text-text hover:text-action-fg hover:underline">
+          {row.name}
+        </Link>
+      ),
+    },
     {
       id: "new_orders_count",
       header: t("branches.list.newOrders"),
@@ -69,130 +67,56 @@ const BranchOpsPage = () => {
     },
   ];
 
-  const handleCancel = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!canCancel || cancelBatch.isPending) return;
-    const ok = await confirm({
-      tone: "danger",
-      title: t("branches.cancel.confirmTitle"),
-      description: t("branches.cancel.confirmDescription"),
-      confirmLabel: t("branches.cancel.confirmLabel"),
-      cancelLabel: t("branches.cancel.cancelLabel"),
-      icon: CircleX,
-      confirmIcon: CircleX,
-    });
-    // Natija (muvaffaqiyat / xato) quyidagi ogohlantirishlarda ko'rinadi.
-    if (ok) cancelBatch.mutate({ id: trimmedBatchId, data: { reason: trimmedReason } });
-  };
-
   return (
     <OpsToolPage tabKey="branches" embedded>
       <OpsIntro title={t("branches.intro.title")} description={t("branches.intro.description")} />
 
-      <div className="flex flex-wrap items-start gap-6 max-md:gap-4">
-        <Card
-          padding="none"
-          title={t("branches.list.title")}
-          actions={newOrders.data !== undefined && !newOrders.isError ? <Badge>{count(rows.length)}</Badge> : null}
-          className="min-w-0 flex-[3_1_440px]"
+      <Card
+        padding="none"
+        title={t("branches.list.title")}
+        actions={newOrders.data !== undefined && !newOrders.isError ? <Badge>{count(rows.length)}</Badge> : null}
+        className="min-w-0"
+      >
+        <QueryBoundary
+          query={newOrders}
+          skeleton="table"
+          isEmpty={() => rows.length === 0}
+          empty={<EmptyState title={t("branches.list.empty")} description={t("branches.list.emptyHint")} />}
+          error={(error, retry) => (
+            <ErrorState
+              error={error}
+              title={t("branches.list.loadError")}
+              description={errorText(error)}
+              retryLabel={t("common.retry")}
+              onRetry={retry}
+            />
+          )}
         >
-          <QueryBoundary
-            query={newOrders}
-            skeleton="table"
-            isEmpty={() => rows.length === 0}
-            empty={<EmptyState title={t("branches.list.empty")} description={t("branches.list.emptyHint")} />}
-            error={(error, retry) => (
-              <ErrorState
-                error={error}
-                title={t("branches.list.loadError")}
-                description={errorText(error)}
-                retryLabel={t("common.retry")}
-                onRetry={retry}
-              />
-            )}
-          >
-            {() => (
-              <DataTable
-                rows={rows}
-                columns={columns}
-                getRowKey={(row) => String(row.id)}
-                label={t("branches.list.title")}
-                renderCard={(row) => (
-                  <div className="flex min-w-0 items-center gap-3 px-4 py-3">
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="font-semibold">{row.name}</span>
-                      <span className="text-[13px] text-text-muted">{t("common.idValue", { id: row.id })}</span>
-                    </div>
-                    <span className="whitespace-nowrap font-semibold">{count(Number(row.new_orders_count) || 0)}</span>
-                  </div>
-                )}
-              />
-            )}
-          </QueryBoundary>
-        </Card>
-
-        <Card
-          title={t("branches.cancel.title")}
-          description={t("branches.cancel.description")}
-          className="min-w-0 flex-[2_1_340px]"
-        >
-          <form onSubmit={handleCancel} noValidate className="flex flex-col gap-4">
-            <Field label={t("branches.cancel.batchId")} required>
-              <div className="relative flex items-center">
-                <span aria-hidden="true" className="pointer-events-none absolute left-3 z-10 text-text-muted">
-                  {t("branches.cancel.batchPrefix")}
-                </span>
-                <TextInput
-                  inputMode="numeric"
-                  value={batchId}
-                  onValueChange={setBatchId}
-                  className="w-full"
-                  inputClassName="pl-7"
-                />
-              </div>
-            </Field>
-            <Field
-              label={t("branches.cancel.reason")}
-              required
-              hint={
-                reasonTooShort
-                  ? undefined
-                  : t("branches.cancel.reasonHint", { count: trimmedReason.length, min: MIN_REASON_LENGTH })
-              }
-              error={
-                reasonTooShort
-                  ? t("branches.cancel.reasonTooShort", { count: trimmedReason.length, min: MIN_REASON_LENGTH })
-                  : undefined
-              }
-            >
-              <TextInput multiline rows={3} value={reason} onValueChange={setReason} className="min-h-24" />
-            </Field>
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                variant="danger-soft"
-                leftIcon={CircleX}
-                disabled={!canCancel}
-                loading={cancelBatch.isPending}
-                className="max-md:w-full"
-              >
-                {t("branches.cancel.submit")}
-              </Button>
-            </div>
-
-            {cancelBatch.isSuccess ? <OpsAlert tone="success" title={t("branches.cancel.success")} /> : null}
-            {cancelBatch.isError ? (
-              <OpsAlert tone="danger" title={t("branches.cancel.error")}>
-                {/* Backend bu amalda 400 ni paket HOLATI uchun qaytaradi (RECEIVED / CANCELLED — branch-transfer-batch
-                    `cancelBatch`), umumiy «Kiritilganini tekshiring» chalg'itadi — o'z matnimiz. */}
-                {getErrorStatus(cancelBatch.error) === 400
-                  ? t("branches.cancel.rejected")
-                  : errorText(cancelBatch.error, { action: true })}
-              </OpsAlert>
-            ) : null}
-          </form>
-        </Card>
-      </div>
+          {() => (
+            <DataTable
+              rows={rows}
+              columns={columns}
+              getRowKey={(row) => String(row.id)}
+              label={t("branches.list.title")}
+              onRowClick={(row) => navigate(branchHref(row))}
+              renderCard={(row) => (
+                <Link
+                  to={branchHref(row)}
+                  aria-label={t("branches.list.open", { name: row.name })}
+                  className="flex min-h-14 min-w-0 items-center gap-3 px-4 py-3 text-text"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="font-semibold">{row.name}</span>
+                    <span className="text-[13px] text-text-muted">{t("common.idValue", { id: row.id })}</span>
+                  </span>
+                  <span className="whitespace-nowrap font-semibold">{count(Number(row.new_orders_count) || 0)}</span>
+                  <ChevronRight aria-hidden="true" size={18} strokeWidth={2} className="shrink-0 text-text-subtle" />
+                </Link>
+              )}
+            />
+          )}
+        </QueryBoundary>
+      </Card>
     </OpsToolPage>
   );
 };
