@@ -57,7 +57,7 @@ describe("passwordSms (aidsxJ2H)", () => {
     expect(isFinalPasswordSmsStatus("pending")).toBe(false);
   });
 
-  it("huquq backend bilan aynan: superadmin — hammasi; admin — admin'dan boshqasi; menejer — faqat kuryer", () => {
+  it("huquq backend bilan aynan: superadmin — hammasi; admin — admin'dan boshqasi; menejer — kuryer va ro'yxatchi (KQINMdeQ)", () => {
     for (const target of ["admin", "registrator", "logist", "courier", "manager", "marketing", "market"]) {
       expect(canManagePasswordSms("superadmin", target)).toBe(true);
     }
@@ -66,7 +66,10 @@ describe("passwordSms (aidsxJ2H)", () => {
     expect(canManagePasswordSms("admin", "courier")).toBe(true);
     expect(canManagePasswordSms("admin", "marketing")).toBe(true);
     expect(canManagePasswordSms("manager", "courier")).toBe(true);
-    expect(canManagePasswordSms("manager", "registrator")).toBe(false);
+    expect(canManagePasswordSms("manager", "registrator")).toBe(true);
+    expect(canManagePasswordSms("manager", "manager")).toBe(false);
+    expect(canManagePasswordSms("manager", "admin")).toBe(false);
+    expect(canManagePasswordSms("manager", "logist")).toBe(false);
     expect(canManagePasswordSms("manager", "marketing")).toBe(false);
     expect(canManagePasswordSms("registrator", "courier")).toBe(false);
     expect(canManagePasswordSms(null, "courier")).toBe(false);

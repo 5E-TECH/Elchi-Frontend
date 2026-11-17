@@ -219,6 +219,8 @@ describe("UserDetailView — «Parolni tiklash va SMS yuborish» (xtXKLUwT)", ()
     ["admin", "courier", true],
     ["admin", "admin", false],
     ["manager", "courier", true],
+    ["manager", "registrator", true],
+    ["manager", "manager", false],
     ["manager", "market", false],
     ["registrator", "courier", false],
     ["superadmin", "customer", false],
@@ -500,6 +502,74 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
     renderView(makeUser("courier", { name: "Sherzod Alimov" }), "manager", "Urgut filiali");
     expect(screen.getByRole("button", { name: "Tahrirlash" })).toBeInTheDocument();
     expect(screen.getAllByText(/Urgut filiali/).length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * KQINMdeQ (ega, 2026-11-17): menejer o'z filialidagi xodimlarni tahrirlaydi — huquq backend'da hozirgi filial
+ * bo'yicha (`created_by` emas), tafsilotda `can_manage`. Maydon kelmasa — zaxira qoida (market va boshqa menejer).
+ */
+describe("UserDetailView — «Tahrirlash» va parol SMS `can_manage` bo'yicha (KQINMdeQ)", () => {
+  const edit = { name: "Tahrirlash" };
+  const resetSms = { name: "Parolni tiklash va SMS yuborish" };
+  const managerState = (id = "25") =>
+    ({ role: { id, role: "manager", region: null, name: "Menejer" } }) as never;
+  const renderAsManager = (target: User, viewerId?: string) =>
+    renderWithProviders(<UserDetailView user={target} />, { preloadedState: managerState(viewerId) });
+
+  it("⭐ admin yaratgan kuryer (`can_manage: true`) — «Tahrirlash» va parol SMS bor", () => {
+    renderAsManager(makeUser("courier", { id: "101", can_manage: true }));
+    expect(screen.getByRole("button", edit)).toBeInTheDocument();
+    expect(screen.getByRole("button", resetSms)).toBeInTheDocument();
+  });
+
+  it("o'z filialidagi ro'yxatchi (`can_manage: true`) — «Tahrirlash» va parol SMS bor (4-savol sukuti)", () => {
+    renderAsManager(makeUser("registrator", { id: "300", can_manage: true }));
+    expect(screen.getByRole("button", edit)).toBeInTheDocument();
+    expect(screen.getByRole("button", resetSms)).toBeInTheDocument();
+  });
+
+  it("⭐ boshqa menejer — «Tahrirlash» yo'q (`can_manage: false` ham, maydon kelmasa ham)", () => {
+    const { unmount } = renderAsManager(makeUser("manager", { id: "26", can_manage: false }));
+    expect(screen.queryByRole("button", edit)).not.toBeInTheDocument();
+    unmount();
+
+    renderAsManager(makeUser("manager", { id: "26" }));
+    expect(screen.queryByRole("button", edit)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", resetSms)).not.toBeInTheDocument();
+  });
+
+  it("menejer o'zini ko'radi (maydon kelmasa) — «Tahrirlash» bor, parol SMS yo'q", () => {
+    renderAsManager(makeUser("manager", { id: "25" }), "25");
+    expect(screen.getByRole("button", edit)).toBeInTheDocument();
+    expect(screen.queryByRole("button", resetSms)).not.toBeInTheDocument();
+  });
+
+  it("⭐ market (o'zi yaratgan) — «Tahrirlash» yo'q (`can_manage: false` ham, maydon kelmasa ham)", () => {
+    const { unmount } = renderAsManager(makeUser("market", { can_manage: false }));
+    expect(screen.queryByRole("button", edit)).not.toBeInTheDocument();
+    unmount();
+
+    renderAsManager(makeUser("market"));
+    expect(screen.queryByRole("button", edit)).not.toBeInTheDocument();
+  });
+
+  it("⭐ `can_manage: false` kuryer (masalan, boshqa filialga o'tkazilgan) — «Tahrirlash» ham, parol SMS ham yo'q", () => {
+    renderAsManager(makeUser("courier", { id: "263", can_manage: false }));
+    expect(screen.queryByRole("button", edit)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", resetSms)).not.toBeInTheDocument();
+  });
+
+  it("admin → boshqa admin (`can_manage: false`) — «Tahrirlash» yo'q; maydon kelmasa — avvalgidek bor", () => {
+    const adminState = { role: { id: "2", role: "admin", region: null, name: "Admin" } } as never;
+    const { unmount } = renderWithProviders(<UserDetailView user={makeUser("admin", { id: "9", can_manage: false })} />, {
+      preloadedState: adminState,
+    });
+    expect(screen.queryByRole("button", edit)).not.toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(<UserDetailView user={makeUser("admin", { id: "9" })} />, { preloadedState: adminState });
+    expect(screen.getByRole("button", edit)).toBeInTheDocument();
   });
 
   it("«Ruxsatlar» da «Guruhda mijoz ismi va telefoni» kaliti yo'q — u «Telegram guruhi» kartasiga ko'chdi (TG-B S3)", () => {

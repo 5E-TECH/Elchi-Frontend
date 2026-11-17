@@ -81,11 +81,11 @@ describe("ResetPasswordSmsButton (xtXKLUwT)", () => {
     expect(within(dialog).getByText("SMS yuborish hozir o'chirilgan")).toBeInTheDocument();
   });
 
-  it("403 (begona kuryer) — backend matni tasdiq oynasida; 429 — kutish vaqti", async () => {
-    mocks.post.mockRejectedValueOnce(apiError(403, { statusCode: 403, message: "Menejer faqat o'z kuryeriga parol yubora oladi" }));
+  it("403 (KQINMdeQ: kuryer boshqa filialga o'tkazilgan) — backend matni tasdiq oynasida; 429 — kutish vaqti", async () => {
+    mocks.post.mockRejectedValueOnce(apiError(403, { statusCode: 403, message: "Siz bu foydalanuvchini boshqara olmaysiz" }));
     const confirm = await openConfirm();
     await userEvent.click(within(confirm).getByRole("button", { name: "Parolni tiklash" }));
-    expect(await within(confirm).findByText("Menejer faqat o'z kuryeriga parol yubora oladi")).toBeInTheDocument();
+    expect(await within(confirm).findByText("Siz bu foydalanuvchini boshqara olmaysiz")).toBeInTheDocument();
 
     mocks.post.mockRejectedValueOnce(
       apiError(429, { statusCode: 429, code: "PASSWORD_SMS_COOLDOWN", retry_after_seconds: 48 }),

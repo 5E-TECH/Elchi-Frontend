@@ -265,9 +265,10 @@ export const MANAGER_CAPABILITIES: Record<BranchType, ManagerCapability[]> = {
    * qiladi, shuning uchun HQ menejeri qabul ekranini ko'rishi kerak.
    *
    * `staff` 2026-10-06 da QO'SHILDI (HQ va PICKUP ga) — backend endi HAR QANDAY
-   * menejerga xodimlar ro'yxatini qaytaradi (tahrir faqat o'zi yaratgan xodim
-   * bilan cheklanadi), shuning uchun har bir menejer "Xodimlar" bandini
-   * ko'rishi kerak. REGIONAL/HYBRID da allaqachon bor edi.
+   * menejerga xodimlar ro'yxatini qaytaradi (KQINMdeQ, 2026-11-17: tahrir —
+   * HOZIR o'z filialidagi kuryer va ro'yxatchi, kim yaratganidan qat'i nazar),
+   * shuning uchun har bir menejer "Xodimlar" bandini ko'rishi kerak.
+   * REGIONAL/HYBRID da allaqachon bor edi.
    */
   HQ: ['intake', 'mails', 'finance', 'staff'],
 };
