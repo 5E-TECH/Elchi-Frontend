@@ -16,6 +16,7 @@ import {
   type ReceivableRow,
 } from "../../../entities/integrations/settlement";
 import { refreshCashboxQueries } from "../../../entities/payments";
+import { isUncertainWriteError } from "../../../entities/warehouse/lib/idempotency";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
   CURRENCY_LABEL,
@@ -47,6 +48,7 @@ import type { Connection } from "../useConnections";
 import { BALANCE_LIST_CLASS, BalanceRow } from "./settlement/BalanceRow";
 import PayResultDialog, { type PayResultContext } from "./settlement/PayResultDialog";
 import RemittancesSection from "./settlement/RemittancesSection";
+import { settleRemittanceKey, takeRemittanceKey } from "./settlement/remittanceKey";
 import { focusRemittancesSection } from "./settlement/remittancesAnchor";
 
 /**
@@ -67,6 +69,14 @@ import { focusRemittancesSection } from "./settlement/remittancesAnchor";
  * «Summani … ga tenglash»; «Yozish» bloklanmaydi. Natija: aniq tushib kassaga yozilsa — xabar, aks holda
  * «To'lov yozildi» oynasi (`settlement/PayResultDialog`). Kassa, moliya tarixi, bosh sahifa kalitlari —
  * `refreshCashboxQueries`.
+ *
+ * ⚠️ IKKI MARTA YOZILMAYDI (ZE5zqXxu): «Yozish» `Idempotency-Key` bilan (`settlement/remittanceKey`) — kalit bitta
+ * to'lovga bitta, javob kelguncha o'zgarmaydi. Ikki marta bosish — bitta so'rov; javobsiz xatodan (tarmoq, 502–504)
+ * keyin oyna ichida «Javob kelmadi» ogohlantirishi, qoldiq va kassa qayta o'qiladi, qayta «Yozish» o'sha kalit bilan
+ * ketadi va backend birinchi to'lovni qaytaradi (`idempotent_replay`) — xabar «To'lov avval yozilgan edi», ikkinchi
+ * kirim yo'q. Qaytgan to'lov summasi kiritilganidan farq qilsa — oyna ochiq qoladi, ichida «Kiritilgan summa
+ * yozilmadi» (yangi to'lov jimgina «avval yozilgan» bo'lib qolmasin; keyingi «Yozish» — yangi kalit). Maket yo'q — eng yaqini: ogohlantirish `*-settlement-cancel-dialog` (server xatosi oyna ichida) va
+ * `*-pay-overpay-dialog` (warning alert); xabar `*-settlement-pay-dialog` «Boshqa holatlar» (natija — xabar bilan).
  */
 
 /**
@@ -440,6 +450,24 @@ const PayDialog = ({
   const [touched, setTouched] = useState(false);
   /** «Summani … ga tenglash» bosilgach tugma yo'qoladi — fokus summa maydoniga o'tadi (oynadan chiqib ketmaydi). */
   const amountRef = useRef<HTMLInputElement>(null);
+  /**
+   * Ikki marta bosishdan himoya — sinxron: ikkinchi bosish (yoki Enter) `isPending` render'gacha ham o'tmaydi. Shunda
+   * ham ikkinchi so'rov ketsa, u o'sha `Idempotency-Key` bilan ketadi.
+   */
+  const submittingRef = useRef(false);
+  /**
+   * Oldingi «Yozish» ga javob kelmadi (tarmoq, 502–504) — to'lov yozilgan bo'lishi mumkin. Ogohlantirish oyna ichida
+   * (xabar emas): telefonda yangi xabar eskisini yashiradi, bu esa pul haqidagi ogohlantirish. Keyingi «Yozish» yoki
+   * oyna yopilganda o'chadi.
+   */
+  const [uncertain, setUncertain] = useState(false);
+  /**
+   * Takroriy kalitga backend BOSHQA summali avvalgi to'lovni qaytardi (javobi yo'qolgan urinishdan keyin summa
+   * tuzatildi yoki bu yangi to'lov): kiritilgan summa YOZILMADI. Oyna kiritilgan qiymatlar bilan ochiq qoladi va buni
+   * aytadi — «avval yozilgan edi» xabari bilan yopilsa, operator yangi to'lovni yozildi deb o'ylardi. Kalit esa
+   * yopilgan: keyingi «Yozish» — yangi to'lov.
+   */
+  const [replayedOther, setReplayedOther] = useState<{ payment: string; amount: string } | null>(null);
 
   const value = Number(amount);
   const amountError = !touched
@@ -465,11 +493,13 @@ const PayDialog = ({
     setReference("");
     setNote("");
     setTouched(false);
+    setUncertain(false);
+    setReplayedOther(null);
   };
 
   const close = () => {
     // Ikki marta bosishdan himoya: so'rov ketayotganda oyna yopilmaydi.
-    if (createRemittance.isPending) return;
+    if (createRemittance.isPending || submittingRef.current) return;
     reset();
     onClose();
   };
@@ -478,7 +508,10 @@ const PayDialog = ({
     event?.preventDefault();
     setTouched(true);
     if (!amount.trim() || !Number.isFinite(value) || value < 1) return;
-    if (createRemittance.isPending) return;
+    if (createRemittance.isPending || submittingRef.current) return;
+    submittingRef.current = true;
+    setUncertain(false);
+    setReplayedOther(null);
     const trimmedReference = reference.trim() || undefined;
     try {
       const result = await createRemittance.mutateAsync({
@@ -486,21 +519,52 @@ const PayDialog = ({
         amount: value,
         reference: trimmedReference,
         note: note.trim() || undefined,
+        // Javobi kelmagan oldingi urinish bo'lsa — o'sha kalit (backend birinchi to'lovni qaytaradi).
+        idempotencyKey: takeRemittanceKey(connection.id),
       });
+      // Javob keldi — keyingi to'lov yangi kalit oladi.
+      settleRemittanceKey(connection.id);
       // Summa MAIN kassaga ham yozildi — kassa, moliya tarixi, bosh sahifa, daromad, KPI, marketlar.
       void refreshCashboxQueries(client);
+      /** «№82 · 1 500 000 so'm» — serverdagi (birinchi) to'lov. */
+      const replayedPayment = [result.remittanceId ? `№${result.remittanceId}` : null, money(result.remitted)]
+        .filter(Boolean)
+        .join(" · ");
+      if (result.replayed && Math.round(result.remitted * 100) !== Math.round(value * 100)) {
+        // Backend kiritilgan summani emas, avvalgi to'lovni qaytardi — kiritilgani yozilmadi: oyna ochiq qoladi.
+        setReplayedOther({ payment: replayedPayment, amount: money(value) });
+        return;
+      }
       reset();
       onClose();
-      if (isExactRemittance(result)) {
+      if (result.replayed) {
+        // To'lov avvalgi (javobi yo'qolgan) urinishda yozilgan — «yozildi» deyilmaydi; summa — serverdagi birinchi
+        // to'lovniki, ikkinchi kirim yo'q.
+        notify.warning(t("settlementPay.replayTitle"), {
+          description: t("settlementPay.replayDesc", { payment: replayedPayment }),
+          duration: 10_000,
+        });
+      } else if (isExactRemittance(result)) {
         notify.success(t("settlementPay.recorded"), {
           description: t("settlementPay.toastDesc", { count: result.settledCount, amount: money(result.remitted) }),
         });
-      } else {
+      }
+      // Avansga o'tsa yoki kassaga yozilmasa — natija oynasi (takroriy javobda ham: kassa holati muhim).
+      if (!isExactRemittance(result)) {
         onResult({ result, connectionName: connection.name, reference: trimmedReference, before: summary, at: new Date() });
       }
-    } catch {
-      // Xom backend matni (inglizcha `message`) ko'rsatilmaydi — faqat i18n matn.
-      notify.error(t("console.paymentFailed"), { description: t("stlPayFailedDesc") });
+    } catch (error) {
+      if (isUncertainWriteError(error)) {
+        // Javob kelmadi — to'lov yozilgan bo'lishi MUMKIN: qoldiq (mutatsiya o'zi) va kassa qayta o'qiladi, oyna
+        // kiritilgan summa va ogohlantirish bilan ochiq qoladi; qayta «Yozish» o'sha kalit bilan — ikkinchi kirim yo'q.
+        void refreshCashboxQueries(client);
+        setUncertain(true);
+      } else {
+        // Xom backend matni (inglizcha `message`) ko'rsatilmaydi — faqat i18n matn.
+        notify.error(t("console.paymentFailed"), { description: t("stlPayFailedDesc") });
+      }
+    } finally {
+      submittingRef.current = false;
     }
   };
 
@@ -529,7 +593,16 @@ const PayDialog = ({
       }
     >
       <div className="flex flex-col gap-4">
-        {overpay ? null : (
+        {uncertain ? (
+          /* Maket yo'q — eng yaqini `*-settlement-cancel-dialog` (server xatosi oyna ichida) va `*-pay-overpay-dialog`. */
+          <InlineAlert tone="warning" role="alert" title={t("settlementPay.uncertainTitle")}>
+            {t("settlementPay.uncertainDesc")}
+          </InlineAlert>
+        ) : replayedOther ? (
+          <InlineAlert tone="warning" role="alert" title={t("settlementPay.replayOtherTitle")}>
+            {t("settlementPay.replayOtherDesc", replayedOther)}
+          </InlineAlert>
+        ) : overpay ? null : (
           <InlineAlert tone="info" role="status" title={t("stlPayCashboxTitle")}>
             {t("stlPayCashboxDesc")}
           </InlineAlert>

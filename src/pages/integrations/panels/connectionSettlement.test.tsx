@@ -78,10 +78,18 @@ const OVERPAID = {
 const postReturns = (data: Record<string, unknown>) =>
   apiPostMock.mockResolvedValueOnce({ data: { statusCode: 201, message: "Remittance recorded", data } });
 
+/** `POST …/remittances` uchinchi argumenti — `Idempotency-Key` sarlavhasi (ZE5zqXxu). */
+const IDEMPOTENCY_HEADERS = { headers: { "Idempotency-Key": expect.stringMatching(/^[A-Za-z0-9-]{8,255}$/) } };
+/** N-chi `POST` ning `Idempotency-Key` i. */
+const sentKey = (call: number) =>
+  (apiPostMock.mock.calls[call]?.[2] as { headers?: Record<string, string> } | undefined)?.headers?.["Idempotency-Key"];
+
 /** Pul matnidagi bo'linmas bo'sh joylarni oddiyga keltiradi. */
 const norm = (value: string | null | undefined) => (value ?? "").replace(/\s/g, " ");
 
 beforeEach(() => {
+  // Javobsiz qolgan to'lov kaliti `sessionStorage` da saqlanadi — testlar bir-biriga kalit qoldirmasin.
+  sessionStorage.clear();
   balance = BALANCE;
   receivables = [];
   apiGetMock.mockReset().mockImplementation((url: string) =>
@@ -230,7 +238,12 @@ describe("ConnectionSettlement — to'lov oynasi", () => {
     await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
 
     await waitFor(() =>
-      expect(apiPostMock).toHaveBeenCalledWith("integrations/7/remittances", { amount: 1_500_000, reference: "TXN-1" }),
+      expect(apiPostMock).toHaveBeenCalledWith(
+        "integrations/7/remittances",
+        // `Idempotency-Key` — sarlavhada, tanada emas (ZE5zqXxu).
+        { amount: 1_500_000, reference: "TXN-1" },
+        IDEMPOTENCY_HEADERS,
+      ),
     );
     expect(await screen.findByText("To'lov yozildi")).toBeInTheDocument();
     expect(norm(screen.getByText(/ta qarz yopildi/).textContent)).toBe("6 ta qarz yopildi · Asosiy kassaga 1 500 000 so'm kirim");
@@ -282,6 +295,180 @@ describe("ConnectionSettlement — to'lov oynasi", () => {
     expect(screen.getByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).toBeInTheDocument();
     expect(amount).toHaveValue("250 000");
     expect(apiPostMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * ZE5zqXxu — «To'lov olindi» ikki marta yozilmaydi. Backend (N3yNa6rO) ayni `Idempotency-Key` li takror so'rovga
+ * birinchi to'lovni qaytaradi (`idempotent_replay: true`) — testdagi soxta server ham shunday: kalit bo'yicha
+ * daftar (`ledger`), takroriy kalit — yangi kirim emas.
+ */
+describe("ConnectionSettlement — Idempotency-Key (ZE5zqXxu)", () => {
+  /** Soxta backend: kalit → yozilgan to'lov. `lose` — yozadi, lekin javob yo'qoladi (tarmoq uzildi / 504). */
+  const fakeServer = (lose: (call: number) => Error | null = () => null) => {
+    const ledger = new Map<string, number>();
+    let call = 0;
+    apiPostMock.mockReset().mockImplementation((_url: string, body: { amount: number }, config?: { headers?: Record<string, string> }) => {
+      const key = config?.headers?.["Idempotency-Key"] ?? "";
+      const lost = lose(call++);
+      const replay = ledger.has(key);
+      if (!replay && key) ledger.set(key, body.amount);
+      if (lost) return Promise.reject(lost);
+      const amount = replay ? ledger.get(key)! : body.amount;
+      return Promise.resolve({
+        data: {
+          statusCode: replay ? 200 : 201,
+          data: { ...EXACT, remitted_amount: amount, settled_amount: amount, ...(replay ? { idempotent_replay: true } : {}) },
+        },
+      });
+    });
+    return ledger;
+  };
+  /** Javob umuman kelmadi (axios: `response` yo'q). */
+  const networkError = () => Object.assign(new Error("Network Error"), { code: "ERR_NETWORK" });
+  const gatewayTimeout = () => Object.assign(new Error("504"), { response: { status: 504, data: {} } });
+  /** Javobsiz qolgan to'lov kalitlari (`sessionStorage`). */
+  const stored = () =>
+    JSON.parse(sessionStorage.getItem("elchi:pending-remittance-keys") ?? "{}") as Record<string, string>;
+
+  it("⭐ ikki marta bosish — bitta so'rov, `Idempotency-Key` sarlavhasi bilan", async () => {
+    let resolve: (value: unknown) => void = () => {};
+    apiPostMock.mockReset().mockImplementation(() => new Promise((r) => (resolve = r)));
+    const { user, dialog } = await openPayDialog();
+    await user.type(within(dialog).getByRole("textbox", { name: /Summa/ }), "1500000");
+    await user.dblClick(within(dialog).getByRole("button", { name: "Yozish" }));
+
+    expect(apiPostMock).toHaveBeenCalledTimes(1);
+    expect(apiPostMock).toHaveBeenCalledWith("integrations/7/remittances", { amount: 1_500_000 }, IDEMPOTENCY_HEADERS);
+    // So'rov ketayotganda oyna yopilmaydi.
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).toBeInTheDocument();
+
+    resolve({ data: { statusCode: 201, data: EXACT } });
+    expect(await screen.findByText("To'lov yozildi")).toBeInTheDocument();
+    expect(apiPostMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("⭐ tarmoq uzildi (to'lov yozilgan, javob yo'qoldi) → qayta «Yozish» — o'sha kalit, bitta kirim, «avval yozilgan»", async () => {
+    const ledger = fakeServer((call) => (call === 0 ? networkError() : null));
+    const { user, dialog } = await openPayDialog();
+    await waitFor(() => expect(balanceCalls()).toBeGreaterThan(0));
+    const before = balanceCalls();
+    const amount = within(dialog).getByRole("textbox", { name: /Summa/ });
+    await user.type(amount, "1500000");
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+
+    // Natija noma'lum: «yozilmadi» deyilmaydi, oyna summa va ichida ogohlantirish bilan ochiq, qoldiq qayta o'qiladi.
+    const warning = (await within(dialog).findByText("Javob kelmadi")).closest("[data-tone]") as HTMLElement;
+    expect(warning).toHaveAttribute("data-tone", "warning");
+    expect(warning).toHaveAttribute("role", "alert");
+    expect(within(warning).getByText(/To'lov yozilgan bo'lishi mumkin/)).toBeInTheDocument();
+    // Kassaga kirim haqidagi info o'rnida — ogohlantirish.
+    expect(within(dialog).queryByText("Summa asosiy kassaga kirim bo'ladi")).not.toBeInTheDocument();
+    expect(screen.queryByText("To'lovni yozib bo'lmadi")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).toBeInTheDocument();
+    expect(amount).toHaveValue("1 500 000");
+    await waitFor(() => expect(balanceCalls()).toBeGreaterThan(before));
+
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+    expect(await screen.findByText("To'lov avval yozilgan edi")).toBeInTheDocument();
+    expect(norm(screen.getByText(/avvalgi urinishda yozilgan/).textContent)).toContain("№82 · 1 500 000 so'm");
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).not.toBeInTheDocument(),
+    );
+
+    expect(apiPostMock).toHaveBeenCalledTimes(2);
+    expect(sentKey(1)).toBe(sentKey(0));
+    // Bitta kirim.
+    expect(ledger.size).toBe(1);
+    // Takroriy javobda «To'lov yozildi» (yangi kirim) xabari yo'q.
+    expect(screen.queryByText("To'lov yozildi")).not.toBeInTheDocument();
+  });
+
+  it("504 dan keyin oyna yopilib qayta ochilsa ham, summa tuzatilsa ham — o'sha kalit, ikkinchi kirim yo'q", async () => {
+    const ledger = fakeServer((call) => (call === 0 ? gatewayTimeout() : null));
+    const { user, dialog } = await openPayDialog();
+    await user.type(within(dialog).getByRole("textbox", { name: /Summa/ }), "1500000");
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+    expect(await within(dialog).findByText("Javob kelmadi")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Orqaga" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).not.toBeInTheDocument(),
+    );
+    await user.click(screen.getByRole("button", { name: "To'lov olindi" }));
+    const reopened = await screen.findByRole("dialog", { name: "Tashuvchidan olingan to'lov" });
+    // Yopilganda ogohlantirish o'chadi (kalit esa saqlanadi).
+    expect(within(reopened).queryByText("Javob kelmadi")).not.toBeInTheDocument();
+    const amount = within(reopened).getByRole("textbox", { name: /Summa/ });
+    await user.type(amount, "1600000");
+    await user.click(within(reopened).getByRole("button", { name: "Yozish" }));
+
+    // Server birinchi to'lovni qaytardi (tuzatilgan summa emas) — kiritilgan summa YOZILMADI: oyna ochiq qoladi va
+    // buni aytadi («avval yozilgan» xabari bilan yopilib, yangi to'lov yozildi deb o'ylatmaydi).
+    const replayAlert = (await within(reopened).findByText("Kiritilgan summa yozilmadi")).closest("[data-tone]") as HTMLElement;
+    expect(replayAlert).toHaveAttribute("data-tone", "warning");
+    expect(replayAlert).toHaveAttribute("role", "alert");
+    expect(norm(replayAlert.textContent)).toContain("№82 · 1 500 000 so'm. 1 600 000 so'm esa yozilmadi");
+    expect(screen.queryByText("To'lov avval yozilgan edi")).not.toBeInTheDocument();
+    expect(screen.queryByText("To'lov yozildi")).not.toBeInTheDocument();
+    expect(amount).toHaveValue("1 600 000");
+    expect(sentKey(1)).toBe(sentKey(0));
+    expect(ledger.size).toBe(1);
+    expect(stored()).toEqual({});
+
+    // Bu yangi to'lov — qayta «Yozish» YANGI kalit bilan ketadi va yoziladi.
+    await user.click(within(reopened).getByRole("button", { name: "Yozish" }));
+    expect(await screen.findByText("To'lov yozildi")).toBeInTheDocument();
+    expect(apiPostMock).toHaveBeenCalledTimes(3);
+    expect(sentKey(2)).not.toBe(sentKey(0));
+    expect(ledger.size).toBe(2);
+    expect(apiPostMock.mock.calls[2]?.[1]).toEqual({ amount: 1_600_000 });
+  });
+
+  it("takroriy javob summasi kiritilganiga teng — «avval yozilgan edi» xabari, oyna yopiladi (tiyin farqisiz)", async () => {
+    fakeServer((call) => (call === 0 ? networkError() : null));
+    const { user, dialog } = await openPayDialog();
+    await user.type(within(dialog).getByRole("textbox", { name: /Summa/ }), "1500000");
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+    expect(await within(dialog).findByText("Javob kelmadi")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+    expect(await screen.findByText("To'lov avval yozilgan edi")).toBeInTheDocument();
+    expect(screen.queryByText("Kiritilgan summa yozilmadi")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).not.toBeInTheDocument(),
+    );
+  });
+
+  it("⭐ muvaffaqiyatdan keyin keyingi to'lov — yangi kalit (ikkinchi haqiqiy to'lov yutilmaydi)", async () => {
+    const ledger = fakeServer();
+    const { user, dialog } = await openPayDialog();
+    await user.type(within(dialog).getByRole("textbox", { name: /Summa/ }), "1500000");
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+    expect(await screen.findByText("To'lov yozildi")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).not.toBeInTheDocument(),
+    );
+
+    await user.click(screen.getByRole("button", { name: "To'lov olindi" }));
+    const next = await screen.findByRole("dialog", { name: "Tashuvchidan olingan to'lov" });
+    await user.type(within(next).getByRole("textbox", { name: /Summa/ }), "1500000");
+    await user.click(within(next).getByRole("button", { name: "Yozish" }));
+
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(2));
+    expect(sentKey(1)).not.toBe(sentKey(0));
+    await waitFor(() => expect(ledger.size).toBe(2));
+    expect(screen.queryByText("To'lov avval yozilgan edi")).not.toBeInTheDocument();
+  });
+
+  it("kalit ulanishga bog'liq — sahifa yangilansa ham (`sessionStorage`) javobsiz to'lov kaliti saqlanadi", async () => {
+    fakeServer(() => networkError());
+    const { user, dialog } = await openPayDialog();
+    await user.type(within(dialog).getByRole("textbox", { name: /Summa/ }), "1500000");
+    await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
+    expect(await within(dialog).findByText("Javob kelmadi")).toBeInTheDocument();
+    const stored = JSON.parse(sessionStorage.getItem("elchi:pending-remittance-keys") ?? "{}") as Record<string, string>;
+    expect(stored).toEqual({ "7": sentKey(0) });
   });
 });
 
@@ -395,10 +582,11 @@ describe("ConnectionSettlement — «To'lov yozildi» natija oynasi (IS-2)", () 
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "To'lov yozildi" })).not.toBeInTheDocument());
     // Fokus «To'lov olindi» ga qaytadi — to'lov oynasining DOM'dan olingan «Yozish» tugmasiga emas.
     expect(screen.getByRole("button", { name: "To'lov olindi" })).toHaveFocus();
-    expect(apiPostMock).toHaveBeenCalledWith("integrations/7/remittances", {
-      amount: 5_000_000,
-      reference: "To'lov topshiriqnomasi №4531",
-    });
+    expect(apiPostMock).toHaveBeenCalledWith(
+      "integrations/7/remittances",
+      { amount: 5_000_000, reference: "To'lov topshiriqnomasi №4531" },
+      IDEMPOTENCY_HEADERS,
+    );
   });
 
   it("⭐ kassaga yozilmadi — «Kassaga yozilmadi» va «Summa asosiy kassaga tushmadi» (Asosiy kassa tarixi havolasi)", async () => {

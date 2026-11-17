@@ -126,8 +126,35 @@ describe("normalizeRemittanceResult", () => {
       advanceApplied: 0,
       advanceBalance: 490_000,
       cashboxPosted: true,
+      replayed: false,
     });
     expect(JSON.stringify(result)).not.toContain("sig'madi");
+  });
+
+  it("⭐ takroriy `Idempotency-Key` (ZE5zqXxu) — `idempotent_replay` → `replayed`, summa birinchi to'lovniki", () => {
+    const result = normalizeRemittanceResult(
+      {
+        statusCode: 200,
+        message: "Remittance already recorded",
+        data: {
+          remittance_id: 82,
+          integration_id: "7",
+          remitted_amount: 1_500_000,
+          settled_amount: 1_500_000,
+          settled_count: 6,
+          unapplied_amount: 0,
+          advance_applied: 0,
+          cashbox_posted: true,
+          idempotent_replay: true,
+        },
+      },
+      // Qayta yuborishda summa tuzatilgan — server birinchisini qaytaradi.
+      1_600_000,
+    );
+    expect(result).toMatchObject({ remittanceId: "82", remitted: 1_500_000, replayed: true, cashboxPosted: true });
+    // Takroriy javobda `advance_balance` yo'q — `null`, «0» emas.
+    expect(result.advanceBalance).toBeNull();
+    expect(normalizeRemittanceResult({ data: { remittance_id: 1, idempotent_replay: "true" } }, 1).replayed).toBe(false);
   });
 
   it("satr summalar va o'ramsiz javob", () => {
