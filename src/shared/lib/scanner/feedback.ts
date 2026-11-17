@@ -6,6 +6,7 @@ import {
   STORED_SCANNER_SOUNDS,
   type StoredScannerSound,
 } from "../preferencesStorage";
+import { SCANNER_ENTER_GAP_MS } from "../useKeyboardScanner";
 
 /**
  * SKAN NATIJASI SIGNALI — ovoz (WebAudio), «Ovozli xabar», tebranish va `SCAN_FEEDBACK_EVENT` hodisasi
@@ -77,24 +78,83 @@ const unlockAudio = async () => {
   }
 };
 
+/**
+ * Klaviaturadan keyin ovoz qulfi shuncha (ms) jimlikdan so'ng ochiladi — skaner oqimi (belgilar va Enter, oxirgi
+ * belgidan Enter gacha `SCANNER_ENTER_GAP_MS`) tugagach. 1 s dan kam: Safari foydalanuvchi harakatini 1 s gacha
+ * bo'lgan taymerga uzatadi — `resume()` baribir harakat ichida.
+ */
+export const SCAN_AUDIO_KEY_UNLOCK_QUIET_MS = SCANNER_ENTER_GAP_MS + 50;
+/** Dekodlash bo'sh paytni shuncha (ms) dan ortiq kutmaydi (`requestIdleCallback` → `timeout`). */
+const DECODE_IDLE_TIMEOUT_MS = 1000;
+
+type IdleWindow = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+};
+
+/** Bo'sh paytda (`requestIdleCallback`; Safari'da yo'q — keyingi vazifa sifatida). */
+const runWhenIdle = (task: () => void) => {
+  const idleWindow = window as IdleWindow;
+  if (typeof idleWindow.requestIdleCallback === "function") {
+    idleWindow.requestIdleCallback(() => task(), { timeout: DECODE_IDLE_TIMEOUT_MS });
+    return;
+  }
+  setTimeout(task, 0);
+};
+
+/**
+ * OVOZ QULFI (kYa7c3sh). Brauzer `AudioContext` ni faqat foydalanuvchi harakatidan keyin ishga tushiradi (iOS/Safari —
+ * `resume()` harakat ishlovchisi ichida bo'lishi shart). Lekin `new AudioContext()` bosh oqimni 100–300 ms band qiladi
+ * (headless Chromium'da o'lchangan: 117 va 278 ms; dekodlash esa fayl boshiga ~1,5 ms). USB skaner — klaviatura:
+ * kontekst skanning birinchi belgisida yaratilsa, keyingi belgi skaner oralig'idan (`SCANNER_KEY_GAP_MS`) kechikib
+ * keladi va skanning boshi tushib qolardi («tok-10235» → «ok-10235»). Shuning uchun:
+ *  - bosish / teginish (`pointerdown`, `touchstart`) — avvalgidek darhol: kontekst yaratiladi va `resume()` shu
+ *    ishlovchining o'zida (iOS/Safari talabi; bu skaner oqimi emas);
+ *  - klaviatura (`keydown`) — kontekst bo'lsa, `resume()` darhol (arzon); bo'lmasa u tugmalar to'xtagach
+ *    (`SCAN_AUDIO_KEY_UNLOCK_QUIET_MS` jimlik) yaratiladi. Taymer tugma ishlovchisida qo'yiladi: Safari harakatni unga
+ *    uzatadi, Chrome va Firefox esa sahifadagi avvalgi harakatni (sticky activation) yetarli deb biladi;
+ *  - oldindan yuklangan fayllar qulf ochilgach bo'sh paytda dekodlanadi — tugma ishlovchisida emas.
+ * Skan natijasi qulfdan oldin kelsa — `playScanSignal` kontekstni o'zi yaratadi (skan allaqachon o'qilgan).
+ */
 if (typeof window !== "undefined") {
-  const removeUnlockListeners = () => {
-    window.removeEventListener("pointerdown", unlockOnce);
-    window.removeEventListener("keydown", unlockOnce);
-    window.removeEventListener("touchstart", unlockOnce);
+  let keyUnlockTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const cancelKeyUnlock = () => {
+    if (keyUnlockTimer === null) return;
+    clearTimeout(keyUnlockTimer);
+    keyUnlockTimer = null;
   };
 
-  const unlockOnce = () => {
+  const removeUnlockListeners = () => {
+    cancelKeyUnlock();
+    window.removeEventListener("pointerdown", unlockNow);
+    window.removeEventListener("touchstart", unlockNow);
+    window.removeEventListener("keydown", unlockAfterKeys);
+  };
+
+  const unlockNow = () => {
+    cancelKeyUnlock();
     void unlockAudio().then(() => {
+      if (!audioContext) return;
       // Oldindan yuklangan (skan sahifasi ochilganda) fayllar endi dekodlanadi — birinchi skan darhol chalinadi.
-      if (audioContext) decodeFetchedFiles(audioContext);
-      if (audioContext?.state === "running") removeUnlockListeners();
+      runWhenIdle(() => {
+        if (audioContext) decodeFetchedFiles(audioContext);
+      });
+      if (audioContext.state === "running") removeUnlockListeners();
     });
   };
 
-  window.addEventListener("pointerdown", unlockOnce);
-  window.addEventListener("keydown", unlockOnce);
-  window.addEventListener("touchstart", unlockOnce);
+  const unlockAfterKeys = () => {
+    if (audioContext) {
+      unlockNow();
+      return;
+    }
+    cancelKeyUnlock();
+    keyUnlockTimer = setTimeout(unlockNow, SCAN_AUDIO_KEY_UNLOCK_QUIET_MS);
+  };
+
+  window.addEventListener("pointerdown", unlockNow);
+  window.addEventListener("touchstart", unlockNow);
+  window.addEventListener("keydown", unlockAfterKeys);
 }
 
 export type ScanFeedbackType = "success" | "error" | "missing" | "duplicate";
@@ -506,7 +566,7 @@ const loadFile = (context: AudioContext, url: string): Promise<AudioBuffer | nul
   return pending;
 };
 
-/** Oldindan yuklangan (hali dekodlanmagan) fayllarni dekodlaydi — ovoz qulfi ochilganda. */
+/** Oldindan yuklangan (hali dekodlanmagan) fayllarni dekodlaydi — ovoz qulfi ochilgach, bo'sh paytda (`runWhenIdle`). */
 const decodeFetchedFiles = (context: AudioContext) => {
   fetchedFiles.forEach((_, url) => void loadFile(context, url));
 };
@@ -516,7 +576,7 @@ const FEEDBACK_TYPES: ScanFeedbackType[] = ["success", "duplicate", "missing", "
 /**
  * Skan sahifasi (skan maqsadi, Mini App) ochilganda kerakli fayllar oldindan yuklanadi — birinchi skan ham darhol
  * chalinsin: tanlangan BeePost ovozlari va (yoqiq bo'lsa) «Ovozli xabar» iboralari. «Ovoz» o'chiq — hech narsa.
- * Tarmoqqa chiqadi, AudioContext yaratmaydi (u foydalanuvchi bosishini kutadi); kontekst bo'lsa — darhol dekodlaydi.
+ * Tarmoqqa chiqadi, AudioContext yaratmaydi (u foydalanuvchi bosishini kutadi); kontekst bo'lsa — bo'sh paytda dekodlaydi.
  */
 export const preloadScanFeedbackAudio = () => {
   if (!getAudioContextCtor() || typeof fetch !== "function") return;
@@ -529,10 +589,11 @@ export const preloadScanFeedbackAudio = () => {
   });
   if (prefs.voice) SCAN_VOICE_PHRASES.forEach((phrase) => urls.add(scanVoiceUrl(phrase)));
   urls.forEach((url) => {
-    if (brokenFiles.has(url)) return;
-    if (audioContext) void loadFile(audioContext, url);
-    else void fetchFile(url);
+    if (!brokenFiles.has(url)) void fetchFile(url);
   });
+  // Kontekst bor (qulf ochilgan) — dekodlash bo'sh paytda: sahifa ochilishi (yoki skan oynasi) bilan bir vazifada emas.
+  const context = audioContext;
+  if (context) runWhenIdle(() => decodeFetchedFiles(context));
 };
 
 const playFile = (context: AudioContext, buffer: AudioBuffer, startAt: number, volume: number) => {
