@@ -85,7 +85,8 @@ test.describe("Ops → Tizim — Tizim holati — 1440px", () => {
     const panel = card.getByRole("region", { name: "Telegram bot holati" });
     await expect(panel.getByText("Telegram bot tokeni rad etildi (401)")).toBeVisible();
     await expect(panel.getByText(/BotFather'dan yangi token oling/)).toBeVisible();
-    await expect(panel.getByText(/^Oxirgi tekshiruv: Bugun, \d{2}:\d{2}$/)).toBeVisible();
+    // `checked_at` — 4 daqiqa oldin: yarim tundan keyingi 4 daqiqada «Kecha» bo'ladi (test yiqilmasin).
+    await expect(panel.getByText(/^Oxirgi tekshiruv: (Bugun|Kecha), \d{2}:\d{2}$/)).toBeVisible();
     await expect(panel.getByText("Qayta ishga tushirish kerak")).toBeVisible();
     await expect(panel.getByRole("button", { name: "Qayta tekshirish" })).toHaveCount(0);
     const row = card.getByRole("table", { name: "Xizmatlar holati" }).locator("tbody tr").nth(0);
