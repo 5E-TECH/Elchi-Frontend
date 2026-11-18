@@ -64,9 +64,11 @@ export const OPS_REDIRECTS = [
   { from: "/logs", tab: "auth", label: "Kirish diagnostikasi", panel: "Kirish diagnostikasi" },
 ];
 
-/** Ish sahifasiga ko'chgan vositalar (F2NzXpMv): eski yo'l ham, `?tab=` ham shu sahifaga olib boradi. */
+/**
+ * Ish sahifasiga ko'chgan vositalar (F2NzXpMv): eski yo'l ham, `?tab=` ham shu sahifaga olib boradi. «Logistika»
+ * (`/logistics-ops`) — u5HTJtqK dan «Pochta → Qaytarish» da (`ops-legacy-redirect.desktop.spec.ts` alohida testi).
+ */
 export const OPS_MOVED = [
-  { from: "/logistics-ops", tab: "logistics", to: "/returns", panel: "Logistika — qaytarish so'rovlari" },
   { from: "/branch-ops", tab: "branches", to: "/batches", panel: "Filiallar — operatsiyalar" },
 ];
 

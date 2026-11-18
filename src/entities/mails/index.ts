@@ -525,8 +525,6 @@ export const useMails = () => {
     queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
     queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
     queryClient.invalidateQueries({ queryKey: ["orders"] });
-    // `/returns` dagi «Qaytarish so'rovlari» (superadmin) — `entities/logistics` (`["logi-cov", "posts", …]`).
-    queryClient.invalidateQueries({ queryKey: ["logi-cov", "posts"] });
   };
 
   const approveReturnRequests = useMutation({

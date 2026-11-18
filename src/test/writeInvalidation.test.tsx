@@ -166,14 +166,18 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
     expectKeys(keys, [["mails", "new"], ["mails", "old"], ["orders"]]);
   });
 
-  it("qaytarish so'rovini tasdiqlash — `/returns` dagi so'rovlar ham", async () => {
+  it("qaytarish so'rovini tasdiqlash — qaytarish, eski / yangi pochtalar va buyurtmalar", async () => {
     const keys = await run(useMails, (m) =>
       m.approveReturnRequests.mutateAsync({ order_ids: ["1"] }),
     );
-    expectKeys(keys, [
-      ["mails", "return"],
-      ["logi-cov", "posts"],
-    ]);
+    expectKeys(keys, [["mails", "return"], ["mails", "old"], ["mails", "new"], ["orders"]]);
+  });
+
+  it("qaytarish so'rovini rad etish — o'sha ro'yxatlar (u5HTJtqK: Ops nusxasidagi takror hook olib tashlandi)", async () => {
+    const keys = await run(useMails, (m) =>
+      m.rejectReturnRequests.mutateAsync({ order_ids: ["1"] }),
+    );
+    expectKeys(keys, [["mails", "return"], ["mails", "old"], ["mails", "new"], ["orders"]]);
   });
 
   it("bekor buyurtmalarni pochtaga jo'natish — «Rad etilgan» pochtalar", async () => {

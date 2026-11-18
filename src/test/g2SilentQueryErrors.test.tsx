@@ -31,7 +31,6 @@ import {
   useInvestorProfits,
   useInvestors,
 } from "../entities/investors";
-import { useLogisticsCoverage } from "../entities/logistics/logisticsCoverage";
 import { useNotifications } from "../entities/notification/api/useNotifications";
 import { useInboxList } from "../entities/notification-inbox/api/useInbox";
 import { usePartners, usePartnerWebhooks } from "../entities/partners";
@@ -156,10 +155,6 @@ describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", 
     ["registratorlar (ops)", () => useIdentityCoverage().useGetRegistrators(undefined, S)],
     ["debitorlar (ops)", () => useIntegrationsCoverage().useGetReceivables({ page: 1 }, S)],
     ["investorlar (ops)", () => useInvestors().useGetInvestors({ page: 1, limit: 20 }, S)],
-    [
-      "qaytarish so'rovlari (ops)",
-      () => useLogisticsCoverage().useGetReturnRequestsList(undefined, S),
-    ],
     ["tizim KPI (ops)", () => useMiscCoverage().useGetAnalyticsKpi(undefined, S)],
     ["tizim holati — readiness (ops)", () => useMiscCoverage().useGetHealthReadiness(S)],
     ["token bo'yicha skan (ops)", () => useMiscCoverage().useGetScanByToken("abc", true, S)],

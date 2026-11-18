@@ -5,15 +5,37 @@ import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useDispatchBranchNames } from "../../../entities/branch";
-import { useMails, type MailItem, type ReturnRequestActionPayload } from "../../../entities/mails";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import { useMails, type MailItem } from "../../../entities/mails";
 import { cx } from "../../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
+import { notify } from "../../../shared/lib/notify";
 import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
-import { Badge, Button, Card, EmptyState, ErrorState, QueryBoundary, SkeletonTable } from "../../../shared/ui/primitives";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  QueryBoundary,
+  SkeletonTable,
+  useConfirm,
+} from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import type { MailsTabLayout } from "../model/mailsLayout";
+import {
+  buildReturnPayload,
+  getRequestId,
+  groupReturnRequests,
+  isBranchTransfer,
+  parseReturnActionResult,
+  returnActionErrorKey,
+  returnRequestState,
+  type ReturnAction,
+  type ReturnActionResult,
+  type ReturnGroup,
+} from "../model/returnRequests";
+import { ApproveReturnSummary } from "./ApproveReturnSummary";
 
 /**
  * «Pochta → Qaytarish» — kuryerlarning qaytarish so'rovlari (maket `superadmin-mails-return`; admin, menejer va
@@ -30,111 +52,40 @@ import type { MailsTabLayout } from "../model/mailsLayout";
  * kuryersiz, ega qarori 2026-11-04) — har manzil filial alohida guruh: «Filial: <nomi> — kelmagan», `Building2`
  * belgisi, holat chipi «Filialga kelmagan»; xulosada kuryer sifatida sanalmaydi. Nomi — `dispatch-destinations`
  * dan (superadmin/admin/HQ registratori), olinmasa — «Filial o'tkazmasi — kelmagan».
+ *
+ * «Tasdiqlash» va «Rad etish» — faqat tasdiq oynasi orqali (u5HTJtqK; maket `superadmin-ops-logistics-approve-dialog`,
+ * Ops'dagi «Qaytarish so'rovlari» nusxasidan ko'chgan — u o'chirildi, `/logistics-ops` va `/ops?tab=logistics` shu
+ * tabga olib keladi): buyurtma va kuryer soni, kuryer bo'yicha guruhlar, HQ yoki filial ombori; so'rov oynaning
+ * ichida ketadi, xato (403 / 409 «tanlov eskirgan» / 5xx) oynada qoladi — tanlov saqlanadi. Natija — xabar: hammasi
+ * bajarilsa muvaffaqiyat, o'tkazib yuborilgan bo'lsa ogohlantirish va buyurtma raqamlari (birinchi 3 tasi, qolgani
+ * «va yana N ta»). Rad etish — o'sha oyna, `danger` tonda (buyurtmalar omborga qaytmaydi).
  */
-
-type ReturnGroup = {
-  /** Kuryer id (`unknown` — kuryersiz eski qator) yoki `branch_transfer:<branch_id>`. */
-  key: string;
-  kind: "courier" | "branch";
-  /** Kuryer ismi yoki «Filial: <nomi> — kelmagan». */
-  name: string;
-  phone: string;
-  orders: MailItem[];
-  totalAmount: number;
-};
 
 /** Filial nomlari (`GET /branches/dispatch-destinations`) faqat shu rollarga ochiq — qolganlar so'ramaydi. */
 const BRANCH_NAME_ROLES = new Set(["superadmin", "admin", "registrator"]);
-
-const isBranchTransfer = (item: MailItem) => item.return_source === "branch_transfer";
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 // Tasdiqlangan buyurtma qayerga qaytadi: filial doirasida — o'sha filial
 // omboriga, HQ doirasida — markazga. (Ilgari "branch" ham "Markazga" deb
 // chiqardi.) «Marketga» manzili yo'q: backend doirasi faqat HQ/BRANCH, tasdiq buyurtmani o'z omboriga qaytaradi.
-const actionLabel = (value: string | undefined, t: Translate) => {
+const isBranchDestination = (value: string | undefined) => {
   const normalized = String(value ?? "").toLowerCase();
-
-  if (normalized.includes("main") || normalized.includes("center") || normalized.includes("hq")) {
-    return t("returnDestinationCenter");
-  }
-
-  if (normalized.includes("branch")) {
-    return t("returnDestinationBranch");
-  }
-
-  return t("returnDestinationCenter");
+  if (normalized.includes("main") || normalized.includes("center") || normalized.includes("hq")) return false;
+  return normalized.includes("branch");
 };
 
-// ON_THE_ROAD — kuryer pochtani qabul qilganda bu posilkani qabul qilmagan (warning); filial o'tkazmasida —
-// posilka manzil filialga kelmagan (warning); WAITING — eski oqimdagi so'rov, posilka kuryer qo'lida (neutral).
-const requestState = (item: MailItem, t: Translate) => {
-  const normalized = String(item.status ?? "").toLowerCase();
-  if (normalized === "on the road") {
-    return {
-      label: t(isBranchTransfer(item) ? "returnStateNotArrived" : "returnStateNotReceived"),
-      tone: "warning" as const,
-    };
-  }
-  if (normalized === "waiting") return { label: t("returnStateWithCourier"), tone: "neutral" as const };
-  return null;
-};
+const actionLabel = (value: string | undefined, t: Translate) =>
+  t(isBranchDestination(value) ? "returnDestinationBranch" : "returnDestinationCenter");
 
-const getRequestId = (item: MailItem) =>
-  item.request_id || item.order_id || item.id;
+const STATE_LABEL_KEYS = {
+  notReceived: "returnStateNotReceived",
+  withCourier: "returnStateWithCourier",
+  notArrived: "returnStateNotArrived",
+} as const;
 
-// Backend faqat { order_ids } qabul qiladi (ValidationPipe boshqa kalitni
-// 400 bilan qaytaradi).
-const buildReturnPayload = (items: MailItem[]): ReturnRequestActionPayload => ({
-  order_ids: Array.from(
-    new Set(items.map((item) => item.order_id || item.request_id || item.id).filter(Boolean)),
-  ),
-});
-
-// Approve/reject javobi: { statusCode, message, data: { approved | rejected,
-// order_ids, skipped_order_ids } }. Eskirgan tanlovni (kuryer shu orada qabul
-// qilgan, hamkasb rad etgan) backend o'tkazib yuboradi va skipped da qaytaradi.
-type ReturnActionResponse = {
-  data?: {
-    approved?: unknown;
-    rejected?: unknown;
-    skipped_order_ids?: unknown;
-  } | null;
-};
-
-/**
- * Kuryer bo'yicha guruhlar; filial o'tkazmasi so'rovlari — manzil filial bo'yicha alohida (`branch_transfer:<id>`):
- * bir nechta filialniki bitta «Kuryer» guruhiga qo'shilib ketmaydi.
- */
-const groupRequests = (
-  items: MailItem[],
-  courierFallback: string,
-  branchLabel: (branch: MailItem["return_branch"]) => string,
-): ReturnGroup[] => {
-  const groups = new Map<string, ReturnGroup>();
-
-  items.forEach((item) => {
-    const branch = isBranchTransfer(item);
-    const key = branch
-      ? `branch_transfer:${item.return_branch?.id ?? ""}`
-      : item.courier?.id || item.courier_id || "unknown";
-    const group = groups.get(key) ?? {
-      key,
-      kind: branch ? ("branch" as const) : ("courier" as const),
-      name: branch ? branchLabel(item.return_branch) : item.courier?.name || courierFallback,
-      phone: branch ? "" : item.courier?.phone_number || "",
-      orders: [],
-      totalAmount: 0,
-    };
-
-    group.orders.push(item);
-    group.totalAmount += item.post_total_price;
-    groups.set(key, group);
-  });
-
-  return Array.from(groups.values());
-};
+/** Natija xabarida nomi bilan sanaladigan o'tkazib yuborilgan buyurtmalar (qolgani — «va yana N ta»). */
+const SKIPPED_LISTED = 3;
 
 /* ─── Klasslar (CODE-MAP 2.6) ─────────────────────────────────────────────── */
 
@@ -187,7 +138,7 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
   const { t, i18n } = useTranslation(["mails", "mailsArchive"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const isPhone = useIsPhone();
-  const { apiRequest } = useAppNotification();
+  const confirm = useConfirm();
   const {
     useGetReturnMails,
     approveReturnRequests,
@@ -214,7 +165,7 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
     [branchNames, t],
   );
   const groups = useMemo(
-    () => groupRequests(requests, t("courierFallback"), branchLabel),
+    () => groupReturnRequests(requests, t("courierFallback"), branchLabel),
     [requests, t, branchLabel],
   );
   const courierGroups = groups.filter((group) => group.kind === "courier").length;
@@ -265,28 +216,96 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
     setSelectedIds(allSelected ? new Set() : new Set(allIds));
   };
 
-  const submit = async (type: "approve" | "reject") => {
+  /** So'rov holati yorlig'i — jadval badge'i va tasdiq oynasi uchun bitta matn (noma'lum holat — «—»). */
+  const stateLabel = (item: MailItem) => {
+    const state = returnRequestState(item);
+    return state ? t(STATE_LABEL_KEYS[state.key]) : "—";
+  };
+
+  /** «№1, №2, №3 ni …» — o'tkazib yuborilganlar sababi (tasdiqlash va rad etish natijasida bir xil). */
+  const skippedReason = (skippedOrderIds: string[]) => {
+    const listed = skippedOrderIds
+      .slice(0, SKIPPED_LISTED)
+      .map((id) => t("mailsArchive:return.dialog.orderNumber", { id }))
+      .join(", ");
+    const rest = skippedOrderIds.length - SKIPPED_LISTED;
+    // Son bo'yicha alohida kalit: uz «… va yana 2 tasini», ru/en — birlik/ko'plik (plural qo'shimchasiz).
+    return rest > 0
+      ? t("mailsArchive:return.result.skippedReasonMore", { list: listed, value: count(rest) })
+      : skippedOrderIds.length === 1
+        ? t("mailsArchive:return.result.skippedReason", { orders: listed })
+        : t("mailsArchive:return.result.skippedReasonMany", { orders: listed });
+  };
+
+  /** Natija — xabar (maket `superadmin-ops-logistics-approve-result`, ega S5): o'tkazib yuborilgan bo'lsa ogohlantirish. */
+  const notifyResult = (type: ReturnAction, { done, skippedOrderIds }: ReturnActionResult) => {
+    const outcome =
+      type === "approve"
+        ? t("mailsArchive:return.approve.result.returned", { value: count(done) })
+        : t("mailsArchive:return.reject.result.kept");
+    if (skippedOrderIds.length === 0) {
+      notify.success(t(`mailsArchive:return.${type}.result.successTitle`, { value: count(done) }), {
+        description: outcome,
+      });
+      return;
+    }
+    const reason = skippedReason(skippedOrderIds);
+    notify.warning(
+      t(`mailsArchive:return.${type}.result.partialTitle`, {
+        done: count(done),
+        skipped: count(skippedOrderIds.length),
+      }),
+      // Hech biri bajarilmagan bo'lsa «0 ta buyurtma omborga qaytarildi» yozilmaydi.
+      { description: done > 0 ? `${outcome} ${reason}` : reason },
+    );
+  };
+
+  /**
+   * Tasdiqlash / rad etish — avval tasdiq oynasi (maket `superadmin-ops-logistics-approve-dialog`; rad etish — o'sha
+   * naqsh, `danger`). So'rov oynaning ichida ketadi (yuklanish, xato — oynada; xom backend matni emas), muvaffaqiyatdan
+   * keyin tanlov tozalanadi va natija xabari chiqadi. Xatoda yoki «Bekor qilish» da tanlov saqlanadi. Ro'yxatlar
+   * (qaytarish, eski, yangi pochta, buyurtmalar) mutatsiyaning `onSettled` ida yangilanadi — xatoda ham.
+   */
+  const submit = async (type: ReturnAction) => {
     if (!selectedItems.length || isMutating) return;
 
     const payload = buildReturnPayload(selectedItems);
+    const orderIds = [...payload.order_ids];
+    const total = orderIds.length;
     const mutation = type === "approve" ? approveReturnRequests : rejectReturnRequests;
-    // Backend xabari (masalan "Siz faqat o'z filialingiz ...") ustun turadi.
-    await apiRequest({
-      request: () => mutation.mutateAsync(payload),
-      // Son — backend haqiqatda bajargani (tanlanganlar soni emas); javobda son
-      // bo'lmasa — tanlanganlar soni.
-      successMessage: (res: unknown) => {
-        const body = (res as ReturnActionResponse | null | undefined)?.data;
-        const done = Number(type === "approve" ? body?.approved : body?.rejected);
-        const total = Number.isFinite(done) ? done : payload.order_ids.length;
-        const skipped = Array.isArray(body?.skipped_order_ids) ? body.skipped_order_ids.length : 0;
-        const base = t(type === "approve" ? "returnApproveSuccess" : "returnRejectSuccess", { count: total });
-        return skipped > 0 ? `${base} · ${t("returnSkippedNote", { count: skipped })}` : base;
+    // Ombor — ro'yxat doirasidan (`scope.type` → `action`): filial yoki HQ.
+    const scopeKey = selectedItems.every((item) => isBranchDestination(item.action)) ? "branch" : "hq";
+    // Natija `onConfirm` ichida yoziladi (oyna yopilgach o'qiladi).
+    const outcome: { result: ReturnActionResult | null } = { result: null };
+
+    const confirmed = await confirm({
+      title: t(`mailsArchive:return.${type}.title`),
+      description:
+        type === "approve"
+          ? t(`mailsArchive:return.approve.description.${scopeKey}`, { value: count(total) })
+          : t("mailsArchive:return.reject.description", { value: count(total) }),
+      icon: type === "approve" ? RotateCcw : X,
+      tone: type === "approve" ? undefined : "danger",
+      size: "md",
+      closable: true,
+      confirmLabel: t(`mailsArchive:return.${type}.confirm`, { value: count(total) }),
+      confirmIcon: type === "approve" ? Check : X,
+      loadingLabel: t(`mailsArchive:return.${type}.loading`),
+      children: (
+        <ApproveReturnSummary
+          groups={groupReturnRequests(selectedItems, t("courierFallback"), branchLabel)}
+          stateLabel={stateLabel}
+        />
+      ),
+      errorMessage: (error) => t(`mailsArchive:return.${type}.errors.${returnActionErrorKey(error)}`),
+      onConfirm: async () => {
+        const response = await mutation.mutateAsync({ order_ids: orderIds });
+        outcome.result = parseReturnActionResult(response, type, orderIds);
       },
-      errorMessage: t("returnActionError"),
-      // Muvaffaqiyatda tanlov tozalanadi; xatoda saqlanadi (qayta urinish uchun).
-      onSuccess: () => setSelectedIds(new Set()),
     });
+    if (!confirmed || !outcome.result) return;
+    setSelectedIds(new Set());
+    notifyResult(type, outcome.result);
   };
 
   /* ─── Qismlar ───────────────────────────────────────────────────────────── */
@@ -298,10 +317,10 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
     return raw ? formatPhone(raw) : t("phoneUnavailable");
   };
   const stateBadge = (item: MailItem) => {
-    const state = requestState(item, t);
+    const state = returnRequestState(item);
     return state ? (
       <Badge tone={state.tone} dot>
-        {state.label}
+        {t(STATE_LABEL_KEYS[state.key])}
       </Badge>
     ) : null;
   };
@@ -378,7 +397,7 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
             leftIcon={X}
             disabled={!someSelected || (isMutating && !rejectReturnRequests.isPending)}
             loading={rejectReturnRequests.isPending}
-            onClick={() => submit("reject")}
+            onClick={() => void submit("reject")}
             className="max-md:flex-1"
           >
             {t("returnReject")}
@@ -388,7 +407,7 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
             leftIcon={Check}
             disabled={!someSelected || (isMutating && !approveReturnRequests.isPending)}
             loading={approveReturnRequests.isPending}
-            onClick={() => submit("approve")}
+            onClick={() => void submit("approve")}
             className="max-md:flex-1"
           >
             {t("returnApprove")}
