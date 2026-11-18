@@ -65,6 +65,18 @@ export const RULES_ORDER: readonly RulesField[] = [
   "extraLimit",
 ];
 
+/**
+ * Faqat sotuvdagi narx dvigatelida ishlatiladigan maydonlar (`SALE_PRICING_ENGINE`, backend DARVOZA 1/2). Saytdagi narx
+ * kalkulyatori (`computeDeliveryQuote`) ularni o'qimaydi — tasdiq oynasi oqibatlari shunga qarab tanlanadi.
+ */
+export const SALE_ONLY_RULES: ReadonlySet<RulesField> = new Set<RulesField>(["minPrice", "extraLimit"]);
+
+/** Tasdiq oynasi oqibatlari uchun: o'zgarishlar narx hisobiga (sayt kalkulyatori ham) va / yoki faqat sotuvga tegadimi. */
+export const changeImpact = (changes: readonly RuleChange[]) => ({
+  quote: changes.some((change) => !SALE_ONLY_RULES.has(change.field)),
+  saleOnly: changes.some((change) => SALE_ONLY_RULES.has(change.field)),
+});
+
 const normalize = (value: string) => value.replace(/\s/g, "").replace(",", ".");
 const NUMBER = /^\d+(?:\.\d+)?$/;
 
