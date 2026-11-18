@@ -231,6 +231,7 @@
       "cancelled": "Bekor qilingan",
       "cancelReason": "Sabab: {{reason}}",
       "elchi": "Elchi kassasidan",
+      "elchiRecord": "Elchi yozuvi",
       "elchiHint": "Ilgari Elchi to'lagan — bekor qilinmaydi",
       "deletedOperator": "O'chirilgan operator",
       "cancel": "Bekor qilish",
@@ -268,7 +269,8 @@
         "amount": "Summani kiriting",
         "amountTooBig": "Summa juda katta",
         "date": "Sanani tanlang",
-        "dateFuture": "Kelajak sanasini tanlab bo'lmaydi"
+        "dateFuture": "Kelajak sanasini tanlab bo'lmaydi",
+        "dateTooOld": "2020-yildan oldingi sanani tanlab bo'lmaydi"
       }
     },
     "confirm": {
@@ -287,7 +289,8 @@
       "replayed": "Bu to'lov allaqachon yozilgan edi",
       "conflict": "Bu to'lov boshqa ma'lumot bilan allaqachon yozilgan bo'lishi mumkin — oynani yopib, tarixni tekshiring.",
       "notFound": "Operator topilmadi — ro'yxatni yangilang.",
-      "failed": "To'lovni yozib bo'lmadi. Qaytadan urinib ko'ring."
+      "failed": "To'lovni yozib bo'lmadi. Qaytadan urinib ko'ring.",
+      "unknown": "Javob kelmadi — to'lov yozilgan bo'lishi mumkin. Oynani yopmasdan «To'lovni yozish» ni qayta bosing: takroriy yozuv bo'lmaydi."
     },
     "cancelDialog": {
       "title": "To'lov yozuvini bekor qilish",

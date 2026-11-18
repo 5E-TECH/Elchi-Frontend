@@ -193,12 +193,55 @@ describe("«Operatorlar → To'lovlar» (F2qp6FtE)", () => {
     await user.click(within(dialog).getByRole("button", { name: "To'lov yozish" }));
     const confirm = await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" });
     await user.click(within(confirm).getByRole("button", { name: "To'lovni yozish" }));
-    expect(await within(confirm).findByText("To'lovni yozib bo'lmadi. Qaytadan urinib ko'ring.")).toBeInTheDocument();
+    // Natija noma'lum (504) — «yozib bo'lmadi» emas: yozuv bo'lishi mumkin, oynada qayta bosish xavfsiz.
+    expect(
+      await within(confirm).findByText(
+        "Javob kelmadi — to'lov yozilgan bo'lishi mumkin. Oynani yopmasdan «To'lovni yozish» ni qayta bosing: takroriy yozuv bo'lmaydi.",
+      ),
+    ).toBeInTheDocument();
     await user.click(within(confirm).getByRole("button", { name: "To'lovni yozish" }));
 
     expect(await screen.findByText("Bu to'lov allaqachon yozilgan edi")).toBeInTheDocument();
     expect(api.post).toHaveBeenCalledTimes(2);
     expect(api.post.mock.calls[0][2].headers["Idempotency-Key"]).toBe(api.post.mock.calls[1][2].headers["Idempotency-Key"]);
+  });
+
+  it("400 — backend sababi ko'rinadi («qayta urinib ko'ring» emas)", async () => {
+    const user = userEvent.setup();
+    api.post.mockReset().mockRejectedValueOnce(axiosError(400, "To'lov sanasi kelajakda bo'lishi mumkin emas"));
+    renderAt("/market-operators?view=payments");
+    const table = await screen.findByRole("table", { name: "Operatorlar hisobi" });
+    const row = within(table).getByText("Sevara Usmonova").closest("tr")!;
+    await user.click(within(row).getByRole("button", { name: "Sevara Usmonova uchun to'lov yozish" }));
+    const dialog = await screen.findByRole("dialog", { name: "To'lov yozish" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Summa" }), "100000");
+    await user.click(within(dialog).getByRole("button", { name: "To'lov yozish" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" });
+    await user.click(within(confirm).getByRole("button", { name: "To'lovni yozish" }));
+    expect(await within(confirm).findByText("To'lov sanasi kelajakda bo'lishi mumkin emas")).toBeInTheDocument();
+    expect(within(confirm).queryByText(/Qaytadan urinib ko'ring/)).toBeNull();
+  });
+
+  it("oynani yopib qayta ochish — yangi Idempotency-Key (yangi yozuv)", async () => {
+    const user = userEvent.setup();
+    api.post.mockReset().mockImplementation(() => ok(payment()));
+    renderAt("/market-operators?view=payments");
+    const table = await screen.findByRole("table", { name: "Operatorlar hisobi" });
+    const open = async () => {
+      const row = within(screen.getByRole("table", { name: "Operatorlar hisobi" })).getByText("Sevara Usmonova").closest("tr")!;
+      await user.click(within(row).getByRole("button", { name: "Sevara Usmonova uchun to'lov yozish" }));
+      const dialog = await screen.findByRole("dialog", { name: "To'lov yozish" });
+      await user.type(within(dialog).getByRole("textbox", { name: "Summa" }), "1000");
+      await user.click(within(dialog).getByRole("button", { name: "To'lov yozish" }));
+      const confirm = await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" });
+      await user.click(within(confirm).getByRole("button", { name: "To'lovni yozish" }));
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "To'lov yozish" })).toBeNull());
+    };
+    expect(table).toBeInTheDocument();
+    await open();
+    await open();
+    expect(api.post).toHaveBeenCalledTimes(2);
+    expect(api.post.mock.calls[0][2].headers["Idempotency-Key"]).not.toBe(api.post.mock.calls[1][2].headers["Idempotency-Key"]);
   });
 
   it("«Bekor qilish»: sabab majburiy, POST :id/cancel { reason }", async () => {
@@ -264,6 +307,7 @@ describe("forma tekshiruvi", () => {
     expect(validatePaymentForm({ operatorId: "41", amount: 10, paidAt: "2026-11-19" }, "2026-11-18")).toEqual({ date: "dateFuture" });
     expect(validatePaymentForm({ operatorId: "41", amount: 1e13, paidAt: "2026-11-18" }, "2026-11-18")).toEqual({ amount: "amountTooBig" });
     expect(validatePaymentForm({ operatorId: "41", amount: 1, paidAt: "2026-11-01" }, "2026-11-18")).toEqual({});
+    expect(validatePaymentForm({ operatorId: "41", amount: 1, paidAt: "2019-12-31" }, "2026-11-18")).toEqual({ date: "dateTooOld" });
   });
 
   it("uz/ru/en — `payments` kalitlari bir xil", () => {
@@ -274,5 +318,12 @@ describe("forma tekshiruvi", () => {
     const uz = keys({ payments: uzLocale.payments, tabs: uzLocale.tabs }).sort();
     expect(keys({ payments: ruLocale.payments, tabs: ruLocale.tabs }).sort()).toEqual(uz);
     expect(keys({ payments: enLocale.payments, tabs: enLocale.tabs }).sort()).toEqual(uz);
+  });
+});
+
+describe("todayIso — Toshkent kuni", () => {
+  it("UTC 20:30 (Toshkentda ertasi kun 01:30) — Toshkent sanasi", () => {
+    expect(todayIso(new Date("2026-11-18T20:30:00Z"))).toBe("2026-11-19");
+    expect(todayIso(new Date("2026-11-18T18:59:00Z"))).toBe("2026-11-18");
   });
 });

@@ -64,7 +64,8 @@ export const OperatorPaymentsTable = memo(({ rows, busy, onCancel }: Props) => {
         return (
           <span className="flex flex-col items-start gap-1">
             <Badge tone="info" icon={Landmark}>
-              {t("payments.history.elchi")}
+              {/* Kassa izi bor eski yozuv — «Elchi kassasidan»; izsiz (AUDIT M6 dan oldingi) — «Elchi yozuvi». */}
+              {t(row.affectsCashbox ? "payments.history.elchi" : "payments.history.elchiRecord")}
             </Badge>
             <span className="text-[13px] text-text-muted">{t("payments.history.elchiHint")}</span>
           </span>

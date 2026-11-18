@@ -231,6 +231,7 @@
       "cancelled": "Cancelled",
       "cancelReason": "Reason: {{reason}}",
       "elchi": "From Elchi cashbox",
+      "elchiRecord": "Elchi record",
       "elchiHint": "Paid earlier by Elchi — cannot be cancelled",
       "deletedOperator": "Deleted operator",
       "cancel": "Cancel",
@@ -268,7 +269,8 @@
         "amount": "Enter the amount",
         "amountTooBig": "The amount is too large",
         "date": "Select a date",
-        "dateFuture": "A future date cannot be selected"
+        "dateFuture": "A future date cannot be selected",
+        "dateTooOld": "A date before 2020 cannot be selected"
       }
     },
     "confirm": {
@@ -287,7 +289,8 @@
       "replayed": "This payment was already recorded",
       "conflict": "This payment may already be recorded with different details — close the dialog and check the history.",
       "notFound": "Operator not found — refresh the list.",
-      "failed": "Could not record the payment. Please try again."
+      "failed": "Could not record the payment. Please try again.",
+      "unknown": "No response — the payment may have been recorded. Without closing this window, press “Record payment” again: no duplicate will be created."
     },
     "cancelDialog": {
       "title": "Cancel payment entry",

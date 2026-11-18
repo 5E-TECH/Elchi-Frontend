@@ -7,6 +7,7 @@ import {
   useOperatorBalances,
   useRecordOperatorPayment,
 } from "../../../entities/operator-payment";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
 import { CURRENCY_LABEL, formatMoneyLocalized, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
@@ -26,6 +27,8 @@ import {
   parseAmountDigits,
   paymentHttpStatus,
   todayIso,
+  PAYMENT_DATE_MIN,
+  isUnknownPaymentOutcome,
   validatePaymentForm,
   type PaymentFormErrors,
 } from "../model/operatorPayments";
@@ -146,7 +149,11 @@ export const RecordOperatorPaymentDialog = ({ open, onClose, operator }: Props) 
           const status = paymentHttpStatus(error);
           if (status === 409) return t("payments.confirm.conflict");
           if (status === 404) return t("payments.confirm.notFound");
-          return t("payments.confirm.failed");
+          // Javob yo'q yoki 5xx — yozuv yaratilgan bo'lishi mumkin: oynani yopmasdan qayta bosish (o'sha
+          // `Idempotency-Key`) ikkinchi yozuv yaratmaydi. Yopib qayta ochish — yangi kalit, ya'ni ikkinchi yozuv.
+          if (isUnknownPaymentOutcome(status)) return t("payments.confirm.unknown");
+          // 400 / 403 — backend sababi (sana, chegara, ruxsat) aniq: uni ko'rsatamiz, «qayta urining» emas.
+          return getBackendErrorMessage(error) ?? t("payments.confirm.failed");
         },
         onConfirm: async () => {
           const result = await record.mutateAsync({
@@ -253,6 +260,7 @@ export const RecordOperatorPaymentDialog = ({ open, onClose, operator }: Props) 
             setPaidAt(value);
             clearError("date");
           }}
+          min={PAYMENT_DATE_MIN}
           max={today}
           clearable={false}
           disabled={busy}
