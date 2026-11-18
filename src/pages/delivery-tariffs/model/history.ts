@@ -30,18 +30,22 @@ export type HistoryEntry = {
 
 /**
  * «O'ZGARISHLAR TARIXI» — `GET /delivery/tariffs` `versions` (yangisi tepada): har versiya shu tarifning undan
- * oldingi versiyasi bilan solishtiriladi. Hisob qoidalari — `buildSettingsHistory`, ikkalasi — `buildTimeline`.
+ * oldingi versiyasi bilan solishtiriladi. Bekor qilingan versiya (B0ILd7YI) hech qachon kuchga kirmagan — u keyingi
+ * versiyalar uchun «oldingi» bo'lmaydi (o'zi esa undan oldingisi bilan solishtiriladi: nima o'zgarishi kerak edi).
+ * Hisob qoidalari — `buildSettingsHistory`, ikkalasi — `buildTimeline`.
  */
 export const buildHistory = (versions: readonly DeliveryTariffVersion[]): HistoryEntry[] =>
   versions.map((version, index) => {
-    const previous = versions.slice(index + 1).find((item) => item.tariffId === version.tariffId);
+    const previous = versions
+      .slice(index + 1)
+      .find((item) => item.tariffId === version.tariffId && !item.isCancelled);
     return { version, initial: !previous, changes: previous ? diffTariffs(previous, version) : [] };
   });
 
-/** Jadval ostidagi «Rejalashtirilgan: …» — kelajakdagi versiyalar, hozirgi tarif bilan solishtirib. */
+/** Jadval ostidagi «Rejalashtirilgan: …» — kelajakdagi (bekor qilinmagan) versiyalar, hozirgi tarif bilan solishtirib. */
 export const scheduledChanges = (data: DeliveryTariffsData): HistoryEntry[] =>
   buildHistory(data.versions)
-    .filter((entry) => entry.version.isScheduled)
+    .filter((entry) => entry.version.isScheduled && !entry.version.isCancelled)
     .map((entry) => {
       const current = data.current[entry.version.tariffId];
       return current ? { ...entry, initial: false, changes: diffTariffs(current, entry.version) } : entry;
@@ -54,7 +58,9 @@ export type SettingsChange =
       from: number;
       to: number;
     }
-  | { kind: "pickupFree"; from: number | null; to: number | null };
+  | { kind: "pickupFree"; from: number | null; to: number | null }
+  | { kind: "minPrice"; from: number | null; to: number | null }
+  | { kind: "extraLimit"; from: number | null; to: number | null };
 
 const SETTINGS_NUMBER_FIELDS = [
   ["firstKg", "firstKgIncluded"],
@@ -73,6 +79,10 @@ export const diffSettings = (previous: DeliveryPricingSettings, next: DeliveryPr
   }
   if (previous.pickupFreeFromCount !== next.pickupFreeFromCount)
     changes.push({ kind: "pickupFree", from: previous.pickupFreeFromCount, to: next.pickupFreeFromCount });
+  if (previous.minDeliveryPrice !== next.minDeliveryPrice)
+    changes.push({ kind: "minPrice", from: previous.minDeliveryPrice, to: next.minDeliveryPrice });
+  if (previous.extraCostLimitAmount !== next.extraCostLimitAmount)
+    changes.push({ kind: "extraLimit", from: previous.extraCostLimitAmount, to: next.extraCostLimitAmount });
   return changes;
 };
 

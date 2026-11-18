@@ -21,7 +21,9 @@ import { useTariffText } from "./useTariffText";
  * «O'ZGARISHLAR TARIXI» (maket `superadmin-regions-delivery-tariffs`): `GET /delivery/tariffs` versiyalari, yangisi
  * tepada — «Markazgacha · har kg 4 000 → 4 500 so'm» + «Rejalashtirilgan»; ostida «25.10.2026 dan · Bugun, 14:20».
  * Hisob qoidalari o'zgarishlari (`GET /delivery/pricing-settings/history`) shu ro'yxatga qo'shiladi; har qatorda kim
- * o'zgartirgani (`created_by_name`). Qoidalar tarixi yuklanmasa — faqat tarif qatorlari.
+ * o'zgartirgani (`created_by_name`). Qoidalar tarixi yuklanmasa — faqat tarif qatorlari. Bekor qilingan
+ * rejalashtirilgan versiya (B0ILd7YI) — «Bekor qilingan» belgisi (ton `danger` — DESIGN_SYSTEM §8, maket
+ * `superadmin-notifications-campaign-cancel-dialog` tarixidagi «Bekor qilingan») va «bekor qilindi: sana · kim».
  */
 export const TariffHistoryCard = ({
   query,
@@ -56,10 +58,20 @@ export const TariffHistoryCard = ({
 
   const meta = (item: TimelineEntry) => {
     const version = item.entry.version;
+    const cancelled =
+      item.type === "tariff" && item.entry.version.isCancelled
+        ? [
+            item.entry.version.cancelledAt
+              ? t("page.history.cancelledAt", { date: formatDateTimeLocalized(item.entry.version.cancelledAt) })
+              : t("page.history.cancelledPlain"),
+            item.entry.version.cancelledByName,
+          ]
+        : [];
     return [
       item.type === "tariff" ? t("page.history.from", { date: formatDateLocalized(item.entry.version.validFrom) }) : null,
       version.createdAt ? formatDateTimeLocalized(version.createdAt) : null,
       version.createdByName ? t("page.history.by", { name: version.createdByName }) : null,
+      ...cancelled,
     ]
       .filter(Boolean)
       .join(" · ");
@@ -90,7 +102,11 @@ export const TariffHistoryCard = ({
                   <span className="text-sm font-semibold text-text">
                     {item.type === "tariff" ? title(item.entry) : settingsTitle(item.entry)}
                   </span>
-                  {item.type === "tariff" && item.entry.version.isScheduled ? (
+                  {item.type === "tariff" && item.entry.version.isCancelled ? (
+                    <Badge tone="danger" size="sm">
+                      {t("page.history.cancelled")}
+                    </Badge>
+                  ) : item.type === "tariff" && item.entry.version.isScheduled ? (
                     <Badge tone="info" size="sm">
                       {t("page.history.scheduled")}
                     </Badge>

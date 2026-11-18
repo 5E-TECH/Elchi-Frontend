@@ -99,6 +99,9 @@ export const normalizePricingSettings = (value: unknown): DeliveryPricingSetting
     pickupFee: numberOf(row.pickup_fee) ?? 0,
     pickupFreeFromCount: numberOf(row.pickup_free_from_count),
     expressMultiplier: numberOf(row.express_multiplier) ?? 1,
+    // KmWO9gTA (migratsiya 183): eski javobda yo'q — `null` (chegara yo'q / sukut).
+    minDeliveryPrice: numberOf(row.min_delivery_price),
+    extraCostLimitAmount: numberOf(row.extra_cost_limit_amount),
   };
 };
 
@@ -139,6 +142,8 @@ export const normalizeTariff = (value: unknown): DeliveryTariff | null => {
     createdAt: textOf(row.createdAt ?? row.created_at),
     createdBy: row.created_by === undefined || row.created_by === null ? null : String(row.created_by),
     createdByName: textOf(row.created_by_name),
+    cancelledAt: textOf(row.cancelled_at),
+    cancelledByName: textOf(row.cancelled_by_name),
   };
 };
 
@@ -179,7 +184,17 @@ export const normalizeTariffsData = (value: unknown): DeliveryTariffsData => {
     versions: versions.flatMap((raw): DeliveryTariffVersion[] => {
       const tariff = normalizeTariff(raw);
       const row = asRecord(raw);
-      return tariff ? [{ ...tariff, isCurrent: row?.is_current === true, isScheduled: row?.is_scheduled === true }] : [];
+      if (!tariff) return [];
+      // B0ILd7YI: bekor qilingan versiya hech qachon «rejalashtirilgan» emas (eski javobda `is_cancelled` yo'q).
+      const isCancelled = row?.is_cancelled === true || tariff.cancelledAt !== null;
+      return [
+        {
+          ...tariff,
+          isCurrent: row?.is_current === true,
+          isScheduled: row?.is_scheduled === true && !isCancelled,
+          isCancelled,
+        },
+      ];
     }),
   };
 };
@@ -192,4 +207,17 @@ export const getDeliveryTariffs = async (): Promise<DeliveryTariffsData> => {
 export const createDeliveryTariff = async (body: CreateDeliveryTariffRequest) => {
   const response = await api.post(API_ENDPOINTS.DELIVERY_PRICING.TARIFFS, body);
   return response.data as unknown;
+};
+
+/** `POST /delivery/tariffs/:id/cancel` natijasi: bekor qilingan versiya; `alreadyCancelled` — takror so'rov (xato emas). */
+export type CancelDeliveryTariffResult = { tariff: DeliveryTariff | null; alreadyCancelled: boolean };
+
+/**
+ * B0ILd7YI — rejalashtirilgan (hali kuchga kirmagan) versiyani bekor qilish. Takror so'rov (vaqt tugagach qayta
+ * bosish) — 200 va `already_cancelled: true`; kuchga kirgan versiya — 409.
+ */
+export const cancelDeliveryTariff = async (id: string): Promise<CancelDeliveryTariffResult> => {
+  const response = await api.post(API_ENDPOINTS.DELIVERY_PRICING.TARIFF_CANCEL(id));
+  const row = payloadOf(response.data);
+  return { tariff: normalizeTariff(row), alreadyCancelled: row?.already_cancelled === true };
 };

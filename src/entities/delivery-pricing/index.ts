@@ -46,8 +46,10 @@ export {
   type WeightIssue,
 } from "./lib/measureInput";
 export {
+  cancelDeliveryTariff,
   createDeliveryTariff,
   getDeliveryTariffs,
+  type CancelDeliveryTariffResult,
   normalizeTariff,
   normalizeTariffsData,
   updatePricingSettings,
@@ -62,6 +64,7 @@ export {
 } from "./api/deliveryPricingApi";
 export {
   QUOTE_DEBOUNCE_MS,
+  useCancelDeliveryTariff,
   useCreateDeliveryTariff,
   useDeliveryTariffs,
   useUpdatePricingSettings,

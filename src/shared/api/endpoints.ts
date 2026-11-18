@@ -402,6 +402,8 @@ export const API_ENDPOINTS = {
     // GET → data.current { city, center, address } + data.versions (is_current, is_scheduled) · POST yangi versiya
     // { tariff_id, base_price, extra_per_kg, days_min, days_max, valid_from? } — SUPERADMIN, ADMIN (47WFHzlx)
     TARIFFS: "delivery/tariffs",
+    // POST (tanasiz) — faqat rejalashtirilgan versiya; takror — 200 `already_cancelled`, kuchga kirgan — 409 (B0ILd7YI)
+    TARIFF_CANCEL: (id: string) => `delivery/tariffs/${encodeURIComponent(id)}/cancel`,
     SETTINGS: "delivery/pricing-settings", // GET faol versiya · PATCH qisman (yangi versiya) — SUPERADMIN, ADMIN
     // GET → data.versions (yangisi tepada, is_active, created_by_name) — SUPERADMIN, ADMIN (47WFHzlx)
     SETTINGS_HISTORY: "delivery/pricing-settings/history",

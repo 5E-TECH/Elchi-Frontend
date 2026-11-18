@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  cancelDeliveryTariff,
   createDeliveryTariff,
   getDeliveryTariffs,
   getPricingSettings,
@@ -103,7 +104,21 @@ describe("normalizePricingSettings", () => {
       pickupFee: 20000,
       pickupFreeFromCount: null,
       expressMultiplier: 1.4,
+      // Migratsiya 183 dan oldingi javob — sotuv chegaralari yo'q.
+      minDeliveryPrice: null,
+      extraCostLimitAmount: null,
     });
+  });
+
+  it("sotuv chegaralari (B0ILd7YI): `min_delivery_price`, `extra_cost_limit_amount` — son satri ham; `null` — chegara yo'q", () => {
+    expect(
+      normalizePricingSettings({
+        data: { id: 5, first_kg_included: 1, round_to: 500, min_delivery_price: "15000.00", extra_cost_limit_amount: 20000 },
+      }),
+    ).toMatchObject({ minDeliveryPrice: 15000, extraCostLimitAmount: 20000 });
+    expect(
+      normalizePricingSettings({ first_kg_included: 1, round_to: 500, min_delivery_price: null, extra_cost_limit_amount: null }),
+    ).toMatchObject({ minDeliveryPrice: null, extraCostLimitAmount: null });
   });
 
   it("majburiy maydon yo'q — `null`", () => {
@@ -231,5 +246,52 @@ describe("hisob qoidalari tarixi va muallif ismi (47WFHzlx)", () => {
       },
     });
     expect(data.versions[0]).toMatchObject({ createdBy: "1", createdByName: "Shodiyor Ergashev" });
+  });
+});
+
+describe("rejalashtirilgan versiyani bekor qilish (B0ILd7YI)", () => {
+  const version = (extra: Record<string, unknown>) => ({
+    id: "9",
+    tariff_id: "center",
+    base_price: 40000,
+    extra_per_kg: 4500,
+    valid_from: "2099-10-25T00:00:00Z",
+    ...extra,
+  });
+
+  it("normalizeTariffsData: `is_cancelled` / `cancelled_at` — bekor qilingan, hech qachon «rejalashtirilgan» emas", () => {
+    const data = normalizeTariffsData({
+      data: {
+        current: {},
+        versions: [
+          version({ is_scheduled: false, is_cancelled: true, cancelled_at: "2026-11-17T10:00:00Z", cancelled_by_name: "Shodiyor Ergashev" }),
+          // Eski javob (bayroqsiz), lekin `cancelled_at` bor — baribir bekor qilingan.
+          version({ id: "8", is_scheduled: true, cancelled_at: "2026-11-17T09:00:00Z" }),
+          version({ id: "7", is_scheduled: true }),
+        ],
+      },
+    });
+    expect(data.versions[0]).toMatchObject({
+      isCancelled: true,
+      isScheduled: false,
+      cancelledAt: "2026-11-17T10:00:00Z",
+      cancelledByName: "Shodiyor Ergashev",
+    });
+    expect(data.versions[1]).toMatchObject({ isCancelled: true, isScheduled: false });
+    expect(data.versions[2]).toMatchObject({ isCancelled: false, isScheduled: true, cancelledAt: null, cancelledByName: null });
+  });
+
+  it("POST delivery/tariffs/:id/cancel — tanasiz; takror so'rov (`already_cancelled`) ham natija", async () => {
+    mocks.post.mockResolvedValueOnce({
+      data: { statusCode: 200, data: version({ is_cancelled: true, cancelled_at: "2026-11-17T10:00:00Z", already_cancelled: false }) },
+    });
+    await expect(cancelDeliveryTariff("9")).resolves.toMatchObject({
+      tariff: { id: "9", cancelledAt: "2026-11-17T10:00:00Z" },
+      alreadyCancelled: false,
+    });
+    expect(mocks.post).toHaveBeenCalledWith("delivery/tariffs/9/cancel");
+
+    mocks.post.mockResolvedValueOnce({ data: { statusCode: 200, data: version({ already_cancelled: true }) } });
+    await expect(cancelDeliveryTariff("9")).resolves.toMatchObject({ alreadyCancelled: true });
   });
 });

@@ -3,6 +3,7 @@ import type { DeliveryTariffId } from "../../../entities/delivery-pricing";
 import { getErrorKind, getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import type { SettingsChange, TariffChange } from "../model/history";
+import type { RulesField } from "../model/rulesForm";
 
 /** Sahifa matnlari: tarif nomi, muddat («1–2 kun»), o'zgarish («har kg 4 000 → 4 500 so'm»), pul va son. */
 export const useTariffText = () => {
@@ -26,6 +27,9 @@ export const useTariffText = () => {
     value === null ? t("page.history.settings.pickupNever") : t("page.history.settings.pickupFrom", { count: value });
   /** Kg / koeffitsiyent — kasri bilan (0,1; 1,5; 3), butun son kasrsiz. */
   const decimal = (value: number) => formatNumberLocalized(value, { language, fractionDigits: 3 });
+  /** Sotuv chegarasi (B0ILd7YI): `null` — «chegarasiz» / «sukut». */
+  const minPrice = (value: number | null) => (value === null ? t("page.rules.minPriceNone") : money(value));
+  const extraLimit = (value: number | null) => (value === null ? t("page.rules.extraLimitDefault") : money(value));
   /**
    * Hisob qoidasi o'zgarishi: «asosiy narxga kiradigan og'irlik 1 → 2 kg», «hajm bo'yicha hisoblash chegarasi
    * 0 → 3 kg», «yaxlitlash 500 → 1 000 so'm».
@@ -33,10 +37,36 @@ export const useTariffText = () => {
   const settingsChange = (item: SettingsChange) => {
     const key = `page.history.settings.${item.kind}`;
     if (item.kind === "pickupFree") return t(key, { from: pickupFree(item.from), to: pickupFree(item.to) });
+    if (item.kind === "minPrice") return t(key, { from: minPrice(item.from), to: minPrice(item.to) });
+    if (item.kind === "extraLimit") return t(key, { from: extraLimit(item.from), to: extraLimit(item.to) });
     if (item.kind === "roundTo" || item.kind === "pickupFee") return t(key, { from: number(item.from), to: money(item.to) });
     return t(key, { from: decimal(item.from), to: decimal(item.to) });
   };
   const settingsChanges = (items: readonly SettingsChange[]) => items.map(settingsChange).join(", ");
+  /**
+   * Qoida qiymati birligi bilan — «Qoidalarni saqlash» tasdig'idagi «eski → yangi» (B0ILd7YI): «1,0 kg», «500 so'm»,
+   * «×1,4», «10 tadan» / «hech qachon», «chegarasiz» / «sukut».
+   */
+  const ruleValue = (field: RulesField, value: number | null): string => {
+    switch (field) {
+      case "firstKg":
+      case "minKg":
+      case "step":
+      case "volumetricFrom":
+        return value === null ? "—" : t("page.rules.valueKg", { value: decimal(value) });
+      case "roundTo":
+      case "pickupFee":
+        return value === null ? "—" : money(value);
+      case "express":
+        return value === null ? "—" : t("page.rules.valueTimes", { value: decimal(value) });
+      case "pickupFree":
+        return pickupFree(value);
+      case "minPrice":
+        return minPrice(value);
+      case "extraLimit":
+        return extraLimit(value);
+    }
+  };
   /** Saqlash xatosining izohi — faqat i18n (xom backend matni ko'rsatilmaydi). */
   const saveError = (error: unknown) => {
     const kind = getErrorKind(error);
@@ -57,6 +87,7 @@ export const useTariffText = () => {
     days,
     changes,
     settingsChanges,
+    ruleValue,
     name: (id: DeliveryTariffId) => t(`tariffs.${id}`),
   };
 };
