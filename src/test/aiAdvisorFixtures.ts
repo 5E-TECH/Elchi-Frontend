@@ -951,7 +951,8 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
     ...r8Detail,
     id: "1053",
     status: "seen",
-    title: "4 ta tuzatish",
+    // Backend `advisorTitle` (R8, `ratio` yo'q): «dd.mm.yyyy–dd.mm.yyyy: 4 ta tuzatish».
+    title: `${day(lastMonday).split("-").reverse().join(".")}–${day(lastSunday).split("-").reverse().join(".")}: 4 ta tuzatish`,
     facts: { from: day(lastMonday), to: day(lastSunday), count: 4, baseline_weekly_avg: 0, ratio: null },
     evidence: {
       kind: "corrections",
