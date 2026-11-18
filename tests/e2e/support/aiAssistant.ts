@@ -342,8 +342,9 @@ export const expectNoHorizontalOverflow = async (page: Page) => {
  *   filtr (`status`, `severity`, `rule_key`), sahifalash, `counts.by_status` (status filtrisiz); `overview` — joriy
  *   holatdan; `GET alerts/:id` — `new` → `seen` (yon ta'sir); izohda `pending` → `explainReadyAfter` ta so'rovdan
  *   keyin `ready` (`stuck` — hech qachon); `PATCH alerts/:id` — izoh 3–500 («Hal qilindi»), `closed` rejimida 409;
- *   `GET/PATCH settings` (`settings: "off"` — 404), `version` bilan (eskisi — 409; `severity` / `telegram` / boshqa
- *   kalit — 400 `INVALID_SETTING`; `settingsPatch`: `invalid_rule` — 400 `INVALID_RULE`, `error` — 500).
+ *   `GET/PATCH settings` (`settings: "off"` — 404), `version` bilan (eskisi — 409; `severity` / `telegram` —
+ *   400 `INVALID_SETTING`; `settingsPatch`: `invalid_rule` — 400 `INVALID_RULE`, `error` — 500). Gateway DTO
+ *   qatlami (noma'lum kalit, noto'g'ri tur, boshqaruv belgisi) — kodsiz 400, ai-service tekshiruvlaridan oldin.
  */
 export type AdvisorMode = "off" | "on" | "forbidden";
 export type AdvisorExplainMode = "queued" | "cached" | "stuck" | "budget_month" | "budget_global" | "disabled";
@@ -446,6 +447,42 @@ export const createAdvisorMock = ({
   const fail = (body: ErrorBody): Reply => ({ status: body.statusCode, body });
   const badRequest = (message: string): Reply => fail({ statusCode: 400, message });
   const notFound = (method: string, path: string): Reply => fail({ statusCode: 404, message: `Cannot ${method} /${path}`, error: "Not Found" });
+  const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+  /**
+   * Gateway DTO qatlami (global `ValidationPipe` `whitelist` + `forbidNonWhitelisted`) — ai-service'dan OLDIN, kodsiz
+   * 400: noma'lum kalit («property X should not exist»), `@IsIn` / `@IsString` / `@IsObject` / `@Matches(NO_CONTROL_CHARS)`.
+   * Ichki maydonlar (`rules.*`, izoh uzunligi) bu yerda tekshirilmaydi — ular ai-service'ning kodli xatolari.
+   */
+  const dtoError = (body: unknown, fields: Record<string, (value: unknown) => string | null>): string | null => {
+    const payload = isPlainObject(body) ? body : {};
+    const extra = Object.keys(payload).find((key) => !Object.hasOwn(fields, key));
+    if (extra) return `property ${extra} should not exist`;
+    for (const [key, check] of Object.entries(fields)) {
+      const message = check(payload[key]);
+      if (message) return message;
+    }
+    return null;
+  };
+  const optional = (check: (value: unknown) => string | null) => (value: unknown) =>
+    value === undefined || value === null ? null : check(value);
+  const isObjectField = (key: string) => optional((value) => (isPlainObject(value) ? null : `${key} must be an object`));
+  // Backend `NO_CONTROL_CHARS`: C0 (\t, \n, \r dan tashqari) va DEL.
+  // eslint-disable-next-line no-control-regex -- backend `NO_CONTROL_CHARS` bilan bir xil
+  const CONTROL_CHARS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
+  const ALERT_PATCH_DTO = {
+    status: (value: unknown) => (value === "resolved" || value === "dismissed" ? null : "status must be one of the following values: resolved, dismissed"),
+    note: optional((value) =>
+      typeof value !== "string" ? "note must be a string" : CONTROL_CHARS.test(value) ? "note must match NO_CONTROL_CHARS" : null,
+    ),
+  };
+  const SETTINGS_PATCH_DTO = {
+    version: () => null,
+    rules: isObjectField("rules"),
+    telegram: isObjectField("telegram"),
+    budget: isObjectField("budget"),
+    schedule: isObjectField("schedule"),
+  };
 
   const handle = (method: string, path: string, query: URLSearchParams, body: unknown): Reply => {
     state.requests.push({ method, path, query: Object.fromEntries(query), body });
@@ -481,6 +518,10 @@ export const createAdvisorMock = ({
     if (one) {
       const [, id, explainPath] = one;
       if (!/^\d{1,18}$/.test(id)) return badRequest("Ogohlantirish ID si noto'g'ri");
+      if (!explainPath && method === "PATCH") {
+        const invalid = dtoError(body, ALERT_PATCH_DTO);
+        if (invalid) return badRequest(invalid);
+      }
       const alert = state.alerts.find((item) => item.id === id);
       if (!alert) return fail(fx.errors.notFound);
       const closed = alert.status === "resolved" || alert.status === "dismissed";
@@ -504,6 +545,8 @@ export const createAdvisorMock = ({
 
       if (explainPath && method === "POST") {
         if (closed) return fail(fx.errors.explainClosed);
+        // `budget_month` (scope `advisor`, period `month`) — hozirgi backend bermaydi (BE-1 gacha faqat global/day);
+        // oldindan moslik uchun saqlangan.
         if (state.explain === "budget_month") return fail(fx.errors.budgetAdvisorMonth);
         if (state.explain === "budget_global") return fail(fx.errors.budgetGlobalDay);
         if (state.explain === "disabled") return fail(fx.errors.aiDisabled);
@@ -527,21 +570,14 @@ export const createAdvisorMock = ({
       }
 
       if (!explainPath && method === "PATCH") {
-        // Backend `AdvisorAlertsService.update` tartibi: holat (kodsiz 400) → ayni foydalanuvchi ayni holat — 200
-        // o'zgarishsiz → yopilgan — 409 (izoh xatosidan oldin) → izoh (`normalizeNote`: matn emas — `required`,
-        // boshqaruv belgisi — kodsiz 400, avval `too_long`, keyin «Hal qilindi» uchun `required` / `too_short`).
-        const { status, note } = (body ?? {}) as { status?: string; note?: unknown };
-        if (status !== "resolved" && status !== "dismissed") return badRequest("status noto'g'ri");
+        // Gateway DTO (yuqorida, 404 dan ham oldin): holat, izoh turi va boshqaruv belgisi, ortiqcha kalit — kodsiz 400.
+        // So'ng backend `AdvisorAlertsService.update` tartibi: ayni foydalanuvchi ayni holat — 200 o'zgarishsiz →
+        // yopilgan — 409 (izoh xatosidan oldin) → izoh (`normalizeNote`: trim'dan keyin avval `too_long`, keyin
+        // «Hal qilindi» uchun `required` / `too_short`).
+        const { status, note } = body as { status: "resolved" | "dismissed"; note?: string | null };
         if (state.patch !== "closed" && alert.status === status && alert.resolved_by?.id === "1") return ok(alert, 200, "AI advisor alert");
         if (state.patch === "closed") return fail(fx.errors.closed);
         if (closed) return fail({ ...fx.errors.closed, alert_status: alert.status });
-        if (note !== undefined && note !== null && typeof note !== "string") {
-          return fail({ ...fx.errors.noteRequired, message: "Izoh matn bo'lishi kerak" });
-        }
-        // eslint-disable-next-line no-control-regex -- backend `CONTROL_CHARS` (\n, \t dan tashqari) bilan bir xil
-        if (typeof note === "string" && /[\u0000-\u0008\u000b-\u001f\u007f]/.test(note)) {
-          return badRequest("Izohda ruxsat etilmagan belgi bor");
-        }
         const text = typeof note === "string" ? note.trim() : "";
         if (text.length > 500) return fail(fx.errors.noteTooLong);
         if (status === "resolved") {
@@ -562,14 +598,16 @@ export const createAdvisorMock = ({
       if (state.settingsMode === "off") return notFound(method, path);
       if (method === "GET") return ok(state.settings);
       if (method === "PATCH") {
-        // Backend `parseSettingsPatch` + `AdvisorSettingsService.update` tartibi: noma'lum top kalit → `version` →
-        // `telegram`/`budget`/`schedule` (BE-1 gacha) → qoidalar (noma'lum qoida / maydon, `severity`, boolean
-        // `enabled`/`telegram`, chegara `limits` bo'yicha — 400 `INVALID_RULE {field, min, max}`) → versiya (409);
-        // qisman birlashtirish (yuborilmagan maydon, masalan R8 `min_count`, o'zgarmaydi); o'zgarishsiz PATCH
-        // versiyani oshirmaydi.
+        // Gateway DTO (`AiAdvisorSettingsPatchDto`): noma'lum top kalit (`forbidNonWhitelisted`) va obyekt bo'lmagan
+        // `rules` / `telegram` / `budget` / `schedule` (`@IsObject`) — kodsiz 400, ai-service'ga yetmaydi. So'ng
+        // backend `parseSettingsPatch` + `AdvisorSettingsService.update` tartibi: `version` → `telegram`/`budget`/
+        // `schedule` (BE-1 gacha, obyekt bo'lsa ham — `INVALID_SETTING {field}`) → qoidalar (noma'lum qoida / maydon,
+        // `severity`, boolean `enabled`/`telegram`, chegara `limits` bo'yicha — 400 `INVALID_RULE {field, min, max}`) →
+        // versiya (409); qisman birlashtirish (yuborilmagan maydon, masalan R8 `min_count`, o'zgarmaydi); o'zgarishsiz
+        // PATCH versiyani oshirmaydi.
+        const invalid = dtoError(body, SETTINGS_PATCH_DTO);
+        if (invalid) return badRequest(invalid);
         const patchBody = (body ?? {}) as Record<string, unknown>;
-        const unknownKey = Object.keys(patchBody).find((key) => !["version", "rules", "telegram", "budget", "schedule"].includes(key));
-        if (unknownKey) return fail({ ...fx.errors.invalidSetting, field: unknownKey });
         const { version } = patchBody;
         if (typeof version !== "number" || !Number.isInteger(version) || version < 1) return fail(fx.errors.invalidSetting);
         const notOwned = (["telegram", "budget", "schedule"] as const).find((key) => patchBody[key] !== undefined && patchBody[key] !== null);
