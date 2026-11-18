@@ -546,6 +546,36 @@ const mailMock = (path) => {
 };
 
 /**
+ * Pochta → Qaytarish (u5HTJtqK): `/mails/return` — maketdagi hajm (`superadmin-ops-logistics-approve-dialog`): 3 kuryer
+ * (5 + 4 + 2) va kuryersiz 1 ta, holatlar aralash, HQ doirasi. Tasdiq oynasini ochish — `--click` bilan, masalan
+ *   npm run app:shot -- /mails/return --device desktop --click 'role=checkbox[name="Barcha so\'rovlarni tanlash"]' \
+ *     --click 'role=region[name="Tanlangan so\'rovlar"] >> role=button[name="Tasdiqlash"]'
+ * (telefonda «Barcha so'rovlarni tanlash» yo'q — guruh belgilari: `role=checkbox[name="Jasur Tursunov: barchasini tanlash"]`).
+ */
+const RETURN_SHOT = routes.some((route) => /^\/mails\/return(?:$|[?#])/.test(route));
+const RETURN_GROUPS = [
+  ['56', 'Jasur Tursunov', '+998901112233', [['10244', 'Aziz Karimov', 'on the road'], ['10241', "Malika Yo'ldosheva", 'waiting'], ['10223', 'Bobur Rahimov', 'on the road'], ['10236', 'Dilnoza Sobirova', 'waiting'], ['10229', 'Sardor Aliyev', 'waiting']]],
+  ['57', 'Sherzod Komilov', '+998901112244', [['10250', 'Nodir Ergashev', 'on the road'], ['10247', 'Kamola Yusupova', 'waiting'], ['10218', 'Otabek Nurmatov', 'on the road'], ['10211', 'Shahlo Qodirova', 'waiting']]],
+  ['58', 'Bekzod Usmonov', '+998901112255', [['10203', 'Javohir Toshmatov', 'waiting'], ['10206', 'Zarina Mirzayeva', 'on the road']]],
+  [null, null, null, [['10198', 'Gulnora Tosheva', 'on the road']]],
+];
+const returnRequestsMock = (path) => {
+  if (!RETURN_SHOT || path !== 'post/return-requests/list') return null;
+  const groups = RETURN_GROUPS.map(([courierId, name, phone, orders]) => ({
+    courier_id: courierId,
+    courier: courierId ? { id: courierId, name, phone_number: phone } : null,
+    orders: orders.map(([id, customer, status], index) => ({
+      id, status, total_price: 150000 + index * 35000, post_id: '78', qr_code_token: `qr-${id}`,
+      ...(courierId ? { holder_courier_id: courierId } : {}), return_requested: true,
+      createdAt: '2026-11-17T08:00:00.000Z', updatedAt: '2026-11-17T09:00:00.000Z',
+      customer: { id: `c${id}`, name: customer, phone_number: '+998901234567' },
+      district: { id: 'd1', name: 'Chilonzor tumani', region: { id: '1', name: 'Toshkent shahri' } },
+    })),
+  }));
+  return { statusCode: 200, message: "Qaytarish so'rovlari", data: { total: 12, scope: { type: 'HQ', branch_id: '1' }, groups } };
+};
+
+/**
  * «Xizmat viloyatlari» (ega qarori 2026-11-15): `/all-users/1062` — HQ kuryeri Jasur Tursunov, viloyatlari Samarqand
  * (o'z tarifi bilan) va Qashqadaryo; viloyatlar katalogi `GET region` (faqat shu route'da — boshqa ekranlar bo'sh).
  */
@@ -612,6 +642,8 @@ const mockBody = (path, themeName, query) => {
   if (path === 'notifications/me/telegram-groups') return myTelegramGroupsMock();
   const carrier = carrierMock(path);
   if (carrier) return carrier;
+  const returnRequests = returnRequestsMock(path);
+  if (returnRequests) return returnRequests;
   const mail = mailMock(path);
   if (mail) return mail;
   const userDetail = userMock(path);
