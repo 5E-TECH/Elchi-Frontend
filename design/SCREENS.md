@@ -752,7 +752,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/userDetail/:id` — Foydalanuvchi tafsiloti (eski havola, /new-orders ichida; dizayn v2)
 
-- **Fayllar:** `src/pages/users/detail/UserDetailPage.tsx` · `src/widgets/user-detail/ui/UserDetailView.tsx` · `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx` · `src/widgets/user-detail/ui/CourierRegionsCard.tsx`
+- **Fayllar:** `src/pages/users/detail/UserDetailPage.tsx` · `src/widgets/user-detail/ui/UserDetailView.tsx` · `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx` · `src/widgets/user-detail/ui/CourierRegionsCard.tsx` · `src/widgets/user-detail/ui/OperatorAccountSection.tsx` · `src/widgets/user-detail/ui/OperatorAccountTables.tsx`
 - **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7))
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -3872,8 +3872,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/widgets/user-detail/model/useMarketTelegramGroupPiiToggle.ts` | `/all-users/:id` |
 | `src/widgets/user-detail/ui/CourierRegionsCard.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id` |
 | `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id`, `/profile` |
-| `src/widgets/user-detail/ui/OperatorAccountSection.tsx` | `/all-users/:id` |
-| `src/widgets/user-detail/ui/OperatorAccountTables.tsx` | `/all-users/:id` |
+| `src/widgets/user-detail/ui/OperatorAccountSection.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id` |
+| `src/widgets/user-detail/ui/OperatorAccountTables.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id` |
 | `src/widgets/user-detail/ui/UserDetailView.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id` |
 | `src/widgets/user-list/ui/UserListKpi.tsx` | `/all-users` |
 | `src/widgets/user-list/ui/UserListTable.tsx` | `/all-users` |

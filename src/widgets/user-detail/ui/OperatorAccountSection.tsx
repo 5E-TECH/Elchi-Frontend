@@ -61,9 +61,11 @@ const OperatorAccountSummary = ({ operatorId, description }: { operatorId: strin
       key: "paid",
       label: t("operatorAccount.paid"),
       value: data?.paid ?? 0,
+      // «Oxirgisi» — faqat birinchi sahifadan; u yerda faol to'lov bo'lmasa-yu «To'landi» > 0 (hammasi bekor
+      // qilingan sahifa) — «Hali to'lov yo'q» emas, umumiy izoh (review).
       hint: lastPaid?.paidAt
         ? t("operatorAccount.lastPaid", { date: formatDateLocalized(lastPaid.paidAt, { language }) })
-        : payments.data
+        : payments.data && !((data?.paid ?? 0) > 0)
           ? t("operatorAccount.noPayments")
           : t("operatorAccount.paidHint"),
       icon: ArrowDownLeft,

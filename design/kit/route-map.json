@@ -691,7 +691,9 @@
         "src/pages/users/detail/UserDetailPage.tsx",
         "src/widgets/user-detail/ui/UserDetailView.tsx",
         "src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx",
-        "src/widgets/user-detail/ui/CourierRegionsCard.tsx"
+        "src/widgets/user-detail/ui/CourierRegionsCard.tsx",
+        "src/widgets/user-detail/ui/OperatorAccountSection.tsx",
+        "src/widgets/user-detail/ui/OperatorAccountTables.tsx"
       ],
       "views": {},
       "note": "Alohida maket yo'q — <rol>-users-detail maketlari (superadmin-users-detail). /all-users/:id bilan bir xil v2 sahifa (UserDetailView); «Qabul va yaratish» qobig'i bu yo'lda bare — sarlavha va «Buyurtma yaratish» takrorlanmaydi (newOrdersShell.ts), «←» — navigate(-1)."

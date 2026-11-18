@@ -149,7 +149,9 @@ describe("OperatorAccountSection — «Hisob» (B1te60bD)", () => {
     expect(account).toHaveTextContent("Ortiqcha to'langan");
     expect(account).toHaveTextContent("Operatorga market o'zi to'laydi va yozib boradi");
     await waitFor(() => expect(account).toHaveTextContent("Hali sotuv yo'q"));
-    expect(account).toHaveTextContent("Hali to'lov yo'q");
+    // «To'landi» > 0, lekin birinchi sahifada faol to'lov yo'q — «Hali to'lov yo'q» emas (review), umumiy izoh.
+    expect(account).not.toHaveTextContent("Hali to'lov yo'q");
+    expect(account).toHaveTextContent("Bekor qilinganlarsiz");
   });
 
   it("hisob xatosi — karta ichida «Qayta urinish», qayta so'raydi", async () => {
