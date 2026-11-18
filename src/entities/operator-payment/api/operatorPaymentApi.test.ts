@@ -4,6 +4,7 @@ import {
   normalizeMyOperatorBalance,
   normalizeMyOperatorPayments,
   normalizeOperatorBalances,
+  normalizeOperatorEarnings,
   normalizeOperatorPayment,
   normalizeOperatorPaymentList,
   normalizeOperatorPaymentResult,
@@ -68,5 +69,33 @@ describe("operator-payment normalizatorlari", () => {
     expect(normalizeMyOperatorBalance({ statusCode: 200, data: null })).toBeNull();
     expect(normalizeEarningsTotal({ statusCode: 200, data: { rows: [], total: 82 } })).toBe(82);
     expect(normalizeEarningsTotal({ statusCode: 200, data: {} })).toBeNull();
+  });
+
+  it("B1te60bD: `/operators/:id/earnings` qatorlari — satr sonlar, stavka turi, eski yozuvda stavka yo'q", () => {
+    const list = normalizeOperatorEarnings({
+      statusCode: 200,
+      data: {
+        rows: [
+          {
+            id: "9001", operator_id: "41", order_id: 10241, amount: "18000.00", commission_type: "percent",
+            commission_value: "5.00", order_total_price: "360000.00", createdAt: "2026-11-16T08:52:00.000Z",
+          },
+          { id: "9000", order_id: "10200", amount: 0, commission_type: null, commission_value: null, order_total_price: null },
+          { order_id: "id siz" },
+        ],
+        total: "82",
+        limit: 10,
+        offset: 0,
+      },
+    });
+    expect(list.total).toBe(82);
+    expect(list.items).toEqual([
+      {
+        id: "9001", orderId: "10241", amount: 18000, commissionType: "percent", commissionValue: 5, orderTotal: 360000,
+        createdAt: "2026-11-16T08:52:00.000Z",
+      },
+      { id: "9000", orderId: "10200", amount: 0, commissionType: null, commissionValue: null, orderTotal: null, createdAt: null },
+    ]);
+    expect(normalizeOperatorEarnings({ statusCode: 200, data: null })).toEqual({ items: [], total: 0 });
   });
 });

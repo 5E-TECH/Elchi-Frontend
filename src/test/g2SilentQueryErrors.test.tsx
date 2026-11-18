@@ -31,9 +31,13 @@ import {
   useInvestors,
 } from "../entities/investors";
 import { useNotifications } from "../entities/notification/api/useNotifications";
+import {
+  useOperatorAccountBalance,
+  useOperatorAccountEarnings,
+  useOperatorAccountPayments,
+} from "../entities/operator-payment";
 import { useInboxList } from "../entities/notification-inbox/api/useInbox";
 import { usePartners, usePartnerWebhooks } from "../entities/partners";
-import { useFinanceCoverage } from "../entities/payments/financeCoverage";
 import { useReceipt, useReceiptSettings } from "../entities/payments/receipt";
 import {
   useSmsAccounts,
@@ -136,18 +140,10 @@ describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", 
     ["SMS hisoboti", () => useSmsReport("2026-10-01", "2026-10-08", S)],
     // Tizim
     ["faoliyat jurnali", () => useActivityLogs({ page: 1, limit: 20 }, S)],
-    [
-      "operator balansi",
-      () => useFinanceCoverage().useGetOperatorBalance("3", true, S),
-    ],
-    [
-      "operator daromadi",
-      () => useFinanceCoverage().useGetOperatorEarnings("3", true, { limit: 10 }, S),
-    ],
-    [
-      "operator to'lovlari",
-      () => useFinanceCoverage().useGetOperatorPayouts("3", true, { limit: 10 }, S),
-    ],
+    // B1te60bD: operator hisobi (`/all-users/:id` → «Hisob») — xato bo'lim ichida chiziladi.
+    ["operator balansi", () => useOperatorAccountBalance("3")],
+    ["operator daromadi", () => useOperatorAccountEarnings("3", { limit: 10, offset: 0 })],
+    ["operator to'lovlari", () => useOperatorAccountPayments("3", { limit: 10, offset: 0 })],
     ["filial yangi buyurtmalari (ops)", () => useBranchCoverage().useGetNewOrders(undefined, S)],
     ["debitorlar (ops)", () => useIntegrationsCoverage().useGetReceivables({ page: 1 }, S)],
     ["investorlar", () => useInvestors().useGetInvestors({ page: 1, limit: 20 }, S)],

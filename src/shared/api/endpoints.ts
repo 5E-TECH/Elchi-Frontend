@@ -369,6 +369,8 @@ export const API_ENDPOINTS = {
     // { rows, total, limit, offset } (limit 1–200, sukut 50)
     OPERATORS_ME_PAYMENTS: "finance/operators/me/payments",
     OPERATORS_ME_EARNINGS: "finance/operators/me/earnings",
+    // B1te60bD — bitta operator hisobi, faqat o'qish (SUPERADMIN, ADMIN, MANAGER; `operatorId` — operator foydalanuvchi
+    // id'si): shakli `OPERATORS_ME_*` bilan AYNI. UI — «Foydalanuvchilar» → operator → «Hisob» (superadmin, admin).
     OPERATOR_BALANCE: (operatorId: string | number) => `finance/operators/${operatorId}/balance`,
     OPERATOR_EARNINGS: (operatorId: string | number) => `finance/operators/${operatorId}/earnings`,
     OPERATOR_PAYOUTS: (operatorId: string | number) => `finance/operators/${operatorId}/payments`,
