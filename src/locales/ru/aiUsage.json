@@ -65,7 +65,8 @@
     "order_extract_multi": "Разбор заказа из текста",
     "order_extract_image": "Разбор заказа из фото",
     "order_district": "Определение района",
-    "order_item_match": "Сопоставление товаров"
+    "order_item_match": "Сопоставление товаров",
+    "advisor_alert": "Пояснение к AI-предупреждению"
   },
   "models": {
     "title": "По моделям",

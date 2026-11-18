@@ -66,6 +66,7 @@ const dashboardPayload = (overrides: Record<string, unknown> = {}) =>
       byFeature: [
         { feature: "order_extract_multi", area: "order", calls: 11, inputTokens: 5400, outputTokens: 1300, costUsd: 1.05, costUzs: 13282 },
         { feature: "order_district", area: "order", calls: 30, inputTokens: 900, outputTokens: 60, costUsd: 0.2, costUzs: 2530 },
+        { feature: "advisor_alert", area: "ai", calls: 2, inputTokens: 1200, outputTokens: 300, costUsd: 0.01, costUzs: 127 },
       ],
       byModel: [{ model: "claude-haiku-4-5", calls: 41, costUsd: 1.25, costUzs: 15812 }],
       dailySeries: days.map((day, index) => ({ day, costUsd: index * 0.5, costUzs: index * 6325, calls: index * 10, aiOrders: index * 3 })),
@@ -178,6 +179,8 @@ describe("Balans → «AI xarajat» (Celz3rKJ)", () => {
     expect(features).toHaveTextContent("Matndan buyurtma ajratish");
     expect(features).toHaveTextContent("order_extract_multi");
     expect(features).toHaveTextContent("Tumanni aniqlash");
+    // AI maslahatchi izohi (backend explain, `feature: advisor_alert`) — xom kalit emas, yorliq bilan.
+    expect(features).toHaveTextContent("AI ogohlantirish izohi");
     expect(features).toHaveTextContent("13 282 so'm");
 
     const models = screen.getByRole("heading", { name: "Modellar bo'yicha" }).closest("section") as HTMLElement;

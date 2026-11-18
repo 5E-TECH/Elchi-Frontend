@@ -65,7 +65,8 @@
     "order_extract_multi": "Matndan buyurtma ajratish",
     "order_extract_image": "Rasmdan buyurtma ajratish",
     "order_district": "Tumanni aniqlash",
-    "order_item_match": "Mahsulotni moslash"
+    "order_item_match": "Mahsulotni moslash",
+    "advisor_alert": "AI ogohlantirish izohi"
   },
   "models": {
     "title": "Modellar bo'yicha",

@@ -65,7 +65,8 @@
     "order_extract_multi": "Order extraction from text",
     "order_extract_image": "Order extraction from image",
     "order_district": "District detection",
-    "order_item_match": "Product matching"
+    "order_item_match": "Product matching",
+    "advisor_alert": "AI alert explanation"
   },
   "models": {
     "title": "By model",

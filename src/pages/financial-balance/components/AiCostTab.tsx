@@ -100,7 +100,8 @@ const SOURCE_TONE: Record<OrderSourceKey, ChartTone> = {
 };
 
 /** Ma'lum funksiya kalitlari (backend: `order_extract_multi`, `order_extract_image`, `order_district`, `order_item_match`). */
-const KNOWN_FEATURES = new Set(["order_extract_multi", "order_extract_image", "order_district", "order_item_match"]);
+/** `ai_usage_logs.feature` — yorlig'i bor turlar; `advisor_alert` — AI maslahatchi ogohlantirish izohi (backend explain). */
+const KNOWN_FEATURES = new Set(["order_extract_multi", "order_extract_image", "order_district", "order_item_match", "advisor_alert"]);
 
 const AiCostTab = () => {
   const { t, i18n } = useTranslation("aiUsage");
