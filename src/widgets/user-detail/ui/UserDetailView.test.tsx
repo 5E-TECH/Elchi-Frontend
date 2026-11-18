@@ -52,6 +52,13 @@ vi.mock("./CourierRegionsCard", () => ({
   ),
 }));
 
+// «Hisob» (B1te60bD) o'z so'rovlarini yuboradi (o'z testi — `OperatorAccountSection.test.tsx`); bu yerda kim ko'radi.
+vi.mock("./OperatorAccountSection", () => ({
+  OperatorAccountSection: ({ operatorId, marketName }: { operatorId: string; marketName?: string | null }) => (
+    <section aria-label="Operator hisobi" data-operator-id={operatorId} data-market={marketName ?? ""} />
+  ),
+}));
+
 vi.mock("../../../features/courier-transfer-branch", () => ({
   TransferCourierButton: ({
     courierId,
@@ -614,6 +621,28 @@ describe("UserDetailView — «Xizmat viloyatlari» kartasi (ega qarori 2026-11-
   it.each<UserRole>(["market", "manager", "customer"])("%s foydalanuvchida karta yo'q", (role) => {
     renderView(makeUser(role), "superadmin");
     expect(screen.queryByRole("region", { name: "Xizmat viloyatlari" })).not.toBeInTheDocument();
+  });
+});
+
+describe("UserDetailView — operator «Hisob» bo'limi (B1te60bD, faqat o'qish)", () => {
+  it.each(["superadmin", "admin"])("%s: market operatori tafsilotida bo'lim (shu operator va uning marketi bilan)", (role) => {
+    renderView(
+      makeUser("market_operator", { id: "41", name: "Madina Xoliqova", market: { id: "1", name: "Baraka Shop" } }),
+      role,
+    );
+    const section = screen.getByRole("region", { name: "Operator hisobi" });
+    expect(section).toHaveAttribute("data-operator-id", "41");
+    expect(section).toHaveAttribute("data-market", "Baraka Shop");
+  });
+
+  it("menejer operator tafsilotida bo'limni ko'rmaydi (ega: faqat superadmin va admin)", () => {
+    renderView(makeUser("market_operator", { id: "41" }), "manager", "Toshkent HQ");
+    expect(screen.queryByRole("region", { name: "Operator hisobi" })).not.toBeInTheDocument();
+  });
+
+  it.each<UserRole>(["market", "courier", "manager", "customer", "registrator"])("%s foydalanuvchida bo'lim yo'q", (role) => {
+    renderView(makeUser(role), "superadmin");
+    expect(screen.queryByRole("region", { name: "Operator hisobi" })).not.toBeInTheDocument();
   });
 });
 

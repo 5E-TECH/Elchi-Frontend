@@ -80,7 +80,7 @@ export const OPS_TABS: OpsTabMeta[] = [
  * «Moliya operatorlari» (`/finance-operators`, `?tab=finance`) olib tashlandi — F2qp6FtE (ega qarori 2026-11-16):
  * market o'z operatoriga O'ZI to'laydi va buni «Operatorlar → To'lovlar» da yozadi; superadmin endi operatorga Elchi
  * kassasidan to'lamaydi. Eski havola superadminni «Foydalanuvchilar → Market operatorlari» ga olib boradi (operatorlar
- * ro'yxati — o'qish uchun eng yaqin sahifa).
+ * ro'yxati — o'qish uchun eng yaqin sahifa); operator hisobi — operator tafsilotidagi «Hisob» (B1te60bD, faqat ko'rish).
  */
 export const FINANCE_OPERATORS_MOVED_TO = "/all-users?role=market_operator";
 

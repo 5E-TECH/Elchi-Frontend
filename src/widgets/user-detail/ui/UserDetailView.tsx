@@ -35,6 +35,7 @@ import {
 } from "../../../shared/ui/primitives";
 import { CourierRegionsCard } from "./CourierRegionsCard";
 import { MarketTelegramGroupsCard } from "./MarketTelegramGroupsCard";
+import { OperatorAccountSection } from "./OperatorAccountSection";
 
 const STATUS_TONE: Record<UserStatus, Tone> = { active: "success", inactive: "neutral", blocked: "danger" };
 
@@ -253,6 +254,9 @@ export interface UserDetailViewProps {
  * dan ko'chdi). Menejer va ro'yxatchi kartani ham, kalitni ham ko'rmaydi (maket `manager-users-detail`).
  * Kuryer tafsilotida superadmin va admin uchun «Xizmat viloyatlari» kartasi (`CourierRegionsCard`, ega qarori
  * 2026-11-15; maket yo'q — eng yaqini `superadmin-users-detail`).
+ * B1te60bD (ega 2026-11-18): market operatori tafsilotida superadmin va admin uchun «Hisob» bo'limi
+ * (`OperatorAccountSection`: Ishlab topdi · To'landi · Qoldiq, «To'lovlar», «Daromadlar») — FAQAT O'QISH, market
+ * o'zi to'laydi va yozadi (F2qp6FtE). Maket yo'q — eng yaqini `market_operator-earnings`, `superadmin-users-detail`.
  */
 export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailViewProps) => {
   const { t, i18n } = useTranslation(["users", "common"]);
@@ -300,6 +304,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   // «Xizmat viloyatlari» (`GET / PUT couriers/:id/regions` — SUPERADMIN, ADMIN): HQ kuryeri shu viloyatlar
   // pochtasida «HQ kuryeriga» ro'yxatida chiqadi (ega qarori 2026-11-15).
   const showCourierRegions = isCourier && canManagePrivilegedToggles;
+  // B1te60bD: operator hisobi (`GET finance/operators/:id/*` — SUPERADMIN, ADMIN, MANAGER) — ko'rish faqat superadmin
+  // va admin uchun (ega 2026-11-18), yozish amali yo'q.
+  const showOperatorAccount = user.role === "market_operator" && canManagePrivilegedToggles;
   const proofConditions = useMemo(
     () => (Array.isArray(user.expense_proof_conditions) ? user.expense_proof_conditions : []),
     [user.expense_proof_conditions],
@@ -684,6 +691,15 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
             </div>
           ) : null}
         </div>
+      ) : null}
+
+      {showOperatorAccount ? (
+        // `key`: boshqa operatorga o'tilsa (sahifa qayta o'rnatilmaydi) sahifalash holati qolmaydi.
+        <OperatorAccountSection
+          key={`operator-account-${user.id}`}
+          operatorId={String(user.id)}
+          marketName={user.market?.name ?? null}
+        />
       ) : null}
 
       {isCustomer ? <CustomerOrdersCard orders={user.orders ?? []} onOpen={(order) => navigate(customerOrderHref(order))} /> : null}
