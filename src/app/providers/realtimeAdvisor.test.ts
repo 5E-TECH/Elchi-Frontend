@@ -82,6 +82,20 @@ describe("realtimeAdvisor — jiddiy AI ogohlantirishi jonli kanalda (60PWUbgC �
     });
   });
 
+  it("ru / en — backend o'zbekcha to'ldiradigan joylar tarjimadan: R6/R8 «Butun tizim», «Asosiy kassa»", async () => {
+    const r6 = { alert_id: "1043", rule_key: "R6", severity: "critical", variant: null, subject_name: "Butun tizim" };
+    const r1Main = { alert_id: "1044", rule_key: "R1", severity: "critical", variant: null, subject_name: "Asosiy kassa" };
+    expect(advisorAlertToast(row(r6), tNotifications()).description).toBe("Zarar — Butun tizim");
+    await i18n.changeLanguage("ru");
+    expect(advisorAlertToast(row(r6), tNotifications()).description).toBe("Убыток — Вся система");
+    expect(advisorAlertToast(row({ ...r6, rule_key: "R8" }), tNotifications()).description).toMatch(/ — Вся система$/);
+    expect(advisorAlertToast(row(r1Main), tNotifications()).description).toMatch(/ — Основная касса$/);
+    await i18n.changeLanguage("en");
+    expect(advisorAlertToast(row(r6), tNotifications()).description).toMatch(/ — Whole system$/);
+    // Boshqa joy — server nomi o'zgarmaydi.
+    expect(advisorAlertToast(row(R7_RECEIPT), tNotifications()).description).toMatch(/ — Urgut filiali$/);
+  });
+
   it("noma'lum qoida yoki `data` yo'q — serverning sarlavhasi, izohda joy (bo'lmasa — `body`)", () => {
     const t = tNotifications();
     expect(advisorAlertToast(row({ rule_key: "R9", subject_name: "Samarqand filiali" }), t)).toEqual({

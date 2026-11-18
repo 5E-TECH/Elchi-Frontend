@@ -21,7 +21,8 @@ import { formatNumberLocalized } from "../../shared/lib/formatMoney";
  *
  * Xabar matni (maket): «Jiddiy ogohlantirish» + «{qisqa nom} — {joy}» («Chekda farq bor — Urgut filiali»). Qisqa nom
  * `data.rule_key` (+ R7 da `data.variant`) dan, uchala tilda (`aiAdvisor:rules.*`); joy — `data.subject_name`
- * (`branch?.name ?? subject.name`, server bergan nom). Qoida noma'lum bo'lsa — serverning o'zbekcha `title`i
+ * (`branch?.name ?? subject.name`, server bergan nom; R6/R8 «Butun tizim» va «Asosiy kassa» — tarjimadan). Qoida
+ * noma'lum bo'lsa — serverning o'zbekcha `title`i
  * («Jiddiy ogohlantirish · …») va izohda joy (yo'q bo'lsa — `body`).
  *
  * ⚠️ Modul `RealtimeSync` da socket.io bilan birga DINAMIK yuklanadi (kirgandan keyin) — ilova kirish bo'lagiga
@@ -119,6 +120,26 @@ const shortName = (data: Record<string, unknown>, t: TFunction): string => {
   return readText(t(`aiAdvisor:${key}`, { defaultValue: "" }));
 };
 
+/** Butun tizim haqidagi qoidalar (backend `subject_name` — o'zbekcha «Butun tizim»). */
+const SYSTEM_RULES = new Set<unknown>(["R6", "R8"]);
+/** Backend asosiy kassa nomi (finance `MAIN_CASHBOX_NAME`) — har doim o'zbekcha. */
+const SERVER_MAIN_CASHBOX_NAME = "Asosiy kassa";
+
+/**
+ * Joy: server `subject_name`; o'zbekcha bo'lishi aniq ma'lum nomlar — tarjimadan (ru/en da «Убыток — Butun tizim»
+ * chiqmasin): R6/R8 — «Butun tizim», asosiy kassa — «Asosiy kassa». Kalit topilmasa — server matni.
+ */
+const subjectOf = (data: Record<string, unknown>, t: TFunction): string => {
+  const subject = readText(data.subject_name);
+  if (!subject) return subject;
+  const key = SYSTEM_RULES.has(data.rule_key)
+    ? "aiAdvisor:alerts.subject.system"
+    : subject === SERVER_MAIN_CASHBOX_NAME
+      ? "aiAdvisor:alerts.cashbox.main"
+      : null;
+  return (key && readText(t(key, { defaultValue: "" }))) || subject;
+};
+
 /** Havola: server `link`; bo'lmasa — `data.alert_id` dan ogohlantirish oynasi. */
 const alertLink = (row: AdvisorRealtimePayload, data: Record<string, unknown>): string | null => {
   if (typeof row.link === "string" && row.link) return row.link;
@@ -129,7 +150,7 @@ const alertLink = (row: AdvisorRealtimePayload, data: Record<string, unknown>): 
 /** Qatorli hodisadan xabar matni va havolasi. */
 export const advisorAlertToast = (row: AdvisorRealtimePayload, t: TFunction): AdvisorAlertToast => {
   const data = readData(row.data);
-  const subject = readText(data.subject_name);
+  const subject = subjectOf(data, t);
   const serverTitle = readText(row.title);
   const short = shortName(data, t);
   const link = alertLink(row, data);

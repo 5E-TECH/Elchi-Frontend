@@ -138,14 +138,24 @@ export const advisorRefName = (ref: AiAdvisorNamedRef | null | undefined): strin
 /** Odam: ism yoki «#<id>» (§3.5). */
 export const advisorUserName = advisorRefName;
 
-/** Kassa nomi: server nomi; olinmasa — asosiy kassa «Asosiy kassa», boshqasi «#<egasi>». */
-export const advisorCashboxName = (cashbox: AiAdvisorCashboxRef, t: AdvisorTranslate): string =>
-  cashbox.name?.trim() || (cashbox.type === "main" ? t("alerts.cashbox.main") : `#${cashbox.owner_id}`);
+/**
+ * Asosiy kassaning `subject.id` si (backend `cashboxRef(0, "main")`). Backend uning nomini har doim o'zbekcha
+ * («Asosiy kassa», finance `MAIN_CASHBOX_NAME`) beradi — FE tarjimadan oladi (ru/en da o'zbekcha chiqmasin).
+ */
+const MAIN_CASHBOX_SUBJECT_ID = "0";
 
-/** Kim/nima haqida: `branch?.name ?? subject.name`; tizim — «Butun tizim»; nomsiz — «#<id>». */
+/** Kassa nomi: asosiy kassa — har doim tarjima («Asosiy kassa»); boshqasi — server nomi, olinmasa «#<egasi>». */
+export const advisorCashboxName = (cashbox: AiAdvisorCashboxRef, t: AdvisorTranslate): string =>
+  cashbox.type === "main" ? t("alerts.cashbox.main") : cashbox.name?.trim() || `#${cashbox.owner_id}`;
+
+/**
+ * Kim/nima haqida: `branch?.name ?? subject.name`; tizim — «Butun tizim», asosiy kassa — «Asosiy kassa» (ikkalasi
+ * tarjimadan, server nomi o'zbekcha); nomsiz — «#<id>».
+ */
 export const subjectName = (alert: Pick<AiAdvisorAlertListItem, "id" | "branch" | "subject">, t: AdvisorTranslate): string => {
   if (alert.branch?.name) return alert.branch.name;
   if (alert.subject.kind === "system") return t("alerts.subject.system");
+  if (alert.subject.kind === "cashbox" && alert.subject.id === MAIN_CASHBOX_SUBJECT_ID) return t("alerts.cashbox.main");
   return alert.subject.name || `#${alert.subject.id ?? alert.id}`;
 };
 
@@ -328,7 +338,8 @@ export const alertDialogTitle = (alert: AiAdvisorAlertListItem, t: AdvisorTransl
 const sublinePlace = (alert: AiAdvisorAlertListItem, t: AdvisorTranslate): string | null => {
   if (!isKnown(alert)) {
     if (alert.branch?.name) return alert.branch.name;
-    return alert.subject.kind === "system" ? t("alerts.subline.system") : alert.subject.name || null;
+    if (alert.subject.kind === "system") return t("alerts.subline.system");
+    return alert.subject.name ? subjectName(alert, t) : null;
   }
   switch (alert.rule_key) {
     case "R4":

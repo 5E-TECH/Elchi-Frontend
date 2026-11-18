@@ -196,6 +196,23 @@ describe("backend dev holatlari (shartnoma v0.4 eslatmalari, #653 review, round-
     expect(alertSubline(namelessBranch, uz)).toBe("HQ'ga o'tkazma kechikmoqda · #12");
   });
 
+  it("asosiy kassa: server nomi o'zbekcha («Asosiy kassa») — ru/en da tarjima", () => {
+    const ru = t("ru");
+    const en = t("en");
+    expect(advisorCashboxName({ type: "main", owner_id: "0", name: "Asosiy kassa" }, ru)).toBe("Основная касса");
+    expect(advisorCashboxName({ type: "main", owner_id: "0", name: "Asosiy kassa" }, en)).toBe("Main cash desk");
+    const main = { id: "1", branch: null, subject: { kind: "cashbox" as const, id: "0", name: "Asosiy kassa" } };
+    expect(subjectName(main, ru)).toBe("Основная касса");
+    expect(subjectName(main, uz)).toBe("Asosiy kassa");
+    // Filial kassasi — server nomi o'zgarmaydi (filial nomi ustun).
+    expect(subjectName({ id: "1", branch: null, subject: { kind: "cashbox", id: "7", name: "Samarqand filiali kassasi" } }, ru)).toBe(
+      "Samarqand filiali kassasi",
+    );
+    // Noma'lum qoida — ost-qatordagi joy ham.
+    const unknown = { ...fx.byRule.R1, rule_key: "R9", facts: null, title: "Server", branch: null, subject: main.subject } as AiAdvisorAlertListItem;
+    expect(alertSubline(unknown, ru)).toBe(`${ruleName("R9", ru)} · Основная касса`);
+  });
+
   it("tasdiqdagi summa: R7 summa farqisiz (karta / valyuta) — `null` («0 so'm» emas)", () => {
     expect(alertHeadlineAmount(fx.detail.r7Transfer)).toBeNull();
     expect(alertHeadlineAmount(fx.detail.r7CardOnly)).toBeNull();
@@ -330,6 +347,8 @@ describe("ru / en — to'liq tarjima", () => {
           alertShortName(alert, tr),
         ];
         for (const text of texts) expect(text, `${lng} ${alert.id}`).not.toMatch(leftovers);
+        // Backend o'zbekcha to'ldiradigan nomlar (asosiy kassa, butun tizim) — tarjimadan.
+        if (lng !== "uz") for (const text of texts) expect(text, `${lng} ${alert.id}`).not.toMatch(/Asosiy kassa|Butun tizim/);
         if (lng !== "uz") {
           const uz = t("uz");
           expect(alertListTitle(alert, tr, lng), `${lng} ${alert.id}`).not.toBe(alertListTitle(alert, uz, "uz"));
