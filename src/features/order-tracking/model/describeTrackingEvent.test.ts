@@ -578,6 +578,22 @@ describe("describeTrackingEvent — kuryer skani (COURIER-SCAN)", () => {
     expect(v.details).toEqual([]);
   });
 
+  it("migratsiya 240 (tizim nomidan, kuryer nomisiz) — «Tizim … «Kutilmoqda» holatiga o'tkazdi», «skan bilan oldi» emas", () => {
+    const v = view({
+      action: "courier_scan_received",
+      changed_by: "system",
+      changed_by_role: "system",
+      actor: { name: "system", role: "system" },
+      from_status: "on the road",
+      to_status: "waiting",
+      description: "Kuryer skan bilan olgan buyurtma «Kutilmoqda» holatiga o'tkazildi (skan = qabul)",
+      metadata: { post_id: "77", courier_id: "44", source: "courier_scan_accepts_migration" },
+    });
+    const text = `${v.sentence.before}${v.actor}${v.sentence.after}`;
+    expect(text).toBe("Tizim kuryer skan bilan olgan buyurtmani «Kutilmoqda» holatiga o'tkazdi");
+    expect(text).not.toContain("skan bilan oldi");
+  });
+
   it("ru / en: kuryer skani jumlasi tarjimada", async () => {
     await i18n.loadLanguages(["ru", "en"]);
     const event = {

@@ -570,6 +570,7 @@
       "courierReturnRequested": "{{actor}} buyurtma kelmaganini bildirdi — qaytarish so'rovi yuborildi",
       "operatorAssigned": "{{actor}} buyurtmaga operator biriktirdi: {{operator}}",
       "courierScanReceived": "{{actor}} buyurtmani skan bilan oldi",
+      "courierScanReceivedBySystem": "{{actor}} kuryer skan bilan olgan buyurtmani «Kutilmoqda» holatiga o'tkazdi",
       "branchPostReceivedByCourierScan": "{{actor}} skani bilan buyurtma filialga qabul qilindi",
       "branchPostReceivedByCourierScanAt": "{{actor}} skani bilan buyurtma filialga qabul qilindi — {{branch}}",
       "operatorAssignedShort": "{{actor}} buyurtmaga operator biriktirdi",

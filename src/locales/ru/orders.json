@@ -570,6 +570,7 @@
       "courierReturnRequested": "{{actor}} сообщил(а): заказ не пришёл — отправлен запрос на возврат",
       "operatorAssigned": "{{actor}} назначил(а) оператора: {{operator}}",
       "courierScanReceived": "{{actor}} взял(а) заказ сканированием",
+      "courierScanReceivedBySystem": "{{actor}}: заказ, взятый курьером по скану, переведён в «Ожидает»",
       "branchPostReceivedByCourierScan": "Заказ принят в филиал по скану: {{actor}}",
       "branchPostReceivedByCourierScanAt": "Заказ принят в филиал по скану: {{actor}} — {{branch}}",
       "operatorAssignedShort": "{{actor}} назначил(а) оператора",

@@ -570,6 +570,7 @@
       "courierReturnRequested": "{{actor}} reported the order did not arrive — a return request was sent",
       "operatorAssigned": "{{actor}} assigned an operator: {{operator}}",
       "courierScanReceived": "{{actor}} took the order by scan",
+      "courierScanReceivedBySystem": "{{actor}} moved the order taken by courier scan to «Waiting»",
       "branchPostReceivedByCourierScan": "The order was received at the branch by the scan of {{actor}}",
       "branchPostReceivedByCourierScanAt": "The order was received at the branch by the scan of {{actor}} — {{branch}}",
       "operatorAssignedShort": "{{actor}} assigned an operator",

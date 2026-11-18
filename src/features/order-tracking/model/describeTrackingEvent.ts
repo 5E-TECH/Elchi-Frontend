@@ -568,7 +568,11 @@ const getSentenceTemplate = (
   }
   if (isCourierReturnRequestedEvent(event)) return dynamic("courierReturnRequested");
   if (isBranchReturnRequestedEvent(event)) return dynamic("branchReturnRequested");
-  if (isCourierScanReceivedEvent(event)) return dynamic("courierScanReceived");
+  if (isCourierScanReceivedEvent(event)) {
+    // Migratsiya 240 eski «Yo'lda» skan qatorlarini tizim nomidan ko'chiradi — «Tizim buyurtmani skan bilan oldi»
+    // deyilmasin: tizim faqat holatni o'tkazdi, skanni kuryer qilgan.
+    return dynamic(isSystemEvent(event) ? "courierScanReceivedBySystem" : "courierScanReceived");
+  }
   if (isBranchPostReceivedByCourierScanEvent(event)) {
     // Faqat yozuvdagi filial nomi (yozuv paytidagi) — buyurtmaning JORIY filiali emas (`postReceivedAtBranch` kabi).
     const receivedAt = getTrackingName(event, "branch");
@@ -633,6 +637,7 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
     case "tracking.dynamic.assignedToCourier":
     case "tracking.dynamic.sentToCourier":
     case "tracking.dynamic.courierScanReceived":
+    case "tracking.dynamic.courierScanReceivedBySystem":
       return Truck;
     case "tracking.dynamic.cancelledPostCreated":
       return Send;

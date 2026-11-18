@@ -536,6 +536,50 @@ describe("MailDetailPage — skan-qabul qayerda (gating)", () => {
     expect(checkbox("101")).toBeInTheDocument();
   });
 
+  it("menejer, kuryer skan bilan olib ketgan buyurtma (400 order_taken_by_courier, COURIER-SCAN) — «№X kuryerda: ism», «qayta skanerlang» yo'q, sahifa yangilanadi", async () => {
+    const rows = [order("101"), order("102")];
+    setup(() => rows, TRANSFER_POST);
+    mocks.receive.mockRejectedValue({
+      response: {
+        status: 400,
+        data: {
+          statusCode: 400,
+          message: "backend matni",
+          data: {
+            reason: "order_taken_by_courier",
+            details: { order_id: "101", post_id: POST_ID, courier_id: "44", courier_name: "Ali Valiyev" },
+          },
+        },
+      },
+    });
+    renderPage(manager());
+    mocks.refetchDetail.mockClear();
+
+    scanRow(rows[0]);
+
+    expect(await screen.findByText("№101 kuryerda: Ali Valiyev")).toBeInTheDocument();
+    expect(screen.getByText("Kuryer uni skan bilan olgan — buyurtma endi bu pochtada emas")).toBeInTheDocument();
+    expect(screen.queryByText(/qayta skanerlang/)).toBeNull();
+    expect(screen.queryByText("backend matni")).toBeNull();
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("error", "№101 kuryerda: Ali Valiyev", undefined, {
+      text: "Kuryer uni skan bilan olgan — buyurtma endi bu pochtada emas",
+    });
+    expect(mocks.refetchDetail).toHaveBeenCalled();
+  });
+
+  it("order_taken_by_courier, kuryer nomisiz — «№X kuryerda»", async () => {
+    const rows = [order("101"), order("102")];
+    setup(() => rows, TRANSFER_POST);
+    mocks.receive.mockRejectedValue({
+      response: { status: 400, data: { statusCode: 400, data: { reason: "order_taken_by_courier", details: {} } } },
+    });
+    renderPage(manager());
+
+    scanRow(rows[0]);
+
+    expect(await screen.findByText("№101 kuryerda")).toBeInTheDocument();
+  });
+
   it("menejer, boshqa filial buyurtmasining QR'i (403 order_not_in_your_branch, #620) — lokal sarlavha, so'rovsiz", async () => {
     setup(() => [order("101"), order("102")], TRANSFER_POST);
     mocks.fetchScanDetail.mockRejectedValue({
