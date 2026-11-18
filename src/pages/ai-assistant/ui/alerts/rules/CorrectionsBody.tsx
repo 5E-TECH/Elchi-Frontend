@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-ai-assistant-alert-dialog-corrections
 import { useId } from "react";
-import { formatAdvisorDayRange } from "../../../../../entities/ai-advisor";
+import { correctionsBaselineDays, formatAdvisorDayRange } from "../../../../../entities/ai-advisor";
 import { Meter } from "../../../../../shared/ui/charts";
 import { AlertFacts } from "../AlertFacts";
 import { countedCorrectionKinds } from "./ruleData";
@@ -24,6 +24,8 @@ export const CorrectionsBody = ({ alert }: RuleBodyProps<"R8">) => {
   const range = formatAdvisorDayRange(facts.from, facts.to);
   const parts = kinds.map(({ kind, count }) => t(`alerts.correctionKinds.short.${kind}`, { count }));
   const total = Math.max(facts.count, kinds.reduce((sum, item) => sum + item.count, 0));
+  // Sarlavhadagi «oldingi N kunda» bilan bir manba.
+  const baselineDays = correctionsBaselineDays(alert);
 
   return (
     <>
@@ -37,7 +39,7 @@ export const CorrectionsBody = ({ alert }: RuleBodyProps<"R8">) => {
           },
           {
             id: "baseline",
-            label: t("alerts.facts.baseline", { count: evidence?.baseline.window_days ?? 30 }),
+            label: t("alerts.facts.baseline", { count: baselineDays }),
             value: t("alerts.facts.baselineValue", { value: f.ratio(facts.baseline_weekly_avg) }),
           },
           {
@@ -46,7 +48,7 @@ export const CorrectionsBody = ({ alert }: RuleBodyProps<"R8">) => {
             // Baza 0 — nisbat yo'q (`ratio: null`): «Oldingi 30 kunda tuzatish bo'lmagan», qator tashlanmaydi.
             value:
               facts.ratio === null
-                ? t("alerts.facts.ratioNoBaseline", { count: evidence?.baseline.window_days ?? 30 })
+                ? t("alerts.facts.ratioNoBaseline", { count: baselineDays })
                 : t("alerts.facts.ratioValue", { value: f.ratio(facts.ratio) }),
           },
           { id: "rule", label: t("alerts.facts.rule"), value: f.condition(alert) },

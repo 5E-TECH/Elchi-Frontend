@@ -169,6 +169,8 @@ export {
   alertListTitle,
   alertShortLabel,
   alertShortName,
+  AI_ADVISOR_R8_BASELINE_DAYS,
+  correctionsBaselineDays,
   alertSubline,
   formatAdvisorDay,
   formatAdvisorDayMonth,

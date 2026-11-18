@@ -724,8 +724,8 @@
       "titles": {
         "list": "{{range}} haftasida {{corrections}} — 30 kunlik o'rtachadan {{ratio}} barobar",
         "dialog": "{{range}} haftasida {{corrections}} — odatdagidan {{ratio}} barobar ko'p",
-        "listNoBaseline": "{{range}} haftasida {{corrections}} — oldingi 30 kunda tuzatish bo'lmagan",
-        "dialogNoBaseline": "{{range}} haftasida {{corrections}} — oldingi 30 kunda tuzatish bo'lmagan"
+        "listNoBaseline": "{{range}} haftasida {{corrections}} — {{noBaseline}}",
+        "dialogNoBaseline": "{{range}} haftasida {{corrections}} — {{noBaseline}}"
       },
       "fields": {
         "ratio": "Nisbat",

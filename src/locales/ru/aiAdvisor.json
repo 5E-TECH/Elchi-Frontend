@@ -776,8 +776,8 @@
       "titles": {
         "list": "Неделя {{range}}: {{corrections}} — в {{ratio}} раза больше 30-дневного среднего",
         "dialog": "Неделя {{range}}: {{corrections}} — в {{ratio}} раза больше обычного",
-        "listNoBaseline": "Неделя {{range}}: {{corrections}} — за предыдущие 30 дней исправлений не было",
-        "dialogNoBaseline": "Неделя {{range}}: {{corrections}} — за предыдущие 30 дней исправлений не было"
+        "listNoBaseline": "Неделя {{range}}: {{corrections}} — {{noBaseline}}",
+        "dialogNoBaseline": "Неделя {{range}}: {{corrections}} — {{noBaseline}}"
       },
       "fields": {
         "ratio": "Коэффициент",

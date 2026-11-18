@@ -5,6 +5,7 @@ import type {
   AiAdvisorAlertListItem,
   AiAdvisorBranchRef,
   AiAdvisorCashboxRef,
+  AiAdvisorEvidence,
   AiAdvisorFactsR7,
   AiAdvisorKnownAlert,
   AiAdvisorNamedRef,
@@ -158,6 +159,16 @@ export const subjectName = (alert: Pick<AiAdvisorAlertListItem, "id" | "branch" 
   if (alert.subject.kind === "cashbox" && alert.subject.id === MAIN_CASHBOX_SUBJECT_ID) return t("alerts.cashbox.main");
   return alert.subject.name || `#${alert.subject.id ?? alert.id}`;
 };
+
+/** R8 baza oynasi (kun) — backend `R8_BASELINE_DAYS`; ro'yxat qatorida dalil yo'q, shuning uchun sukut shu. */
+export const AI_ADVISOR_R8_BASELINE_DAYS = 30;
+
+/**
+ * R8 baza oynasi — sarlavha («oldingi 30 kunda …») va «Nisbat» fakti uchun yagona manba: tafsilotda
+ * `evidence.baseline.window_days`, ro'yxatda — `AI_ADVISOR_R8_BASELINE_DAYS`.
+ */
+export const correctionsBaselineDays = (alert: AiAdvisorAlertListItem & { evidence?: AiAdvisorEvidence | null }): number =>
+  alert.evidence?.kind === "corrections" ? alert.evidence.baseline.window_days : AI_ADVISOR_R8_BASELINE_DAYS;
 
 /** Qoida nomi («Smena kamomadi»); noma'lum — «Boshqa qoida». */
 export const ruleName = (ruleKey: string, t: AdvisorTranslate): string =>
@@ -321,8 +332,11 @@ const knownTitle = (alert: AiAdvisorKnownAlert, mode: TitleMode, t: AdvisorTrans
         range: formatAdvisorWeekRange(f.from, f.to, t),
         corrections: unit(t, "corrections", f.count),
       };
-      // Oldingi 30 kunda tuzatish bo'lmagan (baza 0) — nisbat yo'q (`ratio: null`).
-      if (f.ratio === null) return t(mode === "list" ? "rules.R8.titles.listNoBaseline" : "rules.R8.titles.dialogNoBaseline", vars);
+      // Oldingi 30 kunda tuzatish bo'lmagan (baza 0) — nisbat yo'q (`ratio: null`); matn — «Nisbat» faktidagi bilan bir xil.
+      if (f.ratio === null) {
+        const noBaseline = lowerFirst(t("alerts.facts.ratioNoBaseline", { count: correctionsBaselineDays(alert) }));
+        return t(mode === "list" ? "rules.R8.titles.listNoBaseline" : "rules.R8.titles.dialogNoBaseline", { ...vars, noBaseline });
+      }
       const ratio = ratioText(f.ratio, language);
       return t(mode === "list" ? "rules.R8.titles.list" : "rules.R8.titles.dialog", { ...vars, ratio });
     }

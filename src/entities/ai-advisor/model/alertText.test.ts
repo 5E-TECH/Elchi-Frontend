@@ -9,6 +9,7 @@ import {
   advisorDaysBetween,
   advisorIsoWeekday,
   advisorUserName,
+  AI_ADVISOR_R8_BASELINE_DAYS,
   alertDialogTitle,
   alertHeadlineAmount,
   alertInlineName,
@@ -16,6 +17,7 @@ import {
   alertShortLabel,
   alertShortName,
   alertSubline,
+  correctionsBaselineDays,
   formatAdvisorDayRange,
   formatAdvisorDayRelative,
   formatAdvisorWeekRange,
@@ -164,6 +166,15 @@ describe("backend dev holatlari (shartnoma v0.4 eslatmalari, #653 review, round-
     expect(alertDialogTitle(fx.detail.r8NoBaseline, uz, "uz")).toBe(
       "12–18 oktabr haftasida 4 ta tuzatish — oldingi 30 kunda tuzatish bo'lmagan",
     );
+    // Oyna sarlavhasi va «Nisbat» fakti — bitta manba (`evidence.baseline.window_days`); ro'yxatda — backend sukuti.
+    const r8 = fx.detail.r8NoBaseline;
+    const evidence = r8.evidence as Extract<NonNullable<typeof r8.evidence>, { kind: "corrections" }>;
+    const window28 = { ...r8, evidence: { ...evidence, baseline: { ...evidence.baseline, window_days: 28 } } };
+    expect(correctionsBaselineDays(window28)).toBe(28);
+    expect(correctionsBaselineDays(fx.byRule.R8)).toBe(AI_ADVISOR_R8_BASELINE_DAYS);
+    expect(alertDialogTitle(window28, uz, "uz")).toBe("12–18 oktabr haftasida 4 ta tuzatish — oldingi 28 kunda tuzatish bo'lmagan");
+    expect(alertDialogTitle(window28, t("ru"), "ru")).toMatch(/ — за предыдущие 28 дней исправлений не было$/);
+    expect(alertDialogTitle(window28, t("en"), "en")).toMatch(/ — no corrections in the previous 28 days$/);
   });
 
   it("R3 mediana 0 (`ratio_to_median: null`) — «odatdagidan ko'p», sonsiz", () => {

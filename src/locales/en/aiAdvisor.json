@@ -724,8 +724,8 @@
       "titles": {
         "list": "Week of {{range}}: {{corrections}} — {{ratio}}× the 30-day average",
         "dialog": "Week of {{range}}: {{corrections}} — {{ratio}}× the usual",
-        "listNoBaseline": "Week of {{range}}: {{corrections}} — no corrections in the previous 30 days",
-        "dialogNoBaseline": "Week of {{range}}: {{corrections}} — no corrections in the previous 30 days"
+        "listNoBaseline": "Week of {{range}}: {{corrections}} — {{noBaseline}}",
+        "dialogNoBaseline": "Week of {{range}}: {{corrections}} — {{noBaseline}}"
       },
       "fields": {
         "ratio": "Ratio",
