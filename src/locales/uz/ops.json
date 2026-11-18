@@ -10,7 +10,6 @@
     "tabErrorHint": "Boshqa bo'limlar ishlashda davom etadi."
   },
   "tabs": {
-    "finance": "Moliya operatorlari",
     "expenseCategories": "Xarajat kategoriyalari",
     "shiftSettings": "Kassa smenasi",
     "investors": "Investorlar",
@@ -29,74 +28,6 @@
       "notFound": "Topilmadi (404). ID to'g'riligini tekshiring.",
       "conflict": "Holat allaqachon o'zgargan (409). Ro'yxatni yangilab, qayta urinib ko'ring.",
       "forbidden": "Bu amal sizning rolingiz uchun ochilmagan (403)."
-    }
-  },
-  "finance": {
-    "intro": {
-      "title": "Operator hisob-kitobi",
-      "description": "Operatorning ishlab topgan, to'langan va qoldiq summasi, daromad va to'lov tarixi. Yangi to'lovni shu yerda qayd qiling."
-    },
-    "lookup": {
-      "formLabel": "Operatorni yuklash",
-      "label": "Operator ID",
-      "placeholder": "Operator ID",
-      "submit": "Yuklash",
-      "invalid": "Operator ID faqat raqamlardan iborat bo'lishi kerak"
-    },
-    "balance": {
-      "title": "Operator {{id}} balansi",
-      "subtitle": "Qoldiq = ishlab topgan − to'langan",
-      "due": "Operatorga to'lanishi kerak",
-      "earned": "Ishlab topgan",
-      "paid": "To'langan",
-      "rest": "Qoldiq",
-      "paidShare": "To'langan ulushi",
-      "paidShareAria": "Ishlab topilganning {{value}} to'langan",
-      "waterfallAria": "Qoldiq {{balance}}: ishlab topgan {{earned}}, to'langan {{paid}} ayiriladi",
-      "loadError": "Operator balansini olib bo'lmadi"
-    },
-    "payment": {
-      "title": "To'lov qayd qilish",
-      "description": "Operatorga berilgan to'lovni yozib qo'ying — qoldiq avtomatik kamayadi",
-      "amount": "Summa (so'm)",
-      "amountPlaceholder": "Masalan, 200 000",
-      "amountRequired": "Summani kiriting",
-      "note": "Izoh",
-      "notePlaceholder": "Masalan, oktabr uchun",
-      "submit": "To'lovni saqlash",
-      "success": "To'lov qayd qilindi",
-      "error": "To'lovni qayd qilib bo'lmadi",
-      "confirmTitle": "To'lovni qayd qilasizmi?",
-      "confirmDescription": "Operator {{id}} ga to'lov yoziladi — qoldiq shu summaga kamayadi.",
-      "confirmAmount": "To'lov summasi",
-      "confirmNote": "Izoh",
-      "confirmLoading": "Saqlanmoqda…"
-    },
-    "earnings": {
-      "title": "Daromadlar",
-      "description": "Har bir buyurtma uchun hisoblangan ulush",
-      "order": "Buyurtma",
-      "amount": "Miqdor",
-      "date": "Sana",
-      "summary": "{{from}}–{{to}} / {{total}} ta",
-      "pagesLabel": "Daromadlar sahifalari",
-      "empty": "Hali daromad yo'q",
-      "emptyHint": "Operator buyurtma olganda ulushi shu yerda paydo bo'ladi.",
-      "loadError": "Daromadlarni olib bo'lmadi"
-    },
-    "payouts": {
-      "title": "To'lovlar tarixi",
-      "description": "Operatorga berilgan to'lovlar",
-      "amount": "Miqdor",
-      "note": "Izoh",
-      "date": "Sana",
-      "count": "{{count}} ta to'lov",
-      "total": "Jami:",
-      "summary": "{{from}}–{{to}} / {{total}} ta to'lov",
-      "pagesLabel": "To'lovlar sahifalari",
-      "empty": "Hali to'lov yo'q",
-      "emptyHint": "Qayd qilingan to'lovlar shu yerda ko'rinadi.",
-      "loadError": "To'lovlar tarixini olib bo'lmadi"
     }
   },
   "expenseCategories": {

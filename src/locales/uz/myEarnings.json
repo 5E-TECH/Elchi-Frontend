@@ -18,5 +18,34 @@
     "sample": "Namuna",
     "note": "Stavka o'zgarsa, faqat keyingi sotuvlarga qo'llanadi.",
     "unsetNote": "Stavka belgilanmaguncha daromad yozilmaydi. Market egasi bilan bog'laning."
+  },
+  "account": {
+    "title": "Hisob",
+    "balance": "Qoldiq",
+    "balanceHint": "Sizga to'lanishi kerak",
+    "overpaid": "Ortiqcha to'langan",
+    "earned": "Daromad",
+    "earnedHint": "{{total}} ta sotilgan buyurtmadan",
+    "earnedHintFallback": "Sotilgan buyurtmalardan",
+    "noSales": "Hali sotuv yo'q",
+    "paid": "To'langan",
+    "lastPaid": "Oxirgisi: {{date}}",
+    "noPayments": "Hali to'lov yo'q",
+    "phoneNote": "So'mda · qoldiq = daromad − to'langan"
+  },
+  "payments": {
+    "title": "To'lovlar",
+    "description": "Sizga berilgan to'lovlar",
+    "amount": "Summa",
+    "note": "Izoh",
+    "date": "Sana",
+    "noNote": "Izohsiz",
+    "cancelled": "Bekor qilingan",
+    "cancelReason": "Sabab: {{reason}}",
+    "summary": "{{total}} ta to'lov",
+    "totalLabel": "Jami:",
+    "pagination": "{{from}}–{{to}} / {{total}} ta to'lov",
+    "emptyTitle": "Hali to'lov yo'q",
+    "emptyDescription": "Sizga to'lov qilinganda shu yerda ko'rinadi."
   }
 }

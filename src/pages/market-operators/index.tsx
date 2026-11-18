@@ -3,6 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleCheck, SearchX, UserPlus, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { useSearchParams } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
 import {
   useMarketOperators,
@@ -22,12 +23,16 @@ import {
   TextInput,
   type SelectOption,
 } from "../../shared/ui/primitives";
+import { PAYMENTS_VIEW } from "./model/operatorPayments";
 import { operatorsWithoutCommission } from "./model/unsetCommission";
 import { CommissionDialog } from "./ui/CommissionDialog";
 import { CommissionWarning } from "./ui/CommissionWarning";
 import { CreateOperatorDialog } from "./ui/CreateOperatorDialog";
+import { MarketOperatorsTabs } from "./ui/MarketOperatorsTabs";
+import { OperatorPaymentsView } from "./ui/OperatorPaymentsView";
 import { OperatorsSkeleton, OperatorsTable } from "./ui/OperatorsTable";
 import { useDeleteOperatorConfirm } from "./ui/useDeleteOperatorConfirm";
+import { usePaymentDialogs } from "./ui/usePaymentDialogs";
 
 /** Backend `limit` ≤ 100 (`normalizeQuery`). */
 const PAGE_SIZES = [20, 50, 100] as const;
@@ -45,13 +50,29 @@ const STATUS_VALUES: readonly MarketOperatorStatus[] = ["active", "inactive"];
  * operator yo'q» — sarlavhadagi tugma va filtrlarsiz, tugma bo'sh holat ichida (maket `-empty`).
  *
  * So'rov: `GET /market-operators?page&limit&search&status` (market_id yuborilmaydi — serverda JWT `sub`). Qator
- * menyusi: Komissiya oynasi va o'chirish (tasdiq bilan). «Nofaol qilish / Faollashtirish» — MO-4 (backend endpointi
- * kutilmoqda), shungacha holat faqat o'qiladi.
+ * menyusi: Komissiya oynasi, «To'lov yozish» (F2qp6FtE) va o'chirish (tasdiq bilan). «Nofaol qilish / Faollashtirish»
+ * — MO-4 (backend endpointi kutilmoqda), shungacha holat faqat o'qiladi.
+ *
+ * F2qp6FtE (ega qarori 2026-11-16): sarlavhada «Operatorlar · To'lovlar» tablari; `?view=payments` — operatorlarga
+ * to'lovlar hisobi (`OperatorPaymentsView`, Elchi kassasiga ta'sir qilmaydi).
  */
 const MarketOperatorsPage = () => {
+  const { t } = useTranslation("marketOperators");
+  const marketName = useSelector((state: RootState) => state.user.user?.name?.trim() || null);
+  const [searchParams] = useSearchParams();
+  if (searchParams.get("view") === PAYMENTS_VIEW) {
+    return (
+      <OperatorPaymentsView
+        description={marketName ? t("payments.description", { market: marketName }) : t("payments.descriptionFallback")}
+      />
+    );
+  }
+  return <OperatorsListView marketName={marketName} />;
+};
+
+const OperatorsListView = ({ marketName }: { marketName: string | null }) => {
   const { t, i18n } = useTranslation("marketOperators");
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const marketName = useSelector((state: RootState) => state.user.user?.name?.trim() || null);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(PAGE_SIZES[0]);
@@ -62,6 +83,7 @@ const MarketOperatorsPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [commissionOperator, setCommissionOperator] = useState<MarketOperator | null>(null);
   const confirmDelete = useDeleteOperatorConfirm();
+  const { openRecord, dialogs: paymentDialogs } = usePaymentDialogs();
   /** Sarlavhadagi yoki bo'sh holatdagi «Operator qo'shish» (bir vaqtda bittasi chiziladi). */
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -183,6 +205,7 @@ const MarketOperatorsPage = () => {
       <PageHeader
         title={t("title")}
         description={marketName ? t("description", { market: marketName }) : t("descriptionFallback")}
+        children={<MarketOperatorsTabs value="operators" />}
         actions={noOperators ? undefined : addButton}
       />
 
@@ -272,6 +295,7 @@ const MarketOperatorsPage = () => {
               rows={shownRows}
               busy={isFetching && isPlaceholderData}
               onCommission={openCommission}
+              onRecordPayment={(operator) => openRecord({ id: operator.id, name: operator.name })}
               onDelete={handleDelete}
             />
           )}
@@ -285,6 +309,7 @@ const MarketOperatorsPage = () => {
         onSetCommission={openCommission}
       />
       <CommissionDialog operator={commissionOperator} onClose={() => setCommissionOperator(null)} />
+      {paymentDialogs}
     </div>
   );
 };

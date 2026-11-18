@@ -47,7 +47,7 @@ import {
   resolveMarketOperatorNewOrdersAccess,
 } from "../../pages/new_orders/model/newOrdersShell";
 // Ops tab kalitlari — sof ma'lumot (JSX'siz), eski yo'llarni hub tabiga yo'naltirish uchun.
-import { opsTabPath, SHIFT_SETTINGS_TAB } from "../../pages/ops/tabs";
+import { FINANCE_OPERATORS_MOVED_TO, opsTabPath, SHIFT_SETTINGS_TAB } from "../../pages/ops/tabs";
 // ✅ Login page: `lazy` + to'g'ridan-to'g'ri `/login` da oldindan yuklash.
 import Login from "./loginPage";
 
@@ -57,7 +57,6 @@ const Orders = lazy(() => import("../../pages/orders"));
 const OrderCreate = lazy(() => import("../../pages/orders/create"));
 const Profile = lazy(() => import("../../pages/profile/ui/ProfilePage"));
 const SettingsPage = lazy(() => import("../../pages/settings/ui/SettingsPage"));
-const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
 const MarketOperatorsPage = lazy(() => import("../../pages/market-operators"));
 const CourierBulkPage = lazy(() => import("../../pages/courier-bulk"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
@@ -239,7 +238,7 @@ const canViewBatches = canViewBatchesPage;
 const canViewReturns = canViewReturnsPage;
 
 // «Faoliyat jurnali» (`/activity-logs`) — admin va superadmin (maket `admin-activity-logs-list`). Ops vositalari
-// (`/ops`, `*-ops`, `/finance-operators`) bu guard'da EMAS — ular `canViewOpsPages` (faqat superadmin), `/logs` —
+// (`/ops`, `*-ops`) bu guard'da EMAS — ular `canViewOpsPages` (faqat superadmin), `/logs` —
 // `canViewLogs` (faqat superadmin). Backend yozish yo'llarini o'zi 403 qiladi; bu faqat UI darvozasi (Audit I17, F2NzXpMv).
 const canViewOps = (state: RootState) => {
   const role = state.role.role;
@@ -255,7 +254,7 @@ const canViewAdminNewOrderTabs = (state: RootState) => {
   return role === "admin" || role === "superadmin";
 };
 
-// Ops vositalari — `/ops` (hub) va to'g'ridan-to'g'ri `*-ops`, `/finance-operators`: FAQAT superadmin (maketlar
+// Ops vositalari — `/ops` (hub) va to'g'ridan-to'g'ri `*-ops`: FAQAT superadmin (maketlar
 // `superadmin-ops-*`; admin menyusida «Ops vositalari» yo'q). Ichki dev/texnik shakllar — URL orqali ham yopiq.
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
 const canViewCourierBulk = canViewCourierBulkPage;
@@ -688,10 +687,15 @@ const AppRouter = () => {
               ),
             },
             {
+              /**
+               * F2qp6FtE (ega qarori 2026-11-16): «Moliya operatorlari» olib tashlandi — market o'z operatoriga O'ZI
+               * to'laydi («Operatorlar → To'lovlar»), Elchi kassasiga ta'sir qilmaydi. Eski havola superadminni
+               * «Foydalanuvchilar → Market operatorlari» ga olib boradi (guard o'sha).
+               */
               path: "finance-operators",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <FinanceOperatorsPage />
+                  <Navigate replace to={FINANCE_OPERATORS_MOVED_TO} />
                 </ProtectedRoute>
               ),
             },

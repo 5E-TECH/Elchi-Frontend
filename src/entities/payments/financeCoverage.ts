@@ -4,12 +4,6 @@ import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 import { refreshCashboxQueries } from "./index";
 
-/** Operatorga to'lov (`POST finance/operator-payments`) — body backend DTO'si, `Idempotency-Key` bitta mantiqiy to'lovga bitta. */
-export type OperatorPaymentRequest = {
-  payload: { operator_id: string; amount: number; note?: string };
-  idempotencyKey: string;
-};
-
 export const useFinanceCoverage = () => {
   const client = useQueryClient();
 
@@ -114,7 +108,8 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  // ── Operator balance / earnings / payouts (to'lov — `pages/finance-operators`, Idempotency-Key bilan) ──
+  // ── Operator balance / earnings / payouts — faqat o'qish (SA/ADMIN/MANAGER). F2qp6FtE: superadmin endi operatorga
+  // to'lamaydi — market o'zi yozadi (`entities/operator-payment`, Elchi kassasiga ta'sir qilmaydi). ──
 
   const useGetOperatorBalance = (operatorId: string, enabled: boolean = true, options?: SilentErrorOption) =>
     useQuery({
@@ -145,18 +140,6 @@ export const useFinanceCoverage = () => {
       enabled,
       ...silentErrorMeta(options),
     });
-
-  /**
-   * Operatorga to'lov (OPS → «Moliya operatorlari»). Pul kassadan chiqadi — `refreshCashboxQueries`: operator balansi,
-   * daromad va to'lovlar (`finance-cov`) bilan birga kassa (`[cashbox]`), tarix va bosh sahifa ham yangilanadi (aac031).
-   */
-  const createOperatorPayment = useMutation({
-    mutationFn: ({ payload, idempotencyKey }: OperatorPaymentRequest) =>
-      api
-        .post(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENTS, payload, { headers: { "Idempotency-Key": idempotencyKey } })
-        .then((res) => res.data),
-    onSuccess: () => refreshCashboxQueries(client),
-  });
 
   // ── Salary ────────────────────────────────────────────────────────────────
 
@@ -207,7 +190,6 @@ export const useFinanceCoverage = () => {
     useGetOperatorBalance,
     useGetOperatorEarnings,
     useGetOperatorPayouts,
-    createOperatorPayment,
     // Salary
     createSalary,
     updateSalary,

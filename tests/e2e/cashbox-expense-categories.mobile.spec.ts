@@ -64,12 +64,13 @@ test("⭐ 390: Ops → «Xarajat kategoriyalari» — bo'lim tanlovidan, amallar
   await page.goto("/ops");
   await expect(page.getByRole("heading", { level: 1, name: "Ops vositalari" })).toBeVisible({ timeout: 60_000 });
 
-  // Telefonda tablar o'rniga `Select` — «Xarajat kategoriyalari» moliya guruhida, «Moliya operatorlari» dan keyin.
+  // Telefonda tablar o'rniga `Select` — «Xarajat kategoriyalari» moliya guruhida birinchi («Moliya operatorlari»
+  // F2qp6FtE da olib tashlandi).
   await page.getByRole("combobox", { name: /^Ops bo'limi:/ }).click();
   const options = page.getByRole("option");
-  await expect(options.nth(0)).toHaveText("Moliya operatorlari");
-  await expect(options.nth(1)).toHaveText("Xarajat kategoriyalari");
-  await options.nth(1).click();
+  await expect(options.nth(0)).toHaveText("Xarajat kategoriyalari");
+  await expect(page.getByRole("option", { name: "Moliya operatorlari" })).toHaveCount(0);
+  await options.nth(0).click();
   await expectOpsExpenseCategories(page);
   await expect(page.getByRole("combobox", { name: "Ops bo'limi: Xarajat kategoriyalari" })).toBeVisible();
 

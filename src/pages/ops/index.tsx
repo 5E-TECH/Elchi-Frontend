@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-investors, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
+// dizayn-v2: superadmin-ops-investors, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
 import { Suspense, lazy, useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useSearchParams } from "react-router-dom";
@@ -22,23 +22,23 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  * bandlari menyuni cho'zib yuborardi, shu bois ular BITTA sahifada tab bo'lib yig'ildi — bu ekranlar
  * kamdan-kam ochiladi.
  *
- * Eski `/finance-operators`, `/identity-ops` marshrutlari o'z sarlavhasi va «← Ops vositalari»
- * havolasi bilan chiziladi; `/investors-ops`, `/system-ops`, `/logs` — shu hubning tabiga yo'naltiradi (F2NzXpMv,
- * bhitm9do). Hub o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi. «Logistika» — `/returns` ichida,
+ * Eski `/identity-ops` marshruti o'z sarlavhasi va «← Ops vositalari» havolasi bilan chiziladi; `/investors-ops`,
+ * `/system-ops`, `/logs` — shu hubning tabiga yo'naltiradi (F2NzXpMv, bhitm9do). «Moliya operatorlari» (`?tab=finance`,
+ * `/finance-operators`) olib tashlandi (F2qp6FtE — market o'z operatoriga o'zi to'laydi) — `MOVED_OPS_TABS`.
+ * Hub o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi. «Logistika» — `/returns` ichida,
  * «Filiallar» — `/batches` ichida (F2NzXpMv, faqat superadmin): eski yo'l ham, `?tab=` ham o'sha yerga olib boradi.
  * Hub ichida tug'ilgan tab («Xarajat kategoriyalari», `pages/expense-categories`) — eski yo'lsiz, faqat shu yerda.
  * «Yetkazish narxi» (`pages/delivery-tariffs`) — «Hududlar» bo'limining sahifasi, hub uni ham `embedded` bilan chizadi.
  * «Kassa smenasi» (`pages/payments/shiftSettings`, ega 2026-11-16) — ilgari `/payments/shift-settings` sahifasi; eski yo'l
  * shu tabga yo'naltiradi.
  *
- * Desktop/planshet — `Tabs` (title = «Eski manzil: /finance-operators»; eski yo'li yo'q tabda — yo'q), telefon —
+ * Desktop/planshet — `Tabs` (title = «Eski manzil: /identity-ops»; eski yo'li yo'q tabda — yo'q), telefon —
  * `Select` («Ops bo'limi: <tab>»). Faol tab `?tab=` da; noma'lum qiymat — oxirgi tanlangan yoki birinchi tab.
  * Har tab o'z `Suspense` + xato chegarasida: bittasi yiqilsa, qolgani ishlaydi.
  */
 
 type OpsPanel = ComponentType<{ embedded?: boolean }>;
 
-const FinanceOperatorsPage = lazy(() => import("../finance-operators"));
 const ExpenseCategoriesPage = lazy(() => import("../expense-categories"));
 const ShiftSettingsPage = lazy(() => import("../payments/shiftSettings"));
 const InvestorsOpsPage = lazy(() => import("../investors-ops"));
@@ -50,7 +50,6 @@ const DailySchedulePage = lazy(() => import("../daily-schedule"));
 
 /** Tab kalitidan komponentga xarita — ma'lumot `tabs.ts` da. */
 const CONTENT: Record<string, OpsPanel> = {
-  finance: FinanceOperatorsPage,
   [EXPENSE_CATEGORIES_TAB]: ExpenseCategoriesPage,
   [SHIFT_SETTINGS_TAB]: ShiftSettingsPage,
   investors: InvestorsOpsPage,

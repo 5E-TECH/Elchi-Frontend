@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-integrations, superadmin-ops-investors, superadmin-ops-logistics, superadmin-ops-branches, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
+// dizayn-v2: superadmin-ops-integrations, superadmin-ops-investors, superadmin-ops-logistics, superadmin-ops-branches, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
 import { Component, useId, type ErrorInfo, type ReactNode } from "react";
 import { CircleCheck, CircleX, Info, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -11,7 +11,7 @@ import { getOpsTab, opsTabPath } from "../tabs";
  *
  * Har `*-ops` sahifa ikki joyda chiziladi:
  *  - hub ichida (`/ops?tab=<key>`, `embedded`) — sarlavhasiz, faqat panel (sarlavha «Ops vositalari» hub'da);
- *  - o'z eski yo'lida (`/finance-operators` …) — `PageHeader` (tab nomi) + «← Ops vositalari» → `/ops?tab=<key>`.
+ *  - o'z eski yo'lida (`/identity-ops` …) — `PageHeader` (tab nomi) + «← Ops vositalari» → `/ops?tab=<key>`.
  * Ikkala holatda ildiz — shell kontent slotidagi bo'limlar oralig'i (tashqi karta/chekka yo'q).
  */
 export const OpsToolPage = ({

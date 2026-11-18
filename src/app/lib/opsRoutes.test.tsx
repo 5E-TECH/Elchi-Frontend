@@ -6,9 +6,12 @@ import type { RootState } from "../config/store";
 import AppRouter from "./routes";
 
 /**
- * F2NzXpMv (ruxsat — hujjat va guard bir xil): Ops vositalari (`/ops`, to'g'ridan-to'g'ri `*-ops`, `/finance-operators`)
- * va «Kirish diagnostikasi» (`/logs`) — FAQAT superadmin; «Faoliyat jurnali» (`/activity-logs`) — superadmin va admin.
+ * F2NzXpMv (ruxsat — hujjat va guard bir xil): Ops vositalari (`/ops`, to'g'ridan-to'g'ri `*-ops`) va «Kirish
+ * diagnostikasi» (`/logs`) — FAQAT superadmin; «Faoliyat jurnali» (`/activity-logs`) — superadmin va admin.
  * Boshqa rol — shell ichida 403.
+ *
+ * F2qp6FtE: «Moliya operatorlari» olib tashlandi — `/finance-operators` superadminni «Foydalanuvchilar → Market
+ * operatorlari» ga (`/all-users?role=market_operator`) yo'naltiradi (guard o'sha, admin — 403).
  *
  * F2NzXpMv + bhitm9do («ikki eshik» yopildi): `/investors-ops`, `/system-ops`, `/logs` — `/ops?tab=<k>` ga, ko'chgan
  * `/branch-ops` — `/batches` ga yo'naltiradi; `/logistics-ops` — «Pochta → Qaytarish» ga (u5HTJtqK, Ops nusxasi
@@ -44,14 +47,22 @@ vi.mock("../../pages/mails", async () => {
   return { default: MailsStub };
 });
 vi.mock("../../pages/batches", () => stub("Ops sahifasi /batches"));
-vi.mock("../../pages/finance-operators", () => stub("Ops sahifasi /finance-operators"));
+vi.mock("../../pages/users/list/UserListPage", async () => {
+  const { useLocation } = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  const UsersStub = () => {
+    const { pathname, search } = useLocation();
+    return <p>{`Ops sahifasi ${pathname}${search}`}</p>;
+  };
+  return { default: UsersStub };
+});
 vi.mock("../../pages/integrations", () => stub("Ops sahifasi /integrations"));
 vi.mock("../../pages/identity-ops", () => stub("Ops sahifasi /identity-ops"));
 vi.mock("../../pages/activity-logs", () => stub("Faoliyat jurnali sahifasi"));
 
-const OPS_PATHS = ["/ops", "/finance-operators", "/identity-ops"];
+const OPS_PATHS = ["/ops", "/identity-ops"];
 
 const OPS_REDIRECTS = [
+  ["/finance-operators", "/all-users?role=market_operator"],
   ["/integrations-ops", "/integrations"],
   ["/investors-ops", "/ops?tab=investors"],
   ["/logistics-ops", "/mails/return"],

@@ -31,7 +31,6 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
 /**
  * Naqshga (`*-ops`) tushmaydigan, lekin markazga ATAYLAB kiritilgan sahifalar.
  *
- * `finance-operators` — nomi boshqacha, mazmuni ops.
  * `logs`             — ilgari menyuda "Loglar" deb turardi, lekin u jurnal
  *                      EMAS: ichida `POST /auth/refresh` sinov tugmasi bor.
  *                      Nomi bilan mazmuni mos kelmagani uchun operator
@@ -56,7 +55,6 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
  * yetim sahifa kafolati buzilmaydi.
  */
 const extraOpsPages = [
-  "finance-operators",
   "logs",
   "expense-categories",
   "payments/shiftSettings",
@@ -90,7 +88,9 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
   });
 
   it("ko'chgan tablar hub'da yo'q va yangi manzili bor", () => {
-    expect(Object.keys(MOVED_OPS_TABS).sort()).toEqual(["branches", "integrations", "logistics"]);
+    // F2qp6FtE: «Moliya operatorlari» (`finance`) — market o'z operatoriga o'zi to'laydi; havola «Market operatorlari» ga.
+    expect(Object.keys(MOVED_OPS_TABS).sort()).toEqual(["branches", "finance", "integrations", "logistics"]);
+    expect(MOVED_OPS_TABS.finance).toBe("/all-users?role=market_operator");
     expect(OPS_TABS.filter((tab) => tab.key in MOVED_OPS_TABS)).toEqual([]);
   });
 
@@ -116,7 +116,9 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
       "delivery-pricing",
       "daily-schedule",
     ]);
-    expect(OPS_TABS.map((tab) => tab.key).slice(0, 3)).toEqual(["finance", "expense-categories", "shift-settings"]);
+    // F2qp6FtE: «Moliya operatorlari» olib tashlandi — moliya guruhi «Xarajat kategoriyalari» dan boshlanadi.
+    expect(OPS_TABS.map((tab) => tab.key).slice(0, 2)).toEqual(["expense-categories", "shift-settings"]);
+    expect(OPS_TABS.map((tab) => tab.key)).not.toContain("finance");
   });
 });
 

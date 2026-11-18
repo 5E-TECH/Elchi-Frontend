@@ -1,0 +1,195 @@
+import { api } from "../../../shared/api/instance";
+import { API_ENDPOINTS } from "../../../shared/api";
+import type {
+  MyOperatorBalance,
+  MyOperatorPaymentList,
+  OperatorBalance,
+  OperatorBalances,
+  OperatorPayment,
+  OperatorPaymentList,
+  OperatorPaymentListParams,
+  OperatorPaymentResult,
+  RecordOperatorPaymentRequest,
+} from "../model/types";
+
+/**
+ * F2qp6FtE — operatorga to'lov yozuvlari (backend `OperatorPaymentGatewayController`, faqat MARKET; operator o'zi —
+ * `finance/operators/me/*`). Javoblar `{ statusCode, message, data }`; konvertsiz shakl ham o'qiladi.
+ */
+
+type Raw = Record<string, unknown>;
+
+const asRecord = (value: unknown): Raw | null =>
+  typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Raw) : null;
+
+/** `{ statusCode, message, data }` → `data`; konvert bo'lmasa — o'zi. */
+const unwrap = (value: unknown): unknown => {
+  const record = asRecord(value);
+  if (record && "data" in record && ("statusCode" in record || "message" in record)) return record.data;
+  return value;
+};
+
+const toNumber = (value: unknown): number => {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
+const toText = (value: unknown): string =>
+  typeof value === "string" ? value.trim() : typeof value === "number" && Number.isFinite(value) ? String(value) : "";
+
+const toNullableText = (value: unknown): string | null => toText(value) || null;
+
+/** `YYYY-MM-DD` (to'liq ISO kelsa — sana qismi). */
+const toDay = (value: unknown): string | null => {
+  const text = toText(value);
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(text);
+  return match ? match[1] : null;
+};
+
+export const normalizeOperatorBalance = (value: unknown): OperatorBalance => {
+  const item = asRecord(value) ?? {};
+  const earned = toNumber(item.earned);
+  const paid = toNumber(item.paid);
+  return {
+    operatorId: toText(item.operator_id),
+    operatorName: toText(item.operator_name),
+    status: item.status === "inactive" ? "inactive" : "active",
+    earned,
+    paid,
+    balance: "balance" in item ? toNumber(item.balance) : earned - paid,
+    paymentsCount: toNumber(item.payments_count),
+    lastPaidAt: toDay(item.last_paid_at),
+  };
+};
+
+export const normalizeOperatorBalances = (value: unknown): OperatorBalances => {
+  const data = asRecord(unwrap(value)) ?? {};
+  const items = (Array.isArray(data.items) ? data.items : []).map(normalizeOperatorBalance).filter((item) => item.operatorId);
+  const totals = asRecord(data.totals);
+  const sum = (key: "earned" | "paid" | "balance") => items.reduce((total, item) => total + item[key], 0);
+  return {
+    items,
+    totals: totals
+      ? { earned: toNumber(totals.earned), paid: toNumber(totals.paid), balance: toNumber(totals.balance) }
+      : { earned: sum("earned"), paid: sum("paid"), balance: sum("balance") },
+  };
+};
+
+/** Market ko'rinishi (`OperatorPaymentViewDto`) va operatorning `/me/payments` qatori (eski entity shakli) — ikkalasi. */
+export const normalizeOperatorPayment = (value: unknown): OperatorPayment => {
+  const item = asRecord(value) ?? {};
+  const createdAt = toNullableText(item.created_at ?? item.createdAt);
+  const cancelledAt = toNullableText(item.cancelled_at);
+  const status = item.status === "cancelled" || cancelledAt ? "cancelled" : "active";
+  return {
+    id: toText(item.id),
+    operatorId: toText(item.operator_id),
+    operatorName: toNullableText(item.operator_name),
+    amount: toNumber(item.amount),
+    paidAt: toDay(item.paid_at) ?? toDay(createdAt),
+    // Backend maydoni `note`; eski yozuvlarda `comment` bo'lishi mumkin.
+    note: toText(item.note ?? item.comment),
+    source: item.source === "market" ? "market" : "elchi",
+    affectsCashbox: item.affects_cashbox === true,
+    createdAt,
+    status,
+    cancelledAt,
+    cancelReason: toText(item.cancel_reason),
+    canCancel: item.can_cancel === true && status === "active",
+  };
+};
+
+export const normalizeOperatorPaymentList = (value: unknown, params: OperatorPaymentListParams): OperatorPaymentList => {
+  const data = asRecord(unwrap(value)) ?? {};
+  const items = Array.isArray(data.items) ? data.items : [];
+  const pagination = asRecord(data.pagination) ?? asRecord(data.meta) ?? {};
+  return {
+    items: items.map(normalizeOperatorPayment).filter((item) => item.id),
+    total: "total" in pagination ? toNumber(pagination.total) : items.length,
+    page: toNumber(pagination.page) || params.page,
+    limit: toNumber(pagination.limit) || params.limit,
+  };
+};
+
+export const normalizeOperatorPaymentResult = (value: unknown): OperatorPaymentResult => {
+  const data = asRecord(unwrap(value)) ?? {};
+  return { payment: normalizeOperatorPayment(data), idempotent: data.idempotent === true };
+};
+
+export const normalizeMyOperatorBalance = (value: unknown): MyOperatorBalance | null => {
+  const data = asRecord(unwrap(value));
+  if (!data || !("earned" in data || "paid" in data || "balance" in data)) return null;
+  const earned = toNumber(data.earned);
+  const paid = toNumber(data.paid);
+  return { earned, paid, balance: "balance" in data ? toNumber(data.balance) : earned - paid };
+};
+
+/** `{ rows, total, limit, offset }` (yoki `items`). */
+export const normalizeMyOperatorPayments = (value: unknown): MyOperatorPaymentList => {
+  const data = unwrap(value);
+  if (Array.isArray(data)) return { items: data.map(normalizeOperatorPayment), total: data.length };
+  const record = asRecord(data) ?? {};
+  const rows = Array.isArray(record.rows) ? record.rows : Array.isArray(record.items) ? record.items : [];
+  return { items: rows.map(normalizeOperatorPayment), total: "total" in record ? toNumber(record.total) : rows.length };
+};
+
+/** `GET finance/operators/me/earnings` dan faqat jami son (sotilgan buyurtmalar soni — «N ta sotilgan buyurtmadan»). */
+export const normalizeEarningsTotal = (value: unknown): number | null => {
+  const record = asRecord(unwrap(value));
+  if (!record || !("total" in record)) return null;
+  return toNumber(record.total);
+};
+
+// ───────────────────────────── so'rovlar ─────────────────────────────
+
+export const getOperatorBalances = async (): Promise<OperatorBalances> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENT_BALANCES);
+  return normalizeOperatorBalances(response.data);
+};
+
+export const getOperatorPayments = async (params: OperatorPaymentListParams): Promise<OperatorPaymentList> => {
+  const query: Record<string, string | number> = { page: params.page, limit: params.limit };
+  if (params.operatorId) query.operator_id = params.operatorId;
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENTS, { params: query });
+  return normalizeOperatorPaymentList(response.data, params);
+};
+
+/** Yozish: `Idempotency-Key` — bitta mantiqiy to'lov uchun bitta kalit (qayta urinishda o'sha kalit). */
+export const recordOperatorPayment = async ({
+  body,
+  idempotencyKey,
+}: {
+  body: RecordOperatorPaymentRequest;
+  idempotencyKey: string;
+}): Promise<OperatorPaymentResult> => {
+  const response = await api.post(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENTS, body, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return normalizeOperatorPaymentResult(response.data);
+};
+
+export const cancelOperatorPayment = async ({ id, reason }: { id: string; reason: string }): Promise<OperatorPaymentResult> => {
+  const response = await api.post(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENT_CANCEL(id), { reason });
+  return normalizeOperatorPaymentResult(response.data);
+};
+
+export const getMyOperatorBalance = async (): Promise<MyOperatorBalance | null> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATORS_ME_BALANCE);
+  return normalizeMyOperatorBalance(response.data);
+};
+
+export const getMyOperatorPayments = async (params: { limit: number; offset: number }): Promise<MyOperatorPaymentList> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATORS_ME_PAYMENTS, { params });
+  return normalizeMyOperatorPayments(response.data);
+};
+
+export const getMyOperatorEarningsTotal = async (): Promise<number | null> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATORS_ME_EARNINGS, { params: { limit: 1, offset: 0 } });
+  return normalizeEarningsTotal(response.data);
+};
+
+/** Har mantiqiy to'lov uchun yangi kalit. */
+export const newOperatorPaymentKey = (): string =>
+  typeof globalThis.crypto?.randomUUID === "function"
+    ? globalThis.crypto.randomUUID()
+    : `op-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
