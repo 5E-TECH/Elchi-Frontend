@@ -40,7 +40,9 @@
       "title": "Confirm return requests",
       "description": {
         "hq": "Orders ({{value}}) will be taken from couriers and returned to the HQ warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail.",
-        "branch": "Orders ({{value}}) will be taken from couriers and returned to the branch warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail."
+        "branch": "Orders ({{value}}) will be taken from couriers and returned to the branch warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail.",
+        "transfer": "Orders ({{value}}) did not arrive at the branch and return to the HQ warehouse. Their status becomes “Received” and they are added to the region's new mail to be sent again.",
+        "mixed": "Orders ({{value}}) return to the warehouse: those with couriers become “Waiting” and are detached from the courier and the mail; those that did not arrive at the branch become “Received” at the HQ warehouse and are added to the region's new mail to be sent again."
       },
       "confirm": "Approve {{value}}",
       "loading": "Approving…",

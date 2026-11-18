@@ -38,7 +38,9 @@
       "title": "Qaytarish so'rovlarini tasdiqlang",
       "description": {
         "hq": "{{value}} ta buyurtma kuryerlardan olinadi va HQ omboriga qaytariladi. Holati «Kutilmoqda» bo'ladi, kuryer va pochtadan ajratiladi.",
-        "branch": "{{value}} ta buyurtma kuryerlardan olinadi va filial omboriga qaytariladi. Holati «Kutilmoqda» bo'ladi, kuryer va pochtadan ajratiladi."
+        "branch": "{{value}} ta buyurtma kuryerlardan olinadi va filial omboriga qaytariladi. Holati «Kutilmoqda» bo'ladi, kuryer va pochtadan ajratiladi.",
+        "transfer": "{{value}} ta buyurtma filialga kelmagan — HQ omboriga qaytariladi. Holati «Qabul qilindi» bo'ladi va qayta jo'natish uchun viloyatning yangi pochtasiga qo'shiladi.",
+        "mixed": "{{value}} ta buyurtma omborga qaytariladi: kuryerdagilar «Kutilmoqda» bo'lib, kuryer va pochtadan ajratiladi; filialga kelmaganlari HQ omborida «Qabul qilindi» bo'lib, qayta jo'natish uchun viloyatning yangi pochtasiga qo'shiladi."
       },
       "confirm": "{{value}} tasini tasdiqlash",
       "loading": "Tasdiqlanmoqda…",

@@ -260,6 +260,8 @@ describe("ReturnMails — tasdiq oynasi va natija (u5HTJtqK)", () => {
   it("⭐ oynasiz so'rov ketmaydi: HQ ombori, buyurtma va kuryer soni, kuryersiz qator, guruhlar, eslatma; «Bekor qilish» — tanlov saqlanadi", async () => {
     const user = userEvent.setup();
     renderWithProviders(<ReturnMails layout="card" />);
+    // Xulosa ham oyna kabi: kuryersiz guruh kuryer sanalmaydi (2 ta, 3 emas).
+    expect(screen.getByText((_, node) => node?.textContent === "2 ta kuryer, 7 ta buyurtma")).toBeInTheDocument();
     const dialog = await openDialog(user);
 
     expect(mocks.approveMutateAsync).not.toHaveBeenCalled();
@@ -650,6 +652,11 @@ describe("ReturnMails — filial o'tkazmasi so'rovlari (menejer «kelmagan», HQ
     await user.click(screen.getByRole("checkbox", { name: "Filial: Guliston — kelmagan: barchasini tanlash" }));
     await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
     const dialog = await screen.findByRole("alertdialog", APPROVE_DIALOG);
+    // Faqat filialga kelmaganlar — «Kutilmoqda» emas: «Qabul qilindi» + qayta jo'natish uchun yangi pochta.
+    expect(dialog).toHaveTextContent(
+      "2 ta buyurtma filialga kelmagan — HQ omboriga qaytariladi. Holati «Qabul qilindi» bo'ladi va qayta jo'natish uchun viloyatning yangi pochtasiga qo'shiladi.",
+    );
+    expect(dialog).not.toHaveTextContent("kuryerlardan olinadi");
     await user.click(within(dialog).getByRole("button", { name: "2 tasini tasdiqlash" }));
 
     expect(mocks.approveMutateAsync).toHaveBeenCalledWith({ order_ids: ["201", "203"] });
@@ -663,8 +670,10 @@ describe("ReturnMails — filial o'tkazmasi so'rovlari (menejer «kelmagan», HQ
     await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
     const dialog = await screen.findByRole("alertdialog", APPROVE_DIALOG);
 
-    // HQ doirasi (`action: center`) — «HQ omboriga».
-    expect(dialog).toHaveTextContent("4 ta buyurtma kuryerlardan olinadi va HQ omboriga qaytariladi.");
+    // Aralash tanlov (kuryerdagi + filialga kelmagan) — ikkala natija ham aytiladi (backend `returnDtoOf`).
+    expect(dialog).toHaveTextContent(
+      "4 ta buyurtma omborga qaytariladi: kuryerdagilar «Kutilmoqda» bo'lib, kuryer va pochtadan ajratiladi; filialga kelmaganlari HQ omborida «Qabul qilindi» bo'lib, qayta jo'natish uchun viloyatning yangi pochtasiga qo'shiladi.",
+    );
     expect(within(dialog).getByText("Kuryerlar").nextSibling).toHaveTextContent("1 ta");
     expect(within(dialog).getByText("+ 3 ta buyurtma kuryersiz")).toBeInTheDocument();
     expect(topGroups(dialog)).toEqual([

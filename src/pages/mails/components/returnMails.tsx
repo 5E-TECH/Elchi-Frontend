@@ -28,6 +28,7 @@ import {
   getRequestId,
   groupReturnRequests,
   isBranchTransfer,
+  isCourierlessGroup,
   parseReturnActionResult,
   returnActionErrorKey,
   returnRequestState,
@@ -168,8 +169,9 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
     () => groupReturnRequests(requests, t("courierFallback"), branchLabel),
     [requests, t, branchLabel],
   );
-  const courierGroups = groups.filter((group) => group.kind === "courier").length;
-  const branchGroups = groups.length - courierGroups;
+  // Kuryersiz eski qatorlar guruhi kuryer emas — tasdiq oynasidagi «+ N ta buyurtma kuryersiz» bilan bir xil sanaladi.
+  const courierGroups = groups.filter((group) => group.kind === "courier" && !isCourierlessGroup(group)).length;
+  const branchGroups = groups.filter((group) => group.kind !== "courier").length;
   const selectedItems = useMemo(
     () => requests.filter((item) => selectedIds.has(getRequestId(item))),
     [requests, selectedIds],
@@ -274,7 +276,17 @@ const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
     const total = orderIds.length;
     const mutation = type === "approve" ? approveReturnRequests : rejectReturnRequests;
     // Ombor — ro'yxat doirasidan (`scope.type` → `action`): filial yoki HQ.
-    const scopeKey = selectedItems.every((item) => isBranchDestination(item.action)) ? "branch" : "hq";
+    // Filialga kelmagan (o'tkazma) qatorlar boshqacha qaytadi: «Qabul qilindi» + HQ'ning yangi pochtasi (qayta
+    // jo'natish uchun), kuryerdagilar esa «Kutilmoqda» (backend `approveReturnRequests` → `returnDtoOf`).
+    const transferCount = selectedItems.filter(isBranchTransfer).length;
+    const scopeKey =
+      transferCount === selectedItems.length
+        ? "transfer"
+        : transferCount > 0
+          ? "mixed"
+          : selectedItems.every((item) => isBranchDestination(item.action))
+            ? "branch"
+            : "hq";
     // Natija `onConfirm` ichida yoziladi (oyna yopilgach o'qiladi).
     const outcome: { result: ReturnActionResult | null } = { result: null };
 
