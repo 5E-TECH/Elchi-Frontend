@@ -72,7 +72,11 @@ export const DEFAULT_RULE_LIMITS: Readonly<Record<AiAdvisorRuleKey, AiAdvisorRul
   R5: { balance_uzs: uzs(5_000_000), days_without_transfer: days(3) },
   R6: {},
   R7: {},
-  R8: { ratio: { min: 1.1, max: 10, step: 0.1, unit: "multiplier", default: 2 } },
+  // `min_count` — ega qarori 2026-11-14 (#653 review): haftada kamida N ta tuzatish bo'lmasa jim (UI'da yo'q, Q12).
+  R8: {
+    ratio: { min: 1.1, max: 10, step: 0.1, unit: "multiplier", default: 2 },
+    min_count: { min: 1, max: 50, step: 1, unit: "count", default: 3 },
+  },
 });
 
 export type ThresholdInputMode = "numeric" | "decimal";
@@ -87,7 +91,10 @@ export interface ThresholdFieldSpec {
   inputMode: ThresholdInputMode;
   /** Doimiy izoh (`{{value}}` — joriy qiymat): R3 «Mediana + 3 × mediana og'ishi», R4 «Qarz bo'lsa». */
   hintKey?: string;
-  /** Q12: R8 `ratio` sozlamada bor, maketda maydon yo'q — UI ko'rsatmaydi. */
+  /**
+   * Q12: R8 `ratio` va `min_count` sozlamada bor, maketda maydon yo'q — UI ko'rsatmaydi va PATCH ga kiritmaydi
+   * (backend qisman birlashtiradi — saqlangan qiymat o'zgarmaydi), lekin normalizator saqlaydi.
+   */
   hidden?: boolean;
 }
 
@@ -113,7 +120,7 @@ export const THRESHOLD_FIELDS: Readonly<Record<AiAdvisorRuleKey, readonly Thresh
   R5: [spec("R5", "balance_uzs", "uzs"), spec("R5", "days_without_transfer", "days")],
   R6: [],
   R7: [],
-  R8: [spec("R8", "ratio", "multiplier", { hidden: true })],
+  R8: [spec("R8", "ratio", "multiplier", { hidden: true }), spec("R8", "min_count", "count", { hidden: true })],
 });
 
 /** Izoh so'rovidan keyin poll: oraliq sukuti, eng kichigi va kutish chegarasi (D15). */

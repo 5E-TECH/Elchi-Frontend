@@ -727,7 +727,8 @@
         "dialogNoBaseline": "Week of {{range}}: {{corrections}} — no corrections in the previous 30 days"
       },
       "fields": {
-        "ratio": "Ratio"
+        "ratio": "Ratio",
+        "min_count": "Minimum per week"
       }
     }
   },

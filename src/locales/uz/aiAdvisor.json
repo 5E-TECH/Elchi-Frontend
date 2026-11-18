@@ -727,7 +727,8 @@
         "dialogNoBaseline": "{{range}} haftasida {{corrections}} — oldingi 30 kunda tuzatish bo'lmagan"
       },
       "fields": {
-        "ratio": "Nisbat"
+        "ratio": "Nisbat",
+        "min_count": "Haftasiga kamida"
       }
     }
   },

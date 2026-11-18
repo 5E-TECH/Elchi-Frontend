@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import i18n from "../../../i18n";
-import type { AdvisorTranslate, AiAdvisorSettings } from "../../../entities/ai-advisor";
-import { createAdvisorFixtures } from "../../../test/aiAdvisorFixtures";
+import { normalizeSettings, type AdvisorTranslate, type AiAdvisorSettings } from "../../../entities/ai-advisor";
+import { advisorEnvelope, createAdvisorFixtures } from "../../../test/aiAdvisorFixtures";
 import {
   diffSettings,
   fieldLimit,
@@ -154,12 +154,29 @@ describe("diffSettings — PATCH tanasi va tasdiq qatorlari", () => {
       rules: { R1: { shortage_uzs: 30_000 }, R3: { mad_multiplier: 2.5 }, R8: { enabled: false } },
     });
     const body = JSON.stringify(patch);
-    for (const forbidden of ["severity", "telegram", "budget", "schedule", "ratio"]) expect(body).not.toContain(forbidden);
+    for (const forbidden of ["severity", "telegram", "budget", "schedule", "ratio", "min_count"]) expect(body).not.toContain(forbidden);
     expect(changes).toEqual([
       { kind: "threshold", rule: "R1", field: "shortage_uzs", unit: "uzs", decimals: 0, from: 50_000, to: 30_000 },
       { kind: "threshold", rule: "R3", field: "mad_multiplier", unit: "multiplier", decimals: 1, from: 3, to: 2.5 },
       { kind: "enabled", rule: "R8", from: true, to: false },
     ]);
+  });
+
+  it("R8 `min_count` (Q12) — formada yo'q va PATCH ga kirmaydi; javobdagi (qisman birlashtirilgan) qiymat saqlanadi", () => {
+    expect(settings.rules.R8.min_count).toBe(3);
+    expect(toSettingsForm(settings, "uz").R8.values).toEqual({});
+    const { patch } = diffSettings(settings, toggle(toSettingsForm(settings, "uz"), "R8", false));
+    expect(patch).toEqual({ version: 4, rules: { R8: { enabled: false } } });
+    // Backend `parseSettingsPatch` — qisman (deep merge): yuborilmagan `ratio`/`min_count` o'zgarmaydi.
+    const response = { ...settings, version: 5, rules: { ...settings.rules, R8: { ...settings.rules.R8, enabled: false } } };
+    const saved = normalizeSettings(advisorEnvelope(response));
+    expect(saved.rules.R8).toEqual({ enabled: false, severity: "warning", telegram: true, ratio: 2, min_count: 3 });
+    expect(saved.limits.rules.R8.min_count).toEqual({ min: 1, max: 50, step: 1, unit: "count", default: 3 });
+    // Keyingi saqlash ham uni yubormaydi.
+    expect(diffSettings(saved, toggle(toSettingsForm(saved, "uz"), "R8", true)).patch).toEqual({
+      version: 5,
+      rules: { R8: { enabled: true } },
+    });
   });
 
   it("kalit qaytarib qo'yilsa (yoqildi → o'chirildi → yoqildi) — o'zgarish emas", () => {
@@ -200,6 +217,7 @@ describe("server xatosi — INVALID_RULE {field, min, max}", () => {
   it("parseServerField", () => {
     expect(parseServerField("rules.R1.consecutive_negative")).toEqual({ rule: "R1", field: "consecutive_negative" });
     expect(parseServerField("rules.R8.ratio")).toBeNull();
+    expect(parseServerField("rules.R8.min_count")).toBeNull();
     expect(parseServerField("rules.R9.shortage_uzs")).toBeNull();
     expect(parseServerField("rules.R1.severity")).toBeNull();
     expect(parseServerField("version")).toBeNull();

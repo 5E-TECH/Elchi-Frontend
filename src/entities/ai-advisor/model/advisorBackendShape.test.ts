@@ -379,4 +379,12 @@ describe("backend dev sozlamalari — R8 `min_count` (Q12: UI'da yo'q, lekin saq
   it("GET — har maydon o'zgarishsiz (R8 `min_count` qiymati va chegarasi ham)", () => {
     expect(normalizeSettings(advisorEnvelope(settings, 200, "AI advisor settings"))).toEqual(settings);
   });
+
+  it("`limits` yo'q (eski javob) — R8 `min_count` zaxirasi va sukuti (3)", () => {
+    const { limits: _limits, ...rest } = settings;
+    void _limits;
+    const normalized = normalizeSettings({ ...rest, rules: { ...settings.rules, R8: { enabled: false } } });
+    expect(normalized.rules.R8).toEqual({ enabled: false, severity: "warning", telegram: true, ratio: 2, min_count: 3 });
+    expect(normalized.limits.rules.R8.min_count).toEqual({ min: 1, max: 50, step: 1, unit: "count", default: 3 });
+  });
 });
