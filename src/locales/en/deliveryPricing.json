@@ -195,6 +195,7 @@
         "change": "was {{from}}, will be {{to}}",
         "immediate": "Takes effect immediately — new prices are calculated with these rules",
         "website": "The price calculator on the website changes immediately too",
+        "saleOnly": "The minimum price and courier cost limit apply only when the pricing engine is connected to sales — the website calculator does not change",
         "journal": "Logged in the journal: previous and new value"
       }
     },
@@ -256,7 +257,7 @@
       "keepCurrent": "The current price and the website calculator stay the same",
       "history": "The version stays in the history as «Cancelled» and is logged in the journal",
       "error": "Could not cancel",
-      "conflict": "The tariff has already taken effect. To change the price, create a new version.",
+      "conflict": "This version can no longer be cancelled: it has already taken effect or is inactive. To change the price, create a new version.",
       "notFound": "This version was not found — the list has been refreshed.",
       "success": "Scheduled tariff cancelled",
       "successDescription": "{{name}}: no change from {{date}}, the current tariff stays in effect"

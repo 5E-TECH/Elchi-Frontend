@@ -195,6 +195,7 @@
         "change": "{{from}} edi, {{to}} bo'ladi",
         "immediate": "Darhol kuchga kiradi — yangi narxlar shu qoidalar bilan hisoblanadi",
         "website": "Saytdagi narx kalkulyatori ham darhol o'zgaradi",
+        "saleOnly": "Minimal narx va kuryer xarajati chegarasi faqat narx dvigateli sotuvga ulanganda ishlatiladi — sayt kalkulyatori o'zgarmaydi",
         "journal": "Jurnalga yoziladi: oldingi va yangi qiymat"
       }
     },
@@ -256,7 +257,7 @@
       "keepCurrent": "Hozirgi narx va sayt kalkulyatori o'zgarmaydi",
       "history": "Versiya tarixda «Bekor qilingan» bo'lib qoladi, jurnalga yoziladi",
       "error": "Bekor qilib bo'lmadi",
-      "conflict": "Tarif allaqachon kuchga kirgan. Narxni o'zgartirish uchun yangi versiya yarating.",
+      "conflict": "Bu versiyani endi bekor qilib bo'lmaydi: u kuchga kirgan yoki faol emas. Narxni o'zgartirish uchun yangi versiya yarating.",
       "notFound": "Bu versiya topilmadi — ro'yxat yangilandi.",
       "success": "Rejalashtirilgan tarif bekor qilindi",
       "successDescription": "{{name}}: {{date}} dan o'zgarish bo'lmaydi, hozirgi tarif amalda"
