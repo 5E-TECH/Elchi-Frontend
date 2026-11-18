@@ -6,21 +6,22 @@ import type { RootState } from "../config/store";
 import AppRouter from "./routes";
 
 /**
- * vpKijXce — `/investor`: investor o'z kabinetiga (`/`), superadmin investorlar ro'yxatiga; `/investor/:id` —
- * kabinet nazorat uchun, faqat superadmin. Boshqa rol — shell ichida 403.
+ * vpKijXce — `/investor`: investor o'z kabinetiga (`/`), superadmin investorlar ro'yxatiga («Foydalanuvchilar →
+ * Investorlar», LIuf0DcD dan — Ops «Investorlar» tabi olib tashlandi); `/investor/:id` — kabinet nazorat uchun, faqat
+ * superadmin. Boshqa rol — shell ichida 403.
  */
 
 vi.mock("../../widgets/layout/dashboardLayout", async () => {
   const { Outlet } = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return { default: () => <main><Outlet /></main> };
 });
-vi.mock("../../pages/ops", async () => {
+vi.mock("../../pages/users/list/UserListPage", async () => {
   const { useLocation } = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
-  const OpsStub = () => {
+  const UsersStub = () => {
     const { pathname, search } = useLocation();
-    return <p>{`Ops ${pathname}${search}`}</p>;
+    return <p>{`Foydalanuvchilar ${pathname}${search}`}</p>;
   };
-  return { default: OpsStub };
+  return { default: UsersStub };
 });
 vi.mock("../../pages/investor/InvestorControlPage", async () => {
   const { useParams } = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -45,9 +46,11 @@ const renderAt = (route: string, role: string) =>
 const forbidden = () => screen.findByRole("heading", { level: 1, name: "Bu sahifaga ruxsatingiz yo'q" }, { timeout: 5000 });
 
 describe("/investor (vpKijXce)", () => {
-  it("⭐ superadmin: /investor → Ops investorlar ro'yxati", async () => {
+  it("⭐ superadmin: /investor → «Foydalanuvchilar → Investorlar»", async () => {
     renderAt("/investor", "superadmin");
-    expect(await screen.findByText("Ops /ops?tab=investors", undefined, { timeout: 5000 })).toBeInTheDocument();
+    expect(
+      await screen.findByText("Foydalanuvchilar /all-users?role=investor", undefined, { timeout: 5000 }),
+    ).toBeInTheDocument();
   });
 
   it("⭐ superadmin: /investor/7 — kabinet nazorati", async () => {
@@ -68,7 +71,7 @@ describe("/investor (vpKijXce)", () => {
   it.each(["admin", "manager", "market", "courier"])("%s: /investor va /investor/7 — 403", async (role) => {
     const first = renderAt("/investor", role);
     expect(await forbidden()).toBeInTheDocument();
-    expect(screen.queryByText(/^Ops /)).toBeNull();
+    expect(screen.queryByText(/^Foydalanuvchilar /)).toBeNull();
     first.unmount();
 
     renderAt("/investor/7", role);

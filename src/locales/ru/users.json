@@ -218,6 +218,7 @@
       "phoneBranch": "{{phone}} · {{branch}}",
       "menu": {
         "edit": "Редактировать",
+        "cabinet": "Открыть кабинет",
         "deactivate": "Деактивировать",
         "activate": "Активировать",
         "delete": "Удалить"

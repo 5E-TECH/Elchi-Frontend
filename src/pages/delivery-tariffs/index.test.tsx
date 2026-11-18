@@ -2,7 +2,6 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DeliveryTariffsPage from "./index";
-import OpsPage from "../ops";
 import {
   computeMeasureWeights,
   computeTariffTotal,
@@ -638,27 +637,8 @@ describe("DeliveryTariffsPage — rejalashtirilgan tarifni bekor qilish (B0ILd7Y
   });
 });
 
-describe("Ops vositalari → «Yetkazish narxi» (`/ops?tab=delivery-pricing`)", () => {
-  it("hub ichida (`embedded`): sarlavha va «← Hududlar» o'rniga kirish kartasi; tanasi — o'sha bloklar", async () => {
-    renderWithProviders(<OpsPage />, {
-      route: "/ops?tab=delivery-pricing",
-      preloadedState: { role: { id: "superadmin-1", role: "superadmin", region: null, name: "superadmin" } } as never,
-    });
-
-    const panel = await screen.findByRole("tabpanel", { name: "Yetkazish narxi" });
-    expect(screen.getByRole("heading", { level: 1, name: "Ops vositalari" })).toBeInTheDocument();
-    expect(await within(panel).findByRole("heading", { name: "Yetkazish narxi — tariflar va hisob qoidalari" })).toBeInTheDocument();
-    expect(within(panel).queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
-    expect(within(panel).queryByRole("link", { name: "Hududlar" })).not.toBeInTheDocument();
-
-    expect(await within(panel).findByRole("table", { name: "Tariflar — asosiy narx va har kg narxi" })).toBeInTheDocument();
-    const rules = within(panel).getByRole("region", { name: "Hisob qoidalari — qo'shimcha haq qachon boshlanadi" });
-    expect(await within(rules).findByRole("textbox", { name: "Hajm bo'yicha hisoblash chegarasi" })).toHaveValue("0,0");
-    expect(within(panel).getByRole("region", { name: "Narx kalkulyatori" })).toBeInTheDocument();
-    expect(within(panel).getByRole("list", { name: "O'zgarishlar tarixi" })).toBeInTheDocument();
-  });
-
-  it("`/delivery-tariffs` o'zgarmagan: sarlavha, «← Hududlar», kirish kartasi yo'q", async () => {
+describe("«Yetkazish narxi» — faqat `/delivery-tariffs` (LIuf0DcD: Ops nusxasi olib tashlandi)", () => {
+  it("sarlavha, «← Hududlar», Ops kirish kartasi yo'q", async () => {
     renderPage();
     expect(screen.getByRole("heading", { level: 1, name: "Yetkazish tariflari" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Hududlar" })).toHaveAttribute("href", "/regions");

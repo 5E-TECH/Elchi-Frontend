@@ -311,6 +311,51 @@ const asPhone = () => {
   };
 };
 
+describe("UserListTable — investor «Kabinetni ko'rish» (LIuf0DcD)", () => {
+  const investorRows = [
+    { id: "4", name: "Karim Investov", phone_number: "+998904445566", role: "investor", status: "active" },
+    { id: "5", name: "Login'siz bog'lanmagan", phone_number: "+998904445577", role: "investor", status: "active" },
+    { id: "1", name: "Ali Valiyev", phone_number: "+998901234567", role: "courier", status: "active" },
+  ];
+  const investorIds = new Map([
+    ["4", "77"],
+    ["1", "99"],
+  ]);
+
+  beforeEach(() => {
+    navigateMock.mockReset();
+  });
+
+  it("investor qatori menyusida birinchi band — `/investor/<investor id>` ga olib boradi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={investorRows as never} canManage investorIds={investorIds} />);
+
+    const menu = await openMenu(user, "Karim Investov");
+    const items = within(menu).getAllByRole("menuitem").map((item) => item.textContent);
+    expect(items[0]).toBe("Kabinetni ko'rish");
+    await user.click(within(menu).getByRole("menuitem", { name: "Kabinetni ko'rish" }));
+    expect(navigateMock).toHaveBeenCalledWith("/investor/77");
+  });
+
+  it("xaritada yo'q investor va investor bo'lmagan qatorda band yo'q", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={investorRows as never} canManage investorIds={investorIds} />);
+
+    const noLink = await openMenu(user, "Login'siz bog'lanmagan");
+    expect(within(noLink).queryByRole("menuitem", { name: "Kabinetni ko'rish" })).not.toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    const courier = await openMenu(user, "Ali Valiyev");
+    expect(within(courier).queryByRole("menuitem", { name: "Kabinetni ko'rish" })).not.toBeInTheDocument();
+  });
+
+  it("xarita berilmasa (admin, menejer) — band yo'q", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={investorRows as never} canManage />);
+    const menu = await openMenu(user, "Karim Investov");
+    expect(within(menu).queryByRole("menuitem", { name: "Kabinetni ko'rish" })).not.toBeInTheDocument();
+  });
+});
+
 describe("UserListTable — «Telegram boti» ustuni (TG-B, `*-users-list-telegram`)", () => {
   const telegramUsers = [
     { ...users[0], telegram_linked: true },

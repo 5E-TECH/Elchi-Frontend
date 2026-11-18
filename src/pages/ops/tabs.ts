@@ -10,9 +10,9 @@ export interface OpsTabMeta {
   labelKey: string;
   /**
    * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut — eski havola yoki xatcho'p buzilmaydi:
-   * `/finance-operators`, `/identity-ops` o'z sarlavhasi bilan chiziladi, qolganlari
-   * (`routes.tsx`) `/ops?tab=<key>` ga yo'naltiradi. Markaz ichida tug'ilgan tabda (masalan «Xarajat
-   * kategoriyalari») yo'q — uning yagona manzili `/ops?tab=<key>`.
+   * `/finance-operators` o'z sarlavhasi bilan chiziladi, `/system-ops` (`routes.tsx`) `/ops?tab=<key>` ga
+   * yo'naltiradi. Markaz ichida tug'ilgan tabda (masalan «Xarajat kategoriyalari») yo'q — uning yagona manzili
+   * `/ops?tab=<key>`.
    */
   legacyPath?: string;
   /** `src/pages/` ichidagi papka nomi. */
@@ -28,9 +28,6 @@ export const EXPENSE_CATEGORIES_TAB = "expense-categories";
  * smena yopish oynasi, smena hisoboti, chek maydoni va tarix tafsilotidagi havolalar ham shu yerga olib keladi.
  */
 export const SHIFT_SETTINGS_TAB = "shift-settings";
-
-/** «Yetkazish narxi» tabi kaliti — `/ops?tab=delivery-pricing` (tariflar, hisob qoidalari, hajm chegarasi). */
-export const DELIVERY_PRICING_TAB = "delivery-pricing";
 
 /**
  * «Kun tartibi» tabi kaliti — `/ops?tab=daily-schedule`: buyurtma yaratish va qabul qilish chegaralari, kun almashishi,
@@ -68,23 +65,6 @@ export const OPS_TABS: OpsTabMeta[] = [
     pageDir: "payments/shiftSettings",
   },
   {
-    key: "investors",
-    labelKey: "tabs.investors",
-    legacyPath: "/investors-ops",
-    pageDir: "investors-ops",
-  },
-  {
-    /**
-     * Yetkazish narxi (ega 2026-10-25): tariflar, hisob qoidalari — «Hajm bo'yicha hisoblash chegarasi»
-     * (`volumetric_from_kg`) ham, kalkulyator, tarix. Mazmuni `/delivery-tariffs` bilan AYNI (`DeliveryTariffsContent`).
-     * `legacyPath` yo'q: `/delivery-tariffs` eski ops manzili emas — «Hududlar» bo'limining o'z sahifasi (admin ham,
-     * «← Hududlar»), hub esa uni `embedded` bilan chizadi.
-     */
-    key: DELIVERY_PRICING_TAB,
-    labelKey: "tabs.deliveryPricing",
-    pageDir: "delivery-tariffs",
-  },
-  {
     /**
      * Kun tartibi (ega 2026-11-10): ilgari «Qabul va yaratish» sarlavhasidagi «Bugungi qabul vaqti» oynasi (yaratish
      * chegarasi, kun almashishi) va «Smena sozlamalari»dagi «Avtomatik yopish» — endi bitta joyda, qabul qilish
@@ -95,34 +75,10 @@ export const OPS_TABS: OpsTabMeta[] = [
     pageDir: "daily-schedule",
   },
   {
-    key: "identity",
-    labelKey: "tabs.identity",
-    legacyPath: "/identity-ops",
-    pageDir: "identity-ops",
-  },
-  {
     key: "system",
     labelKey: "tabs.system",
     legacyPath: "/system-ops",
     pageDir: "system-ops",
-  },
-  {
-    /**
-     * ⚠️ ILGARI MENYUDA "Loglar" DEB TURGAN SAHIFA — lekin u jurnal EMAS.
-     *
-     * Ichida `POST /auth/refresh` ga sinov so'rovi yuboradigan bitta tugma
-     * bor. Ya'ni nomi bilan mazmuni bir-biriga mos kelmasdi: biror hodisani
-     * tekshirmoqchi bo'lgan operator "Loglar"ni bosib, token yangilash
-     * tugmasini ko'rardi va haqiqiy jurnalni (`/activity-logs`) topolmasdi.
-     *
-     * Bu DIAGNOSTIKA vositasi — o'rni Ops markazi. Menyudan olib tashlandi,
-     * eski marshrut (`/logs`) shu tabga yo'naltiradi (bhitm9do). Dizayn v2 da
-     * yorlig'i — «Kirish diagnostikasi» (maket `superadmin-ops-auth-diagnostics`).
-     */
-    key: "auth",
-    labelKey: "tabs.auth",
-    legacyPath: "/logs",
-    pageDir: "logs",
   },
 ];
 
@@ -131,11 +87,24 @@ export const OPS_TABS: OpsTabMeta[] = [
  * vositalari — konsol panellarida: qarzlar «Hisob-kitob», navbat «Ish rejimi» (Dj70iDbD); logistika (qaytarish
  * so'rovlari) — «Pochta → Qaytarish» (u5HTJtqK: `/returns` dagi superadmin nusxasi olib tashlandi, tasdiqlash va rad
  * etish o'sha tabda, tasdiq oynasi bilan). Eski `/ops?tab=<key>` havolasi yangi joyga o'tadi.
+ *
+ * Olib tashlangan tablar (LIuf0DcD, ega 2026-11-16; «Investorlar» — ega 2026-11-18) — eski havola o'rnini bosuvchi
+ * sahifaga olib boradi:
+ *  - «Kirish diagnostikasi» (`auth`, `POST /auth/refresh` sinov tugmasi) — haqiqiy jurnal «Faoliyat jurnali»;
+ *  - «Xodimlar» (`identity`, adminlar / menejerlar / ro'yxatchilar ro'yxati, faqat o'qish) — «Foydalanuvchilar» rol
+ *    tablari (nofaol qilish, parol SMS'i ham o'sha yerda);
+ *  - «Investorlar» (`investors`, eski forma investorni LOGINSIZ yaratardi) — «Foydalanuvchilar → Investorlar»
+ *    (`?role=investor`; yaratish — «Foydalanuvchi qo'shish» → «Investor», faqat superadmin);
+ *  - «Yetkazish narxi» (`delivery-pricing`) — «Hududlar → Yetkazish tariflari» (`/delivery-tariffs`, mazmuni AYNI edi).
  */
 export const MOVED_OPS_TABS: Readonly<Record<string, string>> = {
   logistics: "/mails/return",
   branches: "/batches",
   integrations: "/integrations",
+  auth: "/activity-logs",
+  identity: "/all-users",
+  investors: "/all-users?role=investor",
+  "delivery-pricing": "/delivery-tariffs",
 };
 
 /** Tab kaliti bo'yicha meta (to'g'ridan-to'g'ri yo'llardagi «← Ops vositalari» havolasi uchun). */

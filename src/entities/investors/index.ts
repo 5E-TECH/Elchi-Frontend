@@ -21,6 +21,40 @@ export const toInvestorList = <T = Record<string, unknown>>(payload: unknown): I
   return { items, meta: (body as { meta?: InvestorListMeta } | null)?.meta ?? {} };
 };
 
+/** Bir sahifada ko'pi bilan (backend `normalizePagination` chegarasi). */
+const INVESTOR_PAGE_LIMIT = 100;
+/** Ehtiyot chegarasi: 10 sahifa = 1000 investor. */
+const INVESTOR_MAX_PAGES = 10;
+
+/**
+ * LIuf0DcD (ega, 2026-11-18): «Foydalanuvchilar → Investorlar» dagi «Kabinetni ko'rish» uchun login → investor yozuvi
+ * (`user_id` → `id`) xaritasi. `GET /users` investor id'sini bermaydi, `GET /investors` (superadmin/admin) esa har
+ * yozuvning `user_id` sini qaytaradi — barcha sahifalar o'qiladi. Login'siz yozuvlar (`user_id` bo'sh yoki `0`) kirmaydi.
+ */
+export const useInvestorIdsByUser = (enabled: boolean) =>
+  useQuery({
+    queryKey: [investors, "by-user"],
+    enabled,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const map = new Map<string, string>();
+      for (let page = 1; page <= INVESTOR_MAX_PAGES; page += 1) {
+        const { items, meta } = await api
+          .get(API_ENDPOINTS.INVESTORS.BASE, { params: { page, limit: INVESTOR_PAGE_LIMIT } })
+          .then((res) => toInvestorList<{ id?: unknown; user_id?: unknown }>(res.data));
+        for (const item of items) {
+          const userId = item.user_id == null ? "" : String(item.user_id).trim();
+          const id = item.id == null ? "" : String(item.id).trim();
+          if (id && userId && userId !== "0" && !map.has(userId)) map.set(userId, id);
+        }
+        const totalPages = Number(meta.totalPages) || 0;
+        if (items.length < INVESTOR_PAGE_LIMIT || (totalPages > 0 && page >= totalPages)) break;
+      }
+      return map;
+    },
+    ...silentErrorMeta({ silentError: true }),
+  });
+
 export const useInvestors = () => {
   const client = useQueryClient();
 

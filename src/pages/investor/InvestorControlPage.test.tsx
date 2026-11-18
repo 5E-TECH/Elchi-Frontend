@@ -63,7 +63,7 @@ describe("Investor kabineti — superadmin nazorati (vpKijXce)", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Investor kabineti · Habibulla Nazirov" })).toBeInTheDocument();
     expect(screen.getByText("Nazorat · faqat o'qish")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Investorlar/ })).toHaveAttribute("href", "/ops?tab=investors");
+    expect(screen.getByRole("link", { name: /Investorlar/ })).toHaveAttribute("href", "/all-users?role=investor");
     expect(calls.find((call) => call.url === "investors/7/dashboard")?.params).toEqual({ months: 12 });
     expect(calls.some((call) => call.url.startsWith("investors/me"))).toBe(false);
   });

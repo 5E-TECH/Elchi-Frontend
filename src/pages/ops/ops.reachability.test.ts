@@ -32,18 +32,9 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
  * Naqshga (`*-ops`) tushmaydigan, lekin markazga ATAYLAB kiritilgan sahifalar.
  *
  * `finance-operators` — nomi boshqacha, mazmuni ops.
- * `logs`             — ilgari menyuda "Loglar" deb turardi, lekin u jurnal
- *                      EMAS: ichida `POST /auth/refresh` sinov tugmasi bor.
- *                      Nomi bilan mazmuni mos kelmagani uchun operator
- *                      "Loglar"ni bosib haqiqiy jurnalni topolmasdi. Menyudan
- *                      olindi, o'rni — Ops markazi.
  * `expense-categories` — kassa xarajati kategoriyalari sozlamasi («Asosiy
  *                      kassa» oynasidan ko'chirilgan). Hub ichida tug'ilgan —
  *                      to'g'ridan-to'g'ri eski yo'li yo'q.
- * `delivery-tariffs` — «Yetkazish narxi» (tariflar, hisob qoidalari, hajm
- *                      chegarasi). «Hududlar» bo'limining sahifasi
- *                      (`/delivery-tariffs`, admin ham) — hub uni `embedded`
- *                      bilan chizadi; eski ops manzili emas.
  * `daily-schedule`   — «Kun tartibi» (2026-11-10): buyurtma yaratish / qabul
  *                      chegaralari, kun almashishi, smena jadvali. Hub ichida
  *                      tug'ilgan — eski yo'li yo'q.
@@ -54,15 +45,11 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
  * ⚠️ Bu ro'yxat QO'LDA to'ldiriladi, `*-ops` esa avtomatik sanaladi. Ya'ni
  * yangi `*-ops` papka qo'shilsa va unga tab berilmasa, test HAMON yiqiladi —
  * yetim sahifa kafolati buzilmaydi.
+ *
+ * LIuf0DcD (ega 2026-11-16, 2026-11-18): «Kirish diagnostikasi» (`pages/logs`), «Xodimlar» (`identity-ops`),
+ * «Investorlar» (`investors-ops`) o'chirildi, «Yetkazish narxi» (`delivery-tariffs`) — faqat «Hududlar» sahifasi.
  */
-const extraOpsPages = [
-  "finance-operators",
-  "logs",
-  "expense-categories",
-  "payments/shiftSettings",
-  "delivery-tariffs",
-  "daily-schedule",
-];
+const extraOpsPages = ["finance-operators", "expense-categories", "payments/shiftSettings", "daily-schedule"];
 
 /**
  * Hub'dan ish sahifasiga ko'chgan vositalar (F2NzXpMv): yetim emas, `/batches` ichida chiziladi. `logistics-ops`
@@ -89,9 +76,24 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
     }
   });
 
-  it("ko'chgan tablar hub'da yo'q va yangi manzili bor", () => {
-    expect(Object.keys(MOVED_OPS_TABS).sort()).toEqual(["branches", "integrations", "logistics"]);
+  it("ko'chgan va olib tashlangan tablar hub'da yo'q va yangi manzili bor", () => {
+    expect(Object.keys(MOVED_OPS_TABS).sort()).toEqual([
+      "auth",
+      "branches",
+      "delivery-pricing",
+      "identity",
+      "integrations",
+      "investors",
+      "logistics",
+    ]);
     expect(OPS_TABS.filter((tab) => tab.key in MOVED_OPS_TABS)).toEqual([]);
+  });
+
+  it("LIuf0DcD: olib tashlangan tablar o'rnini bosuvchi sahifaga olib boradi", () => {
+    expect(MOVED_OPS_TABS.auth).toBe("/activity-logs");
+    expect(MOVED_OPS_TABS.identity).toBe("/all-users");
+    expect(MOVED_OPS_TABS.investors).toBe("/all-users?role=investor");
+    expect(MOVED_OPS_TABS["delivery-pricing"]).toBe("/delivery-tariffs");
   });
 
   it("tab kalitlari va eski marshrutlar takrorlanmaydi", () => {
@@ -109,11 +111,10 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
     }
   });
 
-  it("eski yo'lsiz tablar — «Xarajat kategoriyalari» (hub ichida tug'ilgan, moliya guruhida), «Kassa smenasi» (ega 2026-11-16, yo'naltirish routes.tsx da), «Yetkazish narxi» (Hududlar sahifasi) va «Kun tartibi» (hub ichida tug'ilgan, 2026-11-10)", () => {
+  it("eski yo'lsiz tablar — «Xarajat kategoriyalari» (hub ichida tug'ilgan, moliya guruhida), «Kassa smenasi» (ega 2026-11-16, yo'naltirish routes.tsx da) va «Kun tartibi» (hub ichida tug'ilgan, 2026-11-10)", () => {
     expect(OPS_TABS.filter((tab) => tab.legacyPath === undefined).map((tab) => tab.key)).toEqual([
       "expense-categories",
       "shift-settings",
-      "delivery-pricing",
       "daily-schedule",
     ]);
     expect(OPS_TABS.map((tab) => tab.key).slice(0, 3)).toEqual(["finance", "expense-categories", "shift-settings"]);
@@ -172,9 +173,12 @@ describe("⭐ 'Loglar' bandi menyudan olib tashlandi (M7)", () => {
     expect(SIDEBAR_GROUP_BY_PATH["/activity-logs"]).toBe("system");
   });
 
-  it("diagnostika Ops markazida tab bo'lib mavjud", () => {
-    const tab = OPS_TABS.find((t) => t.legacyPath === "/logs");
-    expect(tab).toBeDefined();
-    expect(tab!.pageDir).toBe("logs");
+  /**
+   * LIuf0DcD (ega 2026-11-16): «Kirish diagnostikasi» (token yangilash sinovi) Ops'dan ham olib tashlandi — foydasiz
+   * vosita. Eski `/logs` havolasi haqiqiy jurnalga (`/activity-logs`) olib boradi (`routes.tsx`).
+   */
+  it("diagnostika tabi yo'q — `?tab=auth` haqiqiy jurnalga", () => {
+    expect(OPS_TABS.some((t) => t.key === "auth" || t.legacyPath === "/logs")).toBe(false);
+    expect(MOVED_OPS_TABS.auth).toBe("/activity-logs");
   });
 });

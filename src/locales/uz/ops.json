@@ -13,12 +13,8 @@
     "finance": "Moliya operatorlari",
     "expenseCategories": "Xarajat kategoriyalari",
     "shiftSettings": "Kassa smenasi",
-    "investors": "Investorlar",
-    "deliveryPricing": "Yetkazish narxi",
     "dailySchedule": "Kun tartibi",
-    "identity": "Xodimlar",
-    "system": "Tizim holati",
-    "auth": "Kirish diagnostikasi"
+    "system": "Tizim holati"
   },
   "common": {
     "count": "{{count}} ta",
@@ -155,12 +151,6 @@
       "notFoundDescription": "U o'chirilgan bo'lishi mumkin — ro'yxat yangilandi"
     }
   },
-  "deliveryPricing": {
-    "intro": {
-      "title": "Yetkazish narxi — tariflar va hisob qoidalari",
-      "description": "Tariflar, hisob qoidalari (hajm bo'yicha hisoblash chegarasi ham), narx kalkulyatori va o'zgarishlar tarixi. Xuddi shu bo'lim: Hududlar → Yetkazish tariflari (admin ham ko'radi)."
-    }
-  },
   "dailySchedule": {
     "intro": {
       "title": "Kun tartibi",
@@ -226,39 +216,6 @@
       "note": "Tizimning avtomatik ochishi yoki yopishi xato bilan tugasa ham xabar keladi, sababi bilan."
     }
   },
-  "investors": {
-    "intro": {
-      "title": "Investorlar",
-      "description": "Barcha investorlar ro'yxati va yangi investor qo'shish."
-    },
-    "list": {
-      "title": "Investorlar ro'yxati",
-      "id": "ID",
-      "name": "Ism",
-      "phone": "Telefon",
-      "share": "Ulush",
-      "summary": "{{from}}–{{to}} / {{total}} ta investor",
-      "empty": "Investorlar yo'q",
-      "emptyHint": "Yangi investorni o'ngdagi forma orqali qo'shing.",
-      "loadError": "Investorlar ro'yxatini olib bo'lmadi",
-      "open": "Kabinetni ko'rish",
-      "openAria": "{{name}} — kabinetni ko'rish",
-      "actions": "Amallar"
-    },
-    "create": {
-      "title": "Yangi investor",
-      "description": "Investor ro'yxatga darhol qo'shiladi",
-      "name": "Investor ismi",
-      "namePlaceholder": "Ism va familiya",
-      "nameRequired": "Investor ismini kiriting",
-      "phone": "Telefon raqami",
-      "phonePlaceholder": "90 123 45 67",
-      "phoneRequired": "Telefon raqamini to'liq kiriting",
-      "submit": "Qo'shish",
-      "success": "Investor muvaffaqiyatli qo'shildi",
-      "error": "Investorni qo'shib bo'lmadi"
-    }
-  },
   "branches": {
     "intro": {
       "title": "Filiallar — operatsiyalar",
@@ -273,22 +230,6 @@
       "emptyHint": "Filialga yangi buyurtma kelganda u shu ro'yxatda chiqadi.",
       "loadError": "Filiallar ro'yxatini olib bo'lmadi",
       "open": "{{name}} — filial sahifasini ochish"
-    }
-  },
-  "identity": {
-    "intro": {
-      "title": "Xodimlar — ro'yxatlar",
-      "description": "Adminlar, menejerlar va registratorlar ro'yxatini ko'rish."
-    },
-    "lists": {
-      "admins": "Adminlar",
-      "managers": "Menejerlar",
-      "registrators": "Registratorlar",
-      "id": "ID",
-      "name": "Ism",
-      "email": "Email",
-      "empty": "Ro'yxat bo'sh",
-      "loadError": "Ro'yxatni olib bo'lmadi"
     }
   },
   "system": {
@@ -641,27 +582,6 @@
       "loadError": "Analitika ko'rsatkichlarini olib bo'lmadi",
       "loadErrorText": "Analitika xizmati javob bermadi.",
       "loadingLabel": "Analitika ko'rsatkichlari yuklanmoqda"
-    }
-  },
-  "auth": {
-    "intro": {
-      "title": "Kirish diagnostikasi",
-      "description": "Kirish tokenini yangilash so'rovini sinab ko'radi.",
-      "journalPrefix": "Jurnal uchun:",
-      "journalLink": "Tizim → Faoliyat jurnali",
-      "journalMobile": "Jurnal: Tizim → Faoliyat jurnali"
-    },
-    "test": {
-      "title": "Token yangilash sinovi",
-      "description": "Joriy sessiyaning yangilash tokeni bilan yangi kirish tokeni so'raladi",
-      "endpoint": "So'rov manzili",
-      "submit": "Sinov so'rovini yuborish",
-      "submitting": "Yuborilmoqda",
-      "result": "Natija",
-      "success": "Token muvaffaqiyatli yangilandi",
-      "successDetail": "Yangi token olindi: {{token}}…",
-      "error": "Token yangilanmadi",
-      "errorDetail": "Yangilash so'rovida xatolik yuz berdi."
     }
   }
 }

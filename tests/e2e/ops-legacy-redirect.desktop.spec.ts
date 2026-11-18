@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { OPS_MOVED, OPS_REDIRECTS, expectOpsHub, mockOpsHub } from "./support/opsHub";
+import { OPS_MOVED, OPS_REDIRECTS, OPS_REMOVED, expectOpsHub, mockOpsHub, urlPattern } from "./support/opsHub";
 
 /**
- * F2NzXpMv + bhitm9do — «ikki eshik» yopildi: `/investors-ops`, `/logistics-ops`, `/branch-ops`, `/system-ops` va `/logs`
- * alohida sahifa bo'lib ochilmaydi, faqat `/ops?tab=<k>` hub ichida (eski havola buzilmaydi). Guard o'sha — admin 403.
+ * F2NzXpMv + bhitm9do — «ikki eshik» yopildi: `/logistics-ops`, `/branch-ops`, `/system-ops` alohida sahifa bo'lib
+ * ochilmaydi, faqat `/ops?tab=<k>` hub ichida (eski havola buzilmaydi). Guard o'sha — admin 403.
  * u5HTJtqK: `/logistics-ops` va `/ops?tab=logistics` — «Pochta → Qaytarish» (`/mails/return`) ga; `/returns` da
- * qaytarish so'rovlari nusxasi yo'q. Soxta backend, 1440px.
+ * qaytarish so'rovlari nusxasi yo'q. LIuf0DcD: «Kirish diagnostikasi», «Xodimlar», «Investorlar», «Yetkazish narxi»
+ * olib tashlandi — eski yo'l va `?tab=` o'rnini bosuvchi sahifaga. Soxta backend, 1440px.
  */
 test.use({ viewport: { width: 1440, height: 900 } });
 test.describe.configure({ timeout: 120_000 });
@@ -28,6 +29,47 @@ for (const { from, tab, label, panel } of OPS_REDIRECTS) {
     await expect(page.getByRole("heading", { level: 1, name: "Ops vositalari" })).toHaveCount(0);
   });
 }
+
+for (const { from, tab, to, heading } of OPS_REMOVED) {
+  test(`⭐ superadmin: ${from ? `${from} va ` : ""}/ops?tab=${tab} → ${to} (LIuf0DcD), hub emas`, async ({ page }) => {
+    const { leaked } = await mockOpsHub(page, "superadmin");
+    const content = page.locator("[data-shell-slot=content]");
+    for (const start of [...(from ? [from] : []), `/ops?tab=${tab}`]) {
+      await page.goto(start);
+      await expect(page, start).toHaveURL(urlPattern(to), { timeout: 60_000 });
+      await expect(content.getByRole("heading", { level: 1, name: heading })).toBeVisible({ timeout: 60_000 });
+      await expect(content.getByRole("heading", { level: 1, name: "Ops vositalari" })).toHaveCount(0);
+    }
+    // «Narx kalkulyatori» namunasi — hisoblash so'rovi (POST, lekin hech narsa yozmaydi).
+    expect(leaked.filter((call) => call !== "POST delivery/quote/by-tariff")).toEqual([]);
+  });
+
+  if (from) {
+    test(`⭐ admin: ${from} — 403 (guard o'sha)`, async ({ page }) => {
+      await mockOpsHub(page, "admin");
+      await page.goto(from);
+      await expect(page.getByRole("heading", { name: "Bu sahifaga ruxsatingiz yo'q" })).toBeVisible({ timeout: 60_000 });
+    });
+  }
+}
+
+test("⭐ superadmin: hub'da 5 ta tab — olib tashlanganlari yo'q (LIuf0DcD)", async ({ page }) => {
+  await mockOpsHub(page, "superadmin");
+  await page.goto("/ops?tab=system");
+  await expectOpsHub(page, "system", "Tizim holati — xizmatlar va AI");
+  const tabs = page.getByRole("tablist", { name: "Ops bo'limlari" }).getByRole("tab");
+  await expect(tabs).toHaveCount(5);
+  for (const removed of ["Investorlar", "Yetkazish narxi", "Xodimlar", "Kirish diagnostikasi"]) {
+    await expect(tabs.filter({ hasText: removed })).toHaveCount(0);
+  }
+});
+
+test("⭐ superadmin: /investors-ops → «Foydalanuvchilar», «Investorlar» tabi tanlangan", async ({ page }) => {
+  await mockOpsHub(page, "superadmin");
+  await page.goto("/investors-ops");
+  await expect(page).toHaveURL(/\/all-users\?role=investor$/, { timeout: 60_000 });
+  await expect(page.getByRole("tab", { name: "Investorlar", exact: true, selected: true })).toBeVisible({ timeout: 60_000 });
+});
 
 for (const { from, tab, to, panel } of OPS_MOVED) {
   test(`⭐ superadmin: ${from} va /ops?tab=${tab} → ${to}, vosita sahifa ichida`, async ({ page }) => {
@@ -115,10 +157,10 @@ test("⭐ admin bosh sahifasida «Analitika KPI» yo'q", async ({ page }) => {
 
 test("⭐ «Orqaga» — eski yo'l tarixda qolmaydi, hubga qayta tashlamaydi", async ({ page }) => {
   await mockOpsHub(page, "superadmin");
-  await page.goto("/ops?tab=auth");
-  await expectOpsHub(page, "auth", "Kirish diagnostikasi");
+  await page.goto("/ops?tab=expense-categories");
+  await expectOpsHub(page, "expense-categories", "Kassa xarajatlari kategoriyalari");
   await page.goto("/system-ops");
   await expectOpsHub(page, "system", "Tizim holati — xizmatlar va AI");
   await page.goBack();
-  await expect(page).toHaveURL(/\/ops\?tab=auth$/);
+  await expect(page).toHaveURL(/\/ops\?tab=expense-categories$/);
 });

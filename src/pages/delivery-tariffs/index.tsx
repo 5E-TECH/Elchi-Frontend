@@ -2,8 +2,6 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { PageHeader } from "../../shared/ui/primitives";
-import { DELIVERY_PRICING_TAB } from "../ops/tabs";
-import { OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
 import { DeliveryTariffsContent } from "./ui/DeliveryTariffsContent";
 
 /**
@@ -15,23 +13,11 @@ import { DeliveryTariffsContent } from "./ui/DeliveryTariffsContent";
  * «Narx kalkulyatori» (`POST /delivery/quote/by-tariff`), «O'zgarishlar tarixi» (`GET /delivery/tariffs` versiyalari).
  * Saqlangach `deliveryPricing` keshi yangilanadi — jadval, tarix va kalkulyator yangi qiymatlar bilan qayta chiziladi.
  *
- * Ops vositalari → «Yetkazish narxi» (`/ops?tab=delivery-pricing`, ega 2026-10-25) shu sahifani `embedded` bilan
- * chizadi: sarlavha o'rniga kirish kartasi (`OpsIntro`), tanasi — o'sha `DeliveryTariffsContent`.
+ * Ops vositalaridagi «Yetkazish narxi» tabi (ega 2026-10-25) shu sahifani takrorlardi — LIuf0DcD da olib tashlandi
+ * (ega 2026-11-16): `/ops?tab=delivery-pricing` shu sahifaga yo'naltiradi.
  */
-const DeliveryTariffsPage = ({ embedded = false }: { embedded?: boolean }) => {
-  const { t } = useTranslation(["deliveryPricing", "ops"]);
-
-  if (embedded) {
-    return (
-      <OpsToolPage tabKey={DELIVERY_PRICING_TAB} embedded>
-        <OpsIntro
-          title={t("ops:deliveryPricing.intro.title")}
-          description={t("ops:deliveryPricing.intro.description")}
-        />
-        <DeliveryTariffsContent />
-      </OpsToolPage>
-    );
-  }
+const DeliveryTariffsPage = () => {
+  const { t } = useTranslation("deliveryPricing");
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">

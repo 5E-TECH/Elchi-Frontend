@@ -14,9 +14,9 @@ import { TariffsCard } from "./TariffsCard";
 
 /**
  * «YETKAZISH NARXI» TANASI — sarlavhasiz bloklar: tariflar jadvali + «O'zgartirish» oynasi, «Hisob qoidalari»
- * (`volumetric_from_kg` — hajm chegarasi ham), «Narx kalkulyatori», «O'zgarishlar tarixi». Ikki joyda bir xil:
- * `/delivery-tariffs` («← Hududlar», superadmin va admin) va Ops vositalari → «Yetkazish narxi»
- * (`/ops?tab=delivery-pricing`, superadmin). Ildiz — fragment: bo'limlar oralig'ini ota konteyner beradi.
+ * (`volumetric_from_kg` — hajm chegarasi ham), «Narx kalkulyatori», «O'zgarishlar tarixi». Yagona joyi —
+ * `/delivery-tariffs` («← Hududlar», superadmin va admin); Ops vositalaridagi nusxa («Yetkazish narxi») LIuf0DcD da
+ * olib tashlandi. Ildiz — fragment: bo'limlar oralig'ini ota konteyner beradi.
  */
 export const DeliveryTariffsContent = () => {
   const tariffsQuery = useDeliveryTariffs();

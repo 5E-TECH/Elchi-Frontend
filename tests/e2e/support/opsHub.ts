@@ -59,10 +59,22 @@ export const mockOpsHub = async (page: Page, role: Role) => {
 
 /** Hub'ga yo'naltiriladigan eski yo'llar: `tab` — `?tab=`, `label` — tab nomi, `panel` — panel sarlavhasi. */
 export const OPS_REDIRECTS = [
-  { from: "/investors-ops", tab: "investors", label: "Investorlar", panel: "Investorlar" },
   { from: "/system-ops", tab: "system", label: "Tizim holati", panel: "Tizim holati — xizmatlar va AI" },
-  { from: "/logs", tab: "auth", label: "Kirish diagnostikasi", panel: "Kirish diagnostikasi" },
 ];
+
+/**
+ * LIuf0DcD (ega 2026-11-16; «Investorlar» — 2026-11-18): olib tashlangan tablar. Eski yo'l (`from`, bo'lsa) ham,
+ * `/ops?tab=<tab>` ham o'rnini bosuvchi sahifaga (`to`) olib boradi; `heading` — o'sha sahifaning sarlavhasi.
+ */
+export const OPS_REMOVED: Array<{ from?: string; tab: string; to: string; heading: string }> = [
+  { from: "/logs", tab: "auth", to: "/activity-logs", heading: "Faoliyat jurnali" },
+  { from: "/identity-ops", tab: "identity", to: "/all-users", heading: "Foydalanuvchilar" },
+  { from: "/investors-ops", tab: "investors", to: "/all-users?role=investor", heading: "Foydalanuvchilar" },
+  { tab: "delivery-pricing", to: "/delivery-tariffs", heading: "Yetkazish tariflari" },
+];
+
+/** `to` uchun aniq URL naqshi (`?` qochirilgan). */
+export const urlPattern = (to: string) => new RegExp(`${to.replace(/[?]/g, "\\?")}$`);
 
 /**
  * Ish sahifasiga ko'chgan vositalar (F2NzXpMv): eski yo'l ham, `?tab=` ham shu sahifaga olib boradi. «Logistika»

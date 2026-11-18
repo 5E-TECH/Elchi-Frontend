@@ -194,15 +194,17 @@ describe("getActiveNavTo — faol band (maketdagi menuKey)", () => {
 
   it.each([
     "/finance-operators",
-    "/investors-ops",
     "/logistics-ops",
     "/branch-ops",
-    "/identity-ops",
     "/system-ops",
-    "/logs",
     "/ops/ui-kit",
   ])("superadmin %s → «Ops vositalari» (maket menuKey: ops)", (pathname) => {
     expect(getActiveNavTo(itemsOf("superadmin"), pathname)).toBe("/ops");
+  });
+
+  // LIuf0DcD: olib tashlangan tablarning eski yo'llari boshqa bo'limga yo'naltiradi — Ops'ga bog'lanmaydi.
+  it.each(["/logs", "/identity-ops", "/investors-ops"])("superadmin %s — Ops'ga bog'lanmagan", (pathname) => {
+    expect(getActiveNavTo(itemsOf("superadmin"), pathname)).toBeNull();
   });
 
   it("superadmin /inbox → «Bildirishnomalar» (maket superadmin-notifications-inbox); admin ham (NG-A); boshqa rolda hech biri", () => {
