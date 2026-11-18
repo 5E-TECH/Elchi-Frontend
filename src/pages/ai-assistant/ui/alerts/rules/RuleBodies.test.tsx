@@ -433,6 +433,18 @@ describe("backend dev holatlari (shartnoma v0.4 eslatmalari, #653 review, round-
     });
   });
 
+  it("R7 eski o'tkazma (`counter_history_id` dan oldin) — backend asosiy kassa yozuvini beradi: yorliq «Kassa», «Jo'natuvchi» emas", () => {
+    const r7 = fx.detail.r7Transfer;
+    renderBody({
+      ...r7,
+      facts: { ...(r7.facts as object), cashbox: { type: "main", owner_id: "0", name: "Asosiy kassa" } },
+    } as AiAdvisorAlertDetail);
+    const { terms, values } = readFacts();
+    expect(terms).toEqual(["Operatsiya", "Kassa", "Kiritilgan", "Chekda", "Kiritgan"]);
+    expect(values[1]).toBe("Asosiy kassa");
+    expect(within(checkRegion()).getByText("HQ kartasiga tushmagan")).toBeInTheDocument();
+  });
+
   it("R7 karta qoldig'i — faqat karta mos emas: «Farq» — «—», izoh «Rasm boshqa kartaniki»", () => {
     renderBody(fx.detail.r7CardOnly);
     expect(readFacts()).toEqual({

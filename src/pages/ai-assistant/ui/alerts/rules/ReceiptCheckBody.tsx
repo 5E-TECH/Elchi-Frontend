@@ -62,7 +62,8 @@ const SubNote = ({ children }: { children: ReactNode }) => (
 /**
  * R7 «Chek yoki karta farqi» (maket `superadmin-ai-assistant-alert-dialog-receipt`; backend semantikasi — #653
  * review, round-3):
- *   chek (`source: receipt`) — faktlar ikki ustunda (telefonda ham): Operatsiya · Kassa (o'tkazmada — Jo'natuvchi) ·
+ *   chek (`source: receipt`) — faktlar ikki ustunda (telefonda ham): Operatsiya · Kassa (o'tkazmada — Jo'natuvchi;
+ *     eski o'tkazma, asosiy kassa yozuvi — Kassa) ·
  *     Kiritilgan · Chekda · Farq · Kiritgan; «Chek tekshiruvi» + belgilar («Farq bor», «So'mda emas», «Karta mos emas»
  *     yoki o'tkazmada «HQ kartasiga tushmagan») va `.el-kv` (Chek sanasi, Oluvchi ··8840, To'lovchi ··3307, Bank,
  *     Tranzaksiya raqami, Ishonch); haftalik xulosa. Chek so'mda bo'lmasa (`currency`): «Chekda» — «100 USD», «Farq» —
@@ -150,7 +151,10 @@ export const ReceiptCheckBody = ({ alert }: RuleBodyProps<"R7">) => {
       ? `${t(`alerts.receipt.operation.${kind}`)} · ${categoryName}`
       : t(`alerts.receipt.operation.${kind}`)
     : null;
-  // O'tkazmada `cashbox` — jo'natuvchi (kuryer yoki filial kassasi), `branch` — chek filiali.
+  // O'tkazmada `cashbox` — jo'natuvchi (kuryer yoki filial kassasi), `branch` — chek filiali. Eski o'tkazma
+  // (`counter_history_id` dan oldin) — backend qabul qiluvchi ASOSIY kassa yozuviga tushadi: u jo'natuvchi emas,
+  // yorliq «Kassa».
+  const sender = transfer && facts.cashbox.type !== "main";
   const kassa = transfer ? cashboxName : facts.branch?.name || alert.branch?.name || cashboxName;
   const createdBy = advisorUserName(facts.created_by);
   const createdAt = facts.created_at ? formatDateTimeLocalized(facts.created_at, { language }) : null;
@@ -222,7 +226,7 @@ export const ReceiptCheckBody = ({ alert }: RuleBodyProps<"R7">) => {
         columns={2}
         facts={[
           operationLabel ? { id: "operation", label: t("alerts.facts.operation"), value: operationLabel } : null,
-          { id: "cashbox", label: t(transfer ? "alerts.facts.sender" : "alerts.facts.cashbox"), value: kassa },
+          { id: "cashbox", label: t(sender ? "alerts.facts.sender" : "alerts.facts.cashbox"), value: kassa },
           facts.entered_amount !== null ? { id: "entered", label: t("alerts.facts.entered"), value: money(facts.entered_amount) } : null,
           onReceipt ? { id: "read", label: t("alerts.facts.onReceipt"), value: onReceipt } : null,
           // Valyutali chek — summalar solishtirilmaydi: «Farq» — «—» (`ReceiptSection` bilan bir xil); faqat karta mos
