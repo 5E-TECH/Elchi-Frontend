@@ -8,6 +8,7 @@ import {
   alertHeadlineAmount,
   alertShortLabel,
   readAdvisorError,
+  sanitizeAdvisorNote,
   type AdvisorTranslate,
   type AiAdvisorAlertDetail,
 } from "../../../entities/ai-advisor";
@@ -25,6 +26,7 @@ import { useDismissAlert, useResolveAlert } from "../model/useAlertMutations";
  *                  `NOTE_INVALID`, 409 `ALERT_CLOSED`) → toast «Ogohlantirish hal qilindi», oyna yopiladi;
  *   «Ahamiyatsiz»  tasdiqsiz, izoh ixtiyoriy (≤ 500) → PATCH → toast «Ahamiyatsiz deb belgilandi», oyna yopiladi;
  *                  400 `NOTE_INVALID` — maydon ostida (`noteError`), boshqa xato — oynada (`dismissError`).
+ *   Izohdan boshqaruv belgilari (backend `NO_CONTROL_CHARS`) yuborishdan oldin olinadi.
  */
 export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDetail | undefined; onDone: () => void }) => {
   const { t, i18n } = useTranslation("aiAdvisor");
@@ -60,7 +62,11 @@ export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDeta
   };
 
   const noteErrorView = (reason: string | null): string =>
-    reason === "too_long" ? t("alerts.note.tooLong") : t("alerts.note.tooShort");
+    reason === "too_long"
+      ? t("alerts.note.tooLong")
+      : reason === "required"
+        ? t("alerts.note.required")
+        : t("alerts.note.tooShort");
 
   const closedView = (): ConfirmErrorView => ({
     tone: "neutral",
@@ -76,7 +82,8 @@ export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDeta
 
   const resolve = async () => {
     if (!alert) return;
-    const trimmed = note.trim();
+    // Ko'rinmas boshqaruv belgilari (masalan nusxalangan `\v`, `\f`) olinadi — aks holda backend kodsiz 400 beradi.
+    const trimmed = sanitizeAdvisorNote(note).trim();
     if (trimmed.length < AI_ADVISOR_NOTE_MIN || trimmed.length > AI_ADVISOR_NOTE_MAX) {
       setNoteError(noteErrorView(trimmed.length > AI_ADVISOR_NOTE_MAX ? "too_long" : "too_short"));
       noteRef.current?.focus();
@@ -147,7 +154,7 @@ export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDeta
     setNoteError(null);
     const label = alertShortLabel(alert, tt);
     dismissMutation.mutate(
-      { id: alert.id, note },
+      { id: alert.id, note: sanitizeAdvisorNote(note) },
       {
         onSuccess: () => {
           notify.info(t("alerts.dismiss.toastTitle"), { description: t("alerts.dismiss.toastText", { label }) });

@@ -39,6 +39,16 @@ export type AiAdvisorLinkKind = (typeof AI_ADVISOR_LINK_KINDS)[number];
 export const AI_ADVISOR_NOTE_MIN = 3;
 export const AI_ADVISOR_NOTE_MAX = 500;
 
+/**
+ * Izohdagi boshqaruv belgilari — backend gateway `NO_CONTROL_CHARS` (C0, `\t` `\n` `\r` dan tashqari, va DEL): ular
+ * bilan PATCH kodsiz 400 qaytaradi (UI uni umumiy xato deb ko'rsatardi). Ko'rinmas belgilar — yuborishdan oldin olinadi.
+ */
+// eslint-disable-next-line no-control-regex -- ataylab: backend rad etadigan boshqaruv belgilari
+const AI_ADVISOR_NOTE_CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+
+/** Izoh yuborishga: boshqaruv belgilarisiz (trim — chaqiruvchida). */
+export const sanitizeAdvisorNote = (note: string): string => note.replace(AI_ADVISOR_NOTE_CONTROL_CHARS, "");
+
 /** Kodli xatolar (`PUBLIC_ERROR_CODES`, #644 `AI_ADVISOR_ERROR_CODES`). */
 export const AI_ADVISOR_ERROR_CODES = {
   /** 404 */

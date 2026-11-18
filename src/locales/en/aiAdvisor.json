@@ -329,6 +329,7 @@
       "label": "Note",
       "hint": "Required for “Resolved” · 3–500 characters · written to the activity log",
       "tooShort": "The note must be at least 3 characters",
+      "required": "A note is required for “Resolved”",
       "tooLong": "The note must be at most 500 characters",
       "placeholder": {
         "R1": "What was done? E.g. the card income arrived the next day",

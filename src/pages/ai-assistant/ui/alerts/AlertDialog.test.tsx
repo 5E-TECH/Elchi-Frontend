@@ -414,6 +414,34 @@ describe("«Hal qilindi» / «Ahamiyatsiz» (D9; maket `-alert-resolve-confirm`)
     expect(await within(confirm).findByRole("alert")).toHaveTextContent("Izoh kamida 3 belgi bo'lsin");
   });
 
+  it("400 `NOTE_INVALID required` — «majburiy» matni (qisqalik emas)", async () => {
+    mocks.patch.mockImplementation(() => fail(400, fx.errors.noteRequired));
+    const user = userEvent.setup();
+    open();
+    const panel = await findDialog(R1_TITLE);
+    await user.type(within(panel).getByRole("textbox", { name: "Izoh" }), "abc");
+    await user.click(within(panel).getByRole("button", { name: "Hal qilindi" }));
+    const confirm = await screen.findByRole("alertdialog");
+    await user.click(within(confirm).getByRole("button", { name: "Hal qilindi deb belgilash" }));
+    expect(await within(confirm).findByRole("alert")).toHaveTextContent("«Hal qilindi» uchun izoh majburiy");
+  });
+
+  it("izohdagi boshqaruv belgilari (backend `NO_CONTROL_CHARS`, kodsiz 400) — yuborishdan oldin olinadi; `\\n` qoladi", async () => {
+    mocks.patch.mockImplementation(() => ok(fx.detail.r1Resolved));
+    const user = userEvent.setup();
+    open();
+    const panel = await findDialog(R1_TITLE);
+    await user.click(within(panel).getByRole("textbox", { name: "Izoh" }));
+    await user.paste("Tekshirildi\u000B\u000C,\ntartibda\u0007");
+    await user.click(within(panel).getByRole("button", { name: "Hal qilindi" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Hal qilindi deb belgilash" }));
+    expect(mocks.patch).toHaveBeenCalledWith(
+      "ai/advisor/alerts/1040",
+      { status: "resolved", note: "Tekshirildi,\ntartibda" },
+      { silentNetworkError: true },
+    );
+  });
+
   it("«Ahamiyatsiz» — tasdiqsiz; izoh bo'lmasa yuborilmaydi → toast, oyna yopiladi", async () => {
     mocks.patch.mockImplementation(() => ok({ ...fx.detail.r1, status: "dismissed" }));
     const user = userEvent.setup();

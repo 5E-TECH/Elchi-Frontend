@@ -329,6 +329,7 @@
       "label": "Izoh",
       "hint": "«Hal qilindi» uchun majburiy · 3–500 belgi · faoliyat jurnaliga yoziladi",
       "tooShort": "Izoh kamida 3 belgi bo'lsin",
+      "required": "«Hal qilindi» uchun izoh majburiy",
       "tooLong": "Izoh 500 belgidan oshmasin",
       "placeholder": {
         "R1": "Nima qilindi? Masalan: kartadagi tushum keyingi kuni kelgan",
