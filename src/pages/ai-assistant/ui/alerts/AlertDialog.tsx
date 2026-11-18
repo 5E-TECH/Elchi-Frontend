@@ -131,7 +131,8 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
 
   // D16: ochilishdan keyingi birinchi javob — nishon va banner darhol yangilanadi (bir marta); ro'yxat — oyna
   // yopilgach (har yo'l: tugma, Esc, «Orqaga», tab almashuvi): `?status=new` da ochilgan qator oyna ortida
-  // yo'qolmaydi va fokus o'z havolasiga qaytadi.
+  // yo'qolmaydi va fokus o'z havolasiga qaytadi. Oyna ochiq paytdagi jonli hodisalar ham ro'yxatni faqat eskirtiradi
+  // (`refreshAdvisorQueries`) — shuning uchun yopilganda ro'yxat har doim qayta o'qiladi.
   const openedAt = useRef(0);
   const refreshedFor = useRef<string | null>(null);
   const listStale = useRef(false);
@@ -139,6 +140,7 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
     if (!open || id === null) return;
     openedAt.current = Date.now();
     refreshedFor.current = null;
+    listStale.current = true;
   }, [open, id]);
   useEffect(() => {
     if (!open || id === null || !query.isSuccess || refreshedFor.current === id) return;

@@ -146,6 +146,8 @@ export const queryKeys = {
     alertLists: ["ai-advisor", "alerts"] as const,
     alertList: (params: object) => ["ai-advisor", "alerts", params] as const,
     alertCount: (params: object) => ["ai-advisor", "alerts", "count", params] as const,
+    /** Tafsilotlar prefiksi — ochiq ogohlantirish oynasini aniqlash uchun (faol so'rov = oyna ochiq, D16). */
+    alertDetails: ["ai-advisor", "alert"] as const,
     alert: (id: string) => ["ai-advisor", "alert", id] as const,
     settings: ["ai-advisor", "settings"] as const,
   },

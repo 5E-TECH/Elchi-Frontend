@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "../../i18n";
 import { queryKeys } from "../../shared/config/queryKeys";
@@ -9,6 +9,7 @@ import {
   advisorAlertsBatchToast,
   advisorAlertToast,
   isAdvisorAlert,
+  isAlertDialogOpen,
   readAdvisorAlertChange,
   refreshAdvisorQueries,
 } from "./realtimeAdvisor";
@@ -113,6 +114,31 @@ describe("realtimeAdvisor — jiddiy AI ogohlantirishi jonli kanalda (60PWUbgC �
       queryKeys.aiAdvisor.overview,
       queryKeys.aiAdvisor.alertLists,
     ]);
+  });
+  it("D16: ogohlantirish oynasi ochiq (tafsilot so'rovi faol) — ro'yxatlar faqat eskiradi, oyna ortida qayta o'qilmaydi", async () => {
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    // Yopiq oyna — `enabled: false` kuzatuvchi faol emas.
+    const closed = new QueryObserver(client, { queryKey: queryKeys.aiAdvisor.alert("1045"), enabled: false });
+    const stopClosed = closed.subscribe(() => {});
+    expect(isAlertDialogOpen(client)).toBe(false);
+    await refreshAdvisorQueries(client);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists, refetchType: "active" });
+    stopClosed();
+
+    invalidate.mockClear();
+    const open = new QueryObserver(client, {
+      queryKey: queryKeys.aiAdvisor.alert("1045"),
+      queryFn: async () => ({ id: "1045" }),
+      staleTime: Infinity,
+    });
+    const stopOpen = open.subscribe(() => {});
+    expect(isAlertDialogOpen(client)).toBe(true);
+    await refreshAdvisorQueries(client);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists, refetchType: "none" });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.overview });
+    stopOpen();
+    client.clear();
   });
   it("yangilash `alertIds` bilan — ochiq tafsilot ham (faqat faol so'rov qayta o'qiladi)", async () => {
     const client = new QueryClient();

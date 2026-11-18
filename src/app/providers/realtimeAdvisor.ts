@@ -52,14 +52,30 @@ export const isAdvisorAlert = (payload: AdvisorRealtimePayload | null | undefine
   payload?.type === ADVISOR_ALERT_TYPE;
 
 /**
+ * Ogohlantirish oynasi ochiqmi: tafsilot so'rovining faol kuzatuvchisi bor (yopiq oynada `enabled: false` — faol emas).
+ */
+export const isAlertDialogOpen = (client: QueryClient): boolean =>
+  client
+    .getQueryCache()
+    .findAll({ queryKey: queryKeys.aiAdvisor.alertDetails })
+    .some((query) => query.isActive());
+
+/**
  * `overview` (tab nishoni, banner) va ro'yxatlar (sanoqlar ham) — ochiqlari darhol, qolgani keyingi ochilishda.
  * `alertIds` — ochiq tafsilot oynasi ham (faqat faol so'rov qayta o'qiladi: yopiq oyna uchun `GET :id` — u «Ko'rildi»
  * qiladi — yuborilmaydi, kesh eskirgan deb belgilanadi).
+ *
+ * D16: ogohlantirish oynasi ochiq bo'lsa ro'yxatlar faqat eskirgan deb belgilanadi (`refetchType: "none"`) — oynani
+ * ochish (`GET :id`) o'zi «Ko'rildi» hodisasini chiqaradi, ro'yxat oyna ortida qayta o'qilsa `?status=new` da ochilgan
+ * qator yo'qolib, fokus o'z havolasiga qaytolmasdi. Oyna yopilganda ro'yxatni o'zi yangilaydi (`AlertDialog`).
  */
 export const refreshAdvisorQueries = (client: QueryClient, alertIds: readonly string[] = []) =>
   Promise.all([
     client.invalidateQueries({ queryKey: queryKeys.aiAdvisor.overview }),
-    client.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alertLists }),
+    client.invalidateQueries({
+      queryKey: queryKeys.aiAdvisor.alertLists,
+      refetchType: isAlertDialogOpen(client) ? "none" : "active",
+    }),
     ...alertIds.map((id) => client.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alert(id) })),
   ]);
 
@@ -79,8 +95,8 @@ export type AdvisorAlertChange = {
 /**
  * `ai.advisor.alert_changed` yuki → yangilash rejasi; ID yaroqsiz — `null` (hech narsa qilinmaydi). `GET :id` ning
  * o'zi chiqaradigan «Ko'rildi» (`change: status`, `status: seen`, faqat new → seen) — ro'yxat va nishon yangilanadi,
- * tafsilot emas (u hozirgina o'qilgan). `change: explanation` — izoh `pending` dan chiqdi: tafsilot qayta o'qiladi va
- * poll to'xtaydi (`useAdvisorAlert`).
+ * tafsilot emas (u hozirgina o'qilgan); oyna ochiq bo'lsa ro'yxat — u yopilgach (`refreshAdvisorQueries`, D16).
+ * `change: explanation` — izoh `pending` dan chiqdi: tafsilot qayta o'qiladi va poll to'xtaydi (`useAdvisorAlert`).
  */
 export const readAdvisorAlertChange = (payload: unknown): AdvisorAlertChange | null => {
   const data = readData(payload);

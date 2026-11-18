@@ -1,3 +1,4 @@
+import { QueryObserver } from "@tanstack/react-query";
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes, useLocation } from "react-router-dom";
@@ -312,7 +313,7 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
       // Bitta yig'ish oynasi: inbox + overview (tab nishoni, banner) + ro'yxatlar (sanoqlar ham); tafsilot emas.
       expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.notificationsInbox.all });
       expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.overview });
-      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists, refetchType: "active" });
       expect(invalidate).toHaveBeenCalledTimes(3);
 
       await user.click(screen.getByRole("button", { name: "Ochish" }));
@@ -332,7 +333,7 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
       invalidate.mockClear();
       act(() => lastSocket().fire("notification:new", { type: "ai.advisor_alert", category: "finance", priority: "critical" }));
       await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.overview }));
-      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists, refetchType: "active" });
       expect(invalidate).toHaveBeenCalledTimes(3);
       expect(screen.queryByRole("region", { name: "Bildirishnomalar" })).not.toBeInTheDocument();
     });
@@ -453,10 +454,38 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
 
       act(() => lastSocket().fire("ai.advisor.alert_changed", change({ change: "status", status: "seen" })));
       await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(2));
-      expect(invalidate.mock.calls.map(([filters]) => filters?.queryKey)).toEqual([
-        queryKeys.aiAdvisor.overview,
-        queryKeys.aiAdvisor.alertLists,
+      expect(invalidate.mock.calls.map(([filters]) => filters)).toEqual([
+        { queryKey: queryKeys.aiAdvisor.overview },
+        // Oyna yopiq (boshqa superadmin ochgan) — ochiq ro'yxat darhol yangilanadi.
+        { queryKey: queryKeys.aiAdvisor.alertLists, refetchType: "active" },
       ]);
+    });
+
+    it("⭐ D16: oyna ochiq (tafsilot so'rovi faol) — o'z «Ko'rildi»si ro'yxatni oyna ortida qayta o'qitmaydi, faqat eskirtiradi", async () => {
+      const { queryClient } = renderSync();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      // `?status=new` ro'yxati va ochiq oyna (`GET alerts/1045` — u o'zi «Ko'rildi» hodisasini chiqaradi).
+      const listFn = vi.fn(async () => ({ data: [], meta: { total: 0 } }));
+      const list = new QueryObserver(queryClient, { queryKey: queryKeys.aiAdvisor.alertList({ status: "new" }), queryFn: listFn });
+      const detail = new QueryObserver(queryClient, {
+        queryKey: queryKeys.aiAdvisor.alert("1045"),
+        queryFn: async () => ({ id: "1045" }),
+        staleTime: Infinity,
+      });
+      const unsubscribe = [list.subscribe(() => {}), detail.subscribe(() => {})];
+      await waitFor(() => expect(listFn).toHaveBeenCalledTimes(1));
+      invalidate.mockClear();
+
+      act(() => lastSocket().fire("ai.advisor.alert_changed", change({ change: "status", status: "seen" })));
+      await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(2));
+      expect(invalidate.mock.calls.map(([filters]) => filters)).toEqual([
+        { queryKey: queryKeys.aiAdvisor.overview },
+        { queryKey: queryKeys.aiAdvisor.alertLists, refetchType: "none" },
+      ]);
+      expect(listFn).toHaveBeenCalledTimes(1);
+      expect(queryClient.getQueryState(queryKeys.aiAdvisor.alertList({ status: "new" }))?.isInvalidated).toBe(true);
+      unsubscribe.forEach((stop) => stop());
     });
   });
 
