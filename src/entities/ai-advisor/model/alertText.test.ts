@@ -196,6 +196,18 @@ describe("backend dev holatlari (shartnoma v0.4 eslatmalari, #653 review, round-
     expect(alertSubline(namelessBranch, uz)).toBe("HQ'ga o'tkazma kechikmoqda · #12");
   });
 
+  it("nomi olinmagan filial kassasi (backend shakli) — «#7 kassasida», «#7da» emas", () => {
+    const r1 = fx.byRule.R1;
+    const namelessR1 = {
+      ...r1,
+      branch: { id: "7", name: null },
+      facts: { ...(r1.facts as object), branch: { id: "7", name: null }, cashbox: { type: "branch", owner_id: "7", name: null } },
+    } as AiAdvisorAlertListItem;
+    expect(alertListTitle(namelessR1, uz, "uz")).toBe("#7 kassasida 3 smena ketma-ket kamomad: −445 000 so'm");
+    expect(alertDialogTitle(namelessR1, uz, "uz")).toBe("#7 kassasida 3 smena ketma-ket kamomad");
+    expect(alertListTitle(namelessR1, t("ru"), "ru")).toContain("в кассе «#7»");
+  });
+
   it("asosiy kassa: server nomi o'zbekcha («Asosiy kassa») — ru/en da tarjima", () => {
     const ru = t("ru");
     const en = t("en");

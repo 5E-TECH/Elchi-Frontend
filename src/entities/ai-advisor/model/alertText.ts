@@ -190,10 +190,13 @@ export const alertHeadlineAmount = (alert: AiAdvisorAlertListItem): number | nul
 export const alertShortLabel = (alert: AiAdvisorAlertListItem, t: AdvisorTranslate): string =>
   `${subjectName(alert, t)} · ${alertInlineName(alert, t)}`;
 
-/** Kassa joyi: filial — «Samarqand filiali kassasida», filialsiz (Asosiy) — «Asosiy kassada». */
+/**
+ * Kassa joyi: filial — «Samarqand filiali kassasida» (nomi olinmagan filial — «#7 kassasida», backend kabi; «#7da»
+ * emas), filialsiz (Asosiy) — «Asosiy kassada».
+ */
 const cashboxPlace = (cashbox: AiAdvisorCashboxRef, branch: AiAdvisorBranchRef | null, t: AdvisorTranslate) =>
-  branch?.name
-    ? t("alerts.place.branchCashbox", { name: branch.name })
+  branch
+    ? t("alerts.place.branchCashbox", { name: advisorRefName(branch) })
     : t("alerts.place.cashbox", { name: advisorCashboxName(cashbox, t) });
 
 /** Egasi nomi (gap boshida): filial yoki kassa nomi. */
