@@ -39,7 +39,6 @@ describe("courier bulk finalize (fix3 FE-CB-09)", () => {
       tomorrow: [{ id: "3" }],
       replacement: [],
       courierHeld: [],
-      awaitingPost: [],
     });
   });
 
@@ -90,7 +89,6 @@ describe("courier bulk finalize (fix3 FE-CB-09)", () => {
       tomorrow: orders25.slice(15, 20),
       replacement: [],
       courierHeld: [],
-      awaitingPost: [],
     });
     expect(getCourierBulkUnmarkedCount(orders25, markedActions)).toBe(5);
     expect(getCourierBulkCounts(orders25, markedActions)).toEqual({ cancel: 5, sold: 10, tomorrow: 5, total: 25 });

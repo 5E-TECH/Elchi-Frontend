@@ -1,194 +1,74 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { BRANCH_TOKEN, mockCourierScanTakeApi, TRANSFER_TOKEN } from "./support/courierScanTake";
 import { expectNoHorizontalScroll, FAKE_CAMERA } from "./support/scannerCamera";
 import { enterScanCode } from "./support/universalScanner";
 
 /**
- * 390px, kuryer skan-qabuli (2026-11-07, BeePost `/scan` kuryer qabul sikli), soxta backend:
- *   1) `/scan` «Qabul qilish» rejimi: yo'ldagi o'z buyurtmasi → `PATCH post/receive/:post_id { order_ids: [id], scan: true }`,
- *      kamera yopilmaydi, ro'yxatda «Qabul qilindi»; o'sha kod darhol (3 s ichida) qayta → «allaqachon qabul qilindi»
- *      (so'rovsiz; keyinroq qayta skan — natija sahifasi, unit testlarda);
- *      qabul qilingan («kutilmoqda») kod → natija sahifasi `/scan/:token` (Sotish / Bekor qilish);
- *   2) natija sahifasi: yo'ldagi → «Qabul qilish» → yangilanadi → «Sotish» → `POST orders/sell/:id` → skanerga
- *      «Qabul qilish» rejimida qaytadi.
- * Faqat ruxsat etilgan yozuvlar (qabul va sotish) — qolgan har qanday yozish `leaked` ga tushadi.
+ * 390px, COURIER-SCAN (ega, 2026-11-17): KURYER SKANI = QABUL, soxta backend.
+ *   1) `/scan`: kuryerda faqat «O'zimga olish» va «Ma'lumot» (alohida «Qabul qilish» rejimi yo'q); yo'ldagi o'tkazma
+ *      buyurtmasi skanerlansa — «Sizga biriktirildi», `PATCH post/receive` yuborilmaydi;
+ *   2) «Buyurtmalar»: olingan buyurtma «Kutilayotgan» da, yorlig'i «Kuryerda», faqat «Sotish | Bekor qilish» —
+ *      «Sotish» bir bosishda sotadi;
+ *   3) `/scan/:token`: «O'zimga olish» → shu sahifada darhol «Sotish» / «Bekor qilish» (skanerga qaytmaydi).
  */
 test.use(FAKE_CAMERA);
 
-const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
-const cors = {
-  "access-control-allow-origin": ORIGIN,
-  "access-control-allow-credentials": "true",
-  "access-control-allow-headers": "*",
-  "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
-};
-const reply = (route: Route, body: unknown, status = 200) =>
-  route.fulfill({ status, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
-const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
-
-const COURIER_ID = "31";
-const POST_ID = "p-9";
-const ROAD_TOKEN = "c0c0c0c0c0c0c0c0c0c0c301";
-const WAITING_TOKEN = "c0c0c0c0c0c0c0c0c0c0c302";
-const RESULT_TOKEN = "c0c0c0c0c0c0c0c0c0c0c303";
-
-type Seed = { id: string; name: string; status: string };
-const SEEDS: Record<string, Seed> = {
-  [ROAD_TOKEN]: { id: "10301", name: "Dilnoza Karimova", status: "on_the_road" },
-  [WAITING_TOKEN]: { id: "10302", name: "Jasur Olimov", status: "waiting" },
-  [RESULT_TOKEN]: { id: "10303", name: "Madina Rahimova", status: "on_the_road" },
-};
-
-const orderOf = (token: string, status: string) => {
-  const seed = SEEDS[token];
-  return {
-    id: seed.id,
-    order_number: seed.id,
-    status,
-    courier_id: COURIER_ID,
-    post_id: POST_ID,
-    qr_code_token: token,
-    where_deliver: "address",
-    total_price: 185000,
-    paid_amount: 0,
-    to_be_paid: 185000,
-    product_quantity: 1,
-    createdAt: "2026-11-07T08:00:00.000Z",
-    comment: null,
-    address: "Bunyodkor ko'chasi, 12",
-    customer: { id: `c-${seed.id}`, name: seed.name, phone_number: "+998901112233" },
-    district: { id: "d1", name: "Chilonzor tumani", region: { id: "r1", name: "Toshkent shahri" } },
-    market: { id: "m1", name: "Baraka Shop" },
-    items: [{ id: `i-${seed.id}`, product_id: "p1", quantity: 1, product: { id: "p1", name: "Qishki shapka" } }],
-  };
-};
-
-const mockApi = async (page: Page) => {
-  const status = new Map(Object.entries(SEEDS).map(([token, seed]) => [token, seed.status]));
-  const tokenById = new Map(Object.entries(SEEDS).map(([token, seed]) => [seed.id, token]));
-  const receives: Array<{ postId: string; body: unknown }> = [];
-  const sells: string[] = [];
-  const leaked: string[] = [];
-  await page.context().route("**/*", async (route) => {
-    const request = route.request();
-    const url = new URL(request.url());
-    if (url.origin === ORIGIN) return route.continue();
-    if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
-    if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-    const path = url.pathname.replace(/^\//, "");
-    if (path === "auth/my-profile") {
-      return reply(
-        route,
-        wrap({ id: COURIER_ID, role: "courier", name: "Kuryer", status: "active", branch_id: "2", branch: { id: "2", name: "Chilonzor", type: "REGIONAL" } }),
-      );
-    }
-    const qr = /^orders\/qr-code\/([0-9a-f]{24})$/.exec(path);
-    if (qr && status.has(qr[1])) return reply(route, wrap(orderOf(qr[1], status.get(qr[1]) as string)));
-    const receive = /^post\/receive\/([^/]+)$/.exec(path);
-    if (receive && request.method() === "PATCH") {
-      const body = request.postDataJSON() as { order_ids: string[]; scan?: boolean };
-      receives.push({ postId: receive[1], body });
-      const received: string[] = [];
-      const already: string[] = [];
-      for (const id of body.order_ids) {
-        const token = tokenById.get(id) as string;
-        if (status.get(token) === "waiting") already.push(id);
-        else {
-          status.set(token, "waiting");
-          received.push(id);
-        }
-      }
-      return reply(route, {
-        ...wrap([]),
-        failures: [],
-        not_received_order_ids: [],
-        received_order_ids: received,
-        already_received_order_ids: already,
-        remaining_count: 1,
-        post_status: "sent",
-      });
-    }
-    const sell = /^orders\/sell\/(\d+)$/.exec(path);
-    if (sell && request.method() === "POST") {
-      sells.push(sell[1]);
-      status.set(tokenById.get(sell[1]) as string, "sold");
-      return reply(route, wrap({ id: sell[1], status: "sold" }));
-    }
-    if (request.method() !== "GET") {
-      leaked.push(`${request.method()} ${path}`);
-      return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
-    }
-    return reply(route, wrap([]));
-  });
-  await page.addInitScript(() => {
-    const far = Date.now() + 86_400_000;
-    window.sessionStorage.setItem("accessToken", "e2e.local.token");
-    window.sessionStorage.setItem(
-      "authSessionMetadata",
-      JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
-    );
-  });
-  return { receives, sells, leaked };
-};
-
-test.describe("Kuryer skan-qabuli, 390px", () => {
+test.describe("Kuryer skani = qabul, 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 
-  test("«Qabul qilish» rejimi: yo'ldagi kod qabul qilinadi, takror — jim, kutilayotgan — natija sahifasi", async ({ page }) => {
-    const api = await mockApi(page);
+  test("⭐ skan → «O'zimga olish» → ro'yxat («Kuryerda», «Qabul qilish» yo'q) → «Sotish» → sotildi", async ({ page }) => {
+    const api = await mockCourierScanTakeApi(page);
     await page.goto("/scan");
     await expect(page.getByRole("heading", { name: "O'zimga olish" })).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByRole("radio")).toHaveText(["O'zimga olish", "Qabul qilish", "Ma'lumot"]);
-    await page.getByRole("radio", { name: "Qabul qilish" }).click();
-    await expect(page.getByRole("radio", { name: "Qabul qilish" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radio")).toHaveText(["O'zimga olish", "Ma'lumot"]);
     await expectNoHorizontalScroll(page);
 
-    const camera = page.locator("body");
-    await enterScanCode(page, camera, ROAD_TOKEN, "Qabul qilish");
-    await expect(page.getByText("№10301 · Dilnoza Karimova")).toBeVisible();
-    await expect(page.getByText("Qabul qilindi · Chilonzor tumani")).toBeVisible();
-    expect(api.receives).toEqual([{ postId: POST_ID, body: { order_ids: ["10301"], scan: true } }]);
+    await enterScanCode(page, page.locator("body"), TRANSFER_TOKEN, "Olish");
+    await expect(page.getByText("№10401 · Dilnoza Karimova")).toBeVisible();
+    expect(api.assigns).toEqual([TRANSFER_TOKEN]);
 
-    // O'sha kod darhol qayta (3 s ichida — qo'shaloq o'qish) — so'rovsiz «allaqachon», sahifa o'zgarmaydi.
-    await enterScanCode(page, camera, ROAD_TOKEN, "Qabul qilish");
-    await expect(page.getByText("№10301 allaqachon qabul qilindi").first()).toBeVisible();
-    expect(api.receives).toHaveLength(1);
-    await expect(page).toHaveURL(/\/scan$/);
-
-    // Qabul qilingan (kutilmoqda) — natija sahifasi: «Sotish» va «Bekor qilish», «O'zimga olish» yo'q.
-    await enterScanCode(page, camera, WAITING_TOKEN, "Qabul qilish");
-    await expect(page).toHaveURL(new RegExp(`/scan/${WAITING_TOKEN}$`));
-    await expect(page.getByRole("button", { name: "Sotish" })).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole("button", { name: "Bekor qilish" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "O'zimga olish" })).toHaveCount(0);
-    expect(api.receives).toHaveLength(1);
+    await page.goto("/orders");
+    const list = page.getByRole("list", { name: "Kutilayotgan buyurtmalar" });
+    await expect(list.getByRole("button", { name: "Dilnoza Karimova: sotish" })).toBeVisible({ timeout: 60_000 });
+    await expect(list.getByText("Kuryerda")).toBeVisible();
+    await expect(list.getByText("Yo'lda")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /qabul qilish/i })).toHaveCount(0);
     await expectNoHorizontalScroll(page);
+
+    await list.getByRole("button", { name: "Dilnoza Karimova: sotish" }).click();
+    const dialog = page.getByRole("dialog", { name: "Sotish" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Sotish", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(api.sells).toEqual(["10401"]);
+    await expect(list.getByRole("button", { name: "Dilnoza Karimova: sotish" })).toHaveCount(0);
     expect(api.leaked).toEqual([]);
   });
 
-  test("natija sahifasi: «Qabul qilish» → «Sotish» → sotildi → skanerga «Qabul qilish» rejimida qaytadi", async ({ page }) => {
-    const api = await mockApi(page);
-    await page.goto(`/scan/${RESULT_TOKEN}`);
+  test("natija sahifasi: «O'zimga olish» → shu sahifada «Sotish» / «Bekor qilish» → sotildi", async ({ page }) => {
+    const api = await mockCourierScanTakeApi(page);
+    await page.goto(`/scan/${BRANCH_TOKEN}`);
 
-    const receive = page.getByRole("button", { name: "Qabul qilish" });
-    await expect(receive).toBeEnabled({ timeout: 60_000 });
-    await expect(page.getByRole("button", { name: "O'zimga olish" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Sotish" })).toHaveCount(0);
-    await receive.click();
-    await expect(page.getByText("Buyurtma qabul qilindi")).toBeVisible();
-    expect(api.receives).toEqual([{ postId: POST_ID, body: { order_ids: ["10303"], scan: true } }]);
+    const take = page.getByRole("button", { name: "O'zimga olish" });
+    await expect(take).toBeEnabled({ timeout: 60_000 });
+    await take.click();
+    await expect(page.getByText("Buyurtma sizga biriktirildi")).toBeVisible();
+    expect(api.assigns).toEqual([BRANCH_TOKEN]);
 
     const sell = page.getByRole("button", { name: "Sotish" });
     await expect(sell).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("button", { name: "Bekor qilish" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Qabul qilish" })).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`/scan/${BRANCH_TOKEN}$`));
     await expectNoHorizontalScroll(page);
     await sell.click();
     const dialog = page.getByRole("dialog", { name: "Sotish" });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("switch")).toBeVisible();
     await dialog.getByRole("button", { name: "Sotish" }).click();
 
     await expect(page).toHaveURL(/\/scan$/, { timeout: 30_000 });
-    await expect(page.getByRole("radio", { name: "Qabul qilish" })).toHaveAttribute("aria-checked", "true");
-    expect(api.sells).toEqual(["10303"]);
+    await expect(page.getByRole("radio", { name: "O'zimga olish" })).toHaveAttribute("aria-checked", "true");
+    expect(api.sells).toEqual(["10402"]);
     expect(api.leaked).toEqual([]);
   });
 });

@@ -125,9 +125,11 @@ export const buildScanOrderView = (order: OrderDetail): ScanOrderView => {
 };
 
 /**
- * Kuryer uchun «O'zimga olish» holati (Trello 6qypMFeT) — backend `scanAssignOrder` (logistics) bilan AYNAN bir xil:
- *  - `mine`  — `courier_id` shu kuryer va holat «yo'lda» (backend qayta skanda idempotent javob beradi — olish shart emas);
- *  - `other` — `courier_id` boshqa kuryer (backend 400 «boshqa kuryerga biriktirilgan»);
+ * Kuryer uchun «O'zimga olish» holati (Trello 6qypMFeT) — backend `scanAssignOrder` (logistics) bilan AYNAN bir xil
+ * (u ham `courier_id` va `holder_courier_id` ni tekshiradi):
+ *  - `mine`  — shu kuryerda va holat «kutilmoqda» yoki «yo'lda» (COURIER-SCAN: skan = qabul — olingan buyurtma
+ *    «kutilmoqda»; backend qayta skanda idempotent yoki qabul javobini beradi — olish shart emas);
+ *  - `other` — boshqa kuryerda (backend 400 «boshqa kuryerga biriktirilgan»);
  *  - `free`  — qolgan hammasi: tugma faol (holat noto'g'ri bo'lsa backend sababini o'zi aytadi).
  * `courier_id = '0'` — tayinlanmagan pochta sentineli, kuryer emas.
  */
@@ -138,16 +140,30 @@ const idText = (value: unknown) => {
   return id === "0" ? "" : id;
 };
 
+const MINE_STATUSES = new Set(["waiting", "on the road"]);
+
 export const getCourierTakeState = (
-  order: { courier_id?: unknown; courierId?: unknown; status?: unknown } | null | undefined,
+  order:
+    | {
+        courier_id?: unknown;
+        courierId?: unknown;
+        holder_courier_id?: unknown;
+        holderCourierId?: unknown;
+        status?: unknown;
+      }
+    | null
+    | undefined,
   currentUserId: string | number | null | undefined,
 ): CourierTakeState => {
-  const courierId = idText(order?.courier_id ?? order?.courierId);
+  const courierIds = [
+    idText(order?.courier_id ?? order?.courierId),
+    idText(order?.holder_courier_id ?? order?.holderCourierId),
+  ].filter(Boolean);
   const me = idText(currentUserId);
-  if (!courierId) return "free";
-  if (me && courierId !== me) return "other";
+  if (courierIds.length === 0) return "free";
+  if (me && courierIds.some((id) => id !== me)) return "other";
   const status = String(order?.status ?? "").trim().toLowerCase().replaceAll("_", " ");
-  return me && status === "on the road" ? "mine" : "free";
+  return me && MINE_STATUSES.has(status) ? "mine" : "free";
 };
 
 /**

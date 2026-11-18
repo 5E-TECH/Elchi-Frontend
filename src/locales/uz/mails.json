@@ -337,6 +337,9 @@
       "notReceivable": "№{{id}} yo'lda emas — qabul qilib bo'lmaydi",
       "failed": "№{{id}} qabul qilinmadi — qayta skanerlang",
       "failedShort": "Qabul qilinmadi — qayta skanerlang",
+      "takenByCourier": "№{{id}} kuryerda: {{name}}",
+      "takenByCourierNoName": "№{{id}} kuryerda",
+      "takenByCourierText": "Kuryer uni skan bilan olgan — buyurtma endi bu pochtada emas",
       "done": "Pochta to'liq qabul qilindi",
       "doneText": "Pochtalar ro'yxatiga qaytasiz"
     },

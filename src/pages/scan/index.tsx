@@ -68,7 +68,7 @@ import {
 } from "./model/scanPickers";
 import { useScanHistory } from "./model/scanHistory";
 import { scanHistoryTitle } from "./model/scanHistoryText";
-import { useCourierReceive } from "./model/useCourierReceive";
+import { useBranchReceive } from "./model/useBranchReceive";
 import { useCourierTake } from "./model/useCourierTake";
 import { useMailModeScan } from "./model/useMailModeScan";
 import { useUniversalScan } from "./model/useUniversalScan";
@@ -104,10 +104,11 @@ const MIN_KEYBOARD_SCAN_LENGTH = 4;
  *     `/dispatch`, kamera ochiq; bu rejimda `/scan` da o'qilgan buyurtma kodi `/dispatch` ga olib o'tiladi va
  *     savatga o'sha sahifa handler'i bilan qo'shiladi;
  *   - kuryer «O'zimga olish» (kuryerda sukut) — ketma-ket `POST orders/scan-assign`, natija ro'yxati,
- *     «Tugatish» → kesh yangilanadi va xulosa (`model/useCourierTake.ts`);
- *   - kuryer «Qabul qilish» (2026-11-07, BeePost kuryer qabul sikli) — o'z yo'ldagi buyurtmasi skanerlansa darhol
- *     `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, kamera yopilmaydi, natija ro'yxati; allaqachon
- *     qabul qilingan buyurtma → `/scan/:token` (sotish / bekor; `model/useCourierReceive.ts`);
+ *     «Tugatish» → kesh yangilanadi va xulosa (`model/useCourierTake.ts`). COURIER-SCAN (ega, 2026-11-17): skan =
+ *     qabul — olingan buyurtma darhol «Kutilmoqda», kuryerning alohida «Qabul qilish» rejimi yo'q;
+ *   - menejer «Pochtadan qabul» (2026-11-07, BeePost qabul sikli) — o'z filialiga kelgan o'tkazma pochtasidagi
+ *     yo'ldagi buyurtma skanerlansa darhol `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, kamera
+ *     yopilmaydi, natija ro'yxati; allaqachon qabul qilingan buyurtma → `/scan/:token` (`model/useBranchReceive.ts`);
  *   - «Pochtani jo'natish» / «Rad etilgan pochta» (Trello vNcGDnNh 2-band) — pochta varag'i (`GET post/new` /
  *     `GET post/rejected`) YOKI pochta QR'i (`POST-…`, `model/useMailModeScan.ts`) → `/mails/:id`, kamera o'sha
  *     sahifaning «jo'natish» / «rad etilganni qabul» maqsadida ochiq (buyurtma skani = tanlov; jo'natish va qabul —
@@ -186,15 +187,15 @@ const UniversalScanner = () => {
     (token: string) => navigate(`/scan/${encodeURIComponent(token)}`),
     [navigate],
   );
-  // Skan = qabul: kuryer «Qabul qilish» (o'z pochtasi) yoki filial menejeri «Pochtadan qabul» (o'z filialiga o'tkazma).
-  const isScanReceiveMode = mode === "courierReceive" || mode === "branchReceive";
-  const courierReceive = useCourierReceive({
+  // Skan = qabul: filial menejeri «Pochtadan qabul» (o'z filialiga o'tkazma). Kuryerda alohida qabul rejimi yo'q —
+  // COURIER-SCAN: «O'zimga olish» skanining o'zi qabul.
+  const isScanReceiveMode = mode === "branchReceive";
+  const branchReceive = useBranchReceive({
     enabled: isScanReceiveMode,
     onOpenOrder: openReceivedOrder,
-    actor: mode === "branchReceive" ? "branch" : "courier",
     branchId,
   });
-  const handleReceiveScan = courierReceive.handleScan;
+  const handleReceiveScan = branchReceive.handleScan;
 
   const openPicker = useCallback(() => setSwitcherKey((key) => key + 1), []);
 
@@ -219,7 +220,7 @@ const UniversalScanner = () => {
         handleTakeScan(raw, source);
         return;
       }
-      if (mode === "courierReceive" || mode === "branchReceive") {
+      if (mode === "branchReceive") {
         handleReceiveScan(raw, source);
         return;
       }
@@ -448,28 +449,28 @@ const UniversalScanner = () => {
         finish: { label: t("scanner.take.finish"), keepOpen: true, onFinish: () => void finishTake() },
       };
     }
-    if (mode === "courierReceive" || mode === "branchReceive") {
+    if (mode === "branchReceive") {
       return {
         ...base,
         title: t(`scanner.${mode}.title`),
         context: t(`scanner.${mode}.context`),
         hint: t(`scanner.${mode}.hint`),
         icon: Inbox,
-        progress: { done: courierReceive.received, label: t(`scanner.${mode}.meter`) },
-        list: courierReceive.list,
+        progress: { done: branchReceive.received, label: t(`scanner.${mode}.meter`) },
+        list: branchReceive.list,
         listTitle: t(`scanner.${mode}.listTitle`),
-        listDescription: `${formatNumberLocalized(courierReceive.received, { language })} ${t(
+        listDescription: `${formatNumberLocalized(branchReceive.received, { language })} ${t(
           `scanner.${mode}.meter`,
         )} · ${t("scanner.take.scans", {
-          count: courierReceive.list.length,
-          value: formatNumberLocalized(courierReceive.list.length, { language }),
+          count: branchReceive.list.length,
+          value: formatNumberLocalized(branchReceive.list.length, { language }),
         })}`,
       };
     }
     return { ...base, title: t("scanner.title"), context: t("scanner.context") };
   }, [
-    courierReceive.list,
-    courierReceive.received,
+    branchReceive.list,
+    branchReceive.received,
     finishTake,
     goToHandover,
     goToMarket,
@@ -551,7 +552,7 @@ const UniversalScanner = () => {
   const manualSubmitLabel =
     mode === "take"
       ? t("scanner.take.manualSubmit")
-      : mode === "courierReceive" || mode === "branchReceive"
+      : mode === "branchReceive"
         ? t(`scanner.${mode}.manualSubmit`)
         : mode === "dispatch"
           ? t("scanner.dispatch.manualSubmit")
@@ -712,11 +713,11 @@ const UniversalScanner = () => {
               />
             </div>
           ) : null}
-          {mode === "courierReceive" || mode === "branchReceive" ? (
+          {mode === "branchReceive" ? (
             <div className="min-w-0 max-lg:col-span-2">
               <ScanSessionCard
-                list={courierReceive.list}
-                count={courierReceive.received}
+                list={branchReceive.list}
+                count={branchReceive.received}
                 title={t(`scanner.${mode}.listTitle`)}
                 meter={t(`scanner.${mode}.meter`)}
                 emptyText={t(`scanner.${mode}.emptyText`)}

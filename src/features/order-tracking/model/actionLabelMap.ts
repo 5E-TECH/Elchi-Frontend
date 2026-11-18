@@ -32,4 +32,8 @@ export const actionLabelMap: Record<string, string> = {
   branch_return_requested: "tracking.action.branchReturnRequested",
   // 2026-11-16: operatori yo'q buyurtmaga keyin operator biriktirildi (`PUT /orders/:id/operator`, holat o'zgarmaydi).
   operator_assigned: "tracking.action.operatorAssigned",
+  // COURIER-SCAN (ega, 2026-11-17): kuryer skani = qabul — kuryer buyurtmani skan bilan oldi (holat → kutilmoqda).
+  courier_scan_received: "tracking.action.courierScanReceived",
+  // COURIER-SCAN: o'tkazma pochtasidagi buyurtma kuryer skani bilan filialga qabul qilindi (menejersiz).
+  branch_post_received_by_courier_scan: "tracking.action.branchPostReceivedByCourierScan",
 };

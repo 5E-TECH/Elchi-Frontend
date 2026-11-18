@@ -176,9 +176,16 @@ describe("ScanDetailPage — O'ZIMGA OLISH rad etilganda", () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  it("sends the scanned token, locks the button and returns to the scanner after success", async () => {
+  // COURIER-SCAN (ega, 2026-11-17, savol 6 sukuti): skan = qabul — «O'zimga olish»dan keyin skanerga qaytilmaydi,
+  // skan so'rovi qayta olinadi va shu sahifada darhol «Sotish» / «Bekor qilish» ochiladi.
+  it("sends the scanned token and stays on the page: «Sotish» / «Bekor qilish» open at once (no redirect)", async () => {
     const user = userEvent.setup();
-    assignMock.mockResolvedValue({ statusCode: 200 });
+    assignMock.mockResolvedValue({ statusCode: 200, data: { status: "waiting" } });
+    fetchMock.mockResolvedValueOnce({ type: "order", data: { ...ORDER, status: "received", courier_id: null } });
+    fetchMock.mockResolvedValue({
+      type: "order",
+      data: { ...ORDER, status: "waiting", courier_id: "courier-1", holder_type: "COURIER" },
+    });
     renderDetail("courier");
 
     await user.click(await screen.findByRole("button", { name: /O'zimga olish/ }));
@@ -187,24 +194,29 @@ describe("ScanDetailPage — O'ZIMGA OLISH rad etilganda", () => {
     expect(await screen.findByText("Buyurtma sizga biriktirildi")).toBeInTheDocument();
     expect(feedbackMock).toHaveBeenCalledWith("success", undefined, undefined, { voice: "assigned" });
     expect(invalidateMock).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: /O'zimga olish/ })).toBeDisabled();
-    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan"), { timeout: 3000 });
+    expect(await screen.findByRole("button", { name: "Sotish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /O'zimga olish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qabul qilish" })).not.toBeInTheDocument();
+    // Holat «Kuryerda» (Yo'lda emas).
+    expect(screen.getByText("Kuryerda")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await new Promise((resolve) => setTimeout(resolve, 1700));
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });
 
 // 6qypMFeT: qayta skanda eski holat yo'q — buyurtma allaqachon shu kuryerda yoki boshqa kuryerda bo'lsa
 // «O'zimga olish» faol emas (backend `scanAssignOrder` qoidasi), sababi yonida.
 describe("ScanDetailPage — kuryer: buyurtma kimda (6qypMFeT)", () => {
-  it("already mine (courier_id = me, on the road): «Bu buyurtma allaqachon sizda», button disabled, no request", async () => {
-    const user = userEvent.setup();
+  // COURIER-SCAN: o'z buyurtmasi (yo'lda ham) — «O'zimga olish» emas, darhol «Sotish» / «Bekor qilish».
+  it("already mine (courier_id = me, on the road): «Sotish» / «Bekor qilish» at once, no «O'zimga olish», no request", async () => {
     fetchMock.mockResolvedValue({ type: "order", data: { ...ORDER, status: "on_the_road", courier_id: "courier-1" } });
     renderDetail("courier");
 
-    expect(await screen.findByText("Bu buyurtma allaqachon sizda")).toBeInTheDocument();
-    expect(screen.getByText("Qayta olish shart emas — u buyurtmalaringiz ro'yxatida.")).toBeInTheDocument();
-    const button = screen.getByRole("button", { name: /O'zimga olish/ });
-    expect(button).toBeDisabled();
-    await user.click(button);
+    expect(await screen.findByRole("button", { name: "Sotish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /O'zimga olish/ })).not.toBeInTheDocument();
     expect(assignMock).not.toHaveBeenCalled();
   });
 
@@ -230,67 +242,36 @@ describe("ScanDetailPage — kuryer: buyurtma kimda (6qypMFeT)", () => {
   });
 });
 
-// 2026-11-07 (BeePost kuryer skan sahifasi): o'z yo'ldagi buyurtmasi — «Qabul qilish» (faqat shu buyurtma,
-// `scan: true`); qabul qilingani (WAITING) — «Sotish» / «Bekor qilish», keyin skanerga «Qabul qilish» rejimida qaytadi.
-describe("ScanDetailPage — kuryer: qabul qilish, sotish va bekor qilish", () => {
+// COURIER-SCAN (ega, 2026-11-17): kuryer skani = qabul — o'z buyurtmasi (kutilmoqda, yo'lda, mijoz kutilmoqda) uchun
+// darhol «Sotish» / «Bekor qilish»; alohida «Qabul qilish» qadami yo'q (yo'ldagini backend sotishdan oldin o'zi qabul
+// qiladi). Sotgach / bekor qilgach — skanerga «O'zimga olish» rejimida qaytadi.
+describe("ScanDetailPage — kuryer: sotish va bekor qilish (skan = qabul)", () => {
   const COURIER_ROAD = { ...ORDER, status: "on_the_road", courier_id: "courier-1", post_id: "p-7", where_deliver: "address" };
   const COURIER_WAITING = { ...COURIER_ROAD, status: "waiting", total_price: 245000 };
-  const patchOk = (body: unknown) =>
-    vi.spyOn(api, "patch").mockResolvedValue({ data: body } as AxiosResponse);
 
   afterEach(() => vi.restoreAllMocks());
 
-  it("o'z yo'ldagi buyurtmasi: «Qabul qilish» (O'zimga olish yo'q) → PATCH post/receive/:post_id {order_ids, scan} → sotish/bekor", async () => {
-    const user = userEvent.setup();
-    const patch = patchOk({ statusCode: 200, data: [], received_order_ids: ["1251175"], post_status: "sent" });
-    fetchMock.mockResolvedValueOnce({ type: "order", data: COURIER_ROAD });
-    fetchMock.mockResolvedValue({ type: "order", data: COURIER_WAITING });
-    renderDetail("courier");
-
-    const receive = await screen.findByRole("button", { name: "Qabul qilish" });
-    expect(screen.queryByRole("button", { name: /O'zimga olish/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Sotish" })).not.toBeInTheDocument();
-    await user.click(receive);
-
-    expect(patch).toHaveBeenCalledWith(expect.stringMatching(/post\/receive\/p-7$/), { order_ids: ["1251175"], scan: true });
-    expect(await screen.findByText("Buyurtma qabul qilindi")).toBeInTheDocument();
-    expect(feedbackMock).toHaveBeenCalledWith("success", undefined, undefined, { voice: "received" });
-    // Skan so'rovi qayta olindi — buyurtma «kutilmoqda»: sotish va bekor ochildi, sahifa almashmadi.
-    expect(await screen.findByRole("button", { name: "Sotish" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Qabul qilish" })).not.toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(navigateMock).not.toHaveBeenCalled();
-  });
-
-  it("qabul rad etilsa — backend sababi, tugma qayta bosiladi, sahifa almashmaydi", async () => {
-    const user = userEvent.setup();
-    vi.spyOn(api, "patch").mockRejectedValue(
-      new AxiosError("Request failed", "ERR_BAD_REQUEST", undefined, undefined, {
-        status: 400,
-        data: { message: "Buyurtma yo'lda emas — qabul qilib bo'lmaydi" },
-      } as AxiosResponse),
-    );
+  it("o'z yo'ldagi buyurtmasi: «Qabul qilish» yo'q — darhol «Sotish» / «Bekor qilish», qabul so'rovi yuborilmaydi", async () => {
+    const patch = vi.spyOn(api, "patch");
     fetchMock.mockResolvedValue({ type: "order", data: COURIER_ROAD });
     renderDetail("courier");
 
-    await user.click(await screen.findByRole("button", { name: "Qabul qilish" }));
-
-    expect(await screen.findByText("Buyurtma yo'lda emas — qabul qilib bo'lmaydi")).toBeInTheDocument();
-    expect(feedbackMock).toHaveBeenCalledWith("error");
-    expect(screen.getByRole("button", { name: "Qabul qilish" })).toBeEnabled();
-    expect(navigateMock).not.toHaveBeenCalled();
+    expect(await screen.findByRole("button", { name: "Sotish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qabul qilish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /O'zimga olish/ })).not.toBeInTheDocument();
+    expect(patch).not.toHaveBeenCalled();
   });
 
-  it("pochtasi noma'lum yo'ldagi buyurtma — avvalgidek «allaqachon sizda» (qabul so'rovi yuborib bo'lmaydi)", async () => {
-    fetchMock.mockResolvedValue({ type: "order", data: { ...COURIER_ROAD, post_id: null } });
+  it("mijoz kutilmoqda va pochtasi noma'lum yo'ldagi — ham «Sotish» / «Bekor qilish»", async () => {
+    fetchMock.mockResolvedValue({ type: "order", data: { ...COURIER_ROAD, status: "waiting_customer", post_id: null } });
     renderDetail("courier");
 
-    expect(await screen.findByText("Bu buyurtma allaqachon sizda")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Sotish" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Qabul qilish" })).not.toBeInTheDocument();
   });
 
-  it("qabul qilingan (WAITING) buyurtma: «Sotish» kuryer oynasi → sotildi → /scan «Qabul qilish» rejimida", async () => {
+  it("skan bilan olingan (WAITING) buyurtma: «Sotish» kuryer oynasi → sotildi → /scan «O'zimga olish» rejimida", async () => {
     const user = userEvent.setup();
     const post = vi
       .spyOn(api, "post")
@@ -308,7 +289,7 @@ describe("ScanDetailPage — kuryer: qabul qilish, sotish va bekor qilish", () =
     await user.click(within(dialog).getByRole("button", { name: "Sotish" }));
 
     await waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith("/scan", { state: { scanMode: "courierReceive" } }),
+      expect(navigateMock).toHaveBeenCalledWith("/scan", { state: { scanMode: "take" } }),
     );
     expect(post).toHaveBeenCalledWith(expect.stringContaining("orders/sell/1251175"), expect.anything());
   });
@@ -375,7 +356,7 @@ describe("ScanDetailPage — kuryer: qabul qilish, sotish va bekor qilish", () =
     await user.click(within(dialog).getByRole("button", { name: "Sotish" }));
 
     await waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith("/scan", { state: { scanMode: "courierReceive" } }),
+      expect(navigateMock).toHaveBeenCalledWith("/scan", { state: { scanMode: "take" } }),
     );
     expect(post).toHaveBeenCalledWith(
       expect.stringContaining("orders/sell/1251175"),

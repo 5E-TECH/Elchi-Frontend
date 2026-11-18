@@ -16,7 +16,6 @@ import {
   normalizeScanToken,
   scanAssignOrder,
 } from "../lib/scanResource";
-import { isCourierReceivableStatus } from "./courierReceive";
 
 /**
  * KURYER «O'ZIMGA OLISH» — universal skaner rejimi (`/scan`, Trello v1eLN2tV 3-bosqich; maketlar
@@ -28,8 +27,9 @@ import { isCourierReceivableStatus } from "./courierReceive";
  *
  *   - har skan → `POST orders/scan-assign { qr_token }`; kamera yopilmaydi (uzluksiz);
  *   - ro'yxat: «Sizga biriktirildi», «Allaqachon sizda» (`idempotent`), «Boshqa kuryerda: <ism>» yoki xato
- *     sababi. O'zidagi YO'LDAGI buyurtma (`idempotent`, holat `on_the_road`) — «Yo'lda — «Qabul qilish» rejimida
- *     skanerlang» (2026-11-07: qabul — alohida rejim, `useCourierReceive`). Backend boshqa kuryer nomini aytmaydi — rad etilgach buyurtma bir marta o'qiladi
+ *     sababi. COURIER-SCAN (ega, 2026-11-17): skan = qabul — o'zidagi yo'ldagi buyurtmani qayta skanlash ham qabul
+ *     (backend `accepted: true`, «Sizga biriktirildi»); alohida «Qabul qilish» rejimi yo'q. Backend boshqa kuryer
+ *     nomini aytmaydi — rad etilgach buyurtma bir marta o'qiladi
  *     (`GET orders/qr-code/:token`), ism bo'lsa qatorga yoziladi;
  *   - «Boshqa kuryerga biriktirilgan» (maket `courier-scan-other-courier`) — bitta ohang: qizil xabar, qizil
  *     `UserX` qator, xulosada «Biriktirilmadi». Buyurtma raqami va kuryer ismi aniqlangach (xabar hali
@@ -137,18 +137,9 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
         void playScanFeedback("success", t("scanner.take.assignedToast", { ref }), undefined, { voice: "assigned" });
         return;
       }
-      // O'zidagi yo'ldagi buyurtma — olish shart emas, uni «Qabul qilish» rejimida qabul qiladi.
-      const onTheRoad = feedback.kind === "already" && isCourierReceivableStatus(order?.status);
       void playScanFeedback(
         "duplicate",
-        t(
-          onTheRoad
-            ? "scanner.take.onTheRoadToast"
-            : feedback.kind === "already"
-              ? "scanner.take.alreadyToast"
-              : "scanner.take.repeatToast",
-          { ref },
-        ),
+        t(feedback.kind === "already" ? "scanner.take.alreadyToast" : "scanner.take.repeatToast", { ref }),
       );
     },
     [errorText, t],
@@ -257,15 +248,12 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
         const ref = orderRef(order?.order_number ?? entry.orderId);
         const name = order?.customer?.name?.trim();
         const place = order?.district ?? order?.region ?? null;
-        const onTheRoad = entry.status === "already" && isCourierReceivableStatus(order?.status);
         return {
           key: entry.key,
           title: [ref, name].filter(Boolean).join(" · "),
-          subtitle: onTheRoad
-            ? t("scanner.take.onTheRoad")
-            : [t(entry.status === "assigned" ? "scanner.take.assigned" : "scanner.take.already"), place]
-                .filter(Boolean)
-                .join(" · "),
+          subtitle: [t(entry.status === "assigned" ? "scanner.take.assigned" : "scanner.take.already"), place]
+            .filter(Boolean)
+            .join(" · "),
           tone: entry.status === "assigned" ? "success" : "neutral",
         };
       }),

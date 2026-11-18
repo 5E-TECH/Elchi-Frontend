@@ -85,14 +85,13 @@ export const getDisplayStatus = (order: Order): string => {
   return order.status;
 };
 
-/** Sotish + Bekor qilish tugmalari ko'rinadigan holatlar. */
-const ACTIVE_STATUSES = new Set<string>(["waiting", "on the road", "new", "received"]);
 /**
- * Skan-qabul qilinadigan holatlar (2026-11-07, backend `PATCH post/receive/:id` `scan: true` bilan bir) — yo'lda yoki
- * mijoz kutilmoqda. Bunday qatorda «Qabul qilish» VA «Sotish / Bekor» (2026-11-12: sotish/bekor bosilsa backend avval
- * avtomatik qabul qiladi — tracking'da «Kutilmoqda», keyin «Sotildi / Bekor qilindi»).
+ * Sotish + Bekor qilish tugmalari ko'rinadigan holatlar. COURIER-SCAN (ega, 2026-11-17): kuryer skani = qabul — skan
+ * bilan olingan buyurtma darhol «Kutilmoqda»; kuryerdan alohida «Qabul qilish» kutilmaydi. Yo'ldagi va mijoz
+ * kutilayotgan (menejer biriktirgan) qatorda ham faqat «Sotish / Bekor» — backend sotish/bekordan oldin o'zi qabul
+ * qiladi (2026-11-12).
  */
-const RECEIVABLE_STATUSES = new Set<string>(["on the road", "waiting customer"]);
+const ACTIVE_STATUSES = new Set<string>(["waiting", "on the road", "waiting customer", "new", "received"]);
 /** «Qayta tiklash» ko'rinadigan holatlar — faqat sotilgan va bekor qilingan. */
 const ROLLBACK_STATUSES = new Set<string>(["sold", "cancelled"]);
 
@@ -104,13 +103,6 @@ export const getOrderPostId = (order: Order): string | null => {
   const id = toText(record.post_id ?? record.postId);
   return id && id !== "0" ? id : null;
 };
-
-/**
- * «Qabul qilish» ko'rinadigan qator: kuryerning o'z ro'yxatida (pochtalari) yo'lda yoki mijoz kutilmoqda va pochtasi
- * ma'lum (pochtasiz qabul so'rovi yuborib bo'lmaydi — u holda avvalgidek «Sotish / Bekor»).
- */
-export const isReceivableOrder = (order: Order) =>
-  RECEIVABLE_STATUSES.has(normalizeOrderStatus(order.status)) && Boolean(getOrderPostId(order));
 
 /**
  * Qayta tiklash mumkinmi: sotilgan yoki bekor qilingan, pochtaga jo'natilmagan. Bekor qilingan

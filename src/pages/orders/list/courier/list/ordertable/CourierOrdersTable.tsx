@@ -1,6 +1,6 @@
 // dizayn-v2: courier-orders-pending, courier-orders-all, courier-orders-cancelled, courier-orders-action-approval-pending
 import { memo, useMemo, useState, type ReactNode } from "react";
-import { Check, Clock, Copy, Phone, RotateCcw } from "lucide-react";
+import { Clock, Copy, Phone, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { formatOrderRef, orderNumberOf, OrderStatusBadge, ReplacementTag } from "../../../../../../entities/order";
@@ -30,7 +30,6 @@ import {
   getDisplayStatus,
   getRegionName,
   isActiveOrder,
-  isReceivableOrder,
   isRollbackCandidate,
   isSelectableCancelledOrder,
   sortCourierOrders,
@@ -44,8 +43,9 @@ import {
  *  - 768–1023: Tuman, Market va Yetkazish yashirin, market nomi summa ostida;
  *  - < 768: kartalar — ism + summa, «№ · tuman · market», badge'lar + sana, o'ngda qo'ng'iroq tugmasi,
  *    pastda amallar (44 px).
- * Yo'ldagi qatorda (skan bilan olingan, pochtasi ma'lum — 2026-11-07) «Sotish / Bekor» o'rniga «Qabul qilish»
- * (`PATCH post/receive/:post_id { order_ids: [id], scan: true }`, faqat shu buyurtma) — qabul qilingach sotiladi.
+ * COURIER-SCAN (ega, 2026-11-17): kuryer skani = qabul — faol qatorda (kutilmoqda, yo'lda, mijoz kutilmoqda) faqat
+ * «Sotish» + «Bekor qilish»; alohida «Qabul qilish» tugmasi yo'q (yo'ldagini backend sotish/bekordan oldin o'zi qabul
+ * qiladi).
  * Saralash sahifa ichida (kuryer ro'yxati API'si saralash parametrini qabul qilmaydi; sukut —
  * yangilari tepada, backend tartibi bilan bir xil).
  */
@@ -67,10 +67,6 @@ export type CourierOrdersTableProps = {
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
   onRestore?: (order: Order) => void;
-  /** Yo'ldagi buyurtmani qabul qilish (berilmasa — avvalgidek «Sotish / Bekor»). */
-  onReceive?: (order: Order) => void;
-  /** Qabul so'rovi ketayotgan buyurtmalar (tugma «yuklanmoqda»). */
-  receivingIds?: ReadonlySet<string>;
   /** Qatorda «Qayta tiklash» ko'rsatiladimi (berilmasa — sotilgan/bekor qilingan hammasida). */
   canRestore?: (order: Order) => boolean;
   /** Faqat «Bekor qilingan» tabida — pochtaga yuborish uchun tanlov. */
@@ -135,8 +131,6 @@ const CourierOrdersTable = ({
   onDeliver,
   onCancel,
   onRestore,
-  onReceive,
-  receivingIds,
   canRestore,
   selection,
   busy = false,
@@ -159,8 +153,6 @@ const CourierOrdersTable = ({
   // aks holda hech narsa qilmaydigan tugma chiqardi.
   const showRestore = (order: Order) =>
     Boolean(onRestore) && isRollbackCandidate(order) && (canRestore ? canRestore(order) : true);
-  const showReceive = (order: Order) => Boolean(onReceive) && isReceivableOrder(order);
-  const receiving = (order: Order) => Boolean(receivingIds?.has(order.id));
 
   const nameOf = (order: Order) => order.customer?.name?.trim() || "—";
   const money = (order: Order) => formatMoneyLocalized(Number(order.total_price) || 0, { language });
@@ -168,8 +160,7 @@ const CourierOrdersTable = ({
   // Bekor bosqichi belgisi («Bekor · kuryerda», «Bekor · yo'lda»; joy qatorisiz — kuryerning o'z ro'yxati).
   const status = (order: Order) => <OrderStatusBadge status={getDisplayStatus(order)} order={order} />;
 
-  /** Jadval qatoridagi amallar (maket: `el-btn-sm`, planshetda «Bekor»). */
-  /** Jadval qatoridagi «Sotish» + «Bekor» (faol va yo'ldagi qatorlar). */
+  /** Jadval qatoridagi «Sotish» + «Bekor» (maket: `el-btn-sm`, planshetda «Bekor»). */
   const rowSellCancel = (order: Order): ReactNode => (
     <>
       <Button
@@ -195,26 +186,6 @@ const CourierOrdersTable = ({
   );
 
   const rowActions = (order: Order): ReactNode => {
-    // Yo'ldagi qator (2026-11-12): «Qabul qilish» + «Sotish / Bekor» — sotish/bekor bosilsa backend avval avtomatik
-    // qabul qiladi (tracking: «Yo'lda → Kutilmoqda», keyin «Sotildi / Bekor qilindi»).
-    if (showReceive(order)) {
-      return (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            compact
-            leftIcon={Check}
-            loading={receiving(order)}
-            aria-label={t("courierList.receiveRow", { id: order.id })}
-            onClick={() => onReceive?.(order)}
-          >
-            {t("courierList.receive")}
-          </Button>
-          {rowSellCancel(order)}
-        </div>
-      );
-    }
     if (isActiveOrder(order)) {
       return <div className="flex gap-2">{rowSellCancel(order)}</div>;
     }
@@ -267,24 +238,6 @@ const CourierOrdersTable = ({
         </Button>
       </div>
     );
-    // Yo'ldagi karta (2026-11-12): «Qabul qilish» ustida, «Sotish / Bekor» ostida (avtomatik qabul — backend).
-    if (showReceive(order)) {
-      return (
-        <div className="flex flex-col gap-2 px-4 pb-3">
-          <Button
-            variant="secondary"
-            className="w-full"
-            leftIcon={Check}
-            loading={receiving(order)}
-            aria-label={t("courierList.receiveCard", { name })}
-            onClick={() => onReceive?.(order)}
-          >
-            {t("courierList.receive")}
-          </Button>
-          {sellCancel}
-        </div>
-      );
-    }
     if (isActiveOrder(order)) {
       return <div className="px-4 pb-3">{sellCancel}</div>;
     }

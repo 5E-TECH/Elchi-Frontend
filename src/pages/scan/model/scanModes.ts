@@ -22,12 +22,12 @@ import { resolveReceiveMode } from "../../new_orders/components/newOrderReceiveR
  *   receive     — «Qabul qilish»: avval market tanlanadi, keyin `/new-orders/<marketId>` sahifasida kamera ochiq
  *                 davom etadi (2-bosqichdagi F1 oqimi — ikkinchi qabul mantig'i yozilmaydi);
  *   dispatch    — «Kuryerga biriktirish»: `/dispatch` sahifasida kamera ochiq, savat qurilmada (F9);
- *   take        — kuryer «O'zimga olish» (kuryerda sukut): ketma-ket skan → `POST orders/scan-assign`;
- *   courierReceive — kuryer «Qabul qilish» (2026-11-07, BeePost /scan kuryer qabul sikli): o'z yo'ldagi buyurtmasi
- *                 skanerlansa darhol qabul (`PATCH post/receive/:post_id { order_ids: [id], scan: true }`), kamera
- *                 yopilmaydi; allaqachon qabul qilingan (WAITING) buyurtma — natija sahifasi (sotish / bekor);
- *   branchReceive — menejer «Pochtadan qabul» (2026-11-07, xuddi shu sikl): o'z filialiga kelgan o'tkazma
- *                 pochtasidagi yo'ldagi buyurtma skanerlansa darhol qabul, qabul qilingani — natija sahifasi;
+ *   take        — kuryer «O'zimga olish» (kuryerda sukut): ketma-ket skan → `POST orders/scan-assign`. COURIER-SCAN
+ *                 (ega, 2026-11-17): skan = qabul — olingan buyurtma darhol «Kutilmoqda», o'zidagi yo'ldagini qayta
+ *                 skanlash ham qabul; kuryerning alohida «Qabul qilish» rejimi (2026-11-07) olib tashlandi;
+ *   branchReceive — menejer «Pochtadan qabul» (2026-11-07, BeePost /scan qabul sikli): o'z filialiga kelgan
+ *                 o'tkazma pochtasidagi yo'ldagi buyurtma skanerlansa darhol qabul (`PATCH post/receive/:post_id
+ *                 { order_ids: [id], scan: true }`), kamera yopilmaydi; qabul qilingani — natija sahifasi;
  *   sendMail    — «Pochtani jo'natish»: yangi pochta varag'i (yoki pochta QR'i) → `/mails/:id`, kamera o'sha
  *                 sahifaning «jo'natish» maqsadida ochiq (buyurtma skani = tanlov, jo'natish — sahifa oynasi);
  *   refusedMail — «Rad etilgan pochta»: rad etilgan pochta varag'i (yoki QR'i) → `/mails/:id` (`type: "refused"`),
@@ -37,7 +37,7 @@ import { resolveReceiveMode } from "../../new_orders/components/newOrderReceiveR
  *
  * Rejimlar rol va filial imkoniyatiga qarab — har biri kelinadigan sahifaning O'Z shartini takrorlaydi (sahifa
  * taqiqlangan yoki faqat o'qish bo'lgan rolga rejim chiqmaydi):
- *   - kuryer — «O'zimga olish» · «Qabul qilish» · «Ma'lumot»;
+ *   - kuryer — «O'zimga olish» · «Ma'lumot»;
  *   - «Pochtadan qabul» — REGIONAL / HYBRID filial menejeri (HQ → filial o'tkazma pochtasini backend faqat manzil
  *     filial menejeriga qabul qildiradi; HQ ga o'tkazma kelmaydi, PICKUP ga pochta jo'natilmaydi);
  *   - «Qabul qilish» — buyurtma yaratish/qabul sahifasiga kirish bor (`canCreateOrders`) va qabul usuli bor
@@ -62,7 +62,6 @@ export type UniversalScanMode =
   | "receive"
   | "dispatch"
   | "take"
-  | "courierReceive"
   | "branchReceive"
   | "sendMail"
   | "refusedMail"
@@ -73,7 +72,6 @@ const ALL_MODES: ReadonlySet<string> = new Set<UniversalScanMode>([
   "receive",
   "dispatch",
   "take",
-  "courierReceive",
   "branchReceive",
   "sendMail",
   "refusedMail",
@@ -116,12 +114,12 @@ export const resolveScanModes = ({
 }: ScanModeAccess): UniversalScanMode[] => {
   // Market tomoni (market va MO-3 dan beri buyurtma yaratadigan market operatori) — skanerlamaydi.
   if (!role || isMarketSideRole(role)) return [];
-  // Kuryer: o'ziga olish, o'z yo'ldagi buyurtmasini qabul qilish (skan = qabul) va ma'lumot; pochta jo'natish,
-  // rad etilgan pochta va topshirish yo'q. «Qabul qilish» varaqsiz — `PICKER_SCAN_MODES` ga kirmaydi.
-  if (role === "courier") return ["take", "courierReceive", "info"];
+  // Kuryer: o'ziga olish (skan = qabul — COURIER-SCAN) va ma'lumot; pochta jo'natish, rad etilgan pochta va
+  // topshirish yo'q.
+  if (role === "courier") return ["take", "info"];
   const modes: UniversalScanMode[] = ["info"];
   if (canCreateOrders && resolveReceiveMode(role, branchType) !== "none") modes.push("receive");
-  // O'z filialiga kelgan o'tkazma pochtasini skan bilan qabul qilish (varaqsiz, kuryer «Qabul qilish» kabi).
+  // O'z filialiga kelgan o'tkazma pochtasini skan bilan qabul qilish (varaqsiz).
   if (role === "manager" && BRANCH_RECEIVE_BRANCH_TYPES.has(branchType)) modes.push("branchReceive");
   if (canViewDispatch && COURIER_ASSIGN_ROLES.has(role)) modes.push("dispatch");
   if (canSendMail) modes.push("sendMail");

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   getBranchReceiveDecision,
-  getCourierReceiveDecision,
   getCourierScanAction,
-  isCourierReceivableStatus,
+  isScanReceivableStatus,
   isOwnCourierOrder,
   readOrderPostId,
   readScanReceiveResult,
@@ -17,15 +16,15 @@ const order = (patch: Record<string, unknown> = {}) => ({
   ...patch,
 });
 
-describe("courierReceive — kuryer skan-qabuli qoidalari", () => {
+describe("courierReceive — skan-qabul qoidalari (COURIER-SCAN: kuryer skani = qabul)", () => {
   it("qabul qilinadigan holat: yo'lda yoki mijoz kutilmoqda (enum yoki matn ko'rinishida)", () => {
-    expect(isCourierReceivableStatus("on_the_road")).toBe(true);
-    expect(isCourierReceivableStatus("ON_THE_ROAD")).toBe(true);
-    expect(isCourierReceivableStatus("on the road")).toBe(true);
-    expect(isCourierReceivableStatus("waiting_customer")).toBe(true);
-    expect(isCourierReceivableStatus("waiting")).toBe(false);
-    expect(isCourierReceivableStatus("sold")).toBe(false);
-    expect(isCourierReceivableStatus(undefined)).toBe(false);
+    expect(isScanReceivableStatus("on_the_road")).toBe(true);
+    expect(isScanReceivableStatus("ON_THE_ROAD")).toBe(true);
+    expect(isScanReceivableStatus("on the road")).toBe(true);
+    expect(isScanReceivableStatus("waiting_customer")).toBe(true);
+    expect(isScanReceivableStatus("waiting")).toBe(false);
+    expect(isScanReceivableStatus("sold")).toBe(false);
+    expect(isScanReceivableStatus(undefined)).toBe(false);
   });
 
   it("pochta id: bo'sh va '0' (tayinlanmagan pochta sentineli) — yo'q", () => {
@@ -47,35 +46,19 @@ describe("courierReceive — kuryer skan-qabuli qoidalari", () => {
     expect(isOwnCourierOrder(order(), null)).toBe(false);
   });
 
-  it("natija sahifasi amali: yo'lda → qabul, kutilmoqda → sotish, qolgani → «O'zimga olish»", () => {
-    expect(getCourierScanAction(order(), ME)).toBe("receive");
-    expect(getCourierScanAction(order({ status: "waiting_customer" }), ME)).toBe("receive");
+  it("natija sahifasi amali: o'ziniki (kutilmoqda / yo'lda / mijoz kutilmoqda) → darhol sotish, qolgani → «O'zimga olish»", () => {
+    // COURIER-SCAN (ega, 2026-11-17): alohida «Qabul qilish» qadami yo'q — sotish / bekor yo'ldagini o'zi qabul qiladi.
+    expect(getCourierScanAction(order(), ME)).toBe("sell");
+    expect(getCourierScanAction(order({ status: "waiting_customer" }), ME)).toBe("sell");
     expect(getCourierScanAction(order({ status: "waiting" }), ME)).toBe("sell");
-    // Pochtasi yo'q yo'ldagi buyurtma — avvalgidek («allaqachon sizda»).
-    expect(getCourierScanAction(order({ post_id: null }), ME)).toBe("take");
+    // Pochtasi yo'q yo'ldagi buyurtma ham — sotish (pochta talab qilinmaydi).
+    expect(getCourierScanAction(order({ post_id: null }), ME)).toBe("sell");
+    expect(getCourierScanAction(order({ courier_id: null, holder_courier_id: ME, status: "waiting" }), ME)).toBe("sell");
     expect(getCourierScanAction(order({ status: "sold" }), ME)).toBe("take");
     // Bo'sh yoki boshqa kuryerniki — avvalgi «O'zimga olish» oqimi.
     expect(getCourierScanAction(order({ courier_id: null, status: "new" }), ME)).toBe("take");
     expect(getCourierScanAction(order({ courier_id: "77" }), ME)).toBe("take");
     expect(getCourierScanAction(order({ status: "waiting", holder_courier_id: "77" }), ME)).toBe("take");
-  });
-
-  it("«Qabul qilish» rejimi qarori", () => {
-    expect(getCourierReceiveDecision(order(), ME)).toBe("receive");
-    expect(getCourierReceiveDecision(order({ status: "waiting_customer" }), ME)).toBe("receive");
-    expect(getCourierReceiveDecision(order({ status: "waiting" }), ME)).toBe("open");
-    expect(getCourierReceiveDecision(order({ courier_id: null, status: "new" }), ME)).toBe("free");
-    // Hech kimda emas, lekin sotilgan / bekor / yopilgan — «O'zimga olish» ham ololmaydi: sababi aytiladi.
-    expect(getCourierReceiveDecision(order({ courier_id: null, status: "sold" }), ME)).toBe("notReceivable");
-    expect(getCourierReceiveDecision(order({ courier_id: null, status: "cancelled" }), ME)).toBe("notReceivable");
-    expect(getCourierReceiveDecision(order({ courier_id: null, status: "returned_to_market" }), ME)).toBe("notReceivable");
-    expect(getCourierReceiveDecision(order({ courier_id: "0", status: "received" }), ME)).toBe("free");
-    expect(getCourierReceiveDecision(order({ status: "new" }), ME)).toBe("free");
-    expect(getCourierReceiveDecision(order({ courier_id: "77" }), ME)).toBe("other");
-    expect(getCourierReceiveDecision(order({ holder_courier_id: "77" }), ME)).toBe("other");
-    expect(getCourierReceiveDecision(order({ post_id: null }), ME)).toBe("notReceivable");
-    expect(getCourierReceiveDecision(order({ status: "sold" }), ME)).toBe("notReceivable");
-    expect(getCourierReceiveDecision(order({ status: "cancelled" }), ME)).toBe("notReceivable");
   });
 
   it("qabul javobi: yangi shakl (received / already / failures) va eski shakl (faqat not_received)", () => {
@@ -134,7 +117,7 @@ describe("getBranchReceiveDecision — menejer «Pochtadan qabul» (o'tkazma poc
     expect(getBranchReceiveDecision(transfer({ status: "waiting" }), BRANCH)).toBe("open");
   });
 
-  it("kuryerdagi buyurtma (courier_id yoki holder_courier_id): yo'lda yoki «kutilmoqda» — kuryerniki", () => {
+  it("kuryerdagi buyurtma (courier_id yoki holder_courier_id; COURIER-SCAN: skan bilan olingan) — kuryerniki", () => {
     expect(getBranchReceiveDecision(transfer({ courier_id: "15" }), BRANCH)).toBe("other");
     expect(getBranchReceiveDecision(transfer({ holder_courier_id: "15" }), BRANCH)).toBe("other");
     expect(getBranchReceiveDecision(transfer({ courier_id: "15", status: "waiting" }), BRANCH)).toBe("other");

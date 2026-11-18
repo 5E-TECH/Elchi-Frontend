@@ -163,12 +163,56 @@ describe("OrderStatusBadge — bekor bosqichi (tizim-states-data §09)", () => {
     expect(el.querySelector("[data-badge-dot]")).not.toBeNull();
   });
 
-  it("bekor bo'lmagan buyurtma — `order` bilan ham oddiy belgi", () => {
-    renderStage("waiting", { holder_type: "COURIER" });
-    expect(screen.getByTestId("badge")).toHaveTextContent("Kutilmoqda");
+  it("bekor bo'lmagan buyurtma — `order` bilan ham oddiy belgi (bekor bosqichisiz)", () => {
+    renderStage("on_the_road", { holder_type: "BRANCH" });
+    expect(screen.getByTestId("badge")).toHaveTextContent("Yo'lda");
     expect(screen.getByTestId("badge")).not.toHaveAttribute("data-cancel-stage");
   });
+});
 
+// COURIER-SCAN (ega, 2026-11-17, savol 4 sukuti): kuryerdagi tayyor buyurtma — «Kuryerda», ton `waiting` niki.
+describe("OrderStatusBadge — «Kuryerda» (waiting + kuryer)", () => {
+  it.each([
+    ["holder_type COURIER", { holder_type: "COURIER" }],
+    ["courier_id", { courier_id: "44" }],
+    ["holder_courier_id", { holder_courier_id: "44" }],
+  ] as const)("%s → «Kuryerda», ton va nuqta «Kutilmoqda» niki", (_label, order) => {
+    renderStage("waiting", order);
+    const el = screen.getByTestId("badge");
+    expect(el).toHaveTextContent("Kuryerda");
+    expect(el).toHaveAttribute("data-order-status", "waiting");
+    expect(el).toHaveAttribute("data-holder", "courier");
+    expect(el).toHaveClass("text-warning-fg");
+    expect(el.querySelector("[data-badge-dot]")).not.toBeNull();
+    expect(el).not.toHaveAttribute("data-cancel-stage");
+  });
+
+  it("kuryersiz kutilmoqda («0» sentineli ham) va `order` siz — «Kutilmoqda»", () => {
+    renderStage("waiting", { holder_type: "BRANCH", courier_id: "0" });
+    expect(screen.getByTestId("badge")).toHaveTextContent("Kutilmoqda");
+    expect(screen.getByTestId("badge")).not.toHaveAttribute("data-holder");
+  });
+
+  it("boshqa holat kuryerda bo'lsa ham o'z yorlig'i (masalan «Yo'lda»)", () => {
+    renderStage("on the road", { holder_type: "COURIER", courier_id: "44" });
+    expect(screen.getByTestId("badge")).toHaveTextContent("Yo'lda");
+  });
+
+  it.each([
+    ["ru", "У курьера"],
+    ["en", "With courier"],
+  ])("%s: «%s»", async (language, label) => {
+    await i18n.changeLanguage(language);
+    try {
+      renderStage("waiting", { courier_id: "44" });
+      expect(screen.getByTestId("badge")).toHaveTextContent(label);
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
+  });
+});
+
+describe("OrderStatusBadge — bekor bosqichining joy qatori", () => {
   it("joy qatori: «Toshkent HQ · 2 kun»", () => {
     const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000 - 3_600_000).toISOString();
     renderStage("cancelled", { holder_type: "HQ", post_id: "41", branch: { id: "1", name: "Toshkent HQ" }, last_handover_at: twoDaysAgo }, true);

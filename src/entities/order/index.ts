@@ -22,6 +22,7 @@ export {
   ORDER_STATUS_NS,
   ORDER_STATUS_REGISTRY,
   humanizeOrderStatus,
+  isWaitingWithCourier,
   normalizeOrderStatus,
   resolveDisplayOrderStatus,
 } from "./model/statusRegistry";

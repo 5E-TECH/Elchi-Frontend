@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { BadgeVariant } from "../../../shared/ui/primitives/Badge";
 import type { Tone } from "../../../shared/ui/primitives/tone";
+import { isCourierHeldOrder } from "../../orders/custody";
 import type { OrderStatus } from "../types/order";
 
 /**
@@ -76,6 +77,17 @@ export const ORDER_STATUS_NS = "status";
 
 /** Noma'lum yoki bo'sh holat yorlig'i. */
 export const ORDER_STATUS_UNKNOWN_LABEL_KEY = "order.unknown";
+
+/**
+ * COURIER-SCAN (ega, 2026-11-17, savol 4 sukuti): kuryer qo'lidagi tayyor buyurtma (`waiting` + kuryer) —
+ * «Kuryerda» (ru «У курьера», en «With courier»), barcha rollarda. Ton, ikonka va ko'rinish — `waiting` niki (yangi
+ * rang yo'q); kuryersiz `waiting` — avvalgidek «Kutilmoqda». Faqat buyurtma yozuvi (`order`) berilganda.
+ */
+export const ORDER_STATUS_WAITING_COURIER_LABEL_KEY = "order.waiting_courier";
+
+/** «Kuryerda» ko'rinishi: holat `waiting` va buyurtma kuryerda. */
+export const isWaitingWithCourier = (status: unknown, order: unknown): boolean =>
+  resolveDisplayOrderStatus(status) === "waiting" && isCourierHeldOrder(order);
 
 const meta = (
   key: OrderStatusKey,

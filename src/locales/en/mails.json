@@ -337,6 +337,9 @@
       "notReceivable": "№{{id}} is not on the road — it cannot be received",
       "failed": "№{{id}} was not received — scan it again",
       "failedShort": "Not received — scan it again",
+      "takenByCourier": "№{{id}} is with the courier: {{name}}",
+      "takenByCourierNoName": "№{{id}} is with the courier",
+      "takenByCourierText": "The courier took it by scan — the order is no longer in this mail",
       "done": "Mail fully received",
       "doneText": "Returning to the mail list"
     },

@@ -11,7 +11,6 @@ import {
   PackageCheck,
   Repeat,
   RotateCcw,
-  Truck,
   UserRound,
   Zap,
 } from "lucide-react";
@@ -44,7 +43,6 @@ import {
   getCourierBulkProofKey,
   getCourierBulkUnmarkedCount,
   hasAllCourierBulkProofs,
-  isCourierBulkAwaitingPost,
   isCourierBulkOrderMarked,
   mergeCourierBulkOrders,
   runLimited,
@@ -77,7 +75,7 @@ type ProofStep = {
 };
 
 /** Yakunlashda so'rov ketmaydigan buyurtmalar soni, sababi bo'yicha (`getCourierBulkKept`). */
-type KeptCounts = { unmarked: number; tomorrow: number; replacement: number; courierHeld: number; awaitingPost: number };
+type KeptCounts = { unmarked: number; tomorrow: number; replacement: number; courierHeld: number };
 
 const COURIER_BULK_QUERY_KEY = ["orders", "courier", "bulk", "waiting"] as const;
 
@@ -220,13 +218,6 @@ const CourierBulkPage = () => {
         return;
       }
 
-      // Pochtasi qabul qilinmagan posilka belgilanmaydi (so'rov baribir 400) — token band qilinmaydi.
-      if (isCourierBulkAwaitingPost(order)) {
-        scanNotify.warning(t("awaitingPostTitle"), { description: t("list.awaitingPostHint") });
-        void playScanFeedback("error", t("list.awaitingPostHint"));
-        return;
-      }
-
       scannedTokenRef.current.set(tokenKey, order.id);
       const next: CourierBulkAction = actions[order.id] === scanMode ? "sold" : scanMode;
       setActions((prev) => ({ ...prev, [order.id]: prev[order.id] === scanMode ? "sold" : scanMode }));
@@ -362,7 +353,6 @@ const CourierBulkPage = () => {
       kept.tomorrow > 0 ? t("finalizeTomorrowKept", { count: kept.tomorrow }) : "",
       kept.replacement > 0 ? t("finalizeReplacementKept", { count: kept.replacement }) : "",
       kept.courierHeld > 0 ? t("finalizeCourierHeldKept", { count: kept.courierHeld }) : "",
-      kept.awaitingPost > 0 ? t("finalizeAwaitingPostKept", { count: kept.awaitingPost }) : "",
     ].filter(Boolean);
 
   const handleProofChange = useCallback((proofKey: string, file: File | undefined) => {
@@ -463,14 +453,13 @@ const CourierBulkPage = () => {
     // "Ertaga" va belgilanmagan — so'rovsiz, buyurtma kutilmoqda holatida qoladi (FE-CB-09; sukut natija yo'q).
     const tasks = getCourierBulkFinalizeTasks(orders, actions, viewer);
     // So'rov ketmaydiganlar sababi bilan: belgilanmagan; «ertaga»; almashtirish (lQjt6sKP — «Eski mahsulotni oldim»
-    // tasdig'i «Buyurtmalar» sotish oynasida); menejerda kuryer qo'lidagi (LC-04); pochtasi qabul qilinmagan (6qypMFeT).
+    // tasdig'i «Buyurtmalar» sotish oynasida); menejerda kuryer qo'lidagi (LC-04).
     const keptOrders = getCourierBulkKept(orders, actions, viewer);
     const kept: KeptCounts = {
       unmarked: keptOrders.unmarked.length,
       tomorrow: keptOrders.tomorrow.length,
       replacement: keptOrders.replacement.length,
       courierHeld: keptOrders.courierHeld.length,
-      awaitingPost: keptOrders.awaitingPost.length,
     };
 
     if (tasks.length === 0) {
@@ -535,14 +524,6 @@ const CourierBulkPage = () => {
         hint: t("confirmCourierHeldHint"),
         tone: "warning",
         icon: UserRound,
-      });
-    }
-    if (kept.awaitingPost > 0) {
-      consequences.push({
-        text: t("confirmAwaitingPost", { count: kept.awaitingPost }),
-        hint: t("confirmAwaitingPostHint"),
-        tone: "warning",
-        icon: Truck,
       });
     }
     setIsConfirming(true);

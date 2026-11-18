@@ -11,17 +11,14 @@ type Props = {
   onRowClick?: (order: Order) => void;
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
-  /** Yo'ldagi buyurtmani qabul qilish — «Sotish / Bekor» o'rniga «Qabul qilish» (2026-11-07). */
-  onReceive?: (order: Order) => void;
-  receivingIds?: ReadonlySet<string>;
   onRestore?: (order: Order) => void;
   /** Qatorda «Qayta tiklash» ko'rsatiladimi (berilmasa — sotilgan/bekor qilingan hammasida). */
   canRestore?: (order: Order) => boolean;
 };
 
 /**
- * «Barchasi» tab (maket `courier-orders-all`): yo'ldagi (pochtasi ma'lum) qatorda «Qabul qilish» (2026-11-07),
- * qolgan faol holatda «Sotish» + «Bekor qilish», sotilgan va
+ * «Barchasi» tab (maket `courier-orders-all`): faol holatda (yo'ldagi ham — COURIER-SCAN) «Sotish» + «Bekor
+ * qilish», sotilgan va
  * bekor qilinganda «Qayta tiklash» (fix3b LC-05: bekor qilinganda faqat posilka hali shu kuryerda
  * bo'lsa — `canRestore`), qolganlarida «—».
  */
@@ -34,8 +31,6 @@ const AllOrdersTable = ({
   onCancel,
   onRestore,
   canRestore,
-  onReceive,
-  receivingIds,
 }: Props) => (
   <CourierOrdersTable
     variant="all"
@@ -45,8 +40,6 @@ const AllOrdersTable = ({
     onRowClick={onRowClick}
     onDeliver={onDeliver}
     onCancel={onCancel}
-    onReceive={onReceive}
-    receivingIds={receivingIds}
     onRestore={onRestore}
     canRestore={canRestore}
   />

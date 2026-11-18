@@ -29,7 +29,6 @@ import {
   filterCourierBulkOrders,
   getCourierBulkOrderAction,
   getCourierBulkSellBlock,
-  isCourierBulkAwaitingPost,
   isCourierBulkOrderMarked,
   sortCourierBulkOrders,
   type CourierBulkAction,
@@ -135,27 +134,21 @@ export const CourierBulkOrders = ({
       layout={layout}
       value={getCourierBulkOrderAction(order.id, actions)}
       name={order.customer?.name ?? `№${order.id}`}
-      // Pochtasi qabul qilinmagan posilkani belgilab bo'lmaydi — so'rov baribir ketmaydi.
-      disabled={busy || isCourierBulkAwaitingPost(order)}
+      disabled={busy}
       onChange={(action) => onSetAction(order, action)}
     />
   );
-  // «Belgilanmagan» — natija tanlanmagan qator (yakunlashda o'zgarmaydi); pochtasi qabul qilinmaganida — yo'q (uni
-  // belgilab bo'lmaydi, o'z izohi bor). `getCourierBulkUnmarkedCount` bilan bir xil.
+  // «Belgilanmagan» — natija tanlanmagan qator (yakunlashda o'zgarmaydi). `getCourierBulkUnmarkedCount` bilan bir xil.
   const unmarkedBadge = (order: CourierBulkOrder) =>
-    isCourierBulkOrderMarked(order.id, actions) || isCourierBulkAwaitingPost(order) ? null : (
+    isCourierBulkOrderMarked(order.id, actions) ? null : (
       <Badge className="shrink-0">{t("list.unmarked")}</Badge>
     );
-  // Bu yerdan yopilmaydigan qator — qisqa izoh: pochtasi qabul qilinmagan (6qypMFeT), eski mahsulot olinmagan
-  // almashtirish (lQjt6sKP, belgi bilan), menejerda kuryer qo'lidagi (LC-04). Oxirgi yakunlashda xato bergan qatorda —
-  // backend sababi (natija oynasi yopilgach ham).
+  // Bu yerdan yopilmaydigan qator — qisqa izoh: eski mahsulot olinmagan almashtirish (lQjt6sKP, belgi bilan),
+  // menejerda kuryer qo'lidagi (LC-04). Oxirgi yakunlashda xato bergan qatorda — backend sababi (natija oynasi
+  // yopilgach ham).
   const rowNote = (order: CourierBulkOrder) => {
     const block = getCourierBulkSellBlock(order, viewer);
-    const hold = isCourierBulkAwaitingPost(order) ? (
-      <span className={cx(NOTE_CLASS, "text-warning-fg")} data-testid="courier-bulk-awaiting-post">
-        {t("list.awaitingPostHint")}
-      </span>
-    ) : block === "replacement" ? (
+    const hold = block === "replacement" ? (
       <span className="flex min-w-0 flex-wrap items-center gap-1.5" data-testid="courier-bulk-replacement">
         <ReplacementTag order={order} />
         <span className="text-[13px] text-warning-fg">{t("list.replacementHint")}</span>
