@@ -2,6 +2,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
+  advisorCashboxName,
   advisorUserName,
   ruleConditionText,
   type AdvisorTranslate,
@@ -106,7 +107,7 @@ export const ShiftShortageBody = ({ alert }: RuleBodyProps<"R1">) => {
     <>
       <AlertFacts
         facts={[
-          { id: "cashbox", label: t("alerts.facts.cashbox"), value: facts.cashbox.name },
+          { id: "cashbox", label: t("alerts.facts.cashbox"), value: advisorCashboxName(facts.cashbox, tt) },
           {
             id: "shortage",
             label: t(single ? "alerts.facts.shortage" : "alerts.facts.totalShortage"),

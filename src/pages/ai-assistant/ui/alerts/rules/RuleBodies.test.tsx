@@ -385,6 +385,122 @@ describe("R8 «Tuzatishlar ko'paydi» (maket -alert-dialog-corrections)", () => 
   });
 });
 
+describe("backend dev holatlari (shartnoma v0.4 eslatmalari, #653 review, round-3)", () => {
+  const checkRegion = () => screen.getByRole("region", { name: "Chek tekshiruvi" });
+  const readCheck = () => ({
+    terms: within(checkRegion()).getAllByRole("term").map((node) => node.textContent),
+    values: within(checkRegion()).getAllByRole("definition").map((node) => node.textContent),
+  });
+
+  it("R7 chek so'mda emas: «Chekda» — «100 USD», «Farq» — «—», belgi «So'mda emas» va izoh; sana — xom matn", () => {
+    renderBody(fx.detail.r7Currency);
+    expect(readFacts()).toEqual({
+      terms: ["Operatsiya", "Kassa", "Kiritilgan", "Chekda", "Farq", "Kiritgan"],
+      values: [
+        "Qo'lda chiqim · Yoqilg'i",
+        "Urgut filiali",
+        "1 250 000 so'm",
+        "100 USD",
+        "—",
+        `Ravshan Ortiqov · ${at(fx.at(0, 11, 5))}`,
+      ],
+    });
+    expect(
+      screen.getByText("Chek boshqa valyutada (USD) — so'mdagi summa bilan solishtirib bo'lmadi. Summani rasmdan tekshiring."),
+    ).toBeInTheDocument();
+    expect(within(checkRegion()).getByText("So'mda emas")).toBeInTheDocument();
+    expect(within(checkRegion()).queryByText("Farq bor")).not.toBeInTheDocument();
+    expect(readCheck()).toEqual({ terms: ["Chek sanasi", "To'lovchi", "Ishonch"], values: ["12.10.2026", "··3307", "81%"] });
+  });
+
+  it("R7 kuryer → HQ o'tkazma, pul HQ kartasiga tushmagan: «Jo'natuvchi», «Farq» yo'q, oluvchi — «HQ kartasi emas»; sana — `date_day`", () => {
+    renderBody(fx.detail.r7Transfer);
+    expect(readFacts()).toEqual({
+      terms: ["Operatsiya", "Jo'natuvchi", "Kiritilgan", "Chekda", "Kiritgan"],
+      values: [
+        "Kuryer topshirig'i",
+        "Jasur Tursunov",
+        "1 500 000 so'm",
+        "1 500 000 so'm",
+        `Jasur Tursunov · ${at(fx.at(0, 11, 5))}`,
+      ],
+    });
+    expect(within(checkRegion()).getByText("HQ kartasiga tushmagan")).toBeInTheDocument();
+    expect(within(checkRegion()).queryByText("Karta mos emas")).not.toBeInTheDocument();
+    expect(readCheck()).toEqual({
+      terms: ["Chek sanasi", "Oluvchi", "Bank", "Ishonch"],
+      values: ["20.10.2026", "··1209HQ kartasi emas", "Kapitalbank", "90%"],
+    });
+  });
+
+  it("R7 karta qoldig'i — faqat karta mos emas: «Farq» — «—», izoh «Rasm boshqa kartaniki»", () => {
+    renderBody(fx.detail.r7CardOnly);
+    expect(readFacts()).toEqual({
+      terms: ["Kassa", "Smena", "Tizimda", "AI o'qigan", "Farq"],
+      values: ["Asosiy kassa · Humo virtual", formatAdvisorDay(fx.day(-1)), "2 350 000 so'm", "2 350 000 so'm", "—"],
+    });
+    expect(screen.getByText("Rasm boshqa kartaniki — kassa kartasining qoldig'i emas.")).toBeInTheDocument();
+  });
+
+  it("R7 karta qoldig'i — kassir boshqa raqam ham kiritgan (|AI o'qigan − kiritilgan| > 1): «Kiritilgan» oxirida, izoh bilan", () => {
+    const r7 = fx.detail.r7Card;
+    renderBody({
+      ...r7,
+      facts: { ...(r7.facts as object), entered_amount: 2_300_000, difference: 10_000 },
+    } as AiAdvisorAlertDetail);
+    expect(readFacts()).toEqual({
+      terms: ["Kassa", "Smena", "Tizimda", "AI o'qigan", "Farq", "Kiritilgan"],
+      values: [
+        "Asosiy kassa · Humo virtual",
+        formatAdvisorDay(fx.day(-1)),
+        "2 350 000 so'm",
+        "2 310 000 so'm",
+        "−40 000 so'm",
+        "2 300 000 so'mkassir boshqa raqam kiritgan",
+      ],
+    });
+  });
+
+  it("R7 karta qoldig'i — eski qator (tizim qoldig'i noma'lum): Kiritilgan · AI o'qigan · Farq (AI o'qigan − kiritilgan)", () => {
+    const r7 = fx.detail.r7Card;
+    renderBody({
+      ...r7,
+      facts: { ...(r7.facts as object), entered_amount: 2_350_000, difference: -40_000, expected_balance: null, system_difference: null },
+      evidence: null,
+    } as AiAdvisorAlertDetail);
+    expect(readFacts()).toEqual({
+      terms: ["Kassa", "Smena", "Kiritilgan", "AI o'qigan", "Farq"],
+      values: ["Asosiy kassa · Humo virtual", formatAdvisorDay(fx.day(-1)), "2 350 000 so'm", "2 310 000 so'm", "−40 000 so'm"],
+    });
+  });
+
+  it("R8 baza 0 (`ratio: null`): «Nisbat» — «Oldingi 30 kunda tuzatish bo'lmagan», qolgan faktlar o'rnida", () => {
+    renderBody(fx.detail.r8NoBaseline);
+    const facts = fx.detail.r8NoBaseline.facts as AiAdvisorFactsR8;
+    expect(readFacts()).toEqual({
+      terms: ["Hafta", "Tuzatishlar", "30 kunlik o'rtacha", "Nisbat", "Qoida"],
+      values: [
+        formatAdvisorDayRange(facts.from, facts.to),
+        "4 ta · 4 qo'lda",
+        "0 ta / hafta",
+        "Oldingi 30 kunda tuzatish bo'lmagan",
+        "30 kunlik o'rtachadan 2 barobar va undan ko'p",
+      ],
+    });
+  });
+
+  it("R3 mediana 0 (`ratio_to_median: null`): o'lchagich sarlavhasi «Odatdagidan ko'p»", () => {
+    renderBody(fx.detail.r3NoRatio);
+    expect(screen.getByText("Odatdagidan ko'p")).toBeInTheDocument();
+    expect(screen.queryByText(/barobar/)).not.toBeInTheDocument();
+  });
+
+  it("ism olinmagan (`name: null`) — «#id»", () => {
+    renderBody(fx.detail.r4Nameless);
+    expect(readFacts().values[0]).toBe("#55");
+  });
+});
+
 describe("o'lchagich shkalasi", () => {
   it("qiymat yoki chegaradan 5 % ortiq, ikki muhim raqamga yaxlit (maketdagi 3 000 000 / 1 600 000)", () => {
     expect(thresholdMeterMax(2_840_000, 2_000_000)).toBe(3_000_000);

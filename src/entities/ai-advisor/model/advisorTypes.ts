@@ -1,6 +1,8 @@
 /**
- * AI maslahatchi — ogohlantirishlar R1–R8 (60PWUbgC): API shartnomasi v0.3 (`openapi-fragment.json`) va backend
- * PR #644 (`libs/common/src/ai/advisor.contract.ts` — sozlamalar, `limits`, kodlar). Maydon nomlari API'dagidek
+ * AI maslahatchi — ogohlantirishlar R1–R8 (60PWUbgC): API shartnomasi v0.3 (`openapi-fragment.json`) va backend dev
+ * (#644, #651–#657 va review tuzatishlari: `libs/common/src/ai/advisor.contract.ts` — sozlamalar, `limits`, kodlar;
+ * `finance-service/src/advisor/advisor-inputs.service.ts` — fakt va dalil shakllari; `FRONTEND_CHANGELOG.md`
+ * «AI maslahatchi (BE-5 …)» yozuvlari — v0.4 eslatmalari). Maydon nomlari API'dagidek
  * (snake_case, 1:1) — suhbat tiplaridan (`types.ts`, camelCase) farqli ataylab: 9 ta dalil va 8 ta fakt shakli
  * nomini o'zgartirmasdan o'qiladi. Normallashtirish — `advisorNormalize.ts` (tekshiradi va sukut qo'yadi).
  *
@@ -60,38 +62,44 @@ export type AiAdvisorErrorCode = (typeof AI_ADVISOR_ERROR_CODES)[keyof typeof AI
 
 // ── Havolalar (ID — bigint satr, `^\d{1,18}$`) ──────────────────────────────────────────────────────────────
 
-/** Odam; `name: null` — FE «#<id>» ko'rsatadi (§3.5). */
-export interface AiAdvisorUserRef {
+/**
+ * Nomli havola (odam, filial, market, kategoriya, karta). Backend ism snapshotini ochilish paytida oladi; olinmasa —
+ * `name: null` («ism olinmasa name: null (FE «#id» ko'rsatadi) — xato emas», §3.5) — `advisorRefName`.
+ */
+export interface AiAdvisorNamedRef {
   id: string;
   name: string | null;
 }
 
-export interface AiAdvisorBranchRef {
-  id: string;
-  name: string;
-}
+/** Odam; `name: null` — FE «#<id>» ko'rsatadi (§3.5). */
+export type AiAdvisorUserRef = AiAdvisorNamedRef;
 
-export interface AiAdvisorMarketRef {
-  id: string;
-  name: string;
-}
+export type AiAdvisorBranchRef = AiAdvisorNamedRef;
+
+export type AiAdvisorMarketRef = AiAdvisorNamedRef;
 
 export type AiAdvisorCashboxType = "main" | "branch" | "couriers" | "markets";
 
-/** Kassa: `owner_id` — `cashboxes.user_id` (main va eski qatorlar — `"0"`). */
+/**
+ * Kassa: `owner_id` — `cashboxes.user_id` (main va eski qatorlar — `"0"`). `name` — «Asosiy kassa», «Samarqand
+ * filiali kassasi», kuryer/market ismi; olinmasa `null` (`advisorCashboxName`).
+ */
 export interface AiAdvisorCashboxRef {
   type: AiAdvisorCashboxType;
   owner_id: string;
-  name: string;
+  name: string | null;
 }
 
 export type AiAdvisorSubjectKind = "branch" | "courier" | "market" | "cashbox" | "system";
 
-/** Kim/nima haqida: R1/R3/R7 cashbox · R2 courier · R4 market · R5 branch · R6/R8 system («Butun tizim»). */
+/**
+ * Kim/nima haqida: R1/R3/R7 cashbox · R2 courier · R4 market · R5 branch · R6/R8 system (`name: "Butun tizim"`,
+ * backend `AI_ADVISOR_SYSTEM_SUBJECT_NAME`). Ism olinmasa — `null`.
+ */
 export interface AiAdvisorSubject {
   kind: AiAdvisorSubjectKind;
   id: string | null;
-  name: string;
+  name: string | null;
 }
 
 /** Bo'limga havola (faqat navigatsiya): `href` — ilovaning nisbiy yo'li (`/` bilan, normallashtiruvchi tekshiradi). */
@@ -109,11 +117,18 @@ export interface AiAdvisorFactsR1 {
   trigger: "single_shortage" | "consecutive_negative";
   cashbox: AiAdvisorCashboxRef;
   branch: AiAdvisorBranchRef | null;
+  /** Ogohlantirishdagi barcha fakt-smenalar (ochiq ogohlantirishga qo'shilganlari bilan, #651 B1). */
   shifts_count: number;
   total_difference: number;
   last_difference: number;
   closed_by: AiAdvisorUserRef[];
   last_shift_id: string;
+  /**
+   * Uzluksiz manfiy qator — «N smena ketma-ket» va uning jami (birlashgan yakka kamomadlarsiz); faqat
+   * `consecutive_negative`, aks holda `null` (#651 round-2).
+   */
+  streak_length: number | null;
+  streak_total: number | null;
 }
 
 export interface AiAdvisorFactsR2 {
@@ -131,7 +146,7 @@ export type AiAdvisorExpenseScope = "category_branch" | "category";
 export interface AiAdvisorFactsR3 {
   history_id: string;
   amount: number;
-  category: { id: string; name: string };
+  category: AiAdvisorNamedRef;
   cashbox: AiAdvisorCashboxRef;
   branch: AiAdvisorBranchRef | null;
   created_by: AiAdvisorUserRef | null;
@@ -139,7 +154,8 @@ export interface AiAdvisorFactsR3 {
   median: number;
   mad: number;
   threshold: number;
-  ratio_to_median: number;
+  /** `amount / median` (bir kasr); mediana 0 bo'lsa — `null` (nisbatni aytib bo'lmaydi). */
+  ratio_to_median: number | null;
   sample_size: number;
   window_days: number;
   scope: AiAdvisorExpenseScope;
@@ -171,21 +187,53 @@ export interface AiAdvisorFactsR6 {
   net: number;
 }
 
-export type AiAdvisorReceiptMismatch = "amount" | "card";
-export type AiAdvisorOperationKind = "manual_expense" | "courier_to_hq" | "branch_to_hq";
+/**
+ * R7 farq turi: `amount` — summa (> 1 so'm), `card` — karta (chekda: qo'lda chiqim — to'lov filial kartasidan emas,
+ * o'tkazma — pul HQ kartasiga tushmagan; karta qoldig'ida — rasm boshqa kartaniki), `currency` — chek so'mda emas
+ * (faqat chek; summa solishtirilmaydi). Karta qoldig'i ⊂ {amount, card}, chek ⊂ {amount, card, currency}; hech qachon
+ * bo'sh emas (round-3).
+ */
+export const AI_ADVISOR_RECEIPT_MISMATCHES = ["amount", "card", "currency"] as const;
+export type AiAdvisorReceiptMismatch = (typeof AI_ADVISOR_RECEIPT_MISMATCHES)[number];
 
+/** Chek turi (`CASHBOX_RECEIPT_KINDS`): qo'lda chiqim yoki HQ'ga o'tkazma (kuryer / filial). */
+export const AI_ADVISOR_RECEIPT_KINDS = ["manual_expense", "courier_to_hq", "branch_to_hq"] as const;
+export type AiAdvisorReceiptKind = (typeof AI_ADVISOR_RECEIPT_KINDS)[number];
+/** `facts.operation.kind` — chek turi (`source_type` emas, round-3). */
+export type AiAdvisorOperationKind = AiAdvisorReceiptKind;
+
+/**
+ * R7 «Chek yoki karta farqi». Ikki manba bitta shaklda; manbaga xos maydonlar boshqasida `null`:
+ *   chek (`receipt`) — `receipt_kind`, `read_amount_original` + `read_currency` (valyutali chek: `read_amount`,
+ *     `difference`, `headline_amount` — `null`), `operation`; o'tkazmada `cashbox` — jo'natuvchi (kuryer / filial
+ *     kassasi), `branch` — chek filiali;
+ *   karta qoldig'i (`card_balance`) — `difference` = AI o'qigan − kiritilgan (kassir xatosi), `system_difference` =
+ *     AI o'qigan − tizimdagi (`expected_balance`; haqiqiy farq), `entered_ok`, `shift`, `card`.
+ */
 export interface AiAdvisorFactsR7 {
   source: "receipt" | "card_balance";
-  receipt_ai_enabled: boolean;
+  /** Chek turi (faqat chekda). */
+  receipt_kind: AiAdvisorReceiptKind | null;
+  /** Chek AI yoqiqmi; o'qib bo'lmasa — `null`. */
+  receipt_ai_enabled: boolean | null;
   mismatch: AiAdvisorReceiptMismatch[];
   cashbox: AiAdvisorCashboxRef;
   branch: AiAdvisorBranchRef | null;
-  entered_amount: number;
+  entered_amount: number | null;
   read_amount: number | null;
+  /** Valyutali chek: AI o'qigan summa o'z valyutasida (`read_currency`, «100 USD»). */
+  read_amount_original: number | null;
+  read_currency: string | null;
   difference: number | null;
+  /** Karta qoldig'i: tizimdagi qoldiq; eski qatorda noma'lum — `null`. */
+  expected_balance: number | null;
+  /** Karta qoldig'i: AI o'qigan − tizimdagi (`null` — `expected_balance` noma'lum). */
+  system_difference: number | null;
+  /** Karta qoldig'i: kassir kiritgani AI o'qiganiga mosmi (AI bahosi). */
+  entered_ok: boolean | null;
   operation: { history_id: string; kind: AiAdvisorOperationKind; category_name: string | null } | null;
   shift: { id: string; date: string } | null;
-  card: { id: string; name: string } | null;
+  card: AiAdvisorNamedRef | null;
   created_by: AiAdvisorUserRef | null;
   created_at: string | null;
 }
@@ -195,7 +243,8 @@ export interface AiAdvisorFactsR8 {
   to: string;
   count: number;
   baseline_weekly_avg: number;
-  ratio: number;
+  /** `count / baseline_weekly_avg` (bir kasr); oldingi 30 kunda tuzatish bo'lmagan (baza 0) — `null`. */
+  ratio: number | null;
 }
 
 export interface AiAdvisorFactsByRule {
@@ -253,6 +302,7 @@ export const AI_ADVISOR_THRESHOLD_FIELDS = [
   "days_without_payout",
   "days_without_transfer",
   "ratio",
+  "min_count",
 ] as const;
 export type AiAdvisorThresholdField = (typeof AI_ADVISOR_THRESHOLD_FIELDS)[number];
 export type AiAdvisorThresholds = Partial<Record<AiAdvisorThresholdField, number>>;
@@ -315,7 +365,8 @@ export interface AiAdvisorEvidenceExpenseStats extends AiAdvisorEvidenceBase {
     history_id: string;
     created_at: string;
     amount: number;
-    cashbox_name: string;
+    /** Qator kassasi nomi (`scope: category` — har qator o'z kassasi); olinmasa `null`. */
+    cashbox_name: string | null;
     created_by: AiAdvisorUserRef | null;
     is_trigger: boolean;
     href: string | null;
@@ -348,9 +399,20 @@ export interface AiAdvisorEvidenceReceiptCheck extends AiAdvisorEvidenceBase {
     id: string;
     ai_status: AiAdvisorReceiptAiStatus;
     flags: string[];
-    /** Xom OCR matni (mintaqasiz) — UI `date_at` ni afzal ko'radi. */
+    /** Chek turi (`facts.receipt_kind` bilan bir xil). */
+    kind: AiAdvisorReceiptKind | null;
+    /** Xom OCR matni (mintaqasiz) — UI `date_at` ni, keyin `date_day` ni afzal ko'radi. */
     date: string | null;
+    /** Sana va vaqt o'qilgan bo'lsa (ISO); faqat sana yoki valyutali chek — `null`. */
     date_at: string | null;
+    /** Faqat sana o'qilgan bo'lsa — `YYYY-MM-DD` (Toshkent kuni). */
+    date_day: string | null;
+    /** AI o'qigan summa chek valyutasida (`currency`). */
+    amount: number | null;
+    currency: string | null;
+    /** `currency_not_uzs` va boshqalar (`entities/payments/receipt.ts`). */
+    error_reason: string | null;
+    /** PII: backend doim `null` yuboradi (faqat `*_last4`). */
     recipient: string | null;
     recipient_last4: string | null;
     payer: string | null;
@@ -366,10 +428,14 @@ export interface AiAdvisorEvidenceReceiptCheck extends AiAdvisorEvidenceBase {
 export interface AiAdvisorEvidenceCardBalanceCheck extends AiAdvisorEvidenceBase {
   kind: "card_balance_check";
   shift: { id: string; date: string; closed_at: string | null };
-  card: { id: string; name: string };
+  card: AiAdvisorNamedRef;
   entered_balance: number;
   ai_read_balance: number;
+  expected_balance: number | null;
+  /** AI o'qigan − kiritilgan. */
   difference: number;
+  /** AI o'qigan − tizimdagi. */
+  system_difference: number | null;
   ai_confidence: number | null;
 }
 
@@ -381,7 +447,8 @@ export interface AiAdvisorEvidenceCorrections extends AiAdvisorEvidenceBase {
   by_kind: Record<AiAdvisorCorrectionKind, number>;
   counted_kinds: AiAdvisorCorrectionKind[];
   days: Array<{ date: string; count: number }>;
-  baseline: { window_days: number; total: number; weekly_avg: number };
+  /** `min_count`, `ratio` — ochilgan paytdagi qoida chegaralari (`count ≥ max(min_count, ratio × weekly_avg)`). */
+  baseline: { window_days: number; total: number; weekly_avg: number; min_count: number | null; ratio: number | null };
 }
 
 export type AiAdvisorEvidence =

@@ -12,7 +12,9 @@ import type {
 
 /**
  * AI maslahatchi (60PWUbgC) — vitest va e2e uchun umumiy namunalar: shartnoma v0.3 openapi misollari + maket
- * `superadmin-ai-assistant-alerts` / `-alert-dialog*` qiymatlari. Sanalar «hozir» ga nisbatan (mahalliy vaqt — testlar
+ * `superadmin-ai-assistant-alerts` / `-alert-dialog*` qiymatlari, shakli — backend dev (`advisor-inputs.service.ts`:
+ * R1 `streak_*`, R7 `receipt_kind` / valyuta / karta qoldig'i maydonlari, dalilda `recipient`/`payer` — `null` (PII),
+ * R8 `baseline.min_count`/`ratio`, sozlamada `R8.min_count`; tizim obyekti — «Butun tizim»). Sanalar «hozir» ga nisbatan (mahalliy vaqt — testlar
  * `TZ=Asia/Tashkent`): «Bugun, 14:00», «Kecha, 18:20», 2 kun oldin … — `formatDateTimeLocalized` maketdagidek nisbiy
  * ko'rsatadi. Faqat tip importi — runtime bog'liqlik yo'q (Playwright mock'i ham ishlatadi).
  *
@@ -37,7 +39,7 @@ export const advisorHttpError = (status: number, body: Record<string, unknown> =
 export const advisorNetworkError = () =>
   Object.assign(new Error("Network Error"), { isAxiosError: true, code: "ERR_NETWORK", request: {} });
 
-/** #644 `AI_ADVISOR_RULE_LIMITS` nusxasi (literal — fixture runtime importsiz). */
+/** Backend `AI_ADVISOR_RULE_LIMITS` nusxasi (#644 + R8 `min_count`, #653 review; literal — fixture runtime importsiz). */
 export const ADVISOR_FIXTURE_LIMITS: Record<AiAdvisorRuleKey, AiAdvisorRuleLimits> = {
   R1: {
     shortage_uzs: { min: 1, max: 1_000_000_000, step: 1, unit: "uzs", default: 50_000 },
@@ -56,7 +58,10 @@ export const ADVISOR_FIXTURE_LIMITS: Record<AiAdvisorRuleKey, AiAdvisorRuleLimit
   },
   R6: {},
   R7: {},
-  R8: { ratio: { min: 1.1, max: 10, step: 0.1, unit: "multiplier", default: 2 } },
+  R8: {
+    ratio: { min: 1.1, max: 10, step: 0.1, unit: "multiplier", default: 2 },
+    min_count: { min: 1, max: 50, step: 1, unit: "count", default: 3 },
+  },
 };
 
 const pad2 = (value: number) => String(value).padStart(2, "0");
@@ -159,6 +164,8 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
       last_difference: -240_000,
       closed_by: [SARDOR],
       last_shift_id: "818",
+      streak_length: 3,
+      streak_total: -445_000,
     },
     occurrences: 3,
     first_at: at(-2, 21, 0),
@@ -180,13 +187,19 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
     headline_amount: -18_000,
     facts: {
       source: "receipt",
+      receipt_kind: "manual_expense",
       receipt_ai_enabled: true,
       mismatch: ["amount", "card"],
       cashbox: { type: "branch", owner_id: "12", name: "Urgut filiali kassasi" },
       branch: { id: "12", name: "Urgut filiali" },
       entered_amount: 320_000,
       read_amount: 302_000,
+      read_amount_original: null,
+      read_currency: null,
       difference: -18_000,
+      expected_balance: null,
+      system_difference: null,
+      entered_ok: null,
       operation: { history_id: "99120", kind: "manual_expense", category_name: "Yoqilg'i" },
       shift: null,
       card: null,
@@ -484,13 +497,19 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
       truncated: false,
       receipt: {
         id: "5531",
+        kind: "manual_expense",
         ai_status: "mismatch",
         flags: ["card_mismatch"],
         date: `${day(0)} 10:52`,
         date_at: at(0, 10, 52),
-        recipient: "UzAuto Petrol, 12-shoxobcha",
+        date_day: day(0),
+        amount: 302_000,
+        currency: "UZS",
+        error_reason: null,
+        // PII: backend ismni yubormaydi (#653 review S4) — faqat oxirgi 4 raqam.
+        recipient: null,
         recipient_last4: "8840",
-        payer: "Ravshan Ortiqov",
+        payer: null,
         payer_last4: "3307",
         bank: "Hamkorbank",
         reference: "512778940112",
@@ -508,7 +527,10 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
     seen_by: SHODIYOR,
   };
 
-  /** R7 «Karta qoldig'ida farq» — smena karta tekshiruvi (chek AI'sidan oldin ham). */
+  /**
+   * R7 «Karta qoldig'ida farq» — smena karta tekshiruvi (chek AI'sidan oldin ham). Haqiqiy farq (ega qarori
+   * 2026-11-14): AI o'qigan 2 310 000 ≠ tizimdagi 2 350 000 (`system_difference` −40 000); kassir rasmdagini kiritgan.
+   */
   const r7CardDetail: AiAdvisorAlertDetail = {
     ...detailDefaults,
     id: "1038",
@@ -521,17 +543,23 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
     headline_amount: -40_000,
     facts: {
       source: "card_balance",
+      receipt_kind: null,
       receipt_ai_enabled: true,
       mismatch: ["amount"],
       cashbox: { type: "main", owner_id: "0", name: "Asosiy kassa" },
       branch: null,
-      entered_amount: 2_350_000,
+      entered_amount: 2_310_000,
       read_amount: 2_310_000,
-      difference: -40_000,
+      read_amount_original: null,
+      read_currency: null,
+      difference: 0,
+      expected_balance: 2_350_000,
+      system_difference: -40_000,
+      entered_ok: true,
       operation: null,
       shift: { id: "9001", date: day(-1) },
       card: { id: "3", name: "Humo virtual" },
-      created_by: SHODIYOR,
+      created_by: null,
       created_at: at(-1, 21, 0),
     },
     occurrences: 1,
@@ -548,9 +576,11 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
       truncated: false,
       shift: { id: "9001", date: day(-1), closed_at: at(-1, 21, 0) },
       card: { id: "3", name: "Humo virtual" },
-      entered_balance: 2_350_000,
+      entered_balance: 2_310_000,
       ai_read_balance: 2_310_000,
-      difference: -40_000,
+      expected_balance: 2_350_000,
+      difference: 0,
+      system_difference: -40_000,
       ai_confidence: 0.93,
     },
     links: [{ kind: "shift_report", href: "/payments/shifts/9001", entity_id: "9001", primary: true }],
@@ -738,7 +768,7 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
   const r8Detail: AiAdvisorAlertDetail = {
     ...r8,
     ...detailDefaults,
-    rule: { key: "R8", severity: "warning", thresholds: { ratio: 2 } },
+    rule: { key: "R8", severity: "warning", thresholds: { ratio: 2, min_count: 3 } },
     evidence: {
       kind: "corrections",
       total_rows: 7,
@@ -746,7 +776,7 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
       by_kind: { manual_correction: 0, order_rollback: 6, payment_reverse: 9, payment_edit: 5 },
       counted_kinds: ["manual_correction", "payment_reverse", "payment_edit"],
       days: Array.from({ length: 7 }, (_, index) => ({ date: day(lastMonday + index), count: [3, 1, 2, 4, 2, 1, 1][index] })),
-      baseline: { window_days: 30, total: 26, weekly_avg: 6.1 },
+      baseline: { window_days: 30, total: 26, weekly_avg: 6.1, min_count: 3, ratio: 2 },
     },
     links: [{ kind: "corrections", href: "/payments/main-cashbox", entity_id: null, primary: true }],
     seen_at: at(thisMonday, 9, 0),
@@ -784,10 +814,195 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
     seen_by: null,
   };
 
+  // ── Backend dev holatlari (v0.4 eslatmalari, #653 review, round-3) ──────────────────────────────────
+
+  /** R7 chek so'mda emas: `mismatch: ["currency"]`, summa/farq/sarlavha summasi — `null`, «100 USD». */
+  const r7CurrencyDetail: AiAdvisorAlertDetail = {
+    ...r7Detail,
+    id: "1050",
+    title: "Urgut filiali · Yoqilg'i: chek so'mda emas (100 USD), kiritilgan 1 250 000 so'm",
+    headline_amount: null,
+    facts: {
+      ...r7Detail.facts,
+      mismatch: ["currency"],
+      entered_amount: 1_250_000,
+      read_amount: null,
+      read_amount_original: 100,
+      read_currency: "USD",
+      difference: null,
+    },
+    evidence: {
+      kind: "receipt_check",
+      total_rows: 1,
+      truncated: false,
+      receipt: {
+        id: "5540",
+        kind: "manual_expense",
+        ai_status: "mismatch",
+        flags: [],
+        date: "12.10.2026",
+        date_at: null,
+        date_day: null,
+        amount: 100,
+        currency: "USD",
+        error_reason: "currency_not_uzs",
+        recipient: null,
+        recipient_last4: null,
+        payer: null,
+        payer_last4: "3307",
+        bank: null,
+        reference: null,
+        confidence: 0.81,
+      },
+      week_summary: null,
+    },
+    explanation_status: "none",
+    explanation_md: null,
+    explained_at: null,
+    explanation_requested_at: null,
+  } as AiAdvisorAlertDetail;
+
+  /**
+   * R7 kuryer → HQ o'tkazma cheki, pul HQ kartasiga tushmagan (`card`): `cashbox` — jo'natuvchi (kuryer kassasi),
+   * `operation.history_id` — jo'natuvchining chiqim oyog'i, `operation.kind` — chek turi.
+   */
+  const r7TransferDetail: AiAdvisorAlertDetail = {
+    ...r7Detail,
+    id: "1051",
+    title: "Samarqand filiali · kuryer → HQ o'tkazma cheki: Pul HQ kartasiga tushmagan",
+    branch: { id: "7", name: "Samarqand filiali" },
+    subject: { kind: "cashbox", id: "377", name: "Jasur Tursunov" },
+    headline_amount: 0,
+    facts: {
+      ...r7Detail.facts,
+      receipt_kind: "courier_to_hq",
+      mismatch: ["card"],
+      cashbox: { type: "couriers", owner_id: "377", name: "Jasur Tursunov" },
+      branch: { id: "7", name: "Samarqand filiali" },
+      entered_amount: 1_500_000,
+      read_amount: 1_500_000,
+      difference: 0,
+      operation: { history_id: "99301", kind: "courier_to_hq", category_name: null },
+      created_by: { id: "377", name: "Jasur Tursunov" },
+    },
+    evidence: {
+      kind: "receipt_check",
+      total_rows: 1,
+      truncated: false,
+      receipt: {
+        id: "5541",
+        kind: "courier_to_hq",
+        ai_status: "match",
+        flags: ["card_mismatch"],
+        date: "2026-10-20",
+        date_at: null,
+        date_day: "2026-10-20",
+        amount: 1_500_000,
+        currency: "UZS",
+        error_reason: null,
+        recipient: null,
+        recipient_last4: "1209",
+        payer: null,
+        payer_last4: null,
+        bank: "Kapitalbank",
+        reference: null,
+        confidence: 0.9,
+      },
+      week_summary: null,
+    },
+    links: [{ kind: "operation", href: "/payments/main-cashbox?history=99301", entity_id: "99301", primary: true }],
+    explanation_status: "none",
+    explanation_md: null,
+    explained_at: null,
+    explanation_requested_at: null,
+  } as AiAdvisorAlertDetail;
+
+  /** R7 karta qoldig'i — faqat karta mos emas (rasm boshqa kartaniki): `headline_amount: null`, «Farq» — «—». */
+  const r7CardOnlyDetail: AiAdvisorAlertDetail = {
+    ...r7CardDetail,
+    id: "1052",
+    headline_amount: null,
+    facts: {
+      ...r7CardDetail.facts,
+      mismatch: ["card"],
+      entered_amount: 2_350_000,
+      read_amount: 2_350_000,
+      difference: 0,
+      expected_balance: 2_350_000,
+      system_difference: 0,
+    },
+    evidence: {
+      kind: "card_balance_check",
+      total_rows: 1,
+      truncated: false,
+      shift: { id: "9001", date: day(-1), closed_at: at(-1, 21, 0) },
+      card: { id: "3", name: "Humo virtual" },
+      entered_balance: 2_350_000,
+      ai_read_balance: 2_350_000,
+      expected_balance: 2_350_000,
+      difference: 0,
+      system_difference: 0,
+      ai_confidence: 0.9,
+    },
+  } as AiAdvisorAlertDetail;
+
+  /** R8 — oldingi 30 kunda tuzatish bo'lmagan (baza 0): `ratio: null`, ochilish sababi `min_count`. */
+  const r8NoBaselineDetail: AiAdvisorAlertDetail = {
+    ...r8Detail,
+    id: "1053",
+    status: "seen",
+    title: "4 ta tuzatish",
+    facts: { from: day(lastMonday), to: day(lastSunday), count: 4, baseline_weekly_avg: 0, ratio: null },
+    evidence: {
+      kind: "corrections",
+      total_rows: 7,
+      truncated: false,
+      by_kind: { manual_correction: 4, order_rollback: 1, payment_reverse: 0, payment_edit: 0 },
+      counted_kinds: ["manual_correction", "payment_reverse", "payment_edit"],
+      days: Array.from({ length: 7 }, (_, index) => ({ date: day(lastMonday + index), count: [0, 2, 0, 1, 0, 1, 0][index] })),
+      baseline: { window_days: 30, total: 0, weekly_avg: 0, min_count: 3, ratio: 2 },
+    },
+    resolved_at: null,
+    resolved_by: null,
+    resolution_note: null,
+  } as AiAdvisorAlertDetail;
+
+  /** R3 — mediana 0: `ratio_to_median: null`. */
+  const r3NoRatioDetail: AiAdvisorAlertDetail = {
+    ...r3Detail,
+    id: "1054",
+    facts: { ...r3Detail.facts, median: 0, mad: 0, threshold: 0, ratio_to_median: null },
+  } as AiAdvisorAlertDetail;
+
+  /** R4 — ism snapshoti olinmagan (`name: null`, «ism olinmasa — FE «#id»»). */
+  const r4NamelessDetail: AiAdvisorAlertDetail = {
+    ...r4Detail,
+    id: "1055",
+    subject: { kind: "market", id: "55", name: null },
+    facts: { ...r4Detail.facts, market: { id: "55", name: null } },
+  } as AiAdvisorAlertDetail;
+
   const details: Record<string, AiAdvisorAlertDetail> = Object.fromEntries(
-    [r2Detail, r1Detail, r7Detail, r3Detail, r4Detail, r5Detail, r6Detail, r8Detail, r7CardDetail, r2NoHandoverDetail, r6WeekDetail, r1Reopened].map(
-      (detail) => [detail.id, detail],
-    ),
+    [
+      r2Detail,
+      r1Detail,
+      r7Detail,
+      r3Detail,
+      r4Detail,
+      r5Detail,
+      r6Detail,
+      r8Detail,
+      r7CardDetail,
+      r2NoHandoverDetail,
+      r6WeekDetail,
+      r1Reopened,
+      r7CurrencyDetail,
+      r7TransferDetail,
+      r7CardOnlyDetail,
+      r8NoBaselineDetail,
+      r3NoRatioDetail,
+      r4NamelessDetail,
+    ].map((detail) => [detail.id, detail]),
   );
 
   // ── Izoh, xatolar, sozlamalar ────────────────────────────────────────────────────────────────────────
@@ -816,7 +1031,7 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
     },
     noteRequired: {
       statusCode: 400,
-      message: "«Hal qilindi» uchun izoh yozing",
+      message: "«Hal qilindi» uchun izoh majburiy",
       code: "AI_ADVISOR_NOTE_INVALID",
       reason: "required",
       min_length: 3,
@@ -899,7 +1114,7 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
       R5: { enabled: true, severity: "warning", telegram: true, balance_uzs: 5_000_000, days_without_transfer: 3 },
       R6: { enabled: true, severity: "critical", telegram: true },
       R7: { enabled: true, severity: "critical", telegram: false },
-      R8: { enabled: true, severity: "warning", telegram: true, ratio: 2 },
+      R8: { enabled: true, severity: "warning", telegram: true, ratio: 2, min_count: 3 },
     },
     limits: { rules: ADVISOR_FIXTURE_LIMITS },
     telegram: null,
@@ -928,13 +1143,19 @@ export const createAdvisorFixtures = (now: Date = new Date()) => {
       r2NoHandover: r2NoHandoverDetail,
       r3: r3Detail,
       r3Budget: r3BudgetDetail,
+      r3NoRatio: r3NoRatioDetail,
       r4: r4Detail,
+      r4Nameless: r4NamelessDetail,
       r5: r5Detail,
       r6: r6Detail,
       r6Week: r6WeekDetail,
       r7: r7Detail,
       r7Card: r7CardDetail,
+      r7CardOnly: r7CardOnlyDetail,
+      r7Currency: r7CurrencyDetail,
+      r7Transfer: r7TransferDetail,
       r8: r8Detail,
+      r8NoBaseline: r8NoBaselineDetail,
     },
     explain,
     errors,

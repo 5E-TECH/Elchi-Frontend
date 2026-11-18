@@ -201,6 +201,9 @@
     "subline": {
       "system": "whole system"
     },
+    "cashbox": {
+      "main": "Main cash desk"
+    },
     "place": {
       "branchCashbox": "at {{name}} cash desk",
       "cashbox": "at {{name}}"
@@ -470,6 +473,7 @@
     "facts": {
       "label": "Key facts",
       "cashbox": "Cash desk",
+      "sender": "Sender",
       "totalShortage": "Total shortage",
       "shortage": "Shortage",
       "rule": "Rule",
@@ -482,6 +486,7 @@
       "createdBy": "Entered by",
       "shift": "Shift",
       "aiRead": "AI read",
+      "inSystem": "In the system",
       "amount": "Amount",
       "subject": "Subject",
       "courier": "Courier",
@@ -516,21 +521,30 @@
       "baseline_other": "{{count}}-day average",
       "baselineValue": "{{value}} per week",
       "ratio": "Ratio",
-      "ratioValue": "{{value}}×"
+      "ratioValue": "{{value}}×",
+      "ratioNoBaseline_one": "No corrections in the previous {{count}} day",
+      "ratioNoBaseline_other": "No corrections in the previous {{count}} days"
     },
     "receipt": {
       "title": "Receipt check",
       "amountMismatch": "Mismatch",
       "cardMismatch": "Card mismatch",
+      "currencyMismatch": "Not in UZS",
+      "transferCardMismatch": "Not on the HQ card",
       "date": "Receipt date",
       "recipient": "Recipient",
       "payer": "Payer",
       "payerNotCashbox": "not the branch cash desk card",
+      "recipientNotHq": "not the HQ card",
       "bank": "Bank",
       "reference": "Transaction number",
       "confidence": "Confidence",
       "week": "This week {{checked}} receipts were checked: {{match}} matched, {{mismatch}} mismatched, {{unreadable}} unreadable.",
       "disabled": "Receipt check is off — only the shift card balance is checked for this type.",
+      "currencyNote": "The receipt is in another currency ({{currency}}) — it could not be compared with the amount in UZS. Check the amount on the photo.",
+      "currencyNoteNoCode": "The receipt is in another currency — it could not be compared with the amount in UZS. Check the amount on the photo.",
+      "cardOther": "The photo shows another card — this is not the cash desk card balance.",
+      "enteredTypo": "the cashier entered a different number",
       "operation": {
         "manual_expense": "Manual expense",
         "courier_to_hq": "Courier handover",
@@ -547,6 +561,7 @@
       "caption": "Vertical line — rule threshold, {{threshold}}",
       "captionExpense": "Vertical line — rule threshold: median + {{multiplier}} × median deviation = {{threshold}}",
       "ratio": "{{ratio}}× the usual",
+      "ratioUnknown": "Above the usual",
       "label": "{{what}} {{value}}, rule threshold {{threshold}}"
     },
     "correctionKinds": {
@@ -622,7 +637,9 @@
       "condition": "Above the 30-day median + {{multiplier}} × median deviation",
       "titles": {
         "list": "{{place}}: {{category}} expense {{amount}} — {{ratio}}× the usual",
-        "dialog": "{{place}}: {{category}} expense {{ratio}}× the usual"
+        "dialog": "{{place}}: {{category}} expense {{ratio}}× the usual",
+        "listNoRatio": "{{place}}: {{category}} expense {{amount}} — above the usual",
+        "dialogNoRatio": "{{place}}: {{category}} expense above the usual"
       },
       "fields": {
         "mad_multiplier": "Above usual"
@@ -689,7 +706,12 @@
         "receiptAmount": "Receipt mismatch — {{what}}",
         "receiptAmountCard": "Receipt mismatch — {{what}}, card does not match",
         "receiptCard": "Card does not match — {{what}}",
-        "cardBalance": "Card balance mismatch — {{cashbox}}"
+        "cardBalance": "Card balance mismatch — {{cashbox}}",
+        "receiptAmountTransfer": "Receipt mismatch — {{what}}, money did not reach the HQ card",
+        "receiptTransfer": "Money did not reach the HQ card — {{what}}",
+        "receiptCurrency": "Receipt not in UZS — {{what}}",
+        "receiptCurrencyCard": "Receipt not in UZS — {{what}}, card does not match",
+        "receiptCurrencyTransfer": "Receipt not in UZS — {{what}}, money did not reach the HQ card"
       }
     },
     "R8": {
@@ -700,7 +722,9 @@
       "condition": "{{ratio}}× the 30-day average or more",
       "titles": {
         "list": "Week of {{range}}: {{corrections}} — {{ratio}}× the 30-day average",
-        "dialog": "Week of {{range}}: {{corrections}} — {{ratio}}× the usual"
+        "dialog": "Week of {{range}}: {{corrections}} — {{ratio}}× the usual",
+        "listNoBaseline": "Week of {{range}}: {{corrections}} — no corrections in the previous 30 days",
+        "dialogNoBaseline": "Week of {{range}}: {{corrections}} — no corrections in the previous 30 days"
       },
       "fields": {
         "ratio": "Ratio"

@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-ai-assistant-alert-dialog-hq-transfer
 import { Link } from "react-router-dom";
-import type { AiAdvisorEvidenceBranchTransfers } from "../../../../../entities/ai-advisor";
+import { advisorRefName, type AiAdvisorEvidenceBranchTransfers } from "../../../../../entities/ai-advisor";
 import { AlertFacts } from "../AlertFacts";
 import { EvidenceTable, type EvidenceColumn } from "../EvidenceTable";
 import { ThresholdMeter } from "../ThresholdMeter";
@@ -61,7 +61,7 @@ export const HqTransferBody = ({ alert }: RuleBodyProps<"R5">) => {
     <>
       <AlertFacts
         facts={[
-          { id: "branch", label: t("alerts.facts.branch"), value: facts.branch.name },
+          { id: "branch", label: t("alerts.facts.branch"), value: advisorRefName(facts.branch) },
           { id: "balance", label: t("alerts.facts.branchBalance"), value: f.money(facts.balance) },
           {
             id: "lastTransfer",

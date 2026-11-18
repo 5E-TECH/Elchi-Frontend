@@ -209,6 +209,9 @@
     "subline": {
       "system": "вся система"
     },
+    "cashbox": {
+      "main": "Основная касса"
+    },
     "place": {
       "branchCashbox": "в кассе «{{name}}»",
       "cashbox": "в «{{name}}»"
@@ -508,6 +511,7 @@
     "facts": {
       "label": "Основные данные",
       "cashbox": "Касса",
+      "sender": "Отправитель",
       "totalShortage": "Недостача итого",
       "shortage": "Недостача",
       "rule": "Правило",
@@ -520,6 +524,7 @@
       "createdBy": "Внёс",
       "shift": "Смена",
       "aiRead": "AI прочитал",
+      "inSystem": "В системе",
       "amount": "Сумма",
       "subject": "Объект",
       "courier": "Курьер",
@@ -558,21 +563,32 @@
       "baseline_other": "Среднее за {{count}} дня",
       "baselineValue": "{{value}} в неделю",
       "ratio": "Соотношение",
-      "ratioValue": "в {{value}} раза"
+      "ratioValue": "в {{value}} раза",
+      "ratioNoBaseline_one": "За предыдущий {{count}} день исправлений не было",
+      "ratioNoBaseline_few": "За предыдущие {{count}} дня исправлений не было",
+      "ratioNoBaseline_many": "За предыдущие {{count}} дней исправлений не было",
+      "ratioNoBaseline_other": "За предыдущие {{count}} дня исправлений не было"
     },
     "receipt": {
       "title": "Проверка чека",
       "amountMismatch": "Есть расхождение",
       "cardMismatch": "Карта не совпадает",
+      "currencyMismatch": "Не в сумах",
+      "transferCardMismatch": "Не поступило на карту HQ",
       "date": "Дата чека",
       "recipient": "Получатель",
       "payer": "Плательщик",
       "payerNotCashbox": "не карта кассы филиала",
+      "recipientNotHq": "не карта HQ",
       "bank": "Банк",
       "reference": "Номер транзакции",
       "confidence": "Уверенность",
       "week": "На этой неделе проверено чеков: {{checked}} — {{match}} совпали, {{mismatch}} с расхождением, {{unreadable}} не прочитаны.",
       "disabled": "Проверка чеков выключена — для этого типа проверяется только остаток карты в смене.",
+      "currencyNote": "Чек в другой валюте ({{currency}}) — сравнить с суммой в сумах не удалось. Проверьте сумму по фото.",
+      "currencyNoteNoCode": "Чек в другой валюте — сравнить с суммой в сумах не удалось. Проверьте сумму по фото.",
+      "cardOther": "На фото другая карта — это не остаток карты кассы.",
+      "enteredTypo": "кассир ввёл другое число",
       "operation": {
         "manual_expense": "Ручной расход",
         "courier_to_hq": "Сдача курьера",
@@ -589,6 +605,7 @@
       "caption": "Вертикальная линия — порог правила, {{threshold}}",
       "captionExpense": "Вертикальная линия — порог правила: медиана + {{multiplier}} × медианное отклонение = {{threshold}}",
       "ratio": "В {{ratio}} раза больше обычного",
+      "ratioUnknown": "Больше обычного",
       "label": "{{what}} {{value}}, порог правила {{threshold}}"
     },
     "correctionKinds": {
@@ -672,7 +689,9 @@
       "condition": "Больше 30-дневной медианы + {{multiplier}} × медианное отклонение",
       "titles": {
         "list": "{{place}}: расход «{{category}}» {{amount}} — в {{ratio}} раза больше обычного",
-        "dialog": "{{place}}: расход «{{category}}» в {{ratio}} раза больше обычного"
+        "dialog": "{{place}}: расход «{{category}}» в {{ratio}} раза больше обычного",
+        "listNoRatio": "{{place}}: расход «{{category}}» {{amount}} — больше обычного",
+        "dialogNoRatio": "{{place}}: расход «{{category}}» больше обычного"
       },
       "fields": {
         "mad_multiplier": "Превышение обычного"
@@ -739,7 +758,12 @@
         "receiptAmount": "Расхождение по чеку — {{what}}",
         "receiptAmountCard": "Расхождение по чеку — {{what}}, карта не совпадает",
         "receiptCard": "Карта не совпадает — {{what}}",
-        "cardBalance": "Расхождение в остатке карты — {{cashbox}}"
+        "cardBalance": "Расхождение в остатке карты — {{cashbox}}",
+        "receiptAmountTransfer": "Расхождение по чеку — {{what}}, деньги не поступили на карту HQ",
+        "receiptTransfer": "Деньги не поступили на карту HQ — {{what}}",
+        "receiptCurrency": "Чек не в сумах — {{what}}",
+        "receiptCurrencyCard": "Чек не в сумах — {{what}}, карта не совпадает",
+        "receiptCurrencyTransfer": "Чек не в сумах — {{what}}, деньги не поступили на карту HQ"
       }
     },
     "R8": {
@@ -750,7 +774,9 @@
       "condition": "В {{ratio}} раза и более выше 30-дневного среднего",
       "titles": {
         "list": "Неделя {{range}}: {{corrections}} — в {{ratio}} раза больше 30-дневного среднего",
-        "dialog": "Неделя {{range}}: {{corrections}} — в {{ratio}} раза больше обычного"
+        "dialog": "Неделя {{range}}: {{corrections}} — в {{ratio}} раза больше обычного",
+        "listNoBaseline": "Неделя {{range}}: {{corrections}} — за предыдущие 30 дней исправлений не было",
+        "dialogNoBaseline": "Неделя {{range}}: {{corrections}} — за предыдущие 30 дней исправлений не было"
       },
       "fields": {
         "ratio": "Коэффициент"

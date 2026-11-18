@@ -5,6 +5,7 @@ import {
   AI_ADVISOR_ERROR_CODES,
   AI_ADVISOR_NOTE_MAX,
   AI_ADVISOR_NOTE_MIN,
+  alertHeadlineAmount,
   alertShortLabel,
   readAdvisorError,
   type AdvisorTranslate,
@@ -82,7 +83,7 @@ export const useResolutionFlow = ({ alert, onDone }: { alert: AiAdvisorAlertDeta
       return;
     }
     const label = alertShortLabel(alert, tt);
-    const amount = alert.headline_amount;
+    const amount = alertHeadlineAmount(alert);
     const ok = await confirm({
       title: t("alerts.resolve.title"),
       description: (

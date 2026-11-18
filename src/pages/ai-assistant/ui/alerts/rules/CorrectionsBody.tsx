@@ -40,7 +40,15 @@ export const CorrectionsBody = ({ alert }: RuleBodyProps<"R8">) => {
             label: t("alerts.facts.baseline", { count: evidence?.baseline.window_days ?? 30 }),
             value: t("alerts.facts.baselineValue", { value: f.ratio(facts.baseline_weekly_avg) }),
           },
-          { id: "ratio", label: t("alerts.facts.ratio"), value: t("alerts.facts.ratioValue", { value: f.ratio(facts.ratio) }) },
+          {
+            id: "ratio",
+            label: t("alerts.facts.ratio"),
+            // Baza 0 — nisbat yo'q (`ratio: null`): «Oldingi 30 kunda tuzatish bo'lmagan», qator tashlanmaydi.
+            value:
+              facts.ratio === null
+                ? t("alerts.facts.ratioNoBaseline", { count: evidence?.baseline.window_days ?? 30 })
+                : t("alerts.facts.ratioValue", { value: f.ratio(facts.ratio) }),
+          },
           { id: "rule", label: t("alerts.facts.rule"), value: f.condition(alert) },
         ]}
       />

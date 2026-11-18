@@ -2,6 +2,8 @@ import {
   AI_ADVISOR_ALERT_STATUSES,
   AI_ADVISOR_CORRECTION_KINDS,
   AI_ADVISOR_EXPLANATION_STATUSES,
+  AI_ADVISOR_RECEIPT_KINDS,
+  AI_ADVISOR_RECEIPT_MISMATCHES,
   AI_ADVISOR_RULE_KEYS,
   AI_ADVISOR_SEVERITIES,
   AI_ADVISOR_THRESHOLD_FIELDS,
@@ -18,6 +20,7 @@ import {
   type AiAdvisorFieldLimit,
   type AiAdvisorHistoryEvent,
   type AiAdvisorLink,
+  type AiAdvisorNamedRef,
   type AiAdvisorOverview,
   type AiAdvisorOverviewBudget,
   type AiAdvisorRuleKey,
@@ -86,6 +89,12 @@ const countOf = (value: unknown, fallback = 0): number => {
 
 const boolOf = (value: unknown, fallback: boolean): boolean => (typeof value === "boolean" ? value : fallback);
 
+/** Uch qiymatli bayroq (backend `boolean | null`): boolean bo'lmasa — `null`. */
+const flagOf = (value: unknown): boolean | null => (typeof value === "boolean" ? value : null);
+
+/** Valyuta kodi / yozuvi (server qiymati, faqat chetdagi bo'sh joysiz); bo'sh — `null`. Ko'rsatishda — katta harf. */
+const currencyOf = (value: unknown): string | null => nonEmptyText(value)?.trim() ?? null;
+
 const dateTimeOf = (value: unknown): string | null => nonEmptyText(value);
 
 /** Toshkent kuni `YYYY-MM-DD` (vaqt qismi bo'lsa ham kun olinadi). */
@@ -112,31 +121,29 @@ export const safeAppHref = (value: unknown): string | null => {
   return href;
 };
 
-const userRefOf = (value: unknown): AiAdvisorUserRef | null => {
+/** Ism snapshoti: bo'sh / yo'q — `null` (backend ism olinmasa `null` yuboradi — FE «#id», xato emas). */
+const nameOf = (value: unknown): string | null => nonEmptyText(value)?.trim() ?? null;
+
+/** Nomli havola (odam, filial, market, kategoriya, karta): `id` majburiy, `name` — `null` bo'lishi mumkin. */
+const namedRefOf = (value: unknown): AiAdvisorNamedRef | null => {
   const raw = asRecord(value);
   const id = idOf(raw?.id);
   if (!raw || !id) return null;
-  return { id, name: nonEmptyText(raw.name)?.trim() ?? null };
+  return { id, name: nameOf(raw.name) };
 };
 
-const namedRefOf = (value: unknown): { id: string; name: string } | null => {
-  const raw = asRecord(value);
-  const id = idOf(raw?.id);
-  const name = textOf(raw?.name);
-  if (!raw || !id || name === null) return null;
-  return { id, name: name.trim() };
-};
+const userRefOf = (value: unknown): AiAdvisorUserRef | null => namedRefOf(value);
 
 const branchRefOf = (value: unknown): AiAdvisorBranchRef | null => namedRefOf(value);
 
 const CASHBOX_TYPES = ["main", "branch", "couriers", "markets"] as const;
 
+/** Kassa: `type` majburiy; `name` olinmasa — `null` (`advisorCashboxName`). */
 const cashboxRefOf = (value: unknown): AiAdvisorCashboxRef | null => {
   const raw = asRecord(value);
   const type = oneOf(raw?.type, CASHBOX_TYPES);
-  const name = textOf(raw?.name);
-  if (!raw || !type || name === null) return null;
-  return { type, owner_id: idOf(raw.owner_id) ?? "0", name: name.trim() };
+  if (!raw || !type) return null;
+  return { type, owner_id: idOf(raw.owner_id) ?? "0", name: nameOf(raw.name) };
 };
 
 const SUBJECT_KINDS = ["branch", "courier", "market", "cashbox", "system"] as const;
@@ -146,7 +153,7 @@ const subjectOf = (value: unknown): AiAdvisorSubject => {
   return {
     kind: oneOf(raw?.kind, SUBJECT_KINDS) ?? "system",
     id: idOf(raw?.id),
-    name: textOf(raw?.name)?.trim() ?? "",
+    name: nameOf(raw?.name),
   };
 };
 
@@ -180,6 +187,8 @@ const FACTS: { [R in AiAdvisorRuleKey]: FactsNormalizer<R> } = {
       last_difference: last,
       closed_by: asArray(raw.closed_by).map(userRefOf).filter(defined),
       last_shift_id: idOf(raw.last_shift_id) ?? "",
+      streak_length: numOf(raw.streak_length) === null ? null : countOf(raw.streak_length),
+      streak_total: numOf(raw.streak_total),
     };
   },
   R2: (raw) => {
@@ -202,8 +211,7 @@ const FACTS: { [R in AiAdvisorRuleKey]: FactsNormalizer<R> } = {
     const amount = numOf(raw.amount);
     const category = namedRefOf(raw.category);
     const cashbox = cashboxRefOf(raw.cashbox);
-    const ratio = numOf(raw.ratio_to_median);
-    if (amount === null || !category || !cashbox || ratio === null) return null;
+    if (amount === null || !category || !cashbox) return null;
     return {
       history_id: idOf(raw.history_id) ?? "",
       amount,
@@ -215,7 +223,7 @@ const FACTS: { [R in AiAdvisorRuleKey]: FactsNormalizer<R> } = {
       median: numOf(raw.median) ?? 0,
       mad: numOf(raw.mad) ?? 0,
       threshold: numOf(raw.threshold) ?? 0,
-      ratio_to_median: ratio,
+      ratio_to_median: numOf(raw.ratio_to_median),
       sample_size: countOf(raw.sample_size),
       window_days: countOf(raw.window_days, 30),
       scope: oneOf(raw.scope, ["category_branch", "category"] as const) ?? "category_branch",
@@ -258,23 +266,30 @@ const FACTS: { [R in AiAdvisorRuleKey]: FactsNormalizer<R> } = {
   R7: (raw) => {
     const source = oneOf(raw.source, ["receipt", "card_balance"] as const);
     const cashbox = cashboxRefOf(raw.cashbox);
-    const entered = numOf(raw.entered_amount);
-    if (!source || !cashbox || entered === null) return null;
+    if (!source || !cashbox) return null;
+    const receiptKind = oneOf(raw.receipt_kind, AI_ADVISOR_RECEIPT_KINDS);
     const operation = asRecord(raw.operation);
-    const operationKind = oneOf(operation?.kind, ["manual_expense", "courier_to_hq", "branch_to_hq"] as const);
+    // `operation.kind` — chek turi (round-3); eski / boshqa qiymatda — `receipt_kind` zaxirasi (#654 round-2).
+    const operationKind = oneOf(operation?.kind, AI_ADVISOR_RECEIPT_KINDS) ?? receiptKind;
     const shift = asRecord(raw.shift);
     const shiftId = idOf(shift?.id);
     return {
       source,
-      receipt_ai_enabled: boolOf(raw.receipt_ai_enabled, true),
-      mismatch: asArray(raw.mismatch)
-        .map((item) => oneOf(item, ["amount", "card"] as const))
-        .filter(defined),
+      receipt_kind: receiptKind,
+      receipt_ai_enabled: flagOf(raw.receipt_ai_enabled),
+      mismatch: [
+        ...new Set(asArray(raw.mismatch).map((item) => oneOf(item, AI_ADVISOR_RECEIPT_MISMATCHES)).filter(defined)),
+      ],
       cashbox,
       branch: branchRefOf(raw.branch),
-      entered_amount: entered,
+      entered_amount: numOf(raw.entered_amount),
       read_amount: numOf(raw.read_amount),
+      read_amount_original: numOf(raw.read_amount_original),
+      read_currency: currencyOf(raw.read_currency),
       difference: numOf(raw.difference),
+      expected_balance: numOf(raw.expected_balance),
+      system_difference: numOf(raw.system_difference),
+      entered_ok: flagOf(raw.entered_ok),
       operation:
         operation && operationKind
           ? {
@@ -293,14 +308,14 @@ const FACTS: { [R in AiAdvisorRuleKey]: FactsNormalizer<R> } = {
     const from = dayOf(raw.from);
     const to = dayOf(raw.to);
     const count = numOf(raw.count);
-    const ratio = numOf(raw.ratio);
-    if (!from || !to || count === null || ratio === null) return null;
+    if (!from || !to || count === null) return null;
     return {
       from,
       to,
       count: Math.max(0, Math.trunc(count)),
       baseline_weekly_avg: numOf(raw.baseline_weekly_avg) ?? 0,
-      ratio,
+      // Baza 0 (oldingi 30 kunda tuzatish bo'lmagan) — `null`, fakt tashlanmaydi (#653 review).
+      ratio: numOf(raw.ratio),
     };
   },
 };
@@ -479,7 +494,7 @@ const EVIDENCE: Record<AiAdvisorEvidence["kind"], EvidenceNormalizer> = {
           history_id: idOf(row.history_id) ?? "",
           created_at: dateTimeOf(row.created_at) ?? "",
           amount,
-          cashbox_name: textOf(row.cashbox_name)?.trim() ?? "",
+          cashbox_name: nameOf(row.cashbox_name),
           created_by: userRefOf(row.created_by),
           is_trigger: row.is_trigger === true,
           href: safeAppHref(row.href),
@@ -572,10 +587,15 @@ const EVIDENCE: Record<AiAdvisorEvidence["kind"], EvidenceNormalizer> = {
       ...evidenceBase(raw, 1),
       receipt: {
         id,
+        kind: oneOf(receipt.kind, AI_ADVISOR_RECEIPT_KINDS),
         ai_status: oneOf(receipt.ai_status, RECEIPT_AI_STATUSES) ?? "mismatch",
         flags: asArray(receipt.flags).filter((flag): flag is string => typeof flag === "string"),
         date: nonEmptyText(receipt.date),
         date_at: dateTimeOf(receipt.date_at),
+        date_day: dayOf(receipt.date_day),
+        amount: numOf(receipt.amount),
+        currency: currencyOf(receipt.currency),
+        error_reason: nonEmptyText(receipt.error_reason)?.trim() ?? null,
         recipient: nonEmptyText(receipt.recipient)?.trim() ?? null,
         recipient_last4: last4Of(receipt.recipient_last4),
         payer: nonEmptyText(receipt.payer)?.trim() ?? null,
@@ -612,7 +632,9 @@ const EVIDENCE: Record<AiAdvisorEvidence["kind"], EvidenceNormalizer> = {
       card,
       entered_balance: entered,
       ai_read_balance: read,
+      expected_balance: numOf(raw.expected_balance),
       difference: numOf(raw.difference) ?? read - entered,
+      system_difference: numOf(raw.system_difference),
       ai_confidence: confidence === null ? null : Math.min(1, Math.max(0, confidence)),
     };
   },
@@ -642,6 +664,8 @@ const EVIDENCE: Record<AiAdvisorEvidence["kind"], EvidenceNormalizer> = {
         window_days: countOf(baseline?.window_days, 30),
         total: countOf(baseline?.total),
         weekly_avg: numOf(baseline?.weekly_avg) ?? 0,
+        min_count: numOf(baseline?.min_count),
+        ratio: numOf(baseline?.ratio),
       },
     };
   },

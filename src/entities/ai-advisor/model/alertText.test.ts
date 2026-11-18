@@ -4,11 +4,13 @@ import { createAdvisorFixtures } from "../../../test/aiAdvisorFixtures";
 import type { AiAdvisorAlertListItem } from "./advisorTypes";
 import {
   addAdvisorDays,
+  advisorCashboxName,
   advisorDayOf,
   advisorDaysBetween,
   advisorIsoWeekday,
   advisorUserName,
   alertDialogTitle,
+  alertHeadlineAmount,
   alertInlineName,
   alertListTitle,
   alertShortLabel,
@@ -36,8 +38,22 @@ const t = (lng: string) => i18n.getFixedT(lng, "aiAdvisor") as unknown as T;
 const fx = createAdvisorFixtures(new Date(2026, 9, 23, 15, 0));
 const LANGS = ["uz", "ru", "en"] as const;
 
-/** Barcha variantlar: ro'yxatdagi 8 ta + tafsilot variantlari (R2 muddat, R6 hafta, R7 karta). */
-const variants: AiAdvisorAlertListItem[] = [...fx.items, fx.detail.r2NoHandover, fx.detail.r6Week, fx.detail.r7Card];
+/**
+ * Barcha variantlar: ro'yxatdagi 8 ta + tafsilot variantlari (R2 muddat, R6 hafta, R7 karta) + backend dev holatlari
+ * (R7 valyuta / o'tkazma / faqat karta, R8 baza 0, R3 mediana 0, nomsiz market).
+ */
+const variants: AiAdvisorAlertListItem[] = [
+  ...fx.items,
+  fx.detail.r2NoHandover,
+  fx.detail.r6Week,
+  fx.detail.r7Card,
+  fx.detail.r7Currency,
+  fx.detail.r7Transfer,
+  fx.detail.r7CardOnly,
+  fx.detail.r8NoBaseline,
+  fx.detail.r3NoRatio,
+  fx.detail.r4Nameless,
+];
 
 beforeAll(async () => {
   await i18n.loadLanguages(["ru", "en"]);
@@ -108,6 +124,86 @@ describe("oyna sarlavhasi (maket -alert-dialog*)", () => {
     expect(title(fx.detail.r7)).toBe("Chekda farq bor — Urgut filiali yoqilg'i xarajati");
     expect(title(fx.detail.r7Card)).toBe("Karta qoldig'ida farq — Asosiy kassa");
     expect(title(fx.detail.r8)).toBe("12–18 oktabr haftasida 14 ta tuzatish — odatdagidan 2,3 barobar ko'p");
+  });
+});
+
+describe("backend dev holatlari (shartnoma v0.4 eslatmalari, #653 review, round-3)", () => {
+  const uz = t("uz");
+
+  it("R7 chek so'mda emas — «Chek so'mda emas — …», summa yo'q", () => {
+    expect(alertListTitle(fx.detail.r7Currency, uz, "uz")).toBe("Chek so'mda emas — Urgut filiali yoqilg'i xarajati");
+    expect(alertDialogTitle(fx.detail.r7Currency, uz, "uz")).toBe("Chek so'mda emas — Urgut filiali yoqilg'i xarajati");
+    const withCard = {
+      ...fx.detail.r7Currency,
+      facts: { ...(fx.detail.r7Currency.facts as object), mismatch: ["currency", "card"] },
+    } as unknown as AiAdvisorAlertListItem;
+    expect(alertListTitle(withCard, uz, "uz")).toBe("Chek so'mda emas — Urgut filiali yoqilg'i xarajati, karta mos emas");
+  });
+
+  it("R7 o'tkazma cheki: karta farqi — «Pul HQ kartasiga tushmagan» (chek turi — `operation.kind` / `receipt_kind`)", () => {
+    expect(alertListTitle(fx.detail.r7Transfer, uz, "uz")).toBe("Pul HQ kartasiga tushmagan — Samarqand filiali kuryer topshirig'i");
+    const withAmount = {
+      ...fx.detail.r7Transfer,
+      facts: { ...(fx.detail.r7Transfer.facts as object), mismatch: ["amount", "card"] },
+    } as unknown as AiAdvisorAlertListItem;
+    expect(alertListTitle(withAmount, uz, "uz")).toBe(
+      "Chekda farq bor — Samarqand filiali kuryer topshirig'i, pul HQ kartasiga tushmagan",
+    );
+    // `operation` yo'q — chek turi `receipt_kind` dan.
+    const noOperation = {
+      ...fx.detail.r7Transfer,
+      facts: { ...(fx.detail.r7Transfer.facts as object), operation: null, receipt_kind: "branch_to_hq" },
+    } as unknown as AiAdvisorAlertListItem;
+    expect(alertListTitle(noOperation, uz, "uz")).toBe("Pul HQ kartasiga tushmagan — Samarqand filiali HQ'ga o'tkazma");
+  });
+
+  it("R8 baza 0 (`ratio: null`) — «oldingi 30 kunda tuzatish bo'lmagan», fakt tashlanmaydi", () => {
+    expect(alertListTitle(fx.detail.r8NoBaseline, uz, "uz")).toBe(
+      "12–18 oktabr haftasida 4 ta tuzatish — oldingi 30 kunda tuzatish bo'lmagan",
+    );
+    expect(alertDialogTitle(fx.detail.r8NoBaseline, uz, "uz")).toBe(
+      "12–18 oktabr haftasida 4 ta tuzatish — oldingi 30 kunda tuzatish bo'lmagan",
+    );
+  });
+
+  it("R3 mediana 0 (`ratio_to_median: null`) — «odatdagidan ko'p», sonsiz", () => {
+    expect(alertListTitle(fx.detail.r3NoRatio, uz, "uz")).toBe("Farg'ona filiali: yoqilg'i xarajati 1 450 000 so'm — odatdagidan ko'p");
+    expect(alertDialogTitle(fx.detail.r3NoRatio, uz, "uz")).toBe("Farg'ona filiali: yoqilg'i xarajati odatdagidan ko'p");
+  });
+
+  it("R1: «N smena ketma-ket» — uzluksiz qator (`streak_*`), jami fakt-smenalar emas", () => {
+    const merged = {
+      ...fx.byRule.R1,
+      facts: { ...(fx.byRule.R1.facts as object), shifts_count: 4, total_difference: -545_000, streak_length: 3, streak_total: -445_000 },
+    } as AiAdvisorAlertListItem;
+    expect(alertListTitle(merged, uz, "uz")).toBe("Samarqand filiali kassasida 3 smena ketma-ket kamomad: −445 000 so'm");
+  });
+
+  it("ism olinmagan (`name: null`) — «#id»; nomsiz asosiy kassa — «Asosiy kassa»", () => {
+    expect(alertListTitle(fx.detail.r4Nameless, uz, "uz")).toBe("#55 — 9 kundan beri to'lov yo'q, qarz 3 120 000 so'm");
+    expect(subjectName(fx.detail.r4Nameless, uz)).toBe("#55");
+    expect(alertShortLabel(fx.detail.r4Nameless, uz)).toBe("#55 · market to'lovi kechikmoqda");
+    expect(advisorCashboxName({ type: "main", owner_id: "0", name: null }, uz)).toBe("Asosiy kassa");
+    expect(advisorCashboxName({ type: "branch", owner_id: "7", name: null }, uz)).toBe("#7");
+    expect(advisorCashboxName({ type: "couriers", owner_id: "377", name: " Jasur Tursunov " }, uz)).toBe("Jasur Tursunov");
+    const r5 = fx.byRule.R5;
+    const namelessBranch = {
+      ...r5,
+      branch: { id: "12", name: null },
+      facts: { ...(r5.facts as object), branch: { id: "12", name: null } },
+    } as AiAdvisorAlertListItem;
+    expect(alertListTitle(namelessBranch, uz, "uz")).toBe("#12 kassasida 6 400 000 so'm — HQ'ga 4 kundan beri o'tkazma yo'q");
+    expect(alertSubline(namelessBranch, uz)).toBe("HQ'ga o'tkazma kechikmoqda · #12");
+  });
+
+  it("tasdiqdagi summa: R7 summa farqisiz (karta / valyuta) — `null` («0 so'm» emas)", () => {
+    expect(alertHeadlineAmount(fx.detail.r7Transfer)).toBeNull();
+    expect(alertHeadlineAmount(fx.detail.r7CardOnly)).toBeNull();
+    expect(alertHeadlineAmount(fx.detail.r7Currency)).toBeNull();
+    expect(alertHeadlineAmount(fx.detail.r7)).toBe(-18_000);
+    expect(alertHeadlineAmount(fx.detail.r7Card)).toBe(-40_000);
+    expect(alertHeadlineAmount(fx.detail.r1)).toBe(-445_000);
+    expect(alertHeadlineAmount(fx.detail.r8)).toBeNull();
   });
 });
 
@@ -257,8 +353,9 @@ describe("ru / en — to'liq tarjima", () => {
   it("ruscha ko'plik: 1 смена / 3 смены / 5 смен, 4 дня / 9 дней; inglizcha 1 day / 3 shifts", () => {
     const ru = t("ru");
     const r1 = fx.byRule.R1;
+    // «N smena ketma-ket» — uzluksiz qator (`streak_length`), jami fakt-smenalar (`shifts_count`) bilan bir xil.
     const withShifts = (n: number) =>
-      ({ ...r1, facts: { ...(r1.facts as object), shifts_count: n } }) as AiAdvisorAlertListItem;
+      ({ ...r1, facts: { ...(r1.facts as object), shifts_count: n, streak_length: n } }) as AiAdvisorAlertListItem;
     expect(alertListTitle(withShifts(3), ru, "ru")).toBe("Недостача 3 смены подряд в кассе «Samarqand filiali»: −445 000 сум");
     expect(alertListTitle(withShifts(5), ru, "ru")).toContain("5 смен подряд");
     expect(alertListTitle(fx.byRule.R2, ru, "ru")).toBe("У Jasur Tursunov в кассе 2 840 000 сум — не сдаёт 4 дня");

@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-ai-assistant-alert-dialog-market-payout
-import { advisorDaysBetween, formatAdvisorDayRelative } from "../../../../../entities/ai-advisor";
+import { advisorDaysBetween, advisorRefName, formatAdvisorDayRelative } from "../../../../../entities/ai-advisor";
 import { AlertFacts } from "../AlertFacts";
 import { EvidenceTable, type EvidenceColumn } from "../EvidenceTable";
 import { useRuleFormat } from "./ruleKit";
@@ -54,7 +54,7 @@ export const MarketPayoutBody = ({ alert }: RuleBodyProps<"R4">) => {
     <>
       <AlertFacts
         facts={[
-          { id: "market", label: t("alerts.facts.market"), value: facts.market.name },
+          { id: "market", label: t("alerts.facts.market"), value: advisorRefName(facts.market) },
           { id: "debt", label: t("alerts.facts.debt"), value: f.money(facts.debt) },
           {
             id: "lastPayout",

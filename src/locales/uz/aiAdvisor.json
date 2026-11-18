@@ -201,6 +201,9 @@
     "subline": {
       "system": "butun tizim"
     },
+    "cashbox": {
+      "main": "Asosiy kassa"
+    },
     "place": {
       "branchCashbox": "{{name}} kassasida",
       "cashbox": "{{name}}da"
@@ -470,6 +473,7 @@
     "facts": {
       "label": "Asosiy ma'lumotlar",
       "cashbox": "Kassa",
+      "sender": "Jo'natuvchi",
       "totalShortage": "Jami kamomad",
       "shortage": "Kamomad",
       "rule": "Qoida",
@@ -482,6 +486,7 @@
       "createdBy": "Kiritgan",
       "shift": "Smena",
       "aiRead": "AI o'qigan",
+      "inSystem": "Tizimda",
       "amount": "Summa",
       "subject": "Joy",
       "courier": "Kuryer",
@@ -516,21 +521,30 @@
       "baseline_other": "{{count}} kunlik o'rtacha",
       "baselineValue": "{{value}} ta / hafta",
       "ratio": "Nisbat",
-      "ratioValue": "{{value}} barobar"
+      "ratioValue": "{{value}} barobar",
+      "ratioNoBaseline_one": "Oldingi {{count}} kunda tuzatish bo'lmagan",
+      "ratioNoBaseline_other": "Oldingi {{count}} kunda tuzatish bo'lmagan"
     },
     "receipt": {
       "title": "Chek tekshiruvi",
       "amountMismatch": "Farq bor",
       "cardMismatch": "Karta mos emas",
+      "currencyMismatch": "So'mda emas",
+      "transferCardMismatch": "HQ kartasiga tushmagan",
       "date": "Chek sanasi",
       "recipient": "Oluvchi",
       "payer": "To'lovchi",
       "payerNotCashbox": "filial kassasi kartasi emas",
+      "recipientNotHq": "HQ kartasi emas",
       "bank": "Bank",
       "reference": "Tranzaksiya raqami",
       "confidence": "Ishonch",
       "week": "Bu hafta {{checked}} ta chek tekshirildi: {{match}} mos, {{mismatch}} farq bor, {{unreadable}} o'qib bo'lmadi.",
       "disabled": "Chek tekshiruvi yoqilmagan — bu turda faqat smena karta qoldig'i tekshiriladi.",
+      "currencyNote": "Chek boshqa valyutada ({{currency}}) — so'mdagi summa bilan solishtirib bo'lmadi. Summani rasmdan tekshiring.",
+      "currencyNoteNoCode": "Chek boshqa valyutada — so'mdagi summa bilan solishtirib bo'lmadi. Summani rasmdan tekshiring.",
+      "cardOther": "Rasm boshqa kartaniki — kassa kartasining qoldig'i emas.",
+      "enteredTypo": "kassir boshqa raqam kiritgan",
       "operation": {
         "manual_expense": "Qo'lda chiqim",
         "courier_to_hq": "Kuryer topshirig'i",
@@ -547,6 +561,7 @@
       "caption": "Tik chiziq — qoida chegarasi, {{threshold}}",
       "captionExpense": "Tik chiziq — qoida chegarasi: mediana + {{multiplier}} × mediana og'ishi = {{threshold}}",
       "ratio": "Odatdagidan {{ratio}} barobar",
+      "ratioUnknown": "Odatdagidan ko'p",
       "label": "{{what}} {{value}}, qoida chegarasi {{threshold}}"
     },
     "correctionKinds": {
@@ -622,7 +637,9 @@
       "condition": "30 kunlik mediana + {{multiplier}} × mediana og'ishidan ko'p",
       "titles": {
         "list": "{{place}}: {{category}} xarajati {{amount}} — odatdagidan {{ratio}} barobar",
-        "dialog": "{{place}}: {{category}} xarajati odatdagidan {{ratio}} barobar ko'p"
+        "dialog": "{{place}}: {{category}} xarajati odatdagidan {{ratio}} barobar ko'p",
+        "listNoRatio": "{{place}}: {{category}} xarajati {{amount}} — odatdagidan ko'p",
+        "dialogNoRatio": "{{place}}: {{category}} xarajati odatdagidan ko'p"
       },
       "fields": {
         "mad_multiplier": "Odatdagidan oshish"
@@ -689,7 +706,12 @@
         "receiptAmount": "Chekda farq bor — {{what}}",
         "receiptAmountCard": "Chekda farq bor — {{what}}, karta mos emas",
         "receiptCard": "Karta mos emas — {{what}}",
-        "cardBalance": "Karta qoldig'ida farq — {{cashbox}}"
+        "cardBalance": "Karta qoldig'ida farq — {{cashbox}}",
+        "receiptAmountTransfer": "Chekda farq bor — {{what}}, pul HQ kartasiga tushmagan",
+        "receiptTransfer": "Pul HQ kartasiga tushmagan — {{what}}",
+        "receiptCurrency": "Chek so'mda emas — {{what}}",
+        "receiptCurrencyCard": "Chek so'mda emas — {{what}}, karta mos emas",
+        "receiptCurrencyTransfer": "Chek so'mda emas — {{what}}, pul HQ kartasiga tushmagan"
       }
     },
     "R8": {
@@ -700,7 +722,9 @@
       "condition": "30 kunlik o'rtachadan {{ratio}} barobar va undan ko'p",
       "titles": {
         "list": "{{range}} haftasida {{corrections}} — 30 kunlik o'rtachadan {{ratio}} barobar",
-        "dialog": "{{range}} haftasida {{corrections}} — odatdagidan {{ratio}} barobar ko'p"
+        "dialog": "{{range}} haftasida {{corrections}} — odatdagidan {{ratio}} barobar ko'p",
+        "listNoBaseline": "{{range}} haftasida {{corrections}} — oldingi 30 kunda tuzatish bo'lmagan",
+        "dialogNoBaseline": "{{range}} haftasida {{corrections}} — oldingi 30 kunda tuzatish bo'lmagan"
       },
       "fields": {
         "ratio": "Nisbat"

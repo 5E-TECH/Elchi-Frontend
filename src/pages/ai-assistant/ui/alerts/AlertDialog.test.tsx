@@ -272,8 +272,9 @@ describe("R7 «Chek yoki karta farqi» (maket `superadmin-ai-assistant-alert-dia
     ]);
     expect(within(check).getAllByRole("definition").map((node) => node.textContent)).toEqual([
       "Bugun, 10:52",
-      "UzAuto Petrol, 12-shoxobcha · ··8840",
-      "Ravshan Ortiqov · ··3307filial kassasi kartasi emas",
+      // PII: backend oluvchi / to'lovchi ismini yubormaydi — faqat oxirgi 4 raqam.
+      "··8840",
+      "··3307filial kassasi kartasi emas",
       "Hamkorbank",
       "512 778 940 112",
       "89%",
@@ -289,15 +290,16 @@ describe("R7 «Chek yoki karta farqi» (maket `superadmin-ai-assistant-alert-dia
     );
   });
 
-  it("karta qoldig'i: qatorlar «Asosiy kassa · Humo virtual», Smena, Kiritilgan, «AI o'qigan», Farq; chek AI o'chiq — izoh", async () => {
+  it("karta qoldig'i: qatorlar «Asosiy kassa · Humo virtual», Smena, Tizimda, «AI o'qigan», Farq (tizimga nisbatan); chek AI o'chiq — izoh", async () => {
     replyDetail({ ...fx.detail.r7Card, facts: { ...(fx.detail.r7Card.facts as object), receipt_ai_enabled: false } } as AiAdvisorAlertDetail);
     open("1038");
     const panel = await findDialog("Karta qoldig'ida farq — Asosiy kassa");
 
+    // Haqiqiy farq — AI o'qigan − tizimdagi (`system_difference`); kassir rasmdagini kiritgan — «Kiritilgan» yo'q.
     expect(within(panel).getAllByRole("term").map((node) => node.textContent)).toEqual([
       "Kassa",
       "Smena",
-      "Kiritilgan",
+      "Tizimda",
       "AI o'qigan",
       "Farq",
     ]);

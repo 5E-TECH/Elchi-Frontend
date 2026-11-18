@@ -7,10 +7,11 @@ import type {
   AiAdvisorCashboxRef,
   AiAdvisorFactsR7,
   AiAdvisorKnownAlert,
+  AiAdvisorNamedRef,
+  AiAdvisorReceiptKind,
   AiAdvisorRuleKey,
   AiAdvisorThresholdField,
   AiAdvisorThresholds,
-  AiAdvisorUserRef,
 } from "./advisorTypes";
 
 /**
@@ -130,9 +131,16 @@ export const formatAdvisorDayRange = (from: string, to: string): string => {
   return `${pad2(a.d)}–${pad2(b.d)}.${pad2(b.m)}.${b.y}`;
 };
 
+/** Nomli havola (filial, market, kategoriya, karta): ism yoki «#<id>» — backend ism olinmasa `null` (§3.5). */
+export const advisorRefName = (ref: AiAdvisorNamedRef | null | undefined): string =>
+  ref ? (ref.name?.trim() || `#${ref.id}`) : "";
+
 /** Odam: ism yoki «#<id>» (§3.5). */
-export const advisorUserName = (user: AiAdvisorUserRef | null | undefined): string =>
-  user ? (user.name?.trim() || `#${user.id}`) : "";
+export const advisorUserName = advisorRefName;
+
+/** Kassa nomi: server nomi; olinmasa — asosiy kassa «Asosiy kassa», boshqasi «#<egasi>». */
+export const advisorCashboxName = (cashbox: AiAdvisorCashboxRef, t: AdvisorTranslate): string =>
+  cashbox.name?.trim() || (cashbox.type === "main" ? t("alerts.cashbox.main") : `#${cashbox.owner_id}`);
 
 /** Kim/nima haqida: `branch?.name ?? subject.name`; tizim — «Butun tizim»; nomsiz — «#<id>». */
 export const subjectName = (alert: Pick<AiAdvisorAlertListItem, "id" | "branch" | "subject">, t: AdvisorTranslate): string => {
@@ -161,29 +169,50 @@ export const alertInlineName = (alert: AiAdvisorAlertListItem, t: AdvisorTransla
   return isCardBalance(alert) ? t("rules.R7.inlineCard") : t(`rules.${alert.rule_key}.inline`);
 };
 
+/**
+ * Sarlavha summasi (tasdiq oynasi): R7 da summa farqi bo'lmasa (faqat karta yoki valyuta) — `null`: backend chekda
+ * `headline_amount` ga farqni (0 ham) qo'yadi, karta qoldig'ida — `null`; «0 so'm» ko'rsatilmaydi.
+ */
+export const alertHeadlineAmount = (alert: AiAdvisorAlertListItem): number | null =>
+  isKnown(alert) && alert.rule_key === "R7" && !alert.facts.mismatch.includes("amount") ? null : alert.headline_amount;
+
 /** Toast va tasdiq qatori: «Samarqand filiali · smena kamomadi». */
 export const alertShortLabel = (alert: AiAdvisorAlertListItem, t: AdvisorTranslate): string =>
   `${subjectName(alert, t)} · ${alertInlineName(alert, t)}`;
 
 /** Kassa joyi: filial — «Samarqand filiali kassasida», filialsiz (Asosiy) — «Asosiy kassada». */
 const cashboxPlace = (cashbox: AiAdvisorCashboxRef, branch: AiAdvisorBranchRef | null, t: AdvisorTranslate) =>
-  branch?.name ? t("alerts.place.branchCashbox", { name: branch.name }) : t("alerts.place.cashbox", { name: cashbox.name });
+  branch?.name
+    ? t("alerts.place.branchCashbox", { name: branch.name })
+    : t("alerts.place.cashbox", { name: advisorCashboxName(cashbox, t) });
 
 /** Egasi nomi (gap boshida): filial yoki kassa nomi. */
-const ownerName = (cashbox: AiAdvisorCashboxRef, branch: AiAdvisorBranchRef | null) => branch?.name || cashbox.name;
+const ownerName = (cashbox: AiAdvisorCashboxRef, branch: AiAdvisorBranchRef | null, t: AdvisorTranslate) =>
+  branch?.name || advisorCashboxName(cashbox, t);
 
-/** R7 chek: «Urgut filiali yoqilg'i xarajati». */
+/** R7 chek turi: `operation.kind` (round-3 — chek turi), yo'q bo'lsa `receipt_kind`. Karta qoldig'ida — `null`. */
+export const receiptKindOf = (facts: Pick<AiAdvisorFactsR7, "operation" | "receipt_kind">): AiAdvisorReceiptKind | null =>
+  facts.operation?.kind ?? facts.receipt_kind;
+
+/** HQ'ga o'tkazma cheki (kuryer / filial): karta farqi — «Pul HQ kartasiga tushmagan», `cashbox` — jo'natuvchi. */
+export const isTransferReceipt = (facts: Pick<AiAdvisorFactsR7, "operation" | "receipt_kind">): boolean => {
+  const kind = receiptKindOf(facts);
+  return kind === "courier_to_hq" || kind === "branch_to_hq";
+};
+
+/** R7 chek: «Urgut filiali yoqilg'i xarajati», «Urgut filiali kuryer topshirig'i». */
 const receiptSubject = (facts: AiAdvisorFactsR7, branch: AiAdvisorBranchRef | null, t: AdvisorTranslate) => {
-  const place = ownerName(facts.cashbox, facts.branch ?? branch);
-  const operation = facts.operation;
-  if (!operation) return place;
+  const place = ownerName(facts.cashbox, facts.branch ?? branch, t);
+  const kind = receiptKindOf(facts);
+  if (!kind) return place;
+  const category = facts.operation?.category_name;
   const label =
-    operation.kind === "courier_to_hq"
+    kind === "courier_to_hq"
       ? t("alerts.operation.courierToHq")
-      : operation.kind === "branch_to_hq"
+      : kind === "branch_to_hq"
         ? t("alerts.operation.branchToHq")
-        : operation.category_name
-          ? t("alerts.operation.expense", { category: lowerFirst(operation.category_name) })
+        : category
+          ? t("alerts.operation.expense", { category: lowerFirst(category) })
           : t("alerts.operation.manualExpense");
   return t("rules.R7.what", { place, operation: label });
 };
@@ -200,9 +229,10 @@ const knownTitle = (alert: AiAdvisorKnownAlert, mode: TitleMode, t: AdvisorTrans
           ? t("rules.R1.titles.listSingle", { place, amount: money(f.last_difference, language) })
           : t("rules.R1.titles.dialogSingle", { place });
       }
-      const shifts = unit(t, "shifts", f.shifts_count);
+      // «N smena ketma-ket» — uzluksiz manfiy qator (`streak_*`, birlashgan yakka kamomadlarsiz); eski javob — jami.
+      const shifts = unit(t, "shifts", f.streak_length ?? f.shifts_count);
       return mode === "list"
-        ? t("rules.R1.titles.listConsecutive", { place, shifts, amount: money(f.total_difference, language) })
+        ? t("rules.R1.titles.listConsecutive", { place, shifts, amount: money(f.streak_total ?? f.total_difference, language) })
         : t("rules.R1.titles.dialogConsecutive", { place, shifts });
     }
     case "R2": {
@@ -217,24 +247,30 @@ const knownTitle = (alert: AiAdvisorKnownAlert, mode: TitleMode, t: AdvisorTrans
     case "R3": {
       const f = alert.facts;
       const vars = {
-        place: ownerName(f.cashbox, f.branch ?? alert.branch),
-        category: lowerFirst(f.category.name),
-        ratio: ratioText(f.ratio_to_median, language),
+        place: ownerName(f.cashbox, f.branch ?? alert.branch, t),
+        category: f.category.name ? lowerFirst(f.category.name.trim()) : advisorRefName(f.category),
       };
+      // Mediana 0 — nisbat yo'q (`ratio_to_median: null`): «odatdagidan ko'p», sonsiz.
+      if (f.ratio_to_median === null) {
+        return mode === "list"
+          ? t("rules.R3.titles.listNoRatio", { ...vars, amount: money(f.amount, language) })
+          : t("rules.R3.titles.dialogNoRatio", vars);
+      }
+      const ratio = ratioText(f.ratio_to_median, language);
       return mode === "list"
-        ? t("rules.R3.titles.list", { ...vars, amount: money(f.amount, language) })
-        : t("rules.R3.titles.dialog", vars);
+        ? t("rules.R3.titles.list", { ...vars, ratio, amount: money(f.amount, language) })
+        : t("rules.R3.titles.dialog", { ...vars, ratio });
     }
     case "R4": {
       const f = alert.facts;
-      const vars = { market: f.market.name, days: unit(t, "days", f.days_without_payout) };
+      const vars = { market: advisorRefName(f.market), days: unit(t, "days", f.days_without_payout) };
       return mode === "list"
         ? t("rules.R4.titles.list", { ...vars, amount: money(f.debt, language) })
         : t("rules.R4.titles.dialog", vars);
     }
     case "R5": {
       const f = alert.facts;
-      const vars = { branch: f.branch.name, days: unit(t, "days", f.days_without_transfer) };
+      const vars = { branch: advisorRefName(f.branch), days: unit(t, "days", f.days_without_transfer) };
       return mode === "list"
         ? t("rules.R5.titles.list", { ...vars, amount: money(f.balance, language) })
         : t("rules.R5.titles.dialog", vars);
@@ -252,22 +288,30 @@ const knownTitle = (alert: AiAdvisorKnownAlert, mode: TitleMode, t: AdvisorTrans
     }
     case "R7": {
       const f = alert.facts;
-      if (f.source === "card_balance") return t("rules.R7.titles.cardBalance", { cashbox: f.cashbox.name });
+      if (f.source === "card_balance") return t("rules.R7.titles.cardBalance", { cashbox: advisorCashboxName(f.cashbox, t) });
       const what = receiptSubject(f, alert.branch, t);
-      const amountMismatch = f.mismatch.includes("amount") || !f.mismatch.includes("card");
-      if (!amountMismatch) return t("rules.R7.titles.receiptCard", { what });
-      return mode === "list" && f.mismatch.includes("card")
-        ? t("rules.R7.titles.receiptAmountCard", { what })
-        : t("rules.R7.titles.receiptAmount", { what });
+      const card = f.mismatch.includes("card");
+      // Karta farqi chek turiga qarab: qo'lda chiqim — «karta mos emas», o'tkazma — «pul HQ kartasiga tushmagan».
+      const cardSuffix = isTransferReceipt(f) ? "Transfer" : "Card";
+      // Ro'yxatda ikkinchi farq sarlavhada ham; oynada — belgilarda (maket).
+      const withCard = mode === "list" && card;
+      if (f.mismatch.includes("currency")) {
+        return t(withCard ? `rules.R7.titles.receiptCurrency${cardSuffix}` : "rules.R7.titles.receiptCurrency", { what });
+      }
+      const amountMismatch = f.mismatch.includes("amount") || !card;
+      if (!amountMismatch) return t(isTransferReceipt(f) ? "rules.R7.titles.receiptTransfer" : "rules.R7.titles.receiptCard", { what });
+      return t(withCard ? `rules.R7.titles.receiptAmount${cardSuffix}` : "rules.R7.titles.receiptAmount", { what });
     }
     case "R8": {
       const f = alert.facts;
       const vars = {
         range: formatAdvisorWeekRange(f.from, f.to, t),
         corrections: unit(t, "corrections", f.count),
-        ratio: ratioText(f.ratio, language),
       };
-      return t(mode === "list" ? "rules.R8.titles.list" : "rules.R8.titles.dialog", vars);
+      // Oldingi 30 kunda tuzatish bo'lmagan (baza 0) — nisbat yo'q (`ratio: null`).
+      if (f.ratio === null) return t(mode === "list" ? "rules.R8.titles.listNoBaseline" : "rules.R8.titles.dialogNoBaseline", vars);
+      const ratio = ratioText(f.ratio, language);
+      return t(mode === "list" ? "rules.R8.titles.list" : "rules.R8.titles.dialog", { ...vars, ratio });
     }
   }
 };
@@ -295,9 +339,9 @@ const sublinePlace = (alert: AiAdvisorAlertListItem, t: AdvisorTranslate): strin
     case "R2":
       return alert.branch?.name || alert.facts.branch?.name || null;
     case "R5":
-      return alert.facts.branch.name;
+      return advisorRefName(alert.facts.branch);
     default:
-      return alert.branch?.name || alert.facts.branch?.name || alert.facts.cashbox.name || null;
+      return alert.branch?.name || alert.facts.branch?.name || advisorCashboxName(alert.facts.cashbox, t);
   }
 };
 

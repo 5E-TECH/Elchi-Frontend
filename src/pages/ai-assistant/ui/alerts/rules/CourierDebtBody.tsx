@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import {
   advisorDayOf,
+  advisorRefName,
   advisorUserName,
   formatAdvisorDayMonth,
   formatAdvisorDayRelative,
@@ -124,7 +125,7 @@ export const CourierDebtBody = ({ alert }: RuleBodyProps<"R2">) => {
           {
             id: "courier",
             label: t("alerts.facts.courier"),
-            value: branch ? `${advisorUserName(facts.courier)} · ${branch.name}` : advisorUserName(facts.courier),
+            value: branch ? `${advisorUserName(facts.courier)} · ${advisorRefName(branch)}` : advisorUserName(facts.courier),
           },
           { id: "balance", label: t("alerts.facts.courierBalance"), value: f.money(facts.balance) },
           {

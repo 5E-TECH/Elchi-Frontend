@@ -1,6 +1,11 @@
 // dizayn-v2: superadmin-ai-assistant-alert-dialog-expense
 import { Link } from "react-router-dom";
-import { advisorUserName, type AiAdvisorEvidenceExpenseStats } from "../../../../../entities/ai-advisor";
+import {
+  advisorCashboxName,
+  advisorRefName,
+  advisorUserName,
+  type AiAdvisorEvidenceExpenseStats,
+} from "../../../../../entities/ai-advisor";
 import { cx } from "../../../../../shared/lib/cx";
 import { AlertFacts } from "../AlertFacts";
 import { EvidenceTable, type EvidenceColumn } from "../EvidenceTable";
@@ -29,7 +34,9 @@ export const ExpenseBody = ({ alert }: RuleBodyProps<"R3">) => {
   const threshold = stats?.threshold ?? facts.threshold;
   const multiplier = stats?.multiplier ?? ruleThreshold(alert, "R3", "mad_multiplier");
   const scope = stats?.scope ?? facts.scope;
-  const place = scope === "category" ? t("alerts.subline.system") : facts.branch?.name || alert.branch?.name || facts.cashbox.name;
+  const cashboxName = advisorCashboxName(facts.cashbox, t);
+  const categoryName = advisorRefName(facts.category);
+  const place = scope === "category" ? t("alerts.subline.system") : facts.branch?.name || alert.branch?.name || cashboxName;
   const createdBy = advisorUserName(facts.created_by);
   const medianLabel = t("alerts.facts.median", { count: windowDays });
 
@@ -74,8 +81,8 @@ export const ExpenseBody = ({ alert }: RuleBodyProps<"R3">) => {
       <AlertFacts
         facts={[
           { id: "expense", label: t("alerts.facts.expense"), value: f.money(facts.amount) },
-          { id: "category", label: t("alerts.facts.category"), value: facts.category.name },
-          { id: "cashbox", label: t("alerts.facts.cashbox"), value: facts.cashbox.name },
+          { id: "category", label: t("alerts.facts.category"), value: categoryName },
+          { id: "cashbox", label: t("alerts.facts.cashbox"), value: cashboxName },
           {
             id: "createdBy",
             label: t("alerts.facts.createdBy"),
@@ -95,7 +102,12 @@ export const ExpenseBody = ({ alert }: RuleBodyProps<"R3">) => {
         ]}
       />
       <ThresholdMeter
-        title={t("alerts.meter.ratio", { ratio: f.ratio(facts.ratio_to_median) })}
+        title={
+          // Mediana 0 — nisbat yo'q (`ratio_to_median: null`): «Odatdagidan ko'p», sonsiz.
+          facts.ratio_to_median === null
+            ? t("alerts.meter.ratioUnknown")
+            : t("alerts.meter.ratio", { ratio: f.ratio(facts.ratio_to_median) })
+        }
         compare={`${f.bare(facts.amount)} / ${f.money(median)}`}
         value={facts.amount}
         threshold={threshold}
@@ -113,7 +125,7 @@ export const ExpenseBody = ({ alert }: RuleBodyProps<"R3">) => {
       {evidence && rows.length ? (
         <EvidenceTable
           title={t("alerts.evidence.expense.title", { count: rows.length, value: f.count(rows.length) })}
-          aside={t("alerts.evidence.expense.aside", { category: facts.category.name, place })}
+          aside={t("alerts.evidence.expense.aside", { category: categoryName, place })}
           rows={rows}
           columns={columns}
           getRowKey={(row) => row.history_id}
