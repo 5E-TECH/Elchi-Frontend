@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-system
+// dizayn-v2: superadmin-ops-system
 import { Suspense, lazy, useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useSearchParams } from "react-router-dom";
@@ -15,8 +15,9 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  * bandlari menyuni cho'zib yuborardi, shu bois ular BITTA sahifada tab bo'lib yig'ildi — bu ekranlar
  * kamdan-kam ochiladi.
  *
- * Eski `/finance-operators` marshruti o'z sarlavhasi va «← Ops vositalari» havolasi bilan chiziladi; `/system-ops` —
- * shu hubning tabiga yo'naltiradi (F2NzXpMv). Hub o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi.
+ * Eski `/system-ops` marshruti shu hubning tabiga yo'naltiradi (F2NzXpMv). «Moliya operatorlari» (`?tab=finance`,
+ * `/finance-operators`) olib tashlandi (F2qp6FtE — market o'z operatoriga o'zi to'laydi) — `MOVED_OPS_TABS`.
+ * Hub o'sha komponentni `embedded` bilan (sarlavhasiz) chizadi.
  * «Logistika» — «Pochta → Qaytarish» da (u5HTJtqK), «Filiallar» — `/batches` ichida (F2NzXpMv, faqat superadmin):
  * eski yo'l ham, `?tab=` ham o'sha yerga olib boradi. Hub ichida tug'ilgan tab («Xarajat kategoriyalari»,
  * `pages/expense-categories`) — eski yo'lsiz, faqat shu yerda. «Kassa smenasi» (`pages/payments/shiftSettings`, ega
@@ -24,14 +25,13 @@ import { OpsTabBoundary } from "./ui/OpsToolPage";
  * LIuf0DcD (ega 2026-11-16, 2026-11-18): «Kirish diagnostikasi», «Xodimlar», «Investorlar» va «Yetkazish narxi»
  * olib tashlandi — `?tab=` va eski yo'l o'rnini bosuvchi sahifaga (`MOVED_OPS_TABS`, `routes.tsx`).
  *
- * Desktop/planshet — `Tabs` (title = «Eski manzil: /finance-operators»; eski yo'li yo'q tabda — yo'q), telefon —
+ * Desktop/planshet — `Tabs` (title = «Eski manzil: /system-ops»; eski yo'li yo'q tabda — yo'q), telefon —
  * `Select` («Ops bo'limi: <tab>»). Faol tab `?tab=` da; noma'lum qiymat — oxirgi tanlangan yoki birinchi tab.
  * Har tab o'z `Suspense` + xato chegarasida: bittasi yiqilsa, qolgani ishlaydi.
  */
 
 type OpsPanel = ComponentType<{ embedded?: boolean }>;
 
-const FinanceOperatorsPage = lazy(() => import("../finance-operators"));
 const ExpenseCategoriesPage = lazy(() => import("../expense-categories"));
 const ShiftSettingsPage = lazy(() => import("../payments/shiftSettings"));
 const SystemOpsPage = lazy(() => import("../system-ops"));
@@ -39,7 +39,6 @@ const DailySchedulePage = lazy(() => import("../daily-schedule"));
 
 /** Tab kalitidan komponentga xarita — ma'lumot `tabs.ts` da. */
 const CONTENT: Record<string, OpsPanel> = {
-  finance: FinanceOperatorsPage,
   [EXPENSE_CATEGORIES_TAB]: ExpenseCategoriesPage,
   [SHIFT_SETTINGS_TAB]: ShiftSettingsPage,
   [DAILY_SCHEDULE_TAB]: DailySchedulePage,

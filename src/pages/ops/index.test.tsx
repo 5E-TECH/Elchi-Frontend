@@ -84,23 +84,19 @@ describe("Ops page — tablar (dizayn v2)", () => {
     vi.restoreAllMocks();
   });
 
-  it("5 ta tab (LIuf0DcD: «Investorlar», «Yetkazish narxi», «Xodimlar», «Kirish diagnostikasi» yo'q): «Xarajat kategoriyalari» va «Kassa smenasi» moliya guruhida; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
+  it("4 ta tab (LIuf0DcD: «Investorlar», «Yetkazish narxi», «Xodimlar», «Kirish diagnostikasi» yo'q; F2qp6FtE: «Moliya operatorlari» yo'q): «Xarajat kategoriyalari» va «Kassa smenasi» moliya guruhida; eski manzil maslahatda; `?tab=` tiklanadi", async () => {
     renderWithProviders(<OpsPage />, { route: "/ops?tab=daily-schedule" });
 
     const tablist = screen.getByRole("tablist", { name: "Ops bo'limlari" });
     const tabs = within(tablist).getAllByRole("tab");
     expect(tabs.map((tab) => tab.textContent)).toEqual([
-      "Moliya operatorlari",
       "Xarajat kategoriyalari",
       "Kassa smenasi",
       "Kun tartibi",
       "Tizim holati",
     ]);
     expect(within(tablist).getByRole("tab", { name: "Kun tartibi" })).toHaveAttribute("aria-selected", "true");
-    expect(within(tablist).getByRole("tab", { name: "Moliya operatorlari" })).toHaveAttribute(
-      "title",
-      "Eski manzil: /finance-operators",
-    );
+    expect(within(tablist).queryByRole("tab", { name: "Moliya operatorlari" })).toBeNull();
     expect(within(tablist).getByRole("tab", { name: "Tizim holati" })).toHaveAttribute("title", "Eski manzil: /system-ops");
     expect(await screen.findByText("Kun tartibi tabi (hub ichida)")).toBeInTheDocument();
     expect(screen.getByRole("tabpanel", { name: "Kun tartibi" })).toBeInTheDocument();
@@ -124,7 +120,7 @@ describe("Ops page — tablar (dizayn v2)", () => {
         <OpsPage />
         <LocationProbe />
       </>,
-      { route: "/ops?tab=finance" },
+      { route: "/ops?tab=system" },
     );
 
     await user.click(screen.getByRole("tab", { name: "Xarajat kategoriyalari" }));
@@ -170,6 +166,8 @@ describe("Ops page — tablar (dizayn v2)", () => {
     ["identity", "/all-users"],
     ["investors", "/all-users?role=investor"],
     ["delivery-pricing", "/delivery-tariffs"],
+    // F2qp6FtE: market o'z operatoriga o'zi to'laydi — eski «Moliya operatorlari» havolasi «Market operatorlari» ga.
+    ["finance", "/all-users?role=market_operator"],
   ])("ko'chgan / olib tashlangan tab: `?tab=%s` → %s", async (tab, target) => {
     renderWithProviders(
       <>
@@ -191,7 +189,7 @@ describe("Ops page — tablar (dizayn v2)", () => {
         </>,
         { route: `/ops?tab=${tab}` },
       );
-      expect(await screen.findByRole("tab", { name: "Moliya operatorlari", selected: true })).toBeInTheDocument();
+      expect(await screen.findByRole("tab", { name: "Xarajat kategoriyalari", selected: true })).toBeInTheDocument();
       expect(screen.getByTestId("location")).toHaveTextContent(`/ops?tab=${tab}`);
     },
   );
@@ -225,7 +223,7 @@ describe("Ops page — tablar (dizayn v2)", () => {
     expect(screen.queryByRole("tablist")).toBeNull();
     const select = screen.getByRole("combobox", { name: "Ops bo'limi: Kun tartibi" });
     await user.click(select);
-    expect(await screen.findAllByRole("option")).toHaveLength(5);
+    expect(await screen.findAllByRole("option")).toHaveLength(4);
     await user.click(await screen.findByRole("option", { name: "Kassa smenasi" }));
 
     expect(screen.getByTestId("location")).toHaveTextContent("/ops?tab=shift-settings");

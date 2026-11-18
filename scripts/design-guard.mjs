@@ -112,6 +112,8 @@ export const V2_SCOPES = Object.freeze([
   "src/entities/notification-campaign",
   "src/entities/notification-dispatch",
   "src/entities/notification-inbox",
+  // F2qp6FtE — market o'z operatoriga to'lov yozuvi (Elchi kassasiz): rangsiz entity.
+  "src/entities/operator-payment",
   "src/entities/order",
   "src/entities/orders",
   "src/entities/product",
@@ -157,7 +159,6 @@ export const V2_SCOPES = Object.freeze([
   "src/pages/dispatch",
   "src/pages/expense-categories",
   "src/pages/extra-costs",
-  "src/pages/finance-operators",
   "src/pages/financial-balance",
   "src/pages/incoming-orders",
   "src/pages/integrations",

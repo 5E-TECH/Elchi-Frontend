@@ -10,9 +10,8 @@ export interface OpsTabMeta {
   labelKey: string;
   /**
    * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut — eski havola yoki xatcho'p buzilmaydi:
-   * `/finance-operators` o'z sarlavhasi bilan chiziladi, `/system-ops` (`routes.tsx`) `/ops?tab=<key>` ga
-   * yo'naltiradi. Markaz ichida tug'ilgan tabda (masalan «Xarajat kategoriyalari») yo'q — uning yagona manzili
-   * `/ops?tab=<key>`.
+   * `/system-ops` (`routes.tsx`) `/ops?tab=<key>` ga yo'naltiradi. Markaz ichida tug'ilgan tabda (masalan «Xarajat
+   * kategoriyalari») yo'q — uning yagona manzili `/ops?tab=<key>`.
    */
   legacyPath?: string;
   /** `src/pages/` ichidagi papka nomi. */
@@ -38,16 +37,11 @@ export const DAILY_SCHEDULE_TAB = "daily-schedule";
 
 export const OPS_TABS: OpsTabMeta[] = [
   {
-    key: "finance",
-    labelKey: "tabs.finance",
-    legacyPath: "/finance-operators",
-    pageDir: "finance-operators",
-  },
-  {
     /**
      * Kassa xarajati kategoriyalari (Elchi Pochta №1) — ilgari «Asosiy kassa» sarlavhasidagi tugmadan ochiladigan
-     * oyna edi; sozlama sifatida Ops vositalariga ko'chirildi (moliya guruhi, «Moliya operatorlari» dan keyin).
-     * To'g'ridan-to'g'ri eski yo'li yo'q. «Kassadan xarajat» oynasidagi havola shu tabga olib keladi.
+     * oyna edi; sozlama sifatida Ops vositalariga ko'chirildi (moliya guruhi — birinchi tab; F2qp6FtE gacha
+     * «Moliya operatorlari» dan keyin edi). To'g'ridan-to'g'ri eski yo'li yo'q. «Kassadan xarajat» oynasidagi havola
+     * shu tabga olib keladi.
      */
     key: EXPENSE_CATEGORIES_TAB,
     labelKey: "tabs.expenseCategories",
@@ -83,6 +77,14 @@ export const OPS_TABS: OpsTabMeta[] = [
 ];
 
 /**
+ * «Moliya operatorlari» (`/finance-operators`, `?tab=finance`) olib tashlandi — F2qp6FtE (ega qarori 2026-11-16):
+ * market o'z operatoriga O'ZI to'laydi va buni «Operatorlar → To'lovlar» da yozadi; superadmin endi operatorga Elchi
+ * kassasidan to'lamaydi. Eski havola superadminni «Foydalanuvchilar → Market operatorlari» ga olib boradi (operatorlar
+ * ro'yxati — o'qish uchun eng yaqin sahifa).
+ */
+export const FINANCE_OPERATORS_MOVED_TO = "/all-users?role=market_operator";
+
+/**
  * Hub'dan ko'chgan tablar: filiallar vositasi ish sahifasi ichida, faqat superadmin ko'radi (F2NzXpMv); integratsiya
  * vositalari — konsol panellarida: qarzlar «Hisob-kitob», navbat «Ish rejimi» (Dj70iDbD); logistika (qaytarish
  * so'rovlari) — «Pochta → Qaytarish» (u5HTJtqK: `/returns` dagi superadmin nusxasi olib tashlandi, tasdiqlash va rad
@@ -105,6 +107,7 @@ export const MOVED_OPS_TABS: Readonly<Record<string, string>> = {
   identity: "/all-users",
   investors: "/all-users?role=investor",
   "delivery-pricing": "/delivery-tariffs",
+  finance: FINANCE_OPERATORS_MOVED_TO,
 };
 
 /** Tab kaliti bo'yicha meta (to'g'ridan-to'g'ri yo'llardagi «← Ops vositalari» havolasi uchun). */

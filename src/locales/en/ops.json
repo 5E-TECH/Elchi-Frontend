@@ -10,7 +10,6 @@
     "tabErrorHint": "The other sections keep working."
   },
   "tabs": {
-    "finance": "Finance operators",
     "expenseCategories": "Expense categories",
     "shiftSettings": "Cash shift",
     "dailySchedule": "Daily schedule",
@@ -25,74 +24,6 @@
       "notFound": "Not found (404). Check that the ID is correct.",
       "conflict": "The state has already changed (409). Refresh the list and try again.",
       "forbidden": "This action isn't available for your role (403)."
-    }
-  },
-  "finance": {
-    "intro": {
-      "title": "Operator settlement",
-      "description": "The operator's earned, paid and remaining amounts with earnings and payout history. Record a new payout here."
-    },
-    "lookup": {
-      "formLabel": "Load operator",
-      "label": "Operator ID",
-      "placeholder": "Operator ID",
-      "submit": "Load",
-      "invalid": "Operator ID must contain digits only"
-    },
-    "balance": {
-      "title": "Operator {{id}} balance",
-      "subtitle": "Remaining = earned − paid",
-      "due": "Owed to the operator",
-      "earned": "Earned",
-      "paid": "Paid",
-      "rest": "Remaining",
-      "paidShare": "Paid share",
-      "paidShareAria": "{{value}} of the earned amount has been paid",
-      "waterfallAria": "Remaining {{balance}}: earned {{earned}} minus paid {{paid}}",
-      "loadError": "Couldn't load the operator balance"
-    },
-    "payment": {
-      "title": "Record a payout",
-      "description": "Record a payout made to the operator — the remaining amount goes down automatically",
-      "amount": "Amount (UZS)",
-      "amountPlaceholder": "For example, 200 000",
-      "amountRequired": "Enter the amount",
-      "note": "Note",
-      "notePlaceholder": "For example, for October",
-      "submit": "Save payout",
-      "success": "Payout recorded",
-      "error": "Couldn't record the payout",
-      "confirmTitle": "Record this payout?",
-      "confirmDescription": "A payout will be recorded for operator {{id}} — the remaining amount goes down by this sum.",
-      "confirmAmount": "Payout amount",
-      "confirmNote": "Note",
-      "confirmLoading": "Saving…"
-    },
-    "earnings": {
-      "title": "Earnings",
-      "description": "The share accrued for each order",
-      "order": "Order",
-      "amount": "Amount",
-      "date": "Date",
-      "summary": "{{from}}–{{to}} of {{total}}",
-      "pagesLabel": "Earnings pages",
-      "empty": "No earnings yet",
-      "emptyHint": "When the operator takes an order, their share appears here.",
-      "loadError": "Couldn't load earnings"
-    },
-    "payouts": {
-      "title": "Payout history",
-      "description": "Payouts made to the operator",
-      "amount": "Amount",
-      "note": "Note",
-      "date": "Date",
-      "count": "{{count}} payouts",
-      "total": "Total:",
-      "summary": "{{from}}–{{to}} of {{total}} payouts",
-      "pagesLabel": "Payout pages",
-      "empty": "No payouts yet",
-      "emptyHint": "Recorded payouts appear here.",
-      "loadError": "Couldn't load the payout history"
     }
   },
   "expenseCategories": {

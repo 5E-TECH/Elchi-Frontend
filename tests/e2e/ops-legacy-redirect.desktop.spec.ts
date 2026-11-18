@@ -53,13 +53,13 @@ for (const { from, tab, to, heading } of OPS_REMOVED) {
   }
 }
 
-test("⭐ superadmin: hub'da 5 ta tab — olib tashlanganlari yo'q (LIuf0DcD)", async ({ page }) => {
+test("⭐ superadmin: hub'da 4 ta tab — olib tashlanganlari yo'q (LIuf0DcD, F2qp6FtE)", async ({ page }) => {
   await mockOpsHub(page, "superadmin");
   await page.goto("/ops?tab=system");
   await expectOpsHub(page, "system", "Tizim holati — xizmatlar va AI");
   const tabs = page.getByRole("tablist", { name: "Ops bo'limlari" }).getByRole("tab");
-  await expect(tabs).toHaveCount(5);
-  for (const removed of ["Investorlar", "Yetkazish narxi", "Xodimlar", "Kirish diagnostikasi"]) {
+  await expect(tabs).toHaveCount(4);
+  for (const removed of ["Investorlar", "Yetkazish narxi", "Xodimlar", "Kirish diagnostikasi", "Moliya operatorlari"]) {
     await expect(tabs.filter({ hasText: removed })).toHaveCount(0);
   }
 });

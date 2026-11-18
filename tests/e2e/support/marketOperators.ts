@@ -56,9 +56,39 @@ export type MarketOperatorsMock = {
   posts: unknown[];
   patches: { id: string; body: unknown }[];
   deletes: string[];
+  /** F2qp6FtE: `POST finance/operator-payments` tanalari va `Idempotency-Key` sarlavhalari. */
+  payments: { body: unknown; key: string | null }[];
+  /** F2qp6FtE: `POST finance/operator-payments/:id/cancel`. */
+  cancels: { id: string; body: unknown }[];
+  /** Kassa (`finance/cashbox*`) so'rovlari — operatorga to'lov Elchi kassasiga tegmasligi kerak. */
+  cashboxRequests: string[];
   /** Yozish so'rovlaridan boshqa (kutilmagan) yozish so'rovlari. */
   leaked: string[];
 };
+
+/** F2qp6FtE — operatorlar hisobi (`GET finance/operator-payments/balances`). */
+const BALANCES = [
+  { operator_id: "41", earned: 1286500, paid: 1100000, last_paid_at: "2026-11-15" },
+  { operator_id: "42", earned: 420000, paid: 450000, last_paid_at: "2026-11-10" },
+  { operator_id: "43", earned: 96000, paid: 0, last_paid_at: null },
+];
+
+type PaymentRow = {
+  id: string;
+  operator_id: string;
+  amount: number;
+  paid_at: string;
+  note: string | null;
+  source: "market" | "elchi";
+  status: "active" | "cancelled";
+  cancel_reason: string | null;
+};
+
+const initialPayments = (): PaymentRow[] => [
+  { id: "305", operator_id: "41", amount: 300000, paid_at: "2026-11-15", note: "Noyabr, 1-qism", source: "market", status: "active", cancel_reason: null },
+  { id: "302", operator_id: "42", amount: 450000, paid_at: "2026-11-10", note: "Oktabr komissiyasi", source: "market", status: "active", cancel_reason: null },
+  { id: "301", operator_id: "41", amount: 800000, paid_at: "2026-10-01", note: "Sentabr", source: "elchi", status: "active", cancel_reason: null },
+];
 
 type MockOptions = {
   empty?: boolean;
@@ -68,7 +98,20 @@ type MockOptions = {
 
 export const mockMarketOperators = async (page: Page, { empty = false, theme }: MockOptions = {}) => {
   const operators = empty ? [] : initialOperators();
-  const mock: MarketOperatorsMock = { posts: [], patches: [], deletes: [], leaked: [] };
+  const mock: MarketOperatorsMock = { posts: [], patches: [], deletes: [], payments: [], cancels: [], cashboxRequests: [], leaked: [] };
+  const payments = initialPayments();
+  const nameOf = (id: string) => operators.find((item) => item.id === id)?.name ?? null;
+  const paymentView = (row: PaymentRow) => ({
+    ...row,
+    operator_name: nameOf(row.operator_id),
+    market_id: row.source === "market" ? "12" : null,
+    affects_cashbox: row.source === "elchi",
+    recorded_by_role: row.source === "market" ? "market" : null,
+    created_at: `${row.paid_at}T09:30:00.000Z`,
+    cancelled_at: row.status === "cancelled" ? new Date().toISOString() : null,
+    cancelled_by_role: row.status === "cancelled" ? "market" : null,
+    can_cancel: row.source === "market" && row.status === "active",
+  });
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -91,6 +134,62 @@ export const mockMarketOperators = async (page: Page, { empty = false, theme }: 
       );
     }
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 0 }));
+    if (path.startsWith("finance/cashbox")) mock.cashboxRequests.push(`${method} ${path}`);
+    // ── F2qp6FtE: operatorlarga to'lov (Elchi kassasiga ta'sir qilmaydi) ──
+    if (path === "finance/operator-payments/balances" && method === "GET") {
+      const active = payments.filter((row) => row.status === "active");
+      const items = BALANCES.filter((row) => operators.some((item) => item.id === row.operator_id)).map((row) => {
+        const added = active
+          .filter((p) => p.operator_id === row.operator_id && !initialPayments().some((seed) => seed.id === p.id))
+          .reduce((sum, p) => sum + p.amount, 0);
+        const cancelled = payments
+          .filter((p) => p.operator_id === row.operator_id && p.status === "cancelled")
+          .reduce((sum, p) => sum + p.amount, 0);
+        const paid = row.paid + added - cancelled;
+        const op = operators.find((item) => item.id === row.operator_id)!;
+        return {
+          operator_id: row.operator_id,
+          operator_name: op.name,
+          status: op.status,
+          earned: row.earned,
+          paid,
+          balance: row.earned - paid,
+          payments_count: active.filter((p) => p.operator_id === row.operator_id).length,
+          last_paid_at: row.last_paid_at,
+        };
+      });
+      const sum = (key: "earned" | "paid" | "balance") => items.reduce((total, item) => total + item[key], 0);
+      return reply(route, wrap({ items, totals: { earned: sum("earned"), paid: sum("paid"), balance: sum("balance") } }));
+    }
+    if (path === "finance/operator-payments" && method === "GET") {
+      const operatorId = url.searchParams.get("operator_id");
+      const rows = payments.filter((row) => !operatorId || row.operator_id === operatorId).map(paymentView);
+      return reply(route, wrap({ items: rows, pagination: { total: rows.length, page: 1, limit: 20, totalPages: 1 } }));
+    }
+    if (path === "finance/operator-payments" && method === "POST") {
+      const body = request.postDataJSON() as { operator_id: string; amount: number; paid_at: string; note?: string };
+      mock.payments.push({ body, key: request.headers()["idempotency-key"] ?? null });
+      const row: PaymentRow = {
+        id: String(400 + mock.payments.length),
+        operator_id: body.operator_id,
+        amount: body.amount,
+        paid_at: body.paid_at,
+        note: body.note ?? null,
+        source: "market",
+        status: "active",
+        cancel_reason: null,
+      };
+      payments.unshift(row);
+      return reply(route, wrap({ ...paymentView(row), idempotent: false }, 201), 201);
+    }
+    const cancel = /^finance\/operator-payments\/(\d+)\/cancel$/.exec(path);
+    if (cancel && method === "POST") {
+      const body = request.postDataJSON() as { reason: string };
+      mock.cancels.push({ id: cancel[1], body });
+      const row = payments.find((item) => item.id === cancel[1]);
+      if (row) Object.assign(row, { status: "cancelled", cancel_reason: body.reason });
+      return reply(route, wrap({ ...(row ? paymentView(row) : {}), idempotent: false }));
+    }
     if (path === "market-operators" && method === "GET") {
       const status = url.searchParams.get("status");
       const items = status ? operators.filter((item) => item.status === status) : operators;

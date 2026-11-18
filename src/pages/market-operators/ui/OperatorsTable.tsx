@@ -1,6 +1,6 @@
 // dizayn-v2: market-operators-list
 import { memo, useCallback, useMemo } from "react";
-import { Percent, Trash2 } from "lucide-react";
+import { HandCoins, Percent, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { hasCommission, type MarketOperator } from "../../../entities/market-operator";
 import { cx } from "../../../shared/lib/cx";
@@ -29,6 +29,8 @@ type OperatorsTableProps = {
   rows: readonly MarketOperator[];
   busy?: boolean;
   onCommission: (operator: MarketOperator) => void;
+  /** F2qp6FtE: «To'lov yozish» — operator tanlangan oyna (Elchi kassasiga ta'sir qilmaydi). */
+  onRecordPayment?: (operator: MarketOperator) => void;
   onDelete: (operator: MarketOperator) => void;
 };
 
@@ -39,7 +41,7 @@ type OperatorsTableProps = {
  * (< 1024 yashirin) · kebab. Telefonda (< 768) kartalar: avatar 40, ism, telefon, komissiya va holat belgilari,
  * ostida «Ombordagi qoldiqni ko'radi» qatori, kebab 44 px. Nofaol operator ismi kulrang.
  */
-export const OperatorsTable = memo(({ rows, busy, onCommission, onDelete }: OperatorsTableProps) => {
+export const OperatorsTable = memo(({ rows, busy, onCommission, onRecordPayment, onDelete }: OperatorsTableProps) => {
   const { t, i18n } = useTranslation("marketOperators");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const commission = useCommissionText();
@@ -67,11 +69,14 @@ export const OperatorsTable = memo(({ rows, busy, onCommission, onDelete }: Oper
           icon: Percent,
           onSelect: () => onCommission(row),
         },
+        ...(onRecordPayment
+          ? [{ key: "payment", label: t("rowMenu.recordPayment"), icon: HandCoins, onSelect: () => onRecordPayment(row) }]
+          : []),
         { key: "delete", label: t("rowMenu.delete"), icon: Trash2, danger: true, onSelect: () => onDelete(row) },
       ];
       return <OperatorRowMenu label={t("rowMenu.label", { name: row.name })} items={items} />;
     },
-    [onCommission, onDelete, t],
+    [onCommission, onDelete, onRecordPayment, t],
   );
 
   const nameClass = (row: MarketOperator) =>

@@ -243,7 +243,7 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     keyin NIFAnCvf + 2Fj7iw1k (ikkalasi `FinancialAnalysis.tsx`), wLNccBkX + lQP3ojwq (Ops RBAC, bitta PR).
   - **Xarajat kategoriyalari → Ops (2026-10-23, `fe-ops-expcat`):** kassa xarajati kategoriyalari sozlamasi «Asosiy
     kassa» sarlavhasidagi tugma + `ExpenseCategoriesDialog` dan Ops vositalariga ko'chdi: yangi tab «Xarajat
-    kategoriyalari» (`/ops?tab=expense-categories`, moliya guruhi — «Moliya operatorlari» dan keyin; `pages/expense-categories`:
+    kategoriyalari» (`/ops?tab=expense-categories`, moliya guruhi — birinchi tab, F2qp6FtE gacha «Moliya operatorlari» dan keyin edi; `pages/expense-categories`:
     `OpsIntro` + «Kategoriyalar» kartasi, qo'shish / tahrirlash — `ExpenseCategoryFormDialog`, o'chirish — `useConfirm`).
     Hub ichida tug'ilgan tab — `OpsTabMeta.legacyPath` ixtiyoriy, tab maslahatida «Eski manzil» yo'q. Kassa sarlavhasida
     tugma yo'q; «Kassadan xarajat» da faol kategoriya yo'q bo'lsa superadmin havolasi (`<Link>`) shu tabga olib boradi

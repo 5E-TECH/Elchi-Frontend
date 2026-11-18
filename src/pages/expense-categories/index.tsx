@@ -8,8 +8,8 @@ import ExpenseCategoriesPanel from "./ui/ExpenseCategoriesPanel";
 /**
  * OPS → «Xarajat kategoriyalari» (`/ops?tab=expense-categories`; faqat superadmin). Kassa xarajati kategoriyalari
  * sozlamasi ilgari «To'lovlar → Asosiy kassa» sarlavhasidagi tugmadan ochiladigan oyna edi — 2026-10-23 da
- * sozlama sifatida Ops vositalariga, moliya guruhiga («Moliya operatorlari» dan keyin) ko'chirildi. Eski
- * to'g'ridan-to'g'ri yo'li yo'q — faqat hub ichida (`embedded`); «Kassadan xarajat» oynasidagi «Xarajat
+ * sozlama sifatida Ops vositalariga, moliya guruhiga (birinchi tab; F2qp6FtE gacha «Moliya operatorlari» dan keyin
+ * edi) ko'chirildi. Eski to'g'ridan-to'g'ri yo'li yo'q — faqat hub ichida (`embedded`); «Kassadan xarajat» oynasidagi «Xarajat
  * kategoriyalari» havolasi (faol kategoriya yo'q holati, superadmin) shu tabga olib keladi.
  *
  * Tuzilma — boshqa Ops tablari kabi: kirish kartasi (`OpsIntro`) + bo'lim kartasi (`ExpenseCategoriesPanel`).

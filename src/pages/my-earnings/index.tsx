@@ -12,11 +12,13 @@ import {
 } from "../../shared/lib/formatMoney";
 import { Badge, Card, ErrorState, PageHeader, QueryBoundary, SkeletonLines } from "../../shared/ui/primitives";
 import { readOperatorProfile, readOperatorRate, sampleEarning, type OperatorRate } from "./lib/operatorRate";
+import { EarningsSummary } from "./ui/EarningsSummary";
+import { MyPaymentsCard } from "./ui/MyPaymentsCard";
 
-/** Yolg'iz karta butun enga cho'zilmaydi (maketda «Stavkam» — qatorning 1/3 qismi, yonida Taklif bloklari). */
-const RATE_CARD = "w-full max-w-xl";
-/** `.el-alert.el-tone-warning` (CODE-MAP) — karta bilan bir xil kenglikda (aks holda desktopda alert 2× keng). */
-const ALERT = "flex w-full max-w-xl items-start gap-3 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning-fg";
+/** Maketda «Stavkam» — qatorning 1/3 qismi (`flex: 1 1 300px`), yonida «To'lovlar» (`flex: 2 1 460px`). */
+const RATE_CARD = "w-full";
+/** `.el-alert.el-tone-warning` (CODE-MAP) — sahifa kengligida, «Hisob» ustida (maket `-earnings-no-commission`). */
+const ALERT = "flex w-full items-start gap-3 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning-fg";
 /** `.el-kpi-value` · `.el-kpi-unit` (CODE-MAP). */
 const VALUE =
   "whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] text-text proportional-nums max-md:text-[22px] max-md:leading-[30px]";
@@ -85,20 +87,21 @@ const RateCard = ({ rate }: { rate: OperatorRate | null }) => {
 
 /**
  * «DAROMADIM» — market operatorining komissiya hisobi (`/my-earnings`, MO-2; maketlar `market_operator-earnings`,
- * `market_operator-earnings-no-commission` — qisman).
+ * `market_operator-earnings-no-commission`).
  *
- * Kodda: «Stavkam» kartasi — `GET auth/my-profile` (`commission_type`, `commission_value`); stavka yo'q (yoki 0) —
- * ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi» va «Belgilanmagan» belgisi. «Belgilaydi» — umumiy
- * «Market egasi» (profil market nomini bermaydi — N13).
- * Chizilmagan (maketda «Taklif · backend kerak»): «Hisob» (Qoldiq · Daromad · To'langan), «To'lovlar», «Daromadlar» —
- * `finance/operators/:id/*` operatorga 403, `/me` ko'rinishi yo'q (E6iEOAVs → MO-6).
- * Holatlar: yuklanish — karta skeleti; xato (yoki javobda profil yo'q) — karta ichida `ErrorState` + «Qayta urinish» (xom
- * backend matnisiz).
+ * Tartib (maket): ogohlantirish (stavka yo'q) → «Hisob» (Qoldiq · Daromad · To'langan — `GET finance/operators/me/
+ * balance`, F2qp6FtE / 37vonCdg) → «Stavkam» (`GET auth/my-profile`) | «To'lovlar» (`GET finance/operators/me/payments`,
+ * faqat o'qish — market o'zi yozadi, Elchi kassasiga ta'sir qilmaydi). «Belgilaydi» — umumiy «Market egasi» (profil
+ * market nomini bermaydi — N13). «Daromadlar» jadvali (`/me/earnings` ro'yxati) — 37vonCdg qolgan qismi, bu yerda
+ * chizilmagan.
+ * Holatlar: har blok o'z yuklanishi va xatosi bilan (`ErrorState` + «Qayta urinish», xom backend matnisiz).
  */
 const MyEarningsPage = () => {
   const { t } = useTranslation("myEarnings");
   const { useGetMyProfile } = useUser();
   const profileQuery = useGetMyProfile({ silentError: true });
+  const profile = profileQuery.data ? readOperatorProfile(profileQuery.data) : null;
+  const unset = profile !== null && readOperatorRate(profile) === null;
   // Javob bo'sh yoki shakli buzilgan (profil yo'q) — «Komissiya belgilanmagan» deb chalg'itmaymiz, xato ko'rsatamiz.
   const malformed = (
     <Card title={t("rate.title")} divided className={RATE_CARD}>
@@ -109,42 +112,43 @@ const MyEarningsPage = () => {
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
       <PageHeader title={t("title")} description={t("subtitle")} />
-      <QueryBoundary
-        query={profileQuery}
-        isEmpty={() => false}
-        empty={malformed}
-        className="flex flex-col gap-6 max-md:gap-4"
-        loading={
-          <Card title={t("rate.title")} divided className={RATE_CARD}>
-            <SkeletonLines lines={4} />
-          </Card>
-        }
-        error={(error, retry) => (
-          <Card title={t("rate.title")} divided className={RATE_CARD}>
-            <ErrorState error={error} size="card" onRetry={retry} retrying={profileQuery.isFetching} />
-          </Card>
-        )}
-      >
-        {(response) => {
-          const profile = readOperatorProfile(response);
-          if (!profile) return malformed;
-          const rate = readOperatorRate(profile);
-          return (
-            <>
-              {rate ? null : (
-                <div role="status" className={ALERT}>
-                  <TriangleAlert size={20} aria-hidden="true" className="mt-px shrink-0" />
-                  <div className="flex min-w-0 flex-col gap-0.5 text-text">
-                    <p className="m-0 font-bold">{t("unset.title")}</p>
-                    <p className="m-0 text-[13px]">{t("unset.text")}</p>
-                  </div>
-                </div>
-              )}
-              <RateCard rate={rate} />
-            </>
-          );
-        }}
-      </QueryBoundary>
+      {unset ? (
+        <div role="status" className={ALERT}>
+          <TriangleAlert size={20} aria-hidden="true" className="mt-px shrink-0" />
+          <div className="flex min-w-0 flex-col gap-0.5 text-text">
+            <p className="m-0 font-bold">{t("unset.title")}</p>
+            <p className="m-0 text-[13px]">{t("unset.text")}</p>
+          </div>
+        </div>
+      ) : null}
+      <EarningsSummary />
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="flex min-w-0 flex-[1_1_300px]">
+          <QueryBoundary
+            query={profileQuery}
+            isEmpty={() => false}
+            empty={malformed}
+            className="flex w-full min-w-0 flex-col"
+            loading={
+              <Card title={t("rate.title")} divided className={RATE_CARD}>
+                <SkeletonLines lines={4} />
+              </Card>
+            }
+            error={(error, retry) => (
+              <Card title={t("rate.title")} divided className={RATE_CARD}>
+                <ErrorState error={error} size="card" onRetry={retry} retrying={profileQuery.isFetching} />
+              </Card>
+            )}
+          >
+            {(response) => {
+              const record = readOperatorProfile(response);
+              if (!record) return malformed;
+              return <RateCard rate={readOperatorRate(record)} />;
+            }}
+          </QueryBoundary>
+        </div>
+        <MyPaymentsCard className="min-w-0 flex-[2_1_460px]" />
+      </div>
     </div>
   );
 };

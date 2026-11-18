@@ -31,7 +31,6 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
 /**
  * Naqshga (`*-ops`) tushmaydigan, lekin markazga ATAYLAB kiritilgan sahifalar.
  *
- * `finance-operators` — nomi boshqacha, mazmuni ops.
  * `expense-categories` — kassa xarajati kategoriyalari sozlamasi («Asosiy
  *                      kassa» oynasidan ko'chirilgan). Hub ichida tug'ilgan —
  *                      to'g'ridan-to'g'ri eski yo'li yo'q.
@@ -49,7 +48,7 @@ const opsPageModules = import.meta.glob("../*-ops/index.tsx");
  * LIuf0DcD (ega 2026-11-16, 2026-11-18): «Kirish diagnostikasi» (`pages/logs`), «Xodimlar» (`identity-ops`),
  * «Investorlar» (`investors-ops`) o'chirildi, «Yetkazish narxi» (`delivery-tariffs`) — faqat «Hududlar» sahifasi.
  */
-const extraOpsPages = ["finance-operators", "expense-categories", "payments/shiftSettings", "daily-schedule"];
+const extraOpsPages = ["expense-categories", "payments/shiftSettings", "daily-schedule"];
 
 /**
  * Hub'dan ish sahifasiga ko'chgan vositalar (F2NzXpMv): yetim emas, `/batches` ichida chiziladi. `logistics-ops`
@@ -81,6 +80,7 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
       "auth",
       "branches",
       "delivery-pricing",
+      "finance",
       "identity",
       "integrations",
       "investors",
@@ -94,6 +94,10 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
     expect(MOVED_OPS_TABS.identity).toBe("/all-users");
     expect(MOVED_OPS_TABS.investors).toBe("/all-users?role=investor");
     expect(MOVED_OPS_TABS["delivery-pricing"]).toBe("/delivery-tariffs");
+  });
+
+  it("F2qp6FtE: «Moliya operatorlari» (`finance`) — «Market operatorlari» ga (market o'z operatoriga o'zi to'laydi)", () => {
+    expect(MOVED_OPS_TABS.finance).toBe("/all-users?role=market_operator");
   });
 
   it("tab kalitlari va eski marshrutlar takrorlanmaydi", () => {
@@ -117,7 +121,9 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
       "shift-settings",
       "daily-schedule",
     ]);
-    expect(OPS_TABS.map((tab) => tab.key).slice(0, 3)).toEqual(["finance", "expense-categories", "shift-settings"]);
+    // F2qp6FtE: «Moliya operatorlari» olib tashlandi — moliya guruhi «Xarajat kategoriyalari» dan boshlanadi.
+    expect(OPS_TABS.map((tab) => tab.key).slice(0, 2)).toEqual(["expense-categories", "shift-settings"]);
+    expect(OPS_TABS.map((tab) => tab.key)).not.toContain("finance");
   });
 });
 

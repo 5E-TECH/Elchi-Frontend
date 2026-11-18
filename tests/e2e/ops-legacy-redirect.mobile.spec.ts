@@ -17,12 +17,12 @@ for (const { from, tab, label, panel } of OPS_REDIRECTS) {
   });
 }
 
-/** LIuf0DcD — 390px: «Ops bo'limi» ro'yxatida 5 ta bo'lim, olib tashlanganlari yo'q. */
-test("⭐ «Ops bo'limi» ro'yxatida 5 ta bo'lim (LIuf0DcD)", async ({ page }) => {
+/** LIuf0DcD, F2qp6FtE — 390px: «Ops bo'limi» ro'yxatida 4 ta bo'lim, olib tashlanganlari yo'q. */
+test("⭐ «Ops bo'limi» ro'yxatida 4 ta bo'lim (LIuf0DcD, F2qp6FtE)", async ({ page }) => {
   await mockOpsHub(page, "superadmin");
   await page.goto("/ops?tab=system");
   await expectOpsHub(page, "system", "Tizim holati — xizmatlar va AI");
   await page.getByRole("combobox", { name: "Ops bo'limi: Tizim holati" }).click();
   const options = page.getByRole("option");
-  await expect(options).toHaveText(["Moliya operatorlari", "Xarajat kategoriyalari", "Kassa smenasi", "Kun tartibi", "Tizim holati"]);
+  await expect(options).toHaveText(["Xarajat kategoriyalari", "Kassa smenasi", "Kun tartibi", "Tizim holati"]);
 });

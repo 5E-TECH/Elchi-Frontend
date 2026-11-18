@@ -51,7 +51,7 @@ test("⭐ yon menyu va bosh sahifa: o'z marketi «Siz», xarajat so'rovlari faqa
   await expect(nav.getByRole("link", { name: "Daromadim" })).toHaveAttribute("aria-current", "page");
 });
 
-test("«Daromadim» — foiz stavkasi: qiymat, turi, belgilovchi, namuna; Taklif bloklari yo'q", async ({ page }) => {
+test("«Daromadim» — foiz stavkasi: qiymat, turi, belgilovchi, namuna; «Hisob» va «To'lovlar» (F2qp6FtE)", async ({ page }) => {
   const mock = await openOperatorEarnings(page);
 
   const card = page.getByRole("region", { name: "Stavkam" });
@@ -60,9 +60,16 @@ test("«Daromadim» — foiz stavkasi: qiymat, turi, belgilovchi, namuna; Taklif
   await expect(card).toContainText("Foiz");
   await expect(card).toContainText("250 000 so'm → 12 500 so'm");
   await expect(page.getByText("Komissiya belgilanmagan — daromad yozilmaydi")).toHaveCount(0);
-  for (const title of ["Hisob", "To'lovlar", "Daromadlar"]) {
-    await expect(page.getByRole("heading", { name: title, exact: true })).toHaveCount(0);
-  }
+  // F2qp6FtE / 37vonCdg: o'z hisobi va to'lovlari (faqat o'qish); «Daromadlar» hali yo'q, «Taklif» belgisi yo'q.
+  const account = page.getByRole("region", { name: "Hisob" });
+  await expect(account).toContainText("186 500");
+  await expect(account).toContainText("82 ta sotilgan buyurtmadan");
+  await expect(account).toContainText("Oxirgisi: 01.10.2026");
+  const payments = page.getByRole("table", { name: "To'lovlar" });
+  await expect(payments.getByRole("row", { name: /Sentabr, 2-qism/ })).toContainText("300 000 so'm");
+  await expect(payments.getByRole("row", { name: /Xato/ })).toContainText("Bekor qilingan");
+  await expect(page.getByRole("heading", { name: "Daromadlar", exact: true })).toHaveCount(0);
+  await expect(page.getByText(/Taklif/)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   expectNoLeakRequests(mock, { home: false });
 });

@@ -170,12 +170,14 @@ test.describe("Asosiy kassa — xarajat kategoriyalari — 1440px", () => {
     await expect(page.getByRole("button", { name: "Xarajat kategoriyalari" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Xarajat kategoriyalari" })).toHaveCount(0);
 
-    // Ops vositalari → «Xarajat kategoriyalari» (moliya guruhi — «Moliya operatorlari» dan keyin), URL'da tab.
+    // Ops vositalari → «Xarajat kategoriyalari» (moliya guruhi — birinchi tab: «Moliya operatorlari» F2qp6FtE da
+    // olib tashlandi), URL'da tab.
     await page.goto("/ops");
     const tabs = page.getByRole("tablist", { name: "Ops bo'limlari" }).getByRole("tab");
-    await expect(tabs.nth(0)).toHaveText("Moliya operatorlari");
-    await expect(tabs.nth(1)).toHaveText("Xarajat kategoriyalari");
-    await tabs.nth(1).click();
+    await expect(tabs.nth(0)).toHaveText("Xarajat kategoriyalari");
+    await expect(page.getByRole("tab", { name: "Moliya operatorlari" })).toHaveCount(0);
+    // Birinchi tab sukut bo'yicha tanlangan — bosish URL'ni o'zgartirmaydi; havola bilan ochiladi.
+    await page.goto("/ops?tab=expense-categories");
     await expectOpsExpenseCategories(page);
 
     const card = opsCategoriesCard(page);
