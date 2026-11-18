@@ -291,7 +291,7 @@ describe("ActivityLogViewer — dizayn v2 (y8CxCtcK, `superadmin-activity-logs-l
     expect(screen.queryByRole("table", { name: "Maydon o'zgarishlari" })).toBeNull();
   });
 
-  it("BE-5 §11: «Xizmat» filtrida «AI maslahatchi» — tanlansa `service: ai` so'raladi; `ai` yozuvida xizmat nomi", async () => {
+  it("BE-5 §11: «Xizmat» filtrida «AI» — tanlansa `service: ai` so'raladi; `ai` yozuvida xizmat nomi va obyekt turi", async () => {
     const user = userEvent.setup();
     mocks.logs.mockReturnValue(
       listResult([
@@ -309,12 +309,18 @@ describe("ActivityLogViewer — dizayn v2 (y8CxCtcK, `superadmin-activity-logs-l
     renderWithProviders(<ActivityLogViewer />);
 
     const table = screen.getByRole("table", { name: "Faoliyat jurnali yozuvlari" });
-    expect(within(table).getByText("AI maslahatchi")).toBeInTheDocument();
+    expect(within(table).getByText("AI")).toBeInTheDocument();
+    expect(within(table).getByText(/AI ogohlantirishi/)).toBeInTheDocument();
+    expect(within(table).queryByText(/ai_advisor_alert/)).toBeNull();
 
     await user.click(screen.getByRole("combobox", { name: "Xizmat" }));
     const listbox = await screen.findByRole("listbox", { name: "Xizmat" });
-    await user.click(within(listbox).getByRole("option", { name: "AI maslahatchi" }));
+    await user.click(within(listbox).getByRole("option", { name: "AI" }));
     await waitFor(() => expect(lastParams()).toMatchObject({ service: "ai", page: 1 }));
+
+    // «Obyekt turi» — tarjima nomi backend'dagi aynan qiymatga (snake_case) o'giriladi.
+    await user.type(screen.getByRole("textbox", { name: "Obyekt turi" }), "AI kunlik chegarasi");
+    await waitFor(() => expect(lastParams()).toMatchObject({ entity_type: "ai_daily_cap" }));
   });
 
   it("reyestr kelmasa (eski backend) — fe'llar guruhsiz, humanize", async () => {

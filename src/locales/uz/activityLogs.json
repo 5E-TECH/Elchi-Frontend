@@ -31,7 +31,7 @@
     "catalog": "Katalog",
     "investor": "Investorlar",
     "notification": "Bildirishnomalar",
-    "ai": "AI maslahatchi"
+    "ai": "AI"
   },
   "categories": {
     "order": "Buyurtma",
@@ -74,7 +74,10 @@
     "OperatorEarning": "Operator daromadi",
     "OperatorPayment": "Operator to'lovi",
     "Courier": "Kuryer",
-    "Payment": "To'lov"
+    "Payment": "To'lov",
+    "ai_advisor_alert": "AI ogohlantirishi",
+    "ai_advisor_settings": "AI maslahatchi sozlamalari",
+    "ai_daily_cap": "AI kunlik chegarasi"
   },
   "actor": {
     "system": "Tizim",

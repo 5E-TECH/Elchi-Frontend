@@ -31,7 +31,7 @@
     "catalog": "Каталог",
     "investor": "Инвесторы",
     "notification": "Уведомления",
-    "ai": "AI-советник"
+    "ai": "AI"
   },
   "categories": {
     "order": "Заказ",
@@ -74,7 +74,10 @@
     "OperatorEarning": "Доход оператора",
     "OperatorPayment": "Выплата оператору",
     "Courier": "Курьер",
-    "Payment": "Платёж"
+    "Payment": "Платёж",
+    "ai_advisor_alert": "AI-предупреждение",
+    "ai_advisor_settings": "Настройки AI-советника",
+    "ai_daily_cap": "Дневной лимит AI"
   },
   "actor": {
     "system": "Система",

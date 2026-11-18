@@ -9,7 +9,7 @@ import { ACTIVITY_SERVICES } from "./types";
  * har birining uz/ru/en yorlig'i bor (filtr va «Xizmat» ustuni).
  */
 describe("ACTIVITY_SERVICES", () => {
-  it("gateway oyoqlari tartibida, AI maslahatchi (`ai`) bilan", () => {
+  it("gateway oyoqlari tartibida, ai-service (`ai`) bilan", () => {
     expect(ACTIVITY_SERVICES).toEqual([
       "identity",
       "order",
@@ -25,9 +25,10 @@ describe("ACTIVITY_SERVICES", () => {
   });
 
   it.each([
-    ["uz", uz.services, "AI maslahatchi"],
-    ["ru", ru.services, "AI-советник"],
-    ["en", en.services, "AI advisor"],
+    // Neytral: oyoqda AI maslahatchi amallari ham, kunlik chegara (`ai.cap.raise`) ham bor.
+    ["uz", uz.services, "AI"],
+    ["ru", ru.services, "AI"],
+    ["en", en.services, "AI"],
   ] as const)("%s: har xizmatga yorliq, `ai` — «%s»", (_lng, services, aiLabel) => {
     expect(Object.keys(services).sort()).toEqual([...ACTIVITY_SERVICES].sort());
     expect(services.ai).toBe(aiLabel);

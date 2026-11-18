@@ -31,7 +31,7 @@
     "catalog": "Catalog",
     "investor": "Investors",
     "notification": "Notifications",
-    "ai": "AI advisor"
+    "ai": "AI"
   },
   "categories": {
     "order": "Order",
@@ -74,7 +74,10 @@
     "OperatorEarning": "Operator earning",
     "OperatorPayment": "Operator payout",
     "Courier": "Courier",
-    "Payment": "Payment"
+    "Payment": "Payment",
+    "ai_advisor_alert": "AI alert",
+    "ai_advisor_settings": "AI advisor settings",
+    "ai_daily_cap": "AI daily cap"
   },
   "actor": {
     "system": "System",

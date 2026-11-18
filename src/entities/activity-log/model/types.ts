@@ -3,9 +3,9 @@
 // objects. See Elchi-Backend audit-gateway.controller + audit-enrichment.service.
 
 /**
- * `/activity-logs` xizmat oyoqlari (gateway `audit-gateway.controller.ts`, `service` filtri). `ai` — AI maslahatchi
- * (BE-5 §11): `ai.advisor.alert.resolve|dismiss`, `ai.advisor.settings.update`, `ai.cap.raise`; band bo'lsa (3 s)
- * javobda `meta.failed_services: ["ai"]`, qolgan jurnal kutmaydi.
+ * `/activity-logs` xizmat oyoqlari (gateway `audit-gateway.controller.ts`, `service` filtri). `ai` — ai-service, yorlig'i
+ * neytral «AI» (BE-5 §11): AI maslahatchi `ai.advisor.alert.resolve|dismiss`, `ai.advisor.settings.update` va kunlik
+ * chegara `ai.cap.raise`; band bo'lsa (3 s) javobda `meta.failed_services: ["ai"]`, qolgan jurnal kutmaydi.
  */
 export const ACTIVITY_SERVICES = [
   "identity",

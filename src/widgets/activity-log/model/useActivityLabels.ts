@@ -48,6 +48,10 @@ const ENTITY_TYPES = [
   "UserSalary",
   "OperatorEarning",
   "OperatorPayment",
+  // ai-service (BE-5 §11) — backend snake_case yozadi; filtr ham aynan shu qiymatni yuborishi kerak.
+  "ai_advisor_alert",
+  "ai_advisor_settings",
+  "ai_daily_cap",
 ] as const;
 
 const squash = (value: string) => value.toLowerCase().replace(/[^a-z]/g, "");
