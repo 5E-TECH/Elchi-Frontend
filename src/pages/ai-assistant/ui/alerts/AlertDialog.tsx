@@ -132,7 +132,9 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
   // D16: ochilishdan keyingi birinchi javob — nishon va banner darhol yangilanadi (bir marta); ro'yxat — oyna
   // yopilgach (har yo'l: tugma, Esc, «Orqaga», tab almashuvi): `?status=new` da ochilgan qator oyna ortida
   // yo'qolmaydi va fokus o'z havolasiga qaytadi. Oyna ochiq paytdagi jonli hodisalar ham ro'yxatni faqat eskirtiradi
-  // (`refreshAdvisorQueries`) — shuning uchun yopilganda ro'yxat har doim qayta o'qiladi.
+  // (`refreshAdvisorQueries`, `refetchType: "none"`) — yopilganda eskirgan ro'yxat ham qayta o'qiladi.
+  // ⚠️ `listStale` ochilish effektida o'rnatilmaydi: StrictMode (dev) effektni mount → unmount → mount qiladi va
+  // pastdagi unmount tozalovchisi ro'yxatni oyna ortida qayta o'qitardi.
   const openedAt = useRef(0);
   const refreshedFor = useRef<string | null>(null);
   const listStale = useRef(false);
@@ -140,7 +142,6 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
     if (!open || id === null) return;
     openedAt.current = Date.now();
     refreshedFor.current = null;
-    listStale.current = true;
   }, [open, id]);
   useEffect(() => {
     if (!open || id === null || !query.isSuccess || refreshedFor.current === id) return;
@@ -150,7 +151,12 @@ const AlertDialog = ({ active }: AlertDialogProps) => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.aiAdvisor.overview });
   }, [id, open, query.dataUpdatedAt, query.isSuccess, queryClient]);
   useEffect(() => {
-    if (open || !listStale.current) return;
+    if (open) return;
+    const invalidated = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: queryKeys.aiAdvisor.alertLists })
+      .some((listQuery) => listQuery.state.isInvalidated);
+    if (!listStale.current && !invalidated) return;
     listStale.current = false;
     void queryClient.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alertLists });
   }, [open, queryClient]);

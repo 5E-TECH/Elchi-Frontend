@@ -1,4 +1,5 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { act, configure, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -654,6 +655,46 @@ describe("AI izohi (D15)", () => {
     expect(await within(panel).findByTestId("ai-alert-resolution")).toHaveTextContent(RESOLVE_NOTE);
     expect(within(panel).queryByRole("region", { name: "AI izohi" })).not.toBeInTheDocument();
     expect(within(panel).queryByRole("textbox")).not.toBeInTheDocument();
+  });
+});
+
+describe("D16 — ro'yxat oyna yopilgach yangilanadi", () => {
+  it("StrictMode (dev: effekt mount → unmount → mount) — ochilishda ro'yxat oyna ortida eskirmaydi; yopilganda — eskiradi", async () => {
+    // Ildizdagi StrictMode (ilovadagidek, `main.tsx`) — effektlar ikki marta; render paytidagi chaqiruvlar ham
+    // ko'rinsin (StrictMode tozalovchisi `setQueryData` dan oldin ishlaydi).
+    configure({ reactStrictMode: true });
+    const invalidate = vi.spyOn(QueryClient.prototype, "invalidateQueries");
+    const listCalls = () =>
+      invalidate.mock.calls.filter(([filters]) => JSON.stringify(filters?.queryKey) === JSON.stringify(queryKeys.aiAdvisor.alertLists));
+    const { queryClient } = (() => {
+      try {
+        return open();
+      } finally {
+        configure({ reactStrictMode: false });
+      }
+    })();
+    await findDialog(R1_TITLE);
+    await waitFor(() => expect(queryClient.getQueryState(queryKeys.aiAdvisor.overview)?.isInvalidated).toBe(true));
+    const listState = () => queryClient.getQueryState(queryKeys.aiAdvisor.alertList({ page: 1, limit: 10 }));
+    expect(listCalls()).toEqual([]);
+    expect(listState()?.isInvalidated).toBe(false);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(listState()?.isInvalidated).toBe(true));
+    expect(listCalls()).toHaveLength(1);
+    invalidate.mockRestore();
+  });
+
+  it("jonli hodisa ochiq oynada ro'yxatni faqat eskirtirgan bo'lsa (`refetchType: none`) — yopilganda qayta o'qiladi (GET xato bo'lsa ham)", async () => {
+    replyDetail(() => fail(404, fx.errors.notFound));
+    const { queryClient } = open("999999");
+    await findDialog("Ogohlantirish");
+    await screen.findByText("Ogohlantirish topilmadi");
+    // `refreshAdvisorQueries` (oyna ochiq) — faqat belgi.
+    await queryClient.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alertLists, refetchType: "none" });
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(currentParams().get("alert")).toBeNull());
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.alertLists }));
   });
 });
 
