@@ -17,7 +17,9 @@ import {
   ORDER_STATUS_NS,
   ORDER_STATUS_REGISTRY,
   ORDER_STATUS_UNKNOWN_LABEL_KEY,
+  ORDER_STATUS_WAITING_COURIER_LABEL_KEY,
   humanizeOrderStatus,
+  isWaitingWithCourier,
   resolveDisplayOrderStatus,
 } from "../model/statusRegistry";
 
@@ -31,6 +33,7 @@ export type OrderStatusBadgeProps = Omit<
    * Buyurtma yozuvi (ro'yxat qatori yoki detal) — berilsa, bekor qilingan buyurtma uchun JOY
    * BOSQICHI belgisi chiziladi («Bekor · HQ'da», «Bekor · yo'lda» …; `cancelReturnStage.ts`).
    * Berilmasa — oddiy holat belgisi (`returned_to_market` bundan mustasno: u doim bosqich belgisi).
+   * COURIER-SCAN: `waiting` + kuryer — «Kuryerda» (ton `waiting` niki).
    */
   order?: unknown;
   /** Bosqich belgisi ostida joy qatori («Toshkent HQ · 2 kun», «→ Toshkent HQ»). Faqat `order` bilan. */
@@ -92,12 +95,14 @@ export const OrderStatusBadge = ({
 
   if (resolved) {
     const meta = ORDER_STATUS_REGISTRY[resolved];
+    const withCourier = order !== undefined && isWaitingWithCourier(status, order);
     return (
       <StatusBadge
         tone={meta.tone}
         variant={meta.variant}
-        label={t(meta.labelKey)}
+        label={t(withCourier ? ORDER_STATUS_WAITING_COURIER_LABEL_KEY : meta.labelKey)}
         data-order-status={meta.key}
+        data-holder={withCourier ? "courier" : undefined}
         className={className}
         {...rest}
       />

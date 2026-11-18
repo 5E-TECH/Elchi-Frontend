@@ -64,8 +64,11 @@ const extraOpsPages = [
   "daily-schedule",
 ];
 
-/** Hub'dan ish sahifasiga ko'chgan vositalar (F2NzXpMv): yetim emas, `/returns` va `/batches` ichida chiziladi. */
-const movedOpsPages = ["logistics-ops", "branch-ops"];
+/**
+ * Hub'dan ish sahifasiga ko'chgan vositalar (F2NzXpMv): yetim emas, `/batches` ichida chiziladi. `logistics-ops`
+ * u5HTJtqK da o'chirildi — qaytarish so'rovlari «Pochta → Qaytarish» da.
+ */
+const movedOpsPages = ["branch-ops"];
 
 const discoveredDirs = [
   ...Object.keys(opsPageModules)

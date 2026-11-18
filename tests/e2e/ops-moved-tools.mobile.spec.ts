@@ -3,7 +3,7 @@ import { mockOpsHub, OPS_MOVED } from "./support/opsHub";
 
 /**
  * F2NzXpMv — 390px: ko'chgan vositalar va bosh sahifadagi KPI ekranga sig'adi. Mobil e2e'lar vositaning o'zini
- * sinaydi (`branch-ops`, `logistics-ops-approve`), bu yerda — sahifa ichida gorizontal skroll chiqmasligi. Soxta backend.
+ * sinaydi (`branch-ops`, `mails-return`), bu yerda — sahifa ichida gorizontal skroll chiqmasligi. Soxta backend.
  */
 test.describe.configure({ timeout: 120_000 });
 

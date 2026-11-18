@@ -34,18 +34,5 @@
   "clearFilter": "Filtrni tozalash",
   "messages": {
     "loadFailed": "Qaytarish paketlari ro'yxatini yuklab bo'lmadi"
-  },
-  "opsReturnRequests": {
-    "title": "Logistika — qaytarish so'rovlari",
-    "description": "Qaytarish so'rovlari ro'yxati va ularni tasdiqlash paneli.",
-    "columns": {
-      "id": "ID",
-      "order": "Buyurtma",
-      "status": "Holat",
-      "courier": "Kuryer"
-    },
-    "selectHint": "Tasdiqlash uchun ro'yxatdan buyurtmalarni tanlang.",
-    "loadError": "Qaytarish so'rovlarini yuklab bo'lmadi",
-    "empty": "Qaytarish so'rovlari yo'q"
   }
 }

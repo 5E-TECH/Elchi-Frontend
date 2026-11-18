@@ -2,14 +2,15 @@ import type { ReceivePostResponse } from "../../../entities/mails";
 import { getCourierTakeState } from "./scanOrderView";
 
 /**
- * KURYER SKAN-QABULI (2026-11-07, BeePost `/scan` kuryer qabul sikli) — sof qoidalar (testlanadi).
+ * SKAN-QABUL qoidalari (sof, testlanadi).
  *
- * Kuryer «O'zimga olish» bilan olgan buyurtma uning pochtasida YO'LDA turadi (`on_the_road`); sotish / bekor
- * qilishdan oldin uni qabul qilishi kerak: `PATCH post/receive/:post_id { order_ids: [id], scan: true }` — faqat shu
- * buyurtma «kutilmoqda»ga o'tadi, pochtadagi qolgan yo'ldagilarga tegilmaydi. Qoidalar backend skan yo'li bilan bir:
- *   - qabul qilinadi — yo'lda (`on_the_road`) yoki mijoz kutilmoqda (`waiting_customer`);
- *   - `waiting` — allaqachon qabul qilingan (sotish / bekor sahifasi);
- *   - boshqa holat (sotilgan, bekor, yopilgan …) — qabul qilib bo'lmaydi.
+ * COURIER-SCAN (ega, 2026-11-17): KURYER SKANI = QABUL. Kuryer «O'zimga olish» bilan olgan buyurtma darhol
+ * «Kutilmoqda» (backend `scan-assign` WAITING yozadi) — kuryerdan alohida «Qabul qilish» qadami yo'q (2026-11-07 dagi
+ * kuryer skan-qabuli olib tashlandi). Kuryerning o'zidagi buyurtma (kutilmoqda, yo'lda yoki mijoz kutilmoqda) — darhol
+ * «Sotish» / «Bekor qilish»: yo'ldagini backend sotish/bekordan oldin o'zi qabul qiladi (2026-11-12).
+ *
+ * Menejerning «Pochtadan qabul»i (`PATCH post/receive/:post_id { order_ids: [id], scan: true }`) — qoladi
+ * (`getBranchReceiveDecision`).
  * Kim: `courier_id` yoki `holder_courier_id` shu kuryer (`'0'` — tayinlanmagan pochta sentineli, kuryer emas).
  */
 
@@ -37,7 +38,7 @@ export const normalizeReceiveStatus = (value: unknown) =>
 const RECEIVABLE_STATUSES = new Set(["on the road", "waiting customer"]);
 
 /** Skan bilan qabul qilinadigan holat (yo'lda yoki mijoz kutilmoqda). */
-export const isCourierReceivableStatus = (status: unknown) => RECEIVABLE_STATUSES.has(normalizeReceiveStatus(status));
+export const isScanReceivableStatus = (status: unknown) => RECEIVABLE_STATUSES.has(normalizeReceiveStatus(status));
 
 /** Buyurtmaning joriy pochtasi (`post_id`); yo'q — `null`. */
 export const readOrderPostId = (order: OrderLike): string | null => idText(order?.post_id ?? order?.postId) || null;
@@ -55,14 +56,16 @@ export const isOwnCourierOrder = (order: OrderLike, currentUserId: string | numb
   return ids.length > 0 && ids.every((id) => id === me);
 };
 
+/** Kuryerning o'zidagi buyurtmada «Sotish» / «Bekor qilish» ochiq holatlar (COURIER-SCAN: skan = qabul). */
+const COURIER_SELLABLE_STATUSES = new Set(["waiting", "on the road", "waiting customer"]);
+
 /**
  * Kuryer skan natijasidagi asosiy amal (`/scan/:token`):
- *   - `receive` — o'ziniki, yo'lda (yoki mijoz kutilmoqda) va pochtasi bor → «Qabul qilish»;
- *   - `sell` — o'ziniki va «kutilmoqda» (qabul qilingan) → «Sotish» + «Bekor qilish»;
- *   - `take` — qolgan hammasi: «O'zimga olish» (avvalgidek — bo'sh buyurtma faol, o'ziniki yoki boshqa kuryerniki
- *     `getCourierTakeState` bo'yicha faol emas).
+ *   - `sell` — o'ziniki va kutilmoqda / yo'lda / mijoz kutilmoqda → «Sotish» + «Bekor qilish» (alohida qabul yo'q);
+ *   - `take` — qolgan hammasi: «O'zimga olish» (bo'sh buyurtma faol, boshqa kuryerniki `getCourierTakeState` bo'yicha
+ *     faol emas).
  */
-export type CourierScanAction = "take" | "receive" | "sell";
+export type CourierScanAction = "take" | "sell";
 
 export const getCourierScanAction = (
   order: OrderLike,
@@ -70,21 +73,10 @@ export const getCourierScanAction = (
 ): CourierScanAction => {
   if (getCourierTakeState(order, currentUserId) === "other") return "take";
   if (!isOwnCourierOrder(order, currentUserId)) return "take";
-  const status = normalizeReceiveStatus(order?.status);
-  if (RECEIVABLE_STATUSES.has(status) && readOrderPostId(order)) return "receive";
-  if (status === "waiting") return "sell";
-  return "take";
+  return COURIER_SELLABLE_STATUSES.has(normalizeReceiveStatus(order?.status)) ? "sell" : "take";
 };
 
-/**
- * `/scan` «Qabul qilish» rejimida skanerlangan buyurtma nima bo'ladi:
- *   - `receive` — o'ziniki, qabul qilinadigan holatda, pochtasi bor → darhol qabul;
- *   - `open` — o'ziniki va allaqachon qabul qilingan (`waiting`) → natija sahifasi (sotish / bekor);
- *   - `free` — hech kimda emas (yoki faqat boshqa holatda) → «O'zimga olish» rejimida olinadi;
- *   - `other` — boshqa kuryerda;
- *   - `notReceivable` — o'ziniki, lekin yo'lda emas (sotilgan, bekor …) yoki pochtasi yo'q.
- */
-/** Sotuvdan / bekordan keyingi holatlar — bunday buyurtmani na qabul, na «O'zimga olish» qilib bo'ladi. */
+/** Sotuvdan / bekordan keyingi holatlar — bunday buyurtmani qabul qilib bo'lmaydi. */
 const FINAL_STATUSES: ReadonlySet<string> = new Set([
   "sold",
   "partly paid",
@@ -95,34 +87,14 @@ const FINAL_STATUSES: ReadonlySet<string> = new Set([
   "closed",
 ]);
 
-export type CourierReceiveDecision = "receive" | "open" | "free" | "other" | "notReceivable";
-
-export const getCourierReceiveDecision = (
-  order: OrderLike,
-  currentUserId: string | number | null | undefined,
-): CourierReceiveDecision => {
-  const me = idText(currentUserId);
-  const ids = [idText(order?.courier_id ?? order?.courierId), idText(order?.holder_courier_id ?? order?.holderCourierId)].filter(
-    Boolean,
-  );
-  const status = normalizeReceiveStatus(order?.status);
-  // Hech kimda emas: sotilgan / bekor / yopilgan buyurtmani «O'zimga olish» ham ololmaydi — sababi aytiladi.
-  if (ids.length === 0) return FINAL_STATUSES.has(status) ? "notReceivable" : "free";
-  if (!me || ids.some((id) => id !== me)) return "other";
-  if (RECEIVABLE_STATUSES.has(status)) return readOrderPostId(order) ? "receive" : "notReceivable";
-  if (status === "waiting") return "open";
-  if (status === "new" || status === "created" || status === "received") return "free";
-  return "notReceivable";
-};
-
 /**
  * MENEJER SKAN-QABULI (2026-11-07, Dilshod: «scanerni faqat kuryerda emas, menejerda ham») — `/scan` «Pochtadan
  * qabul» rejimi (REGIONAL / HYBRID filial menejeri). HQ → filial o'tkazma pochtasidagi (kuryersiz) yo'ldagi buyurtma
  * skanerlansa — `PATCH post/receive/:post_id { order_ids: [id], scan: true }`, faqat shu buyurtma «kutilmoqda»ga
  * o'tadi (backend anKpzwxk: o'tkazma pochtasini faqat manzil filial menejeri qabul qiladi). Qaror (shu tartibda):
  *   - `notReceivable` — sotuvdan / bekordan keyingi holat (kuryer id'si qolgan bo'lsa ham — «yo'lda emas»);
- *   - `other` — buyurtma kuryerda (`courier_id` / `holder_courier_id`): yo'lda — uni kuryer o'zi qabul qiladi,
- *     «kutilmoqda» — kuryer qabul qilgan (sotish / bekor kuryerda); boshqa holatda — `notReceivable`;
+ *   - `other` — buyurtma kuryerda (`courier_id` / `holder_courier_id`; COURIER-SCAN: kuryer uni skan bilan olgan —
+ *     skan = qabul, sotish / bekor kuryerda); boshqa holatda — `notReceivable`;
  *   - `notReceivable` — yo'lda, lekin pochtasi yo'q (masalan filiallararo paketdagi posilka — pochta emas);
  *   - `notOurs` — buyurtma boshqa filialniki (`branch_id` ma'lum va menejer filiali emas);
  *   - `receive` — yo'lda yoki mijoz kutilmoqda va pochtasi bor → darhol qabul;

@@ -29,6 +29,7 @@ import {
   useConfirm,
 } from "../../../shared/ui/primitives";
 import {
+  changeImpact,
   diffRules,
   parseRuleValue,
   RULES,
@@ -151,15 +152,23 @@ const RulesForm = ({ settings, tariffs }: { settings: DeliveryPricingSettings; t
     }
     // Tana bosish paytida qotadi: xatodan keyin oynada qayta bosish aynan shu qiymatlarni yuboradi.
     const body = toPatchBody(changes);
-    const saved = await confirm({
+    const impact = changeImpact(changes);
+    const confirmed = await confirm({
       title: t("page.rules.confirm.title"),
       description: t("page.rules.confirm.description", { count: changes.length }),
       icon: Scale,
       iconTone: "neutral",
       rows: changes.map((change) => ({ label: labelOf[change.field], value: changeValue(change), stacked: true })),
       consequences: [
-        { text: t("page.rules.confirm.immediate"), icon: Zap },
-        { text: t("page.rules.confirm.website"), icon: Globe },
+        // Sayt kalkulyatori faqat narx hisobi qoidalari bilan o'zgaradi; minimal narx va kuryer xarajati chegarasi —
+        // faqat sotuvdagi narx dvigateli (sayt kalkulyatoriga ta'sir qilmaydi).
+        ...(impact.quote
+          ? [
+              { text: t("page.rules.confirm.immediate"), icon: Zap },
+              { text: t("page.rules.confirm.website"), icon: Globe },
+            ]
+          : []),
+        ...(impact.saleOnly ? [{ text: t("page.rules.confirm.saleOnly"), icon: Info }] : []),
         { text: t("page.rules.confirm.journal"), icon: History },
       ],
       confirmLabel: t("page.rules.save"),
@@ -178,7 +187,7 @@ const RulesForm = ({ settings, tariffs }: { settings: DeliveryPricingSettings; t
         if (next) reset(toRulesForm(next, language));
       },
     });
-    if (saved) notify.success(t("page.rules.success"), { description: t("page.rules.successDescription") });
+    if (confirmed) notify.success(t("page.rules.success"), { description: t("page.rules.successDescription") });
   });
 
   return (

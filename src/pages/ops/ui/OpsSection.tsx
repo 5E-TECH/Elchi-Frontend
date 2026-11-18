@@ -4,7 +4,8 @@ import { Card, SkeletonLines } from "../../../shared/ui/primitives";
 import { OpsTabBoundary } from "./OpsToolPage";
 
 /**
- * Hub'dan ko'chgan ops vositasi boshqa sahifa ichida (F2NzXpMv): «Logistika» — `/returns`, «Filiallar» — `/batches`.
+ * Hub'dan ko'chgan ops vositasi boshqa sahifa ichida (F2NzXpMv): «Filiallar» — `/batches` («Logistika» — `/returns`
+ * ostidagi nusxa u5HTJtqK da olib tashlandi, qaytarish so'rovlari «Pochta → Qaytarish» da).
  * Kod alohida bo'lak, yiqilsa sahifaning qolgan qismi ishlayveradi. Ruxsatni sahifa tekshiradi: vosita faqat superadmin.
  */
 export const OpsSection = ({ children }: { children: ReactNode }) => {

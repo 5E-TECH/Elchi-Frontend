@@ -525,8 +525,6 @@ export const useMails = () => {
     queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
     queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
     queryClient.invalidateQueries({ queryKey: ["orders"] });
-    // `/returns` dagi «Qaytarish so'rovlari» (superadmin) — `entities/logistics` (`["logi-cov", "posts", …]`).
-    queryClient.invalidateQueries({ queryKey: ["logi-cov", "posts"] });
   };
 
   const approveReturnRequests = useMutation({
@@ -922,7 +920,7 @@ export const useReceivePost = (options?: {
   /**
    * Berilsa so'rovlar shu kalit bo'yicha ketma-ket (bitta navbat; sahifa yashirin bo'lsa yoki sahifadan chiqilsa ham
    * yuboriladi) va `mutationKey: ["post-receive", scope]` (useIsMutating / useMutationState uchun — navbatdagilar ham
-   * darhol `pending`). Skan-qabulda: `post-receive:<postId>`; kuryer /scan va ro'yxati: `courier-scan-receive`.
+   * darhol `pending`). Skan-qabulda: `post-receive:<postId>`; menejer /scan «Pochtadan qabul»: `branch-scan-receive`.
    */
   scope?: string;
 }) => {

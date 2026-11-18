@@ -470,6 +470,17 @@ export const isPostReceivedEvent = (event: TrackingEvent) => normalizeKey(event.
 export const isWarehouseReturnedEvent = (event: TrackingEvent) => normalizeKey(event.action) === "warehouse_returned";
 
 /**
+ * COURIER-SCAN (ega, 2026-11-17): kuryer skani = qabul. `courier_scan_received` — kuryer buyurtmani skan bilan oldi
+ * (holat → kutilmoqda, «pochtani qabul qildi» emas; metadata `{ post_id, courier_name }`);
+ * `branch_post_received_by_courier_scan` — o'tkazma pochtasidagi buyurtma kuryer skani bilan filialga qabul qilindi
+ * (metadata `{ post_id, branch_name, courier_name }`).
+ */
+export const isCourierScanReceivedEvent = (event: TrackingEvent) =>
+  normalizeKey(event.action) === "courier_scan_received";
+export const isBranchPostReceivedByCourierScanEvent = (event: TrackingEvent) =>
+  normalizeKey(event.action) === "branch_post_received_by_courier_scan";
+
+/**
  * HQ rad etilgan pochtadagi bekor buyurtmani jo'natgan filialga qaytardi (`cancelled_post_returned`, holat
  * o'zgarmaydi — `cancelled (sent)`); metadata `{ post_id, return_post_id, from_branch: "HQ", to_branch_id, to_branch_name }`.
  */
@@ -557,6 +568,18 @@ const getSentenceTemplate = (
   }
   if (isCourierReturnRequestedEvent(event)) return dynamic("courierReturnRequested");
   if (isBranchReturnRequestedEvent(event)) return dynamic("branchReturnRequested");
+  if (isCourierScanReceivedEvent(event)) {
+    // Migratsiya 240 eski «Yo'lda» skan qatorlarini tizim nomidan ko'chiradi — «Tizim buyurtmani skan bilan oldi»
+    // deyilmasin: tizim faqat holatni o'tkazdi, skanni kuryer qilgan.
+    return dynamic(isSystemEvent(event) ? "courierScanReceivedBySystem" : "courierScanReceived");
+  }
+  if (isBranchPostReceivedByCourierScanEvent(event)) {
+    // Faqat yozuvdagi filial nomi (yozuv paytidagi) — buyurtmaning JORIY filiali emas (`postReceivedAtBranch` kabi).
+    const receivedAt = getTrackingName(event, "branch");
+    return receivedAt
+      ? dynamic("branchPostReceivedByCourierScanAt", { branch: receivedAt })
+      : dynamic("branchPostReceivedByCourierScan");
+  }
   // Jo'natilgan pochta boshqa filialga o'tkazildi (holat o'zgarmaydi): metadata `{ from_branch_name, to_branch_name }`.
   // 2026-11-16: operatori yo'q buyurtmaga keyin operator biriktirildi — holat o'zgarmaydi (sotilganda «sotdi» emas).
   if (normalizeKey(event.action) === "operator_assigned") {
@@ -613,6 +636,8 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
       return Warehouse;
     case "tracking.dynamic.assignedToCourier":
     case "tracking.dynamic.sentToCourier":
+    case "tracking.dynamic.courierScanReceived":
+    case "tracking.dynamic.courierScanReceivedBySystem":
       return Truck;
     case "tracking.dynamic.cancelledPostCreated":
       return Send;
@@ -622,6 +647,8 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
     case "tracking.dynamic.acceptedAtHq":
     case "tracking.dynamic.postReceived":
     case "tracking.dynamic.postReceivedAtBranch":
+    case "tracking.dynamic.branchPostReceivedByCourierScan":
+    case "tracking.dynamic.branchPostReceivedByCourierScanAt":
       return Inbox;
     case "tracking.dynamic.dispatchToBranch":
     case "tracking.dynamic.dispatchToNamedBranch":

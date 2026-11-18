@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-returns-list, admin-returns-list, manager-returns-list
-import { lazy, memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, ChevronRight, CircleCheck, Inbox, SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -35,7 +35,6 @@ import {
   type SelectOption,
 } from "../../shared/ui/primitives";
 import { formatBatchDisplayId } from "../batches/lib/batchFormat";
-import { OpsSection } from "../ops/ui/OpsSection";
 import type { BatchDetailLocationState } from "../batches/model/batchView";
 import {
   DEFAULT_RETURN_SORT,
@@ -52,9 +51,6 @@ import {
   type ReturnBatchSortKey,
   type ReturnBatchesResponse,
 } from "./model/returnBatches";
-
-/** «Qaytarish so'rovlari» — faqat superadmin (F2NzXpMv, Ops'dan ko'chgan); kodi alohida bo'lakda. */
-const LogisticsOpsPage = lazy(() => import("../logistics-ops"));
 
 const PAGE_SIZES = [10, 20, 50, 100] as const;
 const BATCH_STATUSES: readonly BatchStatus[] = ["new", "on_the_way", "received", "cancelled"];
@@ -86,8 +82,8 @@ const known = (value: string) => (value.trim() && value !== "—" ? value : null
  * yig'adi va `meta.total` ni shu sahifadagi qatorlar soni qilib qaytaradi — «jami N ta paket» va sahifalash shu
  * holda to'liq emas. Frontend buni tuzata olmaydi.
  *
- * Superadmin uchun ro'yxat ostida «Qaytarish so'rovlari» (`pages/logistics-ops`, F2NzXpMv): ilgari Ops vositalarida
- * edi. Admin va menejerga ko'rinmaydi — ruxsat kengaymadi. Maketda yo'q, eng yaqini: `superadmin-ops-logistics`.
+ * Kuryerlarning qaytarish SO'ROVLARI (tasdiqlash / rad etish) bu yerda emas — «Pochta → Qaytarish» (`/mails/return`):
+ * u5HTJtqK da ro'yxat ostidagi superadmin nusxasi (`pages/logistics-ops`) olib tashlandi — bir ish bitta joyda.
  */
 const ReturnsPage = () => {
   const { t, i18n } = useTranslation(["returns", "newOrders"]);
@@ -440,12 +436,6 @@ const ReturnsPage = () => {
           )}
         </QueryBoundary>
       </Card>
-
-      {role === "superadmin" ? (
-        <OpsSection>
-          <LogisticsOpsPage />
-        </OpsSection>
-      ) : null}
     </div>
   );
 };

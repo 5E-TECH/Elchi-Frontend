@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { diffRules, parseRuleValue, toPatchBody, toRulesForm, toSettingsPatch, validateRule } from "./rulesForm";
+import {
+  changeImpact,
+  diffRules,
+  parseRuleValue,
+  RULES,
+  RULES_ORDER,
+  toPatchBody,
+  toRulesForm,
+  toSettingsPatch,
+  validateRule,
+} from "./rulesForm";
 
 const SETTINGS = {
   id: "1",
@@ -109,5 +119,23 @@ describe("hisob qoidalari — forma", () => {
     expect(validateRule("minPrice")("150,5")).toBe("page.rules.errors.integer");
     expect(validateRule("extraLimit")("-1")).toBe("page.rules.errors.notNumber");
     expect(validateRule("extraLimit")("")).toBe(true);
+  });
+});
+
+describe("hisob qoidalari — tartib va oqibatlar (B0ILd7YI)", () => {
+  it("RULES_ORDER har maydonni aynan bir marta o'z ichiga oladi (yangi maydon unutilmasin)", () => {
+    expect([...RULES_ORDER].sort()).toEqual(Object.keys(RULES).sort());
+    expect(new Set(RULES_ORDER).size).toBe(RULES_ORDER.length);
+  });
+
+  it("changeImpact: narx qoidasi — sayt kalkulyatori ham; minimal narx / kuryer chegarasi — faqat sotuv", () => {
+    expect(changeImpact([{ field: "firstKg", from: 1, to: 2 }])).toEqual({ quote: true, saleOnly: false });
+    expect(changeImpact([{ field: "minPrice", from: null, to: 15000 }])).toEqual({ quote: false, saleOnly: true });
+    expect(
+      changeImpact([
+        { field: "extraLimit", from: 20000, to: null },
+        { field: "roundTo", from: 500, to: 1000 },
+      ]),
+    ).toEqual({ quote: true, saleOnly: true });
   });
 });

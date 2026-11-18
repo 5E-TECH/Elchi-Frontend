@@ -1,7 +1,9 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MailItem } from "../../../entities/mails";
+import i18n from "../../../i18n";
+import { expectNoRawBackendText, mockRejection } from "../../../test/mockEnvelope";
 import { renderWithProviders } from "../../../test/test-utils";
 import uz from "../../../locales/uz/mails.json";
 import ru from "../../../locales/ru/mails.json";
@@ -76,6 +78,16 @@ const listResult = (items: MailItem[]) => ({
 
 const checkboxOfCustomer = (name: string) => screen.getByRole("checkbox", { name: `${name} so'rovini tanlash` });
 const selectionRegion = () => screen.getByRole("region", { name: "Tanlangan so'rovlar" });
+const APPROVE_DIALOG = { name: "Qaytarish so'rovlarini tasdiqlang" };
+const REJECT_DIALOG = { name: "Qaytarish so'rovlarini rad eting" };
+/** Oynadagi kuryer guruhlari (ichki buyurtma ro'yxatisiz) — matni bilan. */
+const topGroups = (dialog: HTMLElement) => {
+  const groups = within(dialog).getByRole("list", { name: "Kuryerlar bo'yicha" });
+  return within(groups)
+    .getAllByRole("listitem")
+    .filter((item) => item.parentElement === groups)
+    .map((item) => item.textContent);
+};
 
 describe("ReturnMails (Pochta → Qaytarish)", () => {
   beforeEach(() => {
@@ -155,117 +167,6 @@ describe("ReturnMails (Pochta → Qaytarish)", () => {
     expect(checkboxOfCustomer("Vali")).not.toBeChecked();
   });
 
-  it("approves the checked order with exactly { order_ids } and clears the selection", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<ReturnMails layout="card" />);
-
-    await user.click(checkboxOfCustomer("Vali"));
-    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
-
-    expect(mocks.approveMutateAsync).toHaveBeenCalledWith({ order_ids: ["101"] });
-    expect(mocks.rejectMutateAsync).not.toHaveBeenCalled();
-    expect(await screen.findByText("1 ta buyurtma omborga qaytarildi")).toBeInTheDocument();
-    expect(checkboxOfCustomer("Vali")).not.toBeChecked();
-  });
-
-  it("rejects the whole courier group", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<ReturnMails layout="card" />);
-
-    // Guruh belgisi — faqat shu kuryerning so'rovlari.
-    await user.click(screen.getByRole("checkbox", { name: "Ali: barchasini tanlash" }));
-    await user.click(screen.getByRole("button", { name: "Rad etish" }));
-
-    expect(mocks.rejectMutateAsync).toHaveBeenCalledWith({ order_ids: ["101", "102"] });
-    expect(
-      await screen.findByText("2 ta so'rov rad etildi — buyurtmalar joyida qoldi (kuryerda yoki filial pochtasida)"),
-    ).toBeInTheDocument();
-  });
-
-  // F1: toast backend haqiqatda bajarganini aytadi, tanlanganlar sonini emas.
-  it("counts what the backend approved and notes the skipped stale requests", async () => {
-    const user = userEvent.setup();
-    mocks.approveMutateAsync.mockResolvedValue({
-      statusCode: 200,
-      message: "Qaytarish so'rovlari tasdiqlandi — buyurtmalar omborga qaytarildi",
-      data: { approved: 1, order_ids: ["101"], skipped_order_ids: ["102"] },
-    });
-    renderWithProviders(<ReturnMails layout="card" />);
-
-    await user.click(checkboxOfCustomer("Vali"));
-    await user.click(checkboxOfCustomer("Soli"));
-    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
-
-    expect(mocks.approveMutateAsync).toHaveBeenCalledWith({ order_ids: ["101", "102"] });
-    expect(
-      await screen.findByText(
-        "1 ta buyurtma omborga qaytarildi · 1 ta so'rov allaqachon ko'rib chiqilgan — o'tkazib yuborildi",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/2 ta buyurtma omborga qaytarildi/)).not.toBeInTheDocument();
-  });
-
-  it("counts what the backend rejected and notes the skipped stale requests", async () => {
-    const user = userEvent.setup();
-    mocks.rejectMutateAsync.mockResolvedValue({
-      statusCode: 200,
-      data: { rejected: 1, order_ids: ["102"], skipped_order_ids: ["101"] },
-    });
-    renderWithProviders(<ReturnMails layout="card" />);
-
-    await user.click(screen.getByRole("checkbox", { name: "Ali: barchasini tanlash" }));
-    await user.click(screen.getByRole("button", { name: "Rad etish" }));
-
-    expect(mocks.rejectMutateAsync).toHaveBeenCalledWith({ order_ids: ["101", "102"] });
-    expect(
-      await screen.findByText(
-        "1 ta so'rov rad etildi — buyurtmalar joyida qoldi (kuryerda yoki filial pochtasida) · 1 ta so'rov allaqachon ko'rib chiqilgan — o'tkazib yuborildi",
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it("falls back to the number of selected requests when the response has no count", async () => {
-    const user = userEvent.setup();
-    mocks.approveMutateAsync.mockResolvedValue({ statusCode: 200, data: null });
-    renderWithProviders(<ReturnMails layout="card" />);
-
-    await user.click(checkboxOfCustomer("Vali"));
-    await user.click(checkboxOfCustomer("Soli"));
-    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
-
-    // Son yo'q va skipped yo'q — tanlanganlar soni, izohsiz.
-    expect(await screen.findByText("2 ta buyurtma omborga qaytarildi")).toBeInTheDocument();
-    expect(screen.queryByText(/allaqachon ko'rib chiqilgan/)).not.toBeInTheDocument();
-  });
-
-  it("shows the backend reason verbatim when the action is refused and keeps the selection", async () => {
-    const user = userEvent.setup();
-    const backendMessage =
-      "Siz faqat o'z filialingiz kuryerlarining qaytarish so'rovlarini ko'rib chiqa olasiz";
-    mocks.approveMutateAsync.mockRejectedValue({
-      response: { status: 403, data: { statusCode: 403, message: backendMessage } },
-    });
-    renderWithProviders(<ReturnMails layout="card" />);
-
-    await user.click(checkboxOfCustomer("Vali"));
-    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
-
-    expect(await screen.findByText(backendMessage)).toBeInTheDocument();
-    expect(checkboxOfCustomer("Vali")).toBeChecked();
-    expect(within(selectionRegion()).getByText("1 ta so'rov tanlandi")).toBeInTheDocument();
-  });
-
-  it("falls back to the translated error when the backend sends no message", async () => {
-    const user = userEvent.setup();
-    mocks.rejectMutateAsync.mockRejectedValue({ response: { status: 500, data: {} } });
-    renderWithProviders(<ReturnMails layout="card" />);
-
-    await user.click(checkboxOfCustomer("Soli"));
-    await user.click(screen.getByRole("button", { name: "Rad etish" }));
-
-    expect(await screen.findByText("Qaytarish so'rovini bajarib bo'lmadi")).toBeInTheDocument();
-  });
-
   it("labels HQ-scope requests as going to the center", () => {
     mocks.useGetReturnMails.mockReturnValue(listResult([request({ action: "center" })]));
     renderWithProviders(<ReturnMails layout="card" />);
@@ -299,6 +200,393 @@ describe("ReturnMails (Pochta → Qaytarish)", () => {
     expect(screen.getByText("Qaytarish so'rovlarini yuklab bo'lmadi")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(refetch).toHaveBeenCalled();
+  });
+});
+
+/**
+ * u5HTJtqK — «Tasdiqlash» / «Rad etish» faqat tasdiq oynasi orqali (maket `superadmin-ops-logistics-approve-dialog`,
+ * Ops'dagi «Qaytarish so'rovlari» nusxasidan ko'chgan — OS-3 testlari shu yerga ko'chirildi). Oyna va xabar haqiqiy
+ * UI orqali (`renderWithProviders` — `ConfirmHost` + `Toaster`), mock emas.
+ */
+describe("ReturnMails — tasdiq oynasi va natija (u5HTJtqK)", () => {
+  /** 7 ta: Jasur — 5 (aralash holat), Sherzod — 1, kuryersiz — 1; HQ doirasi (`action: center`). */
+  const order = (id: string, courier: MailItem["courier"], status: string) =>
+    request({
+      id,
+      request_id: id,
+      order_id: id,
+      courier,
+      courier_id: courier?.id ?? "",
+      status,
+      action: "center",
+      customer: { id: `c${id}`, name: `Mijoz ${id}`, phone_number: "+998901112233", extra_number: null },
+    });
+  const jasur = { id: "56", name: "Jasur Tursunov", phone_number: "+998901112233" };
+  const sherzod = { id: "57", name: "Sherzod Komilov", phone_number: "+998901112244" };
+  const SEVEN = [
+    order("9001", jasur, "waiting"),
+    order("9002", jasur, "on the road"),
+    order("9003", jasur, "waiting"),
+    order("9004", jasur, "on the road"),
+    order("9005", jasur, "waiting"),
+    order("9007", null, "waiting"),
+    order("9006", sherzod, "waiting"),
+  ];
+  const ALL_IDS = ["9001", "9002", "9003", "9004", "9005", "9007", "9006"];
+
+  const openDialog = async (user: ReturnType<typeof userEvent.setup>, action: "approve" | "reject" = "approve") => {
+    await user.click(screen.getByRole("checkbox", { name: "Barcha so'rovlarni tanlash" }));
+    await user.click(
+      within(selectionRegion()).getByRole("button", { name: action === "approve" ? "Tasdiqlash" : "Rad etish" }),
+    );
+    return screen.findByRole("alertdialog", action === "approve" ? APPROVE_DIALOG : REJECT_DIALOG);
+  };
+
+  beforeEach(() => {
+    mocks.useDispatchBranchNames.mockReset().mockReturnValue(new Map());
+    mocks.useGetReturnMails.mockReturnValue(listResult(SEVEN));
+    mocks.approveMutateAsync.mockReset().mockResolvedValue({
+      statusCode: 200,
+      message: "Qaytarish so'rovlari tasdiqlandi — buyurtmalar omborga qaytarildi",
+      data: { approved: 7, order_ids: ALL_IDS, skipped_order_ids: [] },
+    });
+    mocks.rejectMutateAsync.mockReset().mockResolvedValue({ statusCode: 200, data: { rejected: 7, skipped_order_ids: [] } });
+  });
+
+  afterEach(async () => {
+    await i18n.changeLanguage("uz");
+  });
+
+  it("⭐ oynasiz so'rov ketmaydi: HQ ombori, buyurtma va kuryer soni, kuryersiz qator, guruhlar, eslatma; «Bekor qilish» — tanlov saqlanadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReturnMails layout="card" />);
+    // Xulosa ham oyna kabi: kuryersiz guruh kuryer sanalmaydi (2 ta, 3 emas).
+    expect(screen.getByText((_, node) => node?.textContent === "2 ta kuryer, 7 ta buyurtma")).toBeInTheDocument();
+    const dialog = await openDialog(user);
+
+    expect(mocks.approveMutateAsync).not.toHaveBeenCalled();
+    expect(dialog).toHaveTextContent(
+      "7 ta buyurtma kuryerlardan olinadi va HQ omboriga qaytariladi. Holati «Kutilmoqda» bo'ladi, kuryer va pochtadan ajratiladi.",
+    );
+    expect(within(dialog).getByText("Buyurtmalar").nextSibling).toHaveTextContent("7 ta");
+    expect(within(dialog).getByText("Kuryerlar").nextSibling).toHaveTextContent("2 ta");
+    expect(within(dialog).getByText("+ 1 ta buyurtma kuryersiz")).toBeInTheDocument();
+    // Ro'yxat tartibida, kuryersiz guruh — oxirida («Kuryer biriktirilmagan», jadvaldagi «Kuryer» emas).
+    expect(topGroups(dialog)).toEqual([
+      expect.stringContaining("Jasur Tursunov5 ta"),
+      expect.stringContaining("Sherzod Komilov1 ta"),
+      expect.stringContaining("Kuryer biriktirilmagan1 ta"),
+    ]);
+    const groups = within(dialog).getByRole("list", { name: "Kuryerlar bo'yicha" });
+    const jasurGroup = within(groups).getByText("Jasur Tursunov").closest("li")!;
+    // Har kuryerda birinchi 3 buyurtma, qolgani «+ yana N ta»; avatar — bosh harflar.
+    expect(within(jasurGroup).getByText("№9001")).toBeInTheDocument();
+    expect(within(jasurGroup).queryByText("№9004")).not.toBeInTheDocument();
+    expect(within(jasurGroup).getByText("+ yana 2 ta")).toBeInTheDocument();
+    expect(within(jasurGroup).getByText("JT")).toBeInTheDocument();
+    // Holat — jadval badge'i matni (`on the road` → «Kuryer qabul qilmagan»), xom qiymat emas.
+    expect(within(jasurGroup).getByText("Kuryer qabul qilmagan")).toBeInTheDocument();
+    expect(within(jasurGroup).getAllByText("Kuryer qo'lida")).toHaveLength(2);
+    expect(dialog).not.toHaveTextContent("on the road");
+    // Telefonda guruhlar ro'yxati 30dvh bilan cheklanadi — xato bloki pastki tugmalar ortida qolmaydi.
+    expect(groups.className).toContain("max-md:max-h-[min(340px,30dvh)]");
+    expect(
+      within(dialog).getByText(
+        "Bu amalni bekor qilib bo'lmaydi. Shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan buyurtma o'tkazib yuboriladi va natijada ko'rsatiladi.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" })).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog", APPROVE_DIALOG)).not.toBeInTheDocument());
+    expect(mocks.approveMutateAsync).not.toHaveBeenCalled();
+    expect(within(selectionRegion()).getByText("7 ta so'rov tanlandi")).toBeInTheDocument();
+  });
+
+  it("filial doirasida (`action: branch`) — «filial omboriga qaytariladi»", async () => {
+    const user = userEvent.setup();
+    mocks.useGetReturnMails.mockReturnValue(listResult(SEVEN.map((item) => ({ ...item, action: "branch" }))));
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    expect(dialog).toHaveTextContent("7 ta buyurtma kuryerlardan olinadi va filial omboriga qaytariladi.");
+  });
+
+  it("⭐ hammasi tasdiqlansa — `{ order_ids }` oynadan, muvaffaqiyat xabari, oyna yopiladi, tanlov tozalanadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+    expect(mocks.approveMutateAsync).toHaveBeenCalledWith({ order_ids: ALL_IDS });
+    expect(mocks.rejectMutateAsync).not.toHaveBeenCalled();
+    expect(await screen.findByText("7 ta tasdiqlandi")).toBeInTheDocument();
+    expect(screen.getByText("7 ta buyurtma omborga qaytarildi.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog", APPROVE_DIALOG)).not.toBeInTheDocument());
+    expect(within(selectionRegion()).getByText("Hech biri tanlanmagan")).toBeInTheDocument();
+    expect(within(selectionRegion()).getByRole("button", { name: "Tasdiqlash" })).toBeDisabled();
+  });
+
+  it("qisman: «N ta tasdiqlandi, M tasi o'tkazib yuborildi» ogohlantirishi va o'tkazilgan buyurtma raqami", async () => {
+    const user = userEvent.setup();
+    mocks.approveMutateAsync.mockResolvedValue({ statusCode: 200, data: { approved: 6, order_ids: [], skipped_order_ids: ["9004"] } });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+    expect(await screen.findByText("6 ta tasdiqlandi, 1 tasi o'tkazib yuborildi")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "6 ta buyurtma omborga qaytarildi. №9004 ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("ko'p o'tkazib yuborilsa — 3 tasi raqami bilan, qolgani «va yana N ta»", async () => {
+    const user = userEvent.setup();
+    mocks.approveMutateAsync.mockResolvedValue({
+      statusCode: 200,
+      data: { approved: 2, skipped_order_ids: ["9001", "9002", "9003", "9004", "9005"] },
+    });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+    expect(await screen.findByText("2 ta tasdiqlandi, 5 tasi o'tkazib yuborildi")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "2 ta buyurtma omborga qaytarildi. №9001, №9002, №9003 va yana 2 tasini shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("hech biri tasdiqlanmasa — «0 ta buyurtma omborga qaytarildi» yozilmaydi", async () => {
+    const user = userEvent.setup();
+    mocks.approveMutateAsync.mockResolvedValue({ statusCode: 200, data: { approved: 0, skipped_order_ids: ["9004"] } });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+    expect(await screen.findByText("0 ta tasdiqlandi, 1 tasi o'tkazib yuborildi")).toBeInTheDocument();
+    expect(screen.getByText("№9004 ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.")).toBeInTheDocument();
+    expect(screen.queryByText(/omborga qaytarildi/)).not.toBeInTheDocument();
+  });
+
+  it("javobda son bo'lmasa — yuborilganlar soni (o'tkazilganlarsiz)", async () => {
+    const user = userEvent.setup();
+    mocks.approveMutateAsync.mockResolvedValue({ statusCode: 200, data: null });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+    expect(await screen.findByText("7 ta tasdiqlandi")).toBeInTheDocument();
+    expect(screen.queryByText(/o'tkazib yuborildi/)).not.toBeInTheDocument();
+  });
+
+  it("⭐ 409 (hammasi shu orada ko'rib chiqilgan) — «Tanlov eskirgan» oynada, xom backend matni yo'q, tanlov saqlanadi", async () => {
+    const user = userEvent.setup();
+    mocks.approveMutateAsync.mockRejectedValue(mockRejection(409));
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Tanlov eskirgan: tanlangan so'rovlar shu orada ko'rib chiqilgan yoki holati o'zgargan. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+    );
+    expectNoRawBackendText();
+    expect(screen.getByRole("alertdialog", APPROVE_DIALOG)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog", APPROVE_DIALOG)).not.toBeInTheDocument());
+    expect(within(selectionRegion()).getByText("7 ta so'rov tanlandi")).toBeInTheDocument();
+  });
+
+  it("404 (eski backend) — o'sha «Tanlov eskirgan» matni", async () => {
+    const user = userEvent.setup();
+    mocks.approveMutateAsync.mockRejectedValue({
+      response: { status: 404, data: { message: "Tanlangan buyurtmalarda ko'rib chiqilmagan qaytarish so'rovi topilmadi" } },
+    });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(/^Tanlov eskirgan:/);
+    expect(screen.queryByText(/ko'rib chiqilmagan qaytarish so'rovi topilmadi/)).not.toBeInTheDocument();
+  });
+
+  it("403 — boshqa filial kuryeri: i18n sabab (backendning o'zbekcha matni emas), oyna ochiq", async () => {
+    const user = userEvent.setup();
+    const backendMessage = "Siz faqat o'z filialingiz kuryerlarining qaytarish so'rovlarini ko'rib chiqa olasiz";
+    mocks.approveMutateAsync.mockRejectedValue({ response: { status: 403, data: { statusCode: 403, message: backendMessage } } });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Ayrim buyurtmalar boshqa filial kuryerida — ularni o'sha filial ko'rib chiqadi. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+    );
+    expect(screen.queryByText(backendMessage)).not.toBeInTheDocument();
+    expect(screen.getByRole("alertdialog", APPROVE_DIALOG)).toBeInTheDocument();
+  });
+
+  it("5xx — «ayrimlari qaytgan bo'lishi mumkin», qayta urinish oynaning o'zidan", async () => {
+    const user = userEvent.setup();
+    mocks.approveMutateAsync.mockRejectedValueOnce(mockRejection(500));
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Tasdiqlashda xato yuz berdi. Ayrim buyurtmalar omborga qaytgan bo'lishi mumkin — ro'yxat yangilandi, tekshirib qayta urinib ko'ring.",
+    );
+    expectNoRawBackendText();
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+    expect(await screen.findByText("7 ta tasdiqlandi")).toBeInTheDocument();
+    expect(mocks.approveMutateAsync).toHaveBeenCalledTimes(2);
+  });
+
+  it("vaqt chegarasi (timeout) — 5xx kabi matn, xom xato matni yo'q", async () => {
+    const user = userEvent.setup();
+    mocks.approveMutateAsync.mockRejectedValueOnce({ isAxiosError: true, code: "ECONNABORTED", message: "timeout of 20000ms exceeded" });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(/^Tasdiqlashda xato yuz berdi\./);
+    expect(screen.queryByText(/timeout of/)).not.toBeInTheDocument();
+  });
+
+  it("xato chiqqanda oyna tanasi xato blokiga suriladi (telefonda pastda qolmasin)", async () => {
+    const user = userEvent.setup();
+    const scrollIntoView = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      mocks.approveMutateAsync.mockRejectedValueOnce(mockRejection(403));
+      renderWithProviders(<ReturnMails layout="card" />);
+      const dialog = await openDialog(user);
+      await user.click(within(dialog).getByRole("button", { name: "7 tasini tasdiqlash" }));
+
+      const alert = await within(dialog).findByRole("alert");
+      await waitFor(() => expect(scrollIntoView.mock.contexts).toContain(alert));
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
+  it("⭐ «Rad etish» — oyna (son, guruhlar), «Bekor qilish» so'rovsiz; tasdiqlansa — `reject { order_ids }` va xabar", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReturnMails layout="card" />);
+    let dialog = await openDialog(user, "reject");
+
+    expect(dialog).toHaveTextContent(
+      "7 ta so'rov rad etiladi: buyurtmalar omborga qaytmaydi, kuryerda (yoki filial pochtasida) qoladi.",
+    );
+    expect(within(dialog).getByText("Jasur Tursunov")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog", REJECT_DIALOG)).not.toBeInTheDocument());
+    expect(mocks.rejectMutateAsync).not.toHaveBeenCalled();
+
+    await user.click(within(selectionRegion()).getByRole("button", { name: "Rad etish" }));
+    dialog = await screen.findByRole("alertdialog", REJECT_DIALOG);
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini rad etish" }));
+
+    expect(mocks.rejectMutateAsync).toHaveBeenCalledWith({ order_ids: ALL_IDS });
+    expect(mocks.approveMutateAsync).not.toHaveBeenCalled();
+    expect(await screen.findByText("7 ta so'rov rad etildi")).toBeInTheDocument();
+    expect(screen.getByText("Buyurtmalar kuryerda yoki filial pochtasida qoldi.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog", REJECT_DIALOG)).not.toBeInTheDocument());
+    expect(within(selectionRegion()).getByRole("button", { name: "Rad etish" })).toBeDisabled();
+  });
+
+  it("rad etish qisman: «6 ta rad etildi, 1 tasi o'tkazib yuborildi» va raqam", async () => {
+    const user = userEvent.setup();
+    mocks.rejectMutateAsync.mockResolvedValue({ statusCode: 200, data: { rejected: 6, skipped_order_ids: ["9004"] } });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user, "reject");
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini rad etish" }));
+
+    expect(await screen.findByText("6 ta rad etildi, 1 tasi o'tkazib yuborildi")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Buyurtmalar kuryerda yoki filial pochtasida qoldi. №9004 ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("rad etish 409 va 5xx — oynada i18n matn", async () => {
+    const user = userEvent.setup();
+    mocks.rejectMutateAsync.mockRejectedValueOnce(mockRejection(409)).mockRejectedValueOnce(mockRejection(502));
+    renderWithProviders(<ReturnMails layout="card" />);
+    const dialog = await openDialog(user, "reject");
+
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini rad etish" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(/^Tanlov eskirgan:/);
+    await user.click(within(dialog).getByRole("button", { name: "7 tasini rad etish" }));
+    await waitFor(() =>
+      expect(within(dialog).getByRole("alert")).toHaveTextContent(
+        "Rad etishda xato yuz berdi. Ayrim so'rovlar rad etilgan bo'lishi mumkin",
+      ),
+    );
+    expectNoRawBackendText();
+  });
+
+  it("en: ko'p o'tkazilgan — ko'plikda («them»), 3 tadan ko'p — «and N more»", async () => {
+    await i18n.changeLanguage("en");
+    const user = userEvent.setup();
+    mocks.approveMutateAsync
+      .mockResolvedValueOnce({ statusCode: 200, data: { approved: 5, skipped_order_ids: ["9001", "9002"] } })
+      .mockResolvedValueOnce({ statusCode: 200, data: { approved: 2, skipped_order_ids: ["9001", "9002", "9003", "9004", "9005"] } });
+    renderWithProviders(<ReturnMails layout="card" />);
+    const approveAll = async () => {
+      await user.click(screen.getByRole("checkbox", { name: "Select all requests" }));
+      await user.click(within(screen.getByRole("region", { name: "Selected requests" })).getByRole("button", { name: "Approve" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "Confirm return requests" });
+      await user.click(within(dialog).getByRole("button", { name: "Approve 7" }));
+    };
+
+    await approveAll();
+    expect(
+      await screen.findByText(
+        "Returned to the warehouse: 5. №9001, №9002: another employee reviewed them meanwhile or their status changed.",
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    await approveAll();
+    expect(
+      await screen.findByText(
+        "Returned to the warehouse: 2. №9001, №9002, №9003 and 2 more: another employee reviewed them meanwhile or their status changed.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["ru", "Выбрать все запросы", "Выбранные запросы", "Подтвердить", "Подтвердите запросы на возврат", "Подтвердить 7", "Заказы (7) будут изъяты у курьеров и возвращены на склад HQ."],
+    ["ru", "Выбрать все запросы", "Выбранные запросы", "Отклонить", "Отклоните запросы на возврат", "Отклонить 7", "Запросы (7) будут отклонены"],
+    ["en", "Select all requests", "Selected requests", "Reject", "Reject return requests", "Reject 7", "Requests (7) will be rejected"],
+  ] as const)("%s: «%s» → «%s» — oyna tanlangan tilda", async (language, selectAll, region, button, title, confirmLabel, description) => {
+    await i18n.changeLanguage(language);
+    const user = userEvent.setup();
+    renderWithProviders(<ReturnMails layout="card" />);
+    await user.click(screen.getByRole("checkbox", { name: selectAll }));
+    await user.click(within(screen.getByRole("region", { name: region })).getByRole("button", { name: button }));
+    const dialog = await screen.findByRole("alertdialog", { name: title });
+    expect(dialog).toHaveTextContent(description);
+    expect(within(dialog).getByRole("button", { name: confirmLabel })).toBeInTheDocument();
+    // Oyna global (`ConfirmHost`) — keyingi testga ochiq qolmasin.
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
   });
 });
 
@@ -363,8 +651,37 @@ describe("ReturnMails — filial o'tkazmasi so'rovlari (menejer «kelmagan», HQ
 
     await user.click(screen.getByRole("checkbox", { name: "Filial: Guliston — kelmagan: barchasini tanlash" }));
     await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
+    const dialog = await screen.findByRole("alertdialog", APPROVE_DIALOG);
+    // Faqat filialga kelmaganlar — «Kutilmoqda» emas: «Qabul qilindi» + qayta jo'natish uchun yangi pochta.
+    expect(dialog).toHaveTextContent(
+      "2 ta buyurtma filialga kelmagan — HQ omboriga qaytariladi. Holati «Qabul qilindi» bo'ladi va qayta jo'natish uchun viloyatning yangi pochtasiga qo'shiladi.",
+    );
+    expect(dialog).not.toHaveTextContent("kuryerlardan olinadi");
+    await user.click(within(dialog).getByRole("button", { name: "2 tasini tasdiqlash" }));
 
     expect(mocks.approveMutateAsync).toHaveBeenCalledWith({ order_ids: ["201", "203"] });
+  });
+
+  it("oynada: filial guruhlari kuryer sanalmaydi — «+ N ta buyurtma kuryersiz», kuryerlardan keyin, «Filialga kelmagan»", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReturnMails layout="card" />, { preloadedState: roleState("superadmin") });
+
+    await user.click(screen.getByRole("checkbox", { name: "Barcha so'rovlarni tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
+    const dialog = await screen.findByRole("alertdialog", APPROVE_DIALOG);
+
+    // Aralash tanlov (kuryerdagi + filialga kelmagan) — ikkala natija ham aytiladi (backend `returnDtoOf`).
+    expect(dialog).toHaveTextContent(
+      "4 ta buyurtma omborga qaytariladi: kuryerdagilar «Kutilmoqda» bo'lib, kuryer va pochtadan ajratiladi; filialga kelmaganlari HQ omborida «Qabul qilindi» bo'lib, qayta jo'natish uchun viloyatning yangi pochtasiga qo'shiladi.",
+    );
+    expect(within(dialog).getByText("Kuryerlar").nextSibling).toHaveTextContent("1 ta");
+    expect(within(dialog).getByText("+ 3 ta buyurtma kuryersiz")).toBeInTheDocument();
+    expect(topGroups(dialog)).toEqual([
+      expect.stringContaining("Ali1 ta"),
+      expect.stringContaining("Filial: Guliston — kelmagan2 ta"),
+      expect.stringContaining("Filial: Urgut — kelmagan1 ta"),
+    ]);
+    expect(within(dialog).getAllByText("Filialga kelmagan")).toHaveLength(3);
   });
 
   it("nom olinmasa (HQ menejeri — `dispatch-destinations` yopiq) — so'ralmaydi, «Filial o'tkazmasi», guruhlar baribir alohida", () => {
@@ -425,6 +742,9 @@ describe("ReturnMails — telefon (< 768): guruh sarlavhasi va kartalar", () => 
     await user.click(within(list).getByText("Vali"));
     expect(checkboxOfCustomer("Vali")).toBeChecked();
     await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
+    const dialog = await screen.findByRole("alertdialog", APPROVE_DIALOG);
+    expect(mocks.approveMutateAsync).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole("button", { name: "1 tasini tasdiqlash" }));
     expect(mocks.approveMutateAsync).toHaveBeenCalledWith({ order_ids: ["101"] });
   });
 });
@@ -437,10 +757,6 @@ describe("mails locales — Qaytarish keys", () => {
     "returnStateNotArrived",
     "returnBranchGroup",
     "returnBranchGroupFallback",
-    "returnApproveSuccess",
-    "returnRejectSuccess",
-    "returnActionError",
-    "returnSkippedNote",
   ] as const;
   const dictionaries = { uz, ru, en } as Record<string, Record<string, unknown>>;
 
@@ -451,14 +767,19 @@ describe("mails locales — Qaytarish keys", () => {
     });
   });
 
-  it("keeps the {{count}} placeholder in the count messages", () => {
+  it("keeps the {{branch}} placeholder in the branch group name", () => {
     Object.values(dictionaries).forEach((dict) => {
-      expect(dict.returnApproveSuccess).toContain("{{count}}");
-      expect(dict.returnRejectSuccess).toContain("{{count}}");
-      expect(dict.returnSkippedNote).toContain("{{count}}");
       expect(dict.returnBranchGroup).toContain("{{branch}}");
     });
   });
+
+  // u5HTJtqK: bir qatorli xabar (`apiRequest`) o'rnini tasdiq oynasi va `notify` (mailsArchive `return.*`) oldi.
+  it.each(["returnApproveSuccess", "returnRejectSuccess", "returnActionError", "returnSkippedNote"])(
+    "old one-line toast key %s is gone from every locale",
+    (key) => {
+      Object.values(dictionaries).forEach((dict) => expect(dict[key]).toBeUndefined());
+    },
+  );
 });
 
 describe("mailsArchive locales — uz/ru/en parity", () => {

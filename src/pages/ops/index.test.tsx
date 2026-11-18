@@ -203,7 +203,8 @@ describe("Ops page — tablar (dizayn v2)", () => {
   });
 
   it.each([
-    ["logistics", "/returns"],
+    // u5HTJtqK: qaytarish so'rovlari — «Pochta → Qaytarish» da (Ops nusxasi olib tashlandi).
+    ["logistics", "/mails/return"],
     ["branches", "/batches"],
   ])("ko'chgan tab: `?tab=%s` → %s (F2NzXpMv)", async (tab, target) => {
     renderWithProviders(

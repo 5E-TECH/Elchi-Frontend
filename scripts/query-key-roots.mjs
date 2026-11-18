@@ -45,7 +45,6 @@ export const SHARED_ROOTS_RATCHET = {
   "INTEGRATIONS.RECEIVABLES": ["integ-cov", "integration-settlement"],
   "MANAGERS.BASE": ["identity-cov", "managers"],
   "ORDERS.EXTERNAL": ["incoming-external-orders", "orders"],
-  "POSTS.RETURN_REQUESTS_LIST": ["logi-cov", "mails"],
   "REGIONS.BASE": ["region-district-catalog", "region-districts-admin", "regions"],
   "SCAN.BY_TOKEN": ["misc-cov", "scan-detail"],
   "USERS.BASE": ["notification-dispatch", "user", "users"],

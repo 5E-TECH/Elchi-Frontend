@@ -166,7 +166,6 @@ export const V2_SCOPES = Object.freeze([
   "src/pages/integrations",
   "src/pages/investor",
   "src/pages/investors-ops",
-  "src/pages/logistics-ops",
   "src/pages/logs",
   "src/pages/mails",
   "src/pages/market-operators",

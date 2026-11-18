@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../../app/config/store";
 import { useReceivePost } from "../../../entities/mails";
 import { coverageErrorLine, readQrScopeText } from "../../../shared/lib/coverageReasons";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
@@ -17,19 +15,13 @@ import {
   getScanResourceType,
   normalizeScanToken,
 } from "../lib/scanResource";
-import {
-  getBranchReceiveDecision,
-  getCourierReceiveDecision,
-  isCourierReceivableStatus,
-  readOrderPostId,
-  readScanReceiveResult,
-} from "./courierReceive";
+import { getBranchReceiveDecision, isScanReceivableStatus, readOrderPostId, readScanReceiveResult } from "./courierReceive";
 
 /**
- * SKAN = QABUL — universal skaner rejimlari (`/scan`, 2026-11-07; andoza — BeePost `/scan` kuryer qabul sikli):
- *   - kuryer «Qabul qilish» (`courierReceive`, `actor: "courier"`) — o'z pochtasidagi yo'ldagi buyurtma;
- *   - menejer «Pochtadan qabul» (`branchReceive`, `actor: "branch"`) — o'z filialiga kelgan o'tkazma pochtasidagi
- *     yo'ldagi buyurtma (qoidalar `getBranchReceiveDecision`).
+ * SKAN = QABUL — universal skanerning menejer «Pochtadan qabul» rejimi (`/scan` `branchReceive`, 2026-11-07; andoza —
+ * BeePost `/scan` qabul sikli): o'z filialiga kelgan o'tkazma pochtasidagi yo'ldagi buyurtma (qoidalar
+ * `getBranchReceiveDecision`). Kuryerning «Qabul qilish» rejimi COURIER-SCAN (ega, 2026-11-17) da olib tashlandi —
+ * kuryer skani o'zi qabul («O'zimga olish»).
  * Maket yo'q — eng yaqini `courier-scan-active` («O'zimga olish» bilan bir xil ko'rinish: hisoblagich, ro'yxat).
  *
  * Har skan: token → buyurtma (`fetchScanDetail`, keshsiz — har safar yangi holat), keyin:
@@ -43,8 +35,8 @@ import {
  *     qayta skan (natija sahifasi), skan seansidan beixtiyor chiqib ketilmaydi;
  *   - «kutilmoqda» (qabul qilingan — shu sessiyada ham, avval ham) → natija sahifasi `/scan/:token` (sotish / bekor).
  *     Ya'ni yo'ldagi posilka: 1-skan — qabul, keyingi skan — sotish / bekor (Dilshod, 2026-11-07);
- *   - kuryerda: bo'sh / NEW → «O'zimga olish rejimida oling»; menejerda: boshqa filialniki → sabab; kuryerdagi yoki
- *     boshqa holatdagi buyurtma — xato ovozi va sabab;
+ *   - boshqa filialniki → sabab; kuryerdagi (kuryer skan bilan olgan) yoki boshqa holatdagi buyurtma — xato ovozi
+ *     va sabab;
  *   - begona QR (#620, anKpzwxk: 403 `order_not_in_your_branch` …) va qabul rad javobi (`post_receive_manager_only`)
  *     — lokal uz/ru/en matn (`common:coverage.*`), backend matni faqat noma'lum sabab uchun.
  * Bitta token parallel ikki marta ketmaydi (yo'ldagi tokenlar to'plami).
@@ -102,30 +94,24 @@ const placeOf = (order: OrderDetail) => {
   return textOf(district) ?? textOf(region);
 };
 
-/** Kim qabul qiladi: kuryer (o'z pochtasi) yoki filial menejeri (o'z filialiga o'tkazma pochtasi). */
-export type ScanReceiveActor = "courier" | "branch";
+/** Skan paytidagi qoidalar — javob kelguncha filial ma'lumoti o'zgarsa ham skan o'z qoidasi bo'yicha tugaydi. */
+type ScanContext = { branchId: string | null };
 
-/** Skan paytidagi qoidalar — javob kelguncha rejim almashsa ham skan o'z rejimi bo'yicha tugaydi. */
-type ScanContext = { actor: ScanReceiveActor; branchId: string | null; currentUserId: string | number | null };
-
-export const useCourierReceive = ({
+export const useBranchReceive = ({
   enabled,
   onOpenOrder,
-  actor = "courier",
   branchId = null,
 }: {
   enabled: boolean;
   /** Allaqachon qabul qilingan buyurtma — natija sahifasi (sotish / bekor). */
   onOpenOrder: (token: string) => void;
-  actor?: ScanReceiveActor;
-  /** Menejer filiali (`actor: "branch"`); noma'lum — filial tekshirilmaydi (backend hal qiladi). */
+  /** Menejer filiali; noma'lum — filial tekshirilmaydi (backend hal qiladi). */
   branchId?: string | null;
 }) => {
   const { t } = useTranslation("scan");
   const queryClient = useQueryClient();
-  const currentUserId = useSelector((state: RootState) => state.user.user?.id ?? state.role.id ?? null);
   // Bitta qurilma — bitta navbat: tez USB skanlar serverdagi pochta qulfini navbat kutib band qilmasin.
-  const { mutateAsync: receivePost } = useReceivePost({ scope: "courier-scan-receive" });
+  const { mutateAsync: receivePost } = useReceivePost({ scope: "branch-scan-receive" });
   const [entries, setEntries] = useState<ReceiveEntry[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   /**
@@ -144,11 +130,11 @@ export const useCourierReceive = ({
   /** Qabul qilingan tokenlar → kamerada oxirgi ko'ringan vaqti (surma jimlik; qabul paytidan boshlanadi). */
   const cameraSeenRef = useRef(new Map<string, number>());
   const mountedRef = useRef(true);
-  const optionsRef = useRef({ enabled, onOpenOrder, currentUserId, actor, branchId });
+  const optionsRef = useRef({ enabled, onOpenOrder, branchId });
 
   useEffect(() => {
-    optionsRef.current = { enabled, onOpenOrder, currentUserId, actor, branchId };
-  }, [actor, branchId, currentUserId, enabled, onOpenOrder]);
+    optionsRef.current = { enabled, onOpenOrder, branchId };
+  }, [branchId, enabled, onOpenOrder]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -205,45 +191,30 @@ export const useCourierReceive = ({
         return;
       }
       if (!order) {
-        fail(token, null, t("scanner.courierReceive.notOrder"), source);
+        fail(token, null, t("scanner.branchReceive.notOrder"), source);
         return;
       }
 
       const ref = refOf(order);
-      const decision =
-        context.actor === "branch"
-          ? getBranchReceiveDecision(order, context.branchId)
-          : getCourierReceiveDecision(order, context.currentUserId);
-      if (decision === "free") {
-        fail(token, order, t("scanner.courierReceive.free"), source);
-        return;
-      }
+      const decision = getBranchReceiveDecision(order, context.branchId);
       if (decision === "notOurs") {
         fail(token, order, t("scanner.branchReceive.notOurs"), source);
         return;
       }
       if (decision === "other") {
         const name = courierNameOf(order);
-        // Menejer: yo'ldagini kuryer o'zi qabul qiladi; «kutilmoqda» — kuryer allaqachon qabul qilgan.
-        const heldKey = isCourierReceivableStatus(order.status)
-          ? "scanner.branchReceive.courierHeld"
-          : "scanner.branchReceive.courierHeldWaiting";
-        const reason =
-          context.actor === "branch"
-            ? name
-              ? t(heldKey, { name })
-              : t(`${heldKey}Unknown`)
-            : name
-              ? t("scanner.take.otherCourier", { name })
-              : t("scanner.take.otherCourierUnknown");
+        // COURIER-SCAN: buyurtmani kuryer skan bilan olgan (skan = qabul) — sotish / bekor kuryerda.
+        const reason = name
+          ? t("scanner.branchReceive.courierHeld", { name })
+          : t("scanner.branchReceive.courierHeldUnknown");
         fail(token, order, reason, source, true);
         return;
       }
       if (decision === "notReceivable") {
         // Yo'lda, lekin pochtada emas — sababi boshqa (holat to'g'ri, qabul qiladigan pochta yo'q).
-        const reason = isCourierReceivableStatus(order.status)
-          ? t("scanner.courierReceive.notInPost")
-          : t("scanner.courierReceive.notOnTheRoad");
+        const reason = isScanReceivableStatus(order.status)
+          ? t("scanner.branchReceive.notInPost")
+          : t("scanner.branchReceive.notOnTheRoad");
         fail(token, order, reason, source);
         return;
       }
@@ -256,7 +227,7 @@ export const useCourierReceive = ({
           fail(token, order, t("waitForAction"), source);
           return;
         }
-        void playScanFeedback("success", t("scanner.courierReceive.openWaiting", { ref }), source, { voice: false });
+        void playScanFeedback("success", t("scanner.branchReceive.openWaiting", { ref }), source, { voice: false });
         if (mountedRef.current && optionsRef.current.enabled) optionsRef.current.onOpenOrder(token);
         return;
       }
@@ -268,7 +239,7 @@ export const useCourierReceive = ({
           order.id,
         );
         if (!result.ok) {
-          fail(token, order, result.error ?? t("scanner.courierReceive.failed", { ref }), source);
+          fail(token, order, result.error ?? t("scanner.branchReceive.failed", { ref }), source);
           return;
         }
         const receivedAt = Date.now();
@@ -287,7 +258,7 @@ export const useCourierReceive = ({
         });
         // Natija sahifasi (`/scan/:token`) keyingi ochilishda yangi holatni oladi.
         void queryClient.invalidateQueries({ queryKey: getScanDetailQueryKey(token), refetchType: "none" });
-        void playScanFeedback("success", t("scanner.courierReceive.receivedToast", { ref }), source, {
+        void playScanFeedback("success", t("scanner.branchReceive.receivedToast", { ref }), source, {
           voice: "received",
         });
       } catch (error) {
@@ -295,7 +266,7 @@ export const useCourierReceive = ({
         const reason =
           coverageErrorLine(t, error, "receive") ??
           getBackendErrorMessage(error) ??
-          t("scanner.courierReceive.failed", { ref });
+          t("scanner.branchReceive.failed", { ref });
         fail(token, order, reason, source);
       }
     },
@@ -328,20 +299,19 @@ export const useCourierReceive = ({
         return;
       }
       if (getScanResourceType(token) !== "order") {
-        void playScanFeedback("error", t("scanner.courierReceive.notOrder"), source);
+        void playScanFeedback("error", t("scanner.branchReceive.notOrder"), source);
         return;
       }
       // Qabuldan darhol keyingi qo'shaloq o'qish — «allaqachon»; keyinroq qayta skan — natija sahifasi (sotish / bekor).
       const known = receivedRef.current.get(token);
       if (known && Date.now() - known.at < RECEIVED_RESCAN_COOLDOWN_MS) {
-        void playScanFeedback("duplicate", t("scanner.courierReceive.alreadyToast", { ref: known.ref }), source);
+        void playScanFeedback("duplicate", t("scanner.branchReceive.alreadyToast", { ref: known.ref }), source);
         return;
       }
       if (inflightRef.current.has(token)) return;
       inflightRef.current.add(token);
       setPendingCount((count) => count + 1);
-      const { actor: scanActor, branchId: scanBranchId, currentUserId: scanUserId } = optionsRef.current;
-      void process(token, source, { actor: scanActor, branchId: scanBranchId, currentUserId: scanUserId }).finally(() => {
+      void process(token, source, { branchId: optionsRef.current.branchId }).finally(() => {
         inflightRef.current.delete(token);
         if (mountedRef.current) setPendingCount((count) => Math.max(0, count - 1));
       });
@@ -365,7 +335,7 @@ export const useCourierReceive = ({
         return {
           key: entry.key,
           title: [entry.ref, entry.name].filter(Boolean).join(" · "),
-          subtitle: [t("scanner.courierReceive.received"), entry.place].filter(Boolean).join(" · "),
+          subtitle: [t("scanner.branchReceive.received"), entry.place].filter(Boolean).join(" · "),
           tone: "success",
         };
       }),

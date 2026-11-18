@@ -1189,6 +1189,20 @@ const MailDetailPage = () => {
               void refetchRegularDetail();
               return;
             }
+            // COURIER-SCAN: kuryer bu buyurtmani o'tkazma pochtasidan skan bilan olib ketgan — u endi pochtada emas,
+            // qayta skan foydasiz: o'z sarlavhasi («№X kuryerda: <ism>»), sahifa yangilanadi (qator va
+            // «Pochtani qabul qilish — n ta» soni).
+            if (rejection.reason === "order_taken_by_courier") {
+              const name = typeof rejection.details.courier_name === "string" ? rejection.details.courier_name.trim() : "";
+              fail(
+                t("detailPage.scanReceive.takenByCourierText"),
+                name
+                  ? t("detailPage.scanReceive.takenByCourier", { id: orderId, name })
+                  : t("detailPage.scanReceive.takenByCourierNoName", { id: orderId }),
+              );
+              void refetchRegularDetail();
+              return;
+            }
             // Boshqa tanilgan sabab — lokal matn; noma'lum — backend matni.
             fail(coverageErrorLine(t, error, "receive") ?? getBackendErrorMessage(error) ?? null);
           },

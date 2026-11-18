@@ -664,8 +664,8 @@ const AppRouter = () => {
               /**
                * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda, menyudan ochiladigan kirish nuqtasi.
                * «Ikki eshik» yopildi (F2NzXpMv, bhitm9do): `/investors-ops`, `/system-ops`, `/logs` — shu hubning
-               * tabiga, `/logistics-ops` — `/returns` ga, `/branch-ops` — `/batches` ga, `/integrations-ops` —
-               * `/integrations` ga yo'naltiradi (guard o'sha).
+               * tabiga, `/branch-ops` — `/batches` ga, `/integrations-ops` — `/integrations` ga yo'naltiradi (guard
+               * o'sha). `/logistics-ops` — «Pochta → Qaytarish» ga (u5HTJtqK: Ops nusxasi olib tashlandi).
                */
               path: "ops",
               element: (
@@ -712,10 +712,12 @@ const AppRouter = () => {
               ),
             },
             {
+              // u5HTJtqK: qaytarish so'rovlari — «Pochta → Qaytarish» da (tasdiq oynasi bilan); eski havola buzilmaydi,
+              // guard o'sha (faqat superadmin ochardi).
               path: "logistics-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <Navigate replace to="/returns" />
+                  <Navigate replace to="/mails/return" />
                 </ProtectedRoute>
               ),
             },

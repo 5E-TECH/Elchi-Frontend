@@ -168,15 +168,22 @@ describe("getCourierTakeState (6qypMFeT — backend scanAssignOrder bilan bir xi
     expect(getCourierTakeState({ courierId: 31, status: "on the road" }, 31)).toBe("mine");
   });
 
-  it("other — courier_id belongs to another courier, whatever the status", () => {
-    expect(getCourierTakeState({ courier_id: "93", status: "on_the_road" }, "31")).toBe("other");
-    expect(getCourierTakeState({ courier_id: "93", status: "received" }, "31")).toBe("other");
+  it("COURIER-SCAN: mine — own waiting too (scan = acceptance), also by holder_courier_id", () => {
+    expect(getCourierTakeState({ courier_id: "31", status: "waiting" }, "31")).toBe("mine");
+    expect(getCourierTakeState({ courier_id: null, holder_courier_id: "31", status: "waiting" }, "31")).toBe("mine");
+    expect(getCourierTakeState({ holderCourierId: 31, status: "on_the_road" }, 31)).toBe("mine");
   });
 
-  it("free — no courier, «0» sentinel, mine but not on the road, or user unknown", () => {
+  it("other — courier_id or holder_courier_id belongs to another courier, whatever the status", () => {
+    expect(getCourierTakeState({ courier_id: "93", status: "on_the_road" }, "31")).toBe("other");
+    expect(getCourierTakeState({ courier_id: "93", status: "received" }, "31")).toBe("other");
+    expect(getCourierTakeState({ courier_id: null, holder_courier_id: "93", status: "waiting" }, "31")).toBe("other");
+  });
+
+  it("free — no courier, «0» sentinel, mine but not waiting / on the road, or user unknown", () => {
     expect(getCourierTakeState({ courier_id: null, status: "received" }, "31")).toBe("free");
     expect(getCourierTakeState({ courier_id: "0", status: "on_the_road" }, "31")).toBe("free");
-    expect(getCourierTakeState({ courier_id: "31", status: "waiting" }, "31")).toBe("free");
+    expect(getCourierTakeState({ courier_id: "31", status: "sold" }, "31")).toBe("free");
     expect(getCourierTakeState({ courier_id: "31", status: "on_the_road" }, null)).toBe("free");
     expect(getCourierTakeState(null, "31")).toBe("free");
   });

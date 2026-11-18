@@ -4,8 +4,9 @@ import { expect, test, type Page, type Route } from "@playwright/test";
  * 390px, kuryer QR skani (Trello 6qypMFeT): «O'zimga olish» dan keyin keshlar yangilanadi.
  *   1) `POST orders/scan-assign` 200 → ilovadan chiqmasdan «Buyurtmalar» ga qaytilsa ro'yxat (`GET orders/courier/orders`)
  *      QAYTA so'raladi — global 30 s keshda eski ro'yxat qolmaydi;
- *   2) o'sha QR qayta ochilsa skan natijasi ham qayta so'raladi va buyurtma endi shu kuryerda, pochtasida yo'lda —
- *      «O'zimga olish» yo'q, o'rniga «Qabul qilish» (2026-11-07 kuryer skan-qabuli).
+ *   2) COURIER-SCAN (ega, 2026-11-17): skan = qabul — «O'zimga olish»dan keyin skan natijasi qayta so'raladi va shu
+ *      sahifada darhol «Sotish» / «Bekor qilish» ochiladi (skanerga qaytmaydi); o'sha QR qayta ochilsa ham —
+ *      buyurtma shu kuryerda, «Kutilmoqda»: «O'zimga olish» ham, «Qabul qilish» ham yo'q.
  * Sahifalar orasida ilova ichida o'tiladi (`history.pushState` + `popstate`) — to'liq qayta yuklash keshni o'chirib,
  * tekshiruvni ma'nosiz qilardi.
  */
@@ -25,9 +26,11 @@ const TOKEN = "c0c0c0c0c0c0c0c0c0c0c214";
 
 const order = (assigned: boolean) => ({
   id: "10214",
-  status: assigned ? "on_the_road" : "received",
+  // COURIER-SCAN: skan = qabul — darhol «kutilmoqda» va kuryerda (kuryer pochtasi — javobdagi `post_id`).
+  status: assigned ? "waiting" : "received",
   courier_id: assigned ? COURIER_ID : null,
-  // scan-assign buyurtmani kuryerning SENT pochtasiga qo'yadi (javobdagi `post_id`).
+  holder_type: assigned ? "COURIER" : "BRANCH",
+  holder_courier_id: assigned ? COURIER_ID : null,
   post_id: assigned ? "p-1" : null,
   qr_code_token: TOKEN,
   where_deliver: "address",
@@ -74,7 +77,10 @@ const mockApi = async (page: Page) => {
     if (path === "orders/scan-assign" && request.method() === "POST") {
       state.assigns += 1;
       state.assigned = true;
-      return reply(route, wrap({ idempotent: false, order_id: "10214", post_id: "p-1", post_created: false }));
+      return reply(
+        route,
+        wrap({ idempotent: false, order_id: "10214", post_id: "p-1", post_created: false, status: "waiting" }),
+      );
     }
     if (request.method() !== "GET") {
       leaked.push(`${request.method()} ${path}`);
@@ -105,8 +111,10 @@ const takeOrder = async (page: Page) => {
   await expect(take).toBeEnabled({ timeout: 60_000 });
   await take.click();
   await expect(page.getByText("Buyurtma sizga biriktirildi")).toBeVisible();
-  // Muvaffaqiyatdan 1,5 s keyin skaner o'zi qayta ochiladi.
-  await expect(page).toHaveURL(/\/scan$/, { timeout: 10_000 });
+  // COURIER-SCAN: skanerga qaytilmaydi — shu sahifada darhol «Sotish» / «Bekor qilish».
+  await expect(page.getByRole("button", { name: "Sotish" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("button", { name: "Bekor qilish" })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/scan/${TOKEN}$`));
 };
 
 test.describe("Kuryer QR: «O'zimga olish» dan keyin kesh (6qypMFeT), 390px", () => {
@@ -130,16 +138,19 @@ test.describe("Kuryer QR: «O'zimga olish» dan keyin kesh (6qypMFeT), 390px", (
     expect(leaked).toEqual([]);
   });
 
-  test("o'sha QR qayta ochilsa — yangi holat: yo'lda, «Qabul qilish» bor, «O'zimga olish» yo'q", async ({ page }) => {
+  test("o'sha QR qayta ochilsa — yangi holat: kutilmoqda, «Sotish» bor; «Qabul qilish» va «O'zimga olish» yo'q", async ({ page }) => {
     const { state, leaked } = await mockApi(page);
     await page.goto(`/scan/${TOKEN}`);
     await takeOrder(page);
-    expect(state.detailCalls).toBe(1);
+    // «O'zimga olish»dan keyin skan natijasi qayta so'raldi (eski «qabul qilingan» surati qolmaydi).
+    expect(state.detailCalls).toBeGreaterThanOrEqual(2);
 
+    await goInApp(page, "/orders");
+    await expect(page.getByRole("tablist", { name: "Buyurtmalar turi" })).toBeVisible();
     await goInApp(page, `/scan/${TOKEN}`);
-    await expect(page.getByRole("button", { name: "Qabul qilish" })).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByRole("button", { name: "Sotish" })).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByRole("button", { name: "Qabul qilish" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "O'zimga olish" })).toHaveCount(0);
-    expect(state.detailCalls).toBe(2);
     expect(state.assigns).toBe(1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);

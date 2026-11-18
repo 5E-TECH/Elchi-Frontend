@@ -335,6 +335,7 @@ describe("DeliveryTariffsPage — hisob qoidalari va kalkulyator", () => {
     expect(within(dialog).getByText("1 kg edi, 2 kg bo'ladi")).toBeInTheDocument();
     expect(within(dialog).getByText("Darhol kuchga kiradi — yangi narxlar shu qoidalar bilan hisoblanadi")).toBeInTheDocument();
     expect(within(dialog).getByText("Saytdagi narx kalkulyatori ham darhol o'zgaradi")).toBeInTheDocument();
+    expect(within(dialog).queryByText(/faqat narx dvigateli sotuvga ulanganda/)).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Qoidalarni saqlash" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
@@ -555,6 +556,14 @@ describe("DeliveryTariffsPage — «Qoidalarni saqlash» tasdig'i va takror so'r
     const dialog = await openSaveConfirm(user, rules);
     expect(within(dialog).getByText(/^chegarasiz edi, 15\s000 so'm bo'ladi$/)).toBeInTheDocument();
     expect(within(dialog).getByText(/^20\s000 so'm edi, sukut \(asosiy narxlar farqi\) bo'ladi$/)).toBeInTheDocument();
+    // Faqat sotuv chegaralari o'zgardi — sayt kalkulyatori o'zgarmaydi, oyna buni aytadi.
+    expect(
+      within(dialog).getByText(
+        "Minimal narx va kuryer xarajati chegarasi faqat narx dvigateli sotuvga ulanganda ishlatiladi — sayt kalkulyatori o'zgarmaydi",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText("Saytdagi narx kalkulyatori ham darhol o'zgaradi")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Darhol kuchga kiradi — yangi narxlar shu qoidalar bilan hisoblanadi")).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Qoidalarni saqlash" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
@@ -619,7 +628,9 @@ describe("DeliveryTariffsPage — rejalashtirilgan tarifni bekor qilish (B0ILd7Y
 
     await user.click(within(dialog).getByRole("button", { name: "Tarifni bekor qilish" }));
     expect(
-      await within(dialog).findByText("Tarif allaqachon kuchga kirgan. Narxni o'zgartirish uchun yangi versiya yarating."),
+      await within(dialog).findByText(
+        "Bu versiyani endi bekor qilib bo'lmaydi: u kuchga kirgan yoki faol emas. Narxni o'zgartirish uchun yangi versiya yarating.",
+      ),
     ).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Tarifni bekor qilish" })).toBeDisabled();
     await waitFor(() => expect(calls(mocks.get, "delivery/tariffs").length).toBeGreaterThan(tariffLoads));

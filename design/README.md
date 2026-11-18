@@ -96,7 +96,8 @@ kontent) · `--sessions locked` (profil «Sessiyalar» yangi qurilma cheklovi bi
   `--tag <nom>` — fayl nomiga qo'shiladi (bir route'ning bir nechta holati: `mails-74-courier--phone-light.png`).
   Soxta ma'lumotli holatlar: `/mails/<id>` — jo'natilmagan HQ pochtasi, filiallar va HQ kuryerlari («Manzilni
   tanlang»); `/all-users/1062` — HQ kuryeri va «Xizmat viloyatlari»; `/integrations/connections?scope=carrier&new=1` —
-  HQ kuryerlari tanlovi.
+  HQ kuryerlari tanlovi; `/mails/return` — 12 ta qaytarish so'rovi (3 kuryer + kuryersiz), tasdiq oynasi uchun
+  `--click 'role=checkbox[name="Barcha so\'rovlarni tanlash"]' --click 'role=region[name="Tanlangan so\'rovlar"] >> role=button[name="Tasdiqlash"]'`.
 - `--width <px>` — tanlangan qurilma oynasining kengligi (320…3840). Balandlik va sensorli rejim `--device` dan qoladi
   (`phone` — 844, sensorli; `tablet` — 1024; `desktop` — 900). Qobiq chegaralarini (375 / 1024) tekshirish uchun.
   Fayl nomiga `-w<px>` qo'shiladi: `orders--phone-w375-light.png`.
