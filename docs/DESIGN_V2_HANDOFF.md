@@ -549,8 +549,10 @@ Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
   o'sha. Favqulodda amallar o'z joyida: nofaol qilish — «Foydalanuvchilar» qator menyusi va tahrirlash oynasi
   (tasdiq bilan), parol SMS'i — `/all-users/:id`, sessiyalarni yopish — Profil → «Sessiyalar». Maketlar
   (`superadmin-ops-identity`, `-ops-investors`, `-ops-auth-diagnostics`) o'rnini bosuvchi route'larga «olib
-  tashlangan» izohi bilan bog'langan (`route-map.json` → `partialViews`). Ochiq: investor kabineti nazorati
-  (`/investor/:id`) endi faqat URL orqali — «Foydalanuvchilar → Investorlar» da «Kabinetni ko'rish» yo'q.
+  tashlangan» izohi bilan bog'langan (`route-map.json` → `partialViews`). Investor kabineti nazorati
+  (`/investor/:id`, superadmin) — «Foydalanuvchilar» dagi investor qatori menyusidagi «Kabinetni ko'rish» (ega
+  2026-11-18; login → investor yozuvi `GET /investors` `user_id` bo'yicha); login'siz eski investor yozuvlari
+  ro'yxatda ko'rinmaydi — ega qabul qildi.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;

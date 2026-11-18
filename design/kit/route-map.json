@@ -251,7 +251,7 @@
       "title": "Investor kabineti — kirish nuqtasi (vpKijXce)",
       "components": ["src/app/lib/routes.tsx"],
       "roles": {
-        "superadmin": "/all-users?role=investor ga yo'naltiradi («Foydalanuvchilar → Investorlar»; LIuf0DcD, ega 2026-11-18 — Ops «Investorlar» tabi va undagi «Kabinetni ko'rish» olib tashlandi)",
+        "superadmin": "/all-users?role=investor ga yo'naltiradi («Foydalanuvchilar → Investorlar»; LIuf0DcD, ega 2026-11-18 — Ops «Investorlar» tabi olib tashlandi, «Kabinetni ko'rish» investor qatori menyusiga ko'chdi)",
         "investor": "/ ga yo'naltiradi — investor kabineti bosh sahifada (IN-1)"
       },
       "views": {},
@@ -263,7 +263,7 @@
     },
     {
       "path": "/investor/:investorId",
-      "entry": "faqat URL — ilgari Ops → «Investorlar» ro'yxatidagi «Kabinetni ko'rish» (tab LIuf0DcD da olib tashlandi, ega 2026-11-18; «Foydalanuvchilar → Investorlar» da kabinet havolasi yo'q — ega savoli)",
+      "entry": "«Foydalanuvchilar» (/all-users, «Investorlar» yoki «Hammasi» tabi) — investor qatori menyusidagi «Kabinetni ko'rish» (faqat superadmin; login → investor yozuvi `GET /investors` dagi `user_id` bo'yicha). Ilgari Ops → «Investorlar» ro'yxatida edi (tab LIuf0DcD da olib tashlandi, ega 2026-11-18). Maket yo'q — eng yaqini: superadmin-users-list (qator menyusi)",
       "section": "finance",
       "title": "Investor kabineti — superadmin nazorati, faqat o'qish (vpKijXce)",
       "components": ["src/pages/investor/InvestorControlPage.tsx", "src/pages/investor/InvestorDashboardPage.tsx"],
@@ -2200,7 +2200,7 @@
     "superadmin-payments-history-correct-amount-dialog": "Kodda bor (T6-FE-2, N2): CorrectAmountDialog — «Joriy summa» xulosasi, «To'g'ri summa» (money, lg; 0 — «0 dan katta summa kiriting», bir xil — «Yangi summa joriy summa bilan bir xil»), «Farq» faqat to'g'ri summada (aria-live, rangsiz, ostida kassalarga ta'siri), «Sabab» (qaytarish bilan bir xil). Farq: kenglik 480 (maket 520); kuryer summasini oshirish, filial, click_to_market «Farq» izohi — Maket yo'q — eng yaqini: shu maket; transfer kelmasa izoh qatorisiz.",
     "superadmin-payments-history-correct-amount-confirm": "Kodda bor (T6-FE-2, N2): useConfirm tone primary, Pencil, rows Joriy · To'g'ri (16/700) · Farq · Sabab, oqibatlar, eslatma «… {correctable.deadline} gacha yana tuzatish mumkin.», «Saqlanmoqda…»; muvaffaqiyat — «Summa tuzatildi» xabari. Farq: «Asl yozuv o'chirilmaydi: teskari yozuv (…) va yangi to'lov (…)» qatori kuryer to'lovida ham (ishoralar qabul qiluvchi kassa tomonidan: −X / +N).",
     "superadmin-payments-history-correct-amount-errors": "Kodda bor (T6-FE-2, N2): AMOUNT_EXCEEDS «Ko'pi bilan {max}» va SAME_AMOUNT — «Tahrirlash» o'chiq (aria-describedby xato qutisiga), «Orqaga» dan keyin maydonda o'sha xato, qiymat o'zgarmaguncha (yoki max dan katta bo'lsa) «Davom etish» o'chiq; INSUFFICIENT_BALANCE «(kerak: …)» required > 0 bo'lsa; oflayn — o'sha kalit. Kuryer chegarasi matni («… kassasidagi qoldiq …») va max kelmagan holat («Summa chegaradan oshdi») — Maket yo'q — eng yaqini: shu maket.",
-    "superadmin-ops-investors": "Olib tashlangan (LIuf0DcD, ega 2026-11-18): Ops «Investorlar» tabi yo'q — ro'yxat «Foydalanuvchilar → Investorlar» (/all-users?role=investor), yaratish «Foydalanuvchi qo'shish» → «Investor» (login bilan; eski forma POST investors loginsiz yaratardi). /investors-ops va /ops?tab=investors → /all-users?role=investor. Maketga qo'shimcha bo'lgan «Kabinetni ko'rish» (vpKijXce, → /investor/:id) ham ketdi — kabinet nazorati faqat URL orqali (ega savoli). Kod bu maketni chizmaydi.",
+    "superadmin-ops-investors": "Olib tashlangan (LIuf0DcD, ega 2026-11-18): Ops «Investorlar» tabi yo'q — ro'yxat «Foydalanuvchilar → Investorlar» (/all-users?role=investor), yaratish «Foydalanuvchi qo'shish» → «Investor» (login bilan; eski forma POST investors loginsiz yaratardi). /investors-ops va /ops?tab=investors → /all-users?role=investor. Maketga qo'shimcha bo'lgan «Kabinetni ko'rish» (vpKijXce, → /investor/:id) «Foydalanuvchilar» dagi investor qatori menyusiga ko'chdi (ega 2026-11-18); login'siz eski investor yozuvlari ro'yxatda ko'rinmaydi (ega qabul qildi). Kod bu maketni chizmaydi.",
     "superadmin-integrations-panel-events": "Maketga qo'shimcha (Dj70iDbD): «Hamkor» filtri («Barcha hamkorlar» — umumiy jurnal, qatorda hamkor nomi; shu holatda «Natija · 24 soat» yashirin) va «Webhook ma'lumoti» ochiladigan qatori — ikkalasi superadmin-integrations-legacy-partners dan. Ega tasdig'i kutilmoqda.",
     "admin-integrations-conn-log": "Maketga qo'shimcha (Dj70iDbD): superadmin bilan bir xil — «Hamkor» filtri va «Webhook ma'lumoti». Ega tasdig'i kutilmoqda.",
     "superadmin-integrations-legacy-partners": "Sahifa olindi (Dj70iDbD, karta TC matni bo'yicha): hamkor amallari konsolda (yaratish, Sozlamalar, Xavfsizlik, Ish rejimi), «Webhook yetkazish jurnali» — «Hodisalar» panelida. /partners va /integrations/partners — 404. Maket taqdiri ega bilan kelishilishi kerak.",

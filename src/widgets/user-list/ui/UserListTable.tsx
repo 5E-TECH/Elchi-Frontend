@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-delete-dialog, admin-users-delete-dialog, superadmin-users-list-telegram, admin-users-list-telegram
 import { memo, useCallback, useMemo, useState } from "react";
-import { ChevronRight, Pencil, Send, Trash2, UserCheck, UserX } from "lucide-react";
+import { ChevronRight, LayoutDashboard, Pencil, Send, Trash2, UserCheck, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import type { User, UserStatus } from "../../../entities/user/types/user";
@@ -33,6 +33,11 @@ interface UserListTableProps {
    * Sukut — yashirin (xavfsiz tomon); sahifa rolga qarab yoqadi. Menejerda — «Ochish» (›).
    */
   canManage?: boolean;
+  /**
+   * LIuf0DcD (ega, 2026-11-18): investor qatoridagi «Kabinetni ko'rish» (`/investor/:id`, faqat superadmin) —
+   * login id → investor yozuvi id (`useInvestorIdsByUser`). Berilmasa yoki qator xaritada yo'q bo'lsa — band yo'q.
+   */
+  investorIds?: ReadonlyMap<string, string>;
   /** Fonda yangilanmoqda — ro'yxat xiralashadi. */
   busy?: boolean;
   /** Jadval yoki kartalar o'rami klassi (karta ichida — `border-t border-border`). */
@@ -100,7 +105,7 @@ const telegramBotState = (user: User): TelegramBotState => {
  * va qatordagi kutish; faol qilish — tasdiqsiz; o'chirish — `ConfirmDialog` (maket `*-users-delete-dialog`),
  * so'ng `deleteUser.mutate` + xabarlar. Qator bosilsa — `/all-users/:id`.
  */
-export const UserListTable = memo(({ users, canManage = false, busy = false, className }: UserListTableProps) => {
+export const UserListTable = memo(({ users, canManage = false, busy = false, investorIds, className }: UserListTableProps) => {
   const { t, i18n } = useTranslation(["users", "common"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
@@ -239,7 +244,18 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
   const menuItems = useCallback(
     (user: User): UserRowMenuItem[] => {
       const isActive = user.status === "active";
+      const investorId = user.role === "investor" ? investorIds?.get(String(user.id)) : undefined;
       return [
+        ...(investorId
+          ? [
+              {
+                key: "cabinet",
+                label: t("v2.list.menu.cabinet"),
+                icon: LayoutDashboard,
+                onSelect: () => navigate(`/investor/${investorId}`),
+              },
+            ]
+          : []),
         { key: "edit", label: t("v2.list.menu.edit"), icon: Pencil, onSelect: () => setEditTarget(user) },
         {
           key: "status",
@@ -257,7 +273,7 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
         },
       ];
     },
-    [handleStatusToggle, loadingIds, t],
+    [handleStatusToggle, investorIds, loadingIds, navigate, t],
   );
 
   const renderActions = useCallback(

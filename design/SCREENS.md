@@ -88,7 +88,7 @@
 | `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
 | `/scan/:token` | Skaner | `src/pages/scan/detail.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 11 | v2 |
 | `/tg/scan` | Skaner | `src/pages/tg-scan/index.tsx` | hamma (kirishsiz) | 7 | v2 |
-| `/investor` | Moliya | `src/app/lib/routes.tsx` | superadmin (/all-users?role=investor ga yo'naltiradi («Foydalanuvchilar → Investorlar»; LIuf0DcD, ega 2026-11-18 — Ops «Investorlar» tabi va undagi «Kabinetni ko'rish» olib tashlandi)), investor (/ ga yo'naltiradi — investor kabineti bosh sahifada (IN-1)) | 0 | eski |
+| `/investor` | Moliya | `src/app/lib/routes.tsx` | superadmin (/all-users?role=investor ga yo'naltiradi («Foydalanuvchilar → Investorlar»; LIuf0DcD, ega 2026-11-18 — Ops «Investorlar» tabi olib tashlandi, «Kabinetni ko'rish» investor qatori menyusiga ko'chdi)), investor (/ ga yo'naltiradi — investor kabineti bosh sahifada (IN-1)) | 0 | eski |
 | `/investor/:investorId` | Moliya | `src/pages/investor/InvestorControlPage.tsx` | superadmin | 0 | v2 |
 | `/investments` | Moliya | `src/pages/investor/InvestmentsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan) | 3 | v2 |
 | `/profits` | Moliya | `src/pages/investor/ProfitsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan) | 2 | v2 |
@@ -1090,7 +1090,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/app/lib/routes.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish) · o'rovchi: `InvestorEntryRedirect`
-- **Rollar:** superadmin (/all-users?role=investor ga yo'naltiradi («Foydalanuvchilar → Investorlar»; LIuf0DcD, ega 2026-11-18 — Ops «Investorlar» tabi va undagi «Kabinetni ko'rish» olib tashlandi)), investor (/ ga yo'naltiradi — investor kabineti bosh sahifada (IN-1))
+- **Rollar:** superadmin (/all-users?role=investor ga yo'naltiradi («Foydalanuvchilar → Investorlar»; LIuf0DcD, ega 2026-11-18 — Ops «Investorlar» tabi olib tashlandi, «Kabinetni ko'rish» investor qatori menyusiga ko'chdi)), investor (/ ga yo'naltiradi — investor kabineti bosh sahifada (IN-1))
 - **Menyuda:** yo'q — faqat URL (karta matnidagi manzil): investor → / (o'z kabineti), superadmin → /all-users?role=investor
 - **Holat:** eski
 - **Izoh:** Karta vpKijXce TC «Superadmin ham /investor sahifasini ochib ko'ra oladi (nazorat uchun)». Boshqa rol — 403.
@@ -1105,7 +1105,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Fayllar:** `src/pages/investor/InvestorControlPage.tsx` · `src/pages/investor/InvestorDashboardPage.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewInvestorControl` (access.ts → canViewInvestorControl)
 - **Rollar:** superadmin
-- **Menyuda:** yo'q — faqat URL — ilgari Ops → «Investorlar» ro'yxatidagi «Kabinetni ko'rish» (tab LIuf0DcD da olib tashlandi, ega 2026-11-18; «Foydalanuvchilar → Investorlar» da kabinet havolasi yo'q — ega savoli)
+- **Menyuda:** yo'q — «Foydalanuvchilar» (/all-users, «Investorlar» yoki «Hammasi» tabi) — investor qatori menyusidagi «Kabinetni ko'rish» (faqat superadmin; login → investor yozuvi `GET /investors` dagi `user_id` bo'yicha). Ilgari Ops → «Investorlar» ro'yxatida edi (tab LIuf0DcD da olib tashlandi, ega 2026-11-18). Maket yo'q — eng yaqini: superadmin-users-list (qator menyusi)
 - **Holat:** v2
 - **Izoh:** GET investors/:id/dashboard (SUPERADMIN, ADMIN; javob investors/me/dashboard bilan AYNAN bir xil — backend spec TC7): KPI va «Oylik foyda». Ro'yxatlar (investors/me/*) faqat investorga ochiq — o'rnida izoh. Sarlavhada «Nazorat · faqat o'qish» va «← Investorlar» (→ /all-users?role=investor). 404 — «Investor topilmadi» (investor holat ekrani va «Chiqish» yo'q). Ega savoli (Shodiyor, 2026-10-21) ochiq — sahifa karta TC matni bo'yicha.
 
@@ -2437,7 +2437,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
 | `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | v2 |
 | `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | qisman — Tab olindi (Dj70iDbD, karta TC matni bo'yicha): qarzlar — ulanishning «Hisob-kitob» panelida (faqat ulanish kesimida, barcha ulanishlar ro'yxati yo'q), navbat — «Ish rejimi» panelida. /integrations-ops va /ops?tab=integrations → /integrations. Maket taqdiri ega bilan kelishilishi kerak. |
-| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | qisman — Olib tashlangan (LIuf0DcD, ega 2026-11-18): Ops «Investorlar» tabi yo'q — ro'yxat «Foydalanuvchilar → Investorlar» (/all-users?role=investor), yaratish «Foydalanuvchi qo'shish» → «Investor» (login bilan; eski forma POST investors loginsiz yaratardi). /investors-ops va /ops?tab=investors → /all-users?role=investor. Maketga qo'shimcha bo'lgan «Kabinetni ko'rish» (vpKijXce, → /investor/:id) ham ketdi — kabinet nazorati faqat URL orqali (ega savoli). Kod bu maketni chizmaydi. |
+| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | qisman — Olib tashlangan (LIuf0DcD, ega 2026-11-18): Ops «Investorlar» tabi yo'q — ro'yxat «Foydalanuvchilar → Investorlar» (/all-users?role=investor), yaratish «Foydalanuvchi qo'shish» → «Investor» (login bilan; eski forma POST investors loginsiz yaratardi). /investors-ops va /ops?tab=investors → /all-users?role=investor. Maketga qo'shimcha bo'lgan «Kabinetni ko'rish» (vpKijXce, → /investor/:id) «Foydalanuvchilar» dagi investor qatori menyusiga ko'chdi (ega 2026-11-18); login'siz eski investor yozuvlari ro'yxatda ko'rinmaydi (ega qabul qildi). Kod bu maketni chizmaydi. |
 | `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/mails/return` | `src/pages/mails/components/returnMails.tsx` | v2 |
 | `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/mails/return` | `src/pages/mails/components/returnMails.tsx`, `src/pages/mails/components/ApproveReturnSummary.tsx` | v2 |
 | `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/mails/return` | `src/pages/mails/components/returnMails.tsx` | v2 |

@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { CircleCheck, Plus, SearchX, Send, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
+import { useInvestorIdsByUser } from "../../../entities/investors";
 import { useUser, type IUserFilter } from "../../../entities/user/api/userApi";
 import { readViewerBranch } from "../../../features/user/lib/viewerBranch";
 import { cx } from "../../../shared/lib/cx";
@@ -111,6 +112,9 @@ const UserListPage = memo(() => {
   const role = tabValues.includes(urlRole) ? urlRole : "";
   const status = read("status");
   const search = read("search");
+  // LIuf0DcD (ega, 2026-11-18): Ops «Investorlar» tabi olib tashlandi — investor kabineti (`/investor/:id`, faqat
+  // superadmin) endi shu ro'yxatdagi investor qatori menyusidan («Kabinetni ko'rish») ochiladi.
+  const { data: investorIds } = useInvestorIdsByUser(viewerRole === "superadmin" && (role === "investor" || role === ""));
   const telegramParam = searchParams.get("telegram") ?? "";
   // Ustun va chiplar faqat superadmin/admin'da — boshqa rol uchun URL kaliti so'rovga ketmaydi.
   const telegram: TelegramFilter | "" = canManageUsers && isTelegramFilter(telegramParam) ? telegramParam : "";
@@ -443,7 +447,7 @@ const UserListPage = memo(() => {
           className="border-t border-border"
         >
           {(list, { isRefetching }) => (
-            <UserListTable users={list} canManage={canManageUsers} busy={isRefetching} />
+            <UserListTable users={list} canManage={canManageUsers} busy={isRefetching} investorIds={investorIds} />
           )}
         </QueryBoundary>
       </Card>
