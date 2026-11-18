@@ -18,5 +18,34 @@
     "sample": "Example",
     "note": "If the rate changes, it applies only to future sales.",
     "unsetNote": "No earnings are recorded until a rate is set. Contact the market owner."
+  },
+  "account": {
+    "title": "Account",
+    "balance": "Balance",
+    "balanceHint": "Owed to you",
+    "overpaid": "Overpaid",
+    "earned": "Earned",
+    "earnedHint": "Sold orders: {{total}}",
+    "earnedHintFallback": "From sold orders",
+    "noSales": "No sales yet",
+    "paid": "Paid",
+    "lastPaid": "Last: {{date}}",
+    "noPayments": "No payments yet",
+    "phoneNote": "In UZS · balance = earned − paid"
+  },
+  "payments": {
+    "title": "Payments",
+    "description": "Payments made to you",
+    "amount": "Amount",
+    "note": "Note",
+    "date": "Date",
+    "noNote": "No note",
+    "cancelled": "Cancelled",
+    "cancelReason": "Reason: {{reason}}",
+    "summary": "{{total}} payments",
+    "totalLabel": "Total:",
+    "pagination": "{{from}}–{{to}} of {{total}} payments",
+    "emptyTitle": "No payments yet",
+    "emptyDescription": "Payments made to you will appear here."
   }
 }

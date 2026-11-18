@@ -68,7 +68,7 @@ test("390: «Menyu» varaqasi yuqori paneldan — profil, Sozlamalar, Chiqish; m
   expectNoLeakRequests(mock);
 });
 
-test("390: «Daromadim» — komissiya belgilanmagan: ogohlantirish va «Belgilanmagan»; faqat profil so'raladi", async ({ page }) => {
+test("390: «Daromadim» — komissiya belgilanmagan: ogohlantirish va «Belgilanmagan»; faqat profil va o'z hisobi (`me`) so'raladi", async ({ page }) => {
   const mock = await openOperatorEarnings(page, { commission: null });
 
   await expect(page.getByText("Komissiya belgilanmagan — daromad yozilmaydi")).toBeVisible();

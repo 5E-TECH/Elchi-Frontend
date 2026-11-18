@@ -307,7 +307,7 @@ const myTelegramGroupsMock = () => ({
 });
 
 /**
- * Yetkazish narxi (`/delivery-tariffs`, Ops → «Yetkazish narxi»): joriy tariflar, hisob qoidalari (hajm chegarasi
+ * Yetkazish narxi (`/delivery-tariffs`; Ops nusxasi LIuf0DcD da olib tashlandi): joriy tariflar, hisob qoidalari (hajm chegarasi
  * 3 kg — ega misoli), qoidalar tarixi va kalkulyator namunasi (0,8 kg, 50 × 35 × 20 → 7,0 kg ≥ 3 — hajm bo'yicha).
  */
 const DELIVERY_TARIFF_ROWS = [
@@ -631,11 +631,86 @@ const userMock = (path) => {
   return null;
 };
 
+/**
+ * F2qp6FtE — market «Operatorlar → To'lovlar» (`/market-operators?view=payments`) va operator «Daromadim» to'ldirilgan
+ * ko'rinishda: 3 operator (biri nofaol, biri ortiqcha to'langan), to'lovlar tarixi (faol, bekor qilingan, eski Elchi
+ * yozuvi). Elchi kassasiga ta'sir yo'q — faqat hisob yozuvlari.
+ */
+const OPERATORS = [
+  { id: '41', name: 'Madina Xoliqova', status: 'active', commission_type: 'percent', commission_value: 5, earned: 1286500, paid: 1100000, last: '2026-11-15' },
+  { id: '42', name: 'Sevara Usmonova', status: 'active', commission_type: 'fixed', commission_value: 3000, earned: 420000, paid: 450000, last: '2026-11-10' },
+  { id: '43', name: 'Kamola Rasulova', status: 'inactive', commission_type: 'percent', commission_value: 3.5, earned: 96000, paid: 0, last: null },
+];
+const OPERATOR_PAYMENTS = [
+  { id: '305', operator_id: '41', amount: 300000, paid_at: '2026-11-15', note: 'Noyabr, 1-qism', source: 'market', status: 'active' },
+  { id: '304', operator_id: '42', amount: 150000, paid_at: '2026-11-10', note: 'Avans', source: 'market', status: 'active' },
+  { id: '303', operator_id: '41', amount: 200000, paid_at: '2026-11-08', note: 'Xato summa', source: 'market', status: 'cancelled', cancel_reason: 'Summa xato kiritildi' },
+  { id: '302', operator_id: '42', amount: 300000, paid_at: '2026-11-01', note: 'Oktabr komissiyasi', source: 'market', status: 'active' },
+  { id: '301', operator_id: '41', amount: 800000, paid_at: '2026-10-01', note: 'Sentabr', source: 'elchi', status: 'active', affects_cashbox: true },
+];
+const operatorPaymentView = (row) => ({
+  id: row.id,
+  operator_id: row.operator_id,
+  operator_name: OPERATORS.find((op) => op.id === row.operator_id)?.name ?? null,
+  market_id: row.source === 'market' ? '1' : null,
+  amount: row.amount,
+  paid_at: row.paid_at,
+  note: row.note,
+  source: row.source,
+  affects_cashbox: row.affects_cashbox === true,
+  recorded_by_role: row.source === 'market' ? 'market' : null,
+  created_at: `${row.paid_at}T09:30:00.000Z`,
+  status: row.status,
+  cancelled_at: row.status === 'cancelled' ? `${row.paid_at}T12:00:00.000Z` : null,
+  cancelled_by_role: row.status === 'cancelled' ? 'market' : null,
+  cancel_reason: row.cancel_reason ?? null,
+  can_cancel: row.source === 'market' && row.status === 'active',
+});
+const operatorPaymentsMock = (path, query) => {
+  if (role === 'market' && path === 'market-operators') {
+    const items = OPERATORS.map((op) => ({
+      id: op.id, name: op.name, phone_number: `+99890${op.id}11223`, role: 'market_operator', status: op.status,
+      market_id: '1', commission_type: op.commission_type, commission_value: op.commission_value,
+      can_view_warehouse_stock: op.id === '41', createdAt: '2026-09-02T09:05:00.000Z',
+    }));
+    return { statusCode: 200, data: { items, meta: { page: 1, limit: 20, total: items.length, totalPages: 1 } } };
+  }
+  if (role === 'market' && path === 'finance/operator-payments/balances') {
+    const items = OPERATORS.map((op) => ({
+      operator_id: op.id, operator_name: op.name, status: op.status, earned: op.earned, paid: op.paid,
+      balance: op.earned - op.paid, payments_count: op.paid > 0 ? 2 : 0, last_paid_at: op.last,
+    }));
+    const sum = (key) => items.reduce((total, item) => total + item[key], 0);
+    return { statusCode: 200, data: { items, totals: { earned: sum('earned'), paid: sum('paid'), balance: sum('balance') } } };
+  }
+  if (role === 'market' && path === 'finance/operator-payments') {
+    const operator = query?.get('operator_id');
+    const rows = OPERATOR_PAYMENTS.filter((row) => !operator || row.operator_id === operator).map(operatorPaymentView);
+    return { statusCode: 200, data: { items: rows, pagination: { total: rows.length, page: 1, limit: 20, totalPages: 1 } } };
+  }
+  if (role === 'market_operator' && path === 'finance/operators/me/balance') {
+    return { statusCode: 200, data: { operator_id: '1', earned: 1286500, paid: 1100000, balance: 186500 } };
+  }
+  if (role === 'market_operator' && path === 'finance/operators/me/payments') {
+    const rows = OPERATOR_PAYMENTS.filter((row) => row.operator_id === '41').map((row) => {
+      const view = operatorPaymentView(row);
+      return { ...view, createdAt: view.created_at };
+    });
+    return { statusCode: 200, data: { rows, total: rows.length, limit: 10, offset: 0 } };
+  }
+  if (role === 'market_operator' && path === 'finance/operators/me/earnings') {
+    return { statusCode: 200, data: { rows: [], total: 82, limit: 1, offset: 0 } };
+  }
+  return null;
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
+  const operatorPayments = operatorPaymentsMock(path, query);
+  if (operatorPayments) return operatorPayments;
   if (path.startsWith('delivery/')) return deliveryPricingMock(path) ?? { statusCode: 200, data: {} };
   if (path.startsWith('ai/assistant/')) return aiAssistantMock(path) ?? { statusCode: 200, data: {} };
   if (path === 'notifications') return notificationGroupsMock(query);

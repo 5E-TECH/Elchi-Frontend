@@ -34,7 +34,8 @@ test("⭐ 390: «Menyu» varaqasidan «Operatorlar» → kartalar, nishonlar ≥
 
   await kebabs.first().click();
   const items = page.getByRole("menuitem");
-  await expect(items).toHaveText(["Komissiyani o'zgartirish", "O'chirish"]);
+  // F2qp6FtE: «To'lov yozish» — market o'z operatoriga o'zi to'laydi (Elchi kassasiga ta'sir qilmaydi).
+  await expect(items).toHaveText(["Komissiyani o'zgartirish", "To'lov yozish", "O'chirish"]);
   for (const box of await items.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().toJSON() as DOMRect))) {
     expect(box.height).toBeGreaterThanOrEqual(44);
   }

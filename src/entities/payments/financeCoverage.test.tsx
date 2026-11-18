@@ -66,25 +66,6 @@ describe("financeCoverage pul mutatsiyalari → [cashbox] (aac031, 26eb9d)", () 
     mocks.post.mockReset().mockResolvedValue({ data: { statusCode: 201, data: { id: "9" } } });
   });
 
-  it("createOperatorPayment: POST finance/operator-payments + Idempotency-Key, keyin [cashbox] va finance-cov eskiradi", async () => {
-    const { queryClient, wrapper } = seeded();
-    const { result } = renderHook(() => useFinanceCoverage(), { wrapper });
-    await act(async () => {
-      await result.current.createOperatorPayment.mutateAsync({
-        payload: { operator_id: "77", amount: 50000, note: "Oktabr" },
-        idempotencyKey: "key-1",
-      });
-    });
-    expect(mocks.post).toHaveBeenCalledWith(
-      "finance/operator-payments",
-      { operator_id: "77", amount: 50000, note: "Oktabr" },
-      { headers: { "Idempotency-Key": "key-1" } },
-    );
-    expect(queryClient.getQueryState([cashbox, "financial-balance"])?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState([cashbox, "main"])?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState(["finance-cov", "operator-balance", "77"])?.isInvalidated).toBe(true);
-  });
-
   it("createFinancialBalanceEntry: [cashbox] (balans kartalari) va finance-cov eskiradi", async () => {
     const { queryClient, wrapper } = seeded();
     const { result } = renderHook(() => useFinanceCoverage(), { wrapper });

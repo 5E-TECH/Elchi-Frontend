@@ -13,7 +13,6 @@ import { emitQueryError, QUERY_ERROR_EVENT } from "../shared/lib/queryErrorEvent
 import { useActivityLogs } from "../entities/activity-log/api/useActivityLogs";
 import { useBranchCoverage } from "../entities/branch/branchCoverage";
 import { useMiscCoverage } from "../entities/coverage/miscCoverage";
-import { useIdentityCoverage } from "../entities/identity";
 import {
   useGetIntegrationById,
   useGetIntegrations,
@@ -150,11 +149,8 @@ describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", 
       () => useFinanceCoverage().useGetOperatorPayouts("3", true, { limit: 10 }, S),
     ],
     ["filial yangi buyurtmalari (ops)", () => useBranchCoverage().useGetNewOrders(undefined, S)],
-    ["adminlar (ops)", () => useIdentityCoverage().useGetAdmins(undefined, S)],
-    ["menejerlar (ops)", () => useIdentityCoverage().useGetManagers(undefined, S)],
-    ["registratorlar (ops)", () => useIdentityCoverage().useGetRegistrators(undefined, S)],
     ["debitorlar (ops)", () => useIntegrationsCoverage().useGetReceivables({ page: 1 }, S)],
-    ["investorlar (ops)", () => useInvestors().useGetInvestors({ page: 1, limit: 20 }, S)],
+    ["investorlar", () => useInvestors().useGetInvestors({ page: 1, limit: 20 }, S)],
     ["tizim KPI (ops)", () => useMiscCoverage().useGetAnalyticsKpi(undefined, S)],
     ["tizim holati — readiness (ops)", () => useMiscCoverage().useGetHealthReadiness(S)],
     ["token bo'yicha skan (ops)", () => useMiscCoverage().useGetScanByToken("abc", true, S)],

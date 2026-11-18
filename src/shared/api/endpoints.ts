@@ -355,8 +355,20 @@ export const API_ENDPOINTS = {
     // Salary
     SALARY: "finance/salary", // POST create / PATCH update
     SALARY_BY_USER: (userId: string | number) => `finance/salary/${userId}`,
-    // Operators (commission) — read by admins; operator reads own
-    OPERATOR_PAYMENTS: "finance/operator-payments", // POST payout to operator
+    // Operators (commission) — read by admins; operator reads own (`OPERATORS_ME_*`)
+    // F2qp6FtE — market o'z operatoriga O'ZI to'laydi, Elchi kassasiga ta'sir qilmaydi (faqat MARKET):
+    //   GET  ?operator_id&page&limit → { items, pagination } · POST { operator_id, amount, paid_at?, note? }
+    //   (`Idempotency-Key` MAJBURIY; 201 yangi / 200 `idempotent: true` / 409 kalit boshqa to'lovda).
+    OPERATOR_PAYMENTS: "finance/operator-payments",
+    // GET → { items: [{ operator_id, operator_name, status, earned, paid, balance, payments_count, last_paid_at }], totals }
+    OPERATOR_PAYMENT_BALANCES: "finance/operator-payments/balances",
+    // POST { reason } — yozuvni bekor qilish (qator qoladi; 200; eski Elchi yozuvi — 409).
+    OPERATOR_PAYMENT_CANCEL: (id: string | number) => `finance/operator-payments/${id}/cancel`,
+    // E6iEOAVs — market operatori O'Z hisobi (operator_id — token): { operator_id, earned, paid, balance }
+    OPERATORS_ME_BALANCE: "finance/operators/me/balance",
+    // { rows, total, limit, offset } (limit 1–200, sukut 50)
+    OPERATORS_ME_PAYMENTS: "finance/operators/me/payments",
+    OPERATORS_ME_EARNINGS: "finance/operators/me/earnings",
     OPERATOR_BALANCE: (operatorId: string | number) => `finance/operators/${operatorId}/balance`,
     OPERATOR_EARNINGS: (operatorId: string | number) => `finance/operators/${operatorId}/earnings`,
     OPERATOR_PAYOUTS: (operatorId: string | number) => `finance/operators/${operatorId}/payments`,

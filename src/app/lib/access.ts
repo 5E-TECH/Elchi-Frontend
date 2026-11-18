@@ -103,7 +103,8 @@ export const canViewExtraCosts: Predicate = hasRole("courier", "manager", "marke
 
 /**
  * Investor kabinetini nazorat uchun ko'rish (vpKijXce): `/investor/:id`. Backend `investors/:id/dashboard` adminga
- * ham ochiq, lekin kirish nuqtasi — Ops «Investorlar» (faqat superadmin), shuning uchun karta matnidagidek superadmin.
+ * ham ochiq, lekin kirish nuqtasi Ops «Investorlar» (faqat superadmin) edi, shuning uchun karta matnidagidek superadmin
+ * (tab LIuf0DcD da olib tashlandi — hozir faqat URL orqali).
  */
 export const canViewInvestorControl: Predicate = hasRole("superadmin");
 
@@ -357,7 +358,8 @@ export const canManageCarrierAccounts: Predicate = hasRole("superadmin", "admin"
 
 /**
  * Investor kabineti (IN-1, vpKijXce): `/` da `InvestorDashboardPage` — faqat investor roli. Ma'lumot doirasi
- * backendda JWT'dan (`GET investors/me/*`, `@Roles(INVESTOR)`); superadmin/admin investorni `/investors-ops` da ko'radi.
+ * backendda JWT'dan (`GET investors/me/*`, `@Roles(INVESTOR)`); superadmin/admin investorni «Foydalanuvchilar →
+ * Investorlar» (`/all-users?role=investor`) da ko'radi.
  */
 export const canViewInvestorCabinet: Predicate = hasRole("investor");
 

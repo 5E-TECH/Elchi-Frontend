@@ -35,9 +35,8 @@ export const useChangeUserRole = () => {
     onSuccess: async (_data, { from, role }) => {
       await Promise.all([
         invalidateUsers(),
-        // Menejerlar ro'yxati (`/payments` «kimdan», identity) va logistlar — rol ikkala tomonda ham o'zgaradi.
+        // Menejerlar ro'yxati (`/payments` «kimdan») va logistlar — rol ikkala tomonda ham o'zgaradi.
         queryClient.invalidateQueries({ queryKey: ["managers"] }),
-        queryClient.invalidateQueries({ queryKey: ["identity-cov"] }),
         from === "logist" || role === "logist" ? refreshLogists() : undefined,
       ]);
     },

@@ -98,6 +98,27 @@ export const mockMarketOperator = async (page: Page, { commission = { type: "per
       );
     }
     if (path === "notifications/inbox/unread-count") return reply(route, wrap({ unread: 2 }));
+    // F2qp6FtE / 37vonCdg — «Daromadim»: faqat o'z hisobi (`/me`, operator_id — token).
+    if (path === "finance/operators/me/balance" && method === "GET") {
+      return reply(route, wrap({ operator_id: OPERATOR_ID, earned: 1_286_500, paid: 1_100_000, balance: 186_500 }));
+    }
+    if (path === "finance/operators/me/payments" && method === "GET") {
+      return reply(
+        route,
+        wrap({
+          rows: [
+            { id: "3", operator_id: OPERATOR_ID, amount: 300_000, note: "Sentabr, 2-qism", paid_at: "2026-10-01", status: "active", source: "market" },
+            { id: "2", operator_id: OPERATOR_ID, amount: 200_000, note: "Xato", paid_at: "2026-09-20", status: "cancelled", cancel_reason: "Summa xato", source: "market" },
+          ],
+          total: 2,
+          limit: 10,
+          offset: 0,
+        }),
+      );
+    }
+    if (path === "finance/operators/me/earnings" && method === "GET") {
+      return reply(route, wrap({ rows: [], total: 82, limit: 1, offset: 0 }));
+    }
     if (path === "analytics/dashboard" && method === "GET") return reply(route, wrap(DASHBOARD));
     if (path === "orders/extra-cost-approvals" && method === "GET") {
       return reply(route, wrap(url.searchParams.get("status") === "pending" ? PENDING_APPROVALS : []));
@@ -138,17 +159,20 @@ export const openOperatorEarnings = async (page: Page, options: MockOptions = {}
 /**
  * Sizish to'sig'i — ruxsat ro'yxati (allowlist): operator bosh sahifasi va «Daromadim» faqat o'z profili, o'z marketi
  * analitikasi (`analytics/dashboard`), o'z marketining xarajat so'rovlari (6QLF7nst — faqat o'qish) va qobiq
- * hisoblagichini so'raydi. Boshqa har qanday GET (kompaniya analitikasi, `region/stats`, moliya, kassa, investor,
- * buyurtmalar, foydalanuvchilar, market egasining operatorlar ro'yxati va h.k.) — sizish; catch-all mock unga 200
+ * hisoblagichini so'raydi; «Daromadim» — yana o'z hisobi (`finance/operators/me/*`, F2qp6FtE / 37vonCdg). Boshqa har
+ * qanday GET (kompaniya analitikasi, `region/stats`, boshqa operatorning moliyasi, kassa, investor, buyurtmalar,
+ * foydalanuvchilar, market egasining operatorlar ro'yxati va to'lovlari va h.k.) — sizish; catch-all mock unga 200
  * bersa ham test yiqiladi.
  */
+const MY_EARNINGS_GET = ["finance/operators/me/balance", "finance/operators/me/payments", "finance/operators/me/earnings"];
 const ALLOWED_GET = new Set([
   "auth/my-profile",
   "analytics/dashboard",
   "orders/extra-cost-approvals",
   "notifications/inbox/unread-count",
+  ...MY_EARNINGS_GET,
 ]);
-/** Ruxsat ro'yxatidagi yo'l ham bosh sahifa bo'lmasa so'ralmasligi kerak (`/my-earnings` faqat profilni o'qiydi). */
+/** Ruxsat ro'yxatidagi yo'l ham bosh sahifa bo'lmasa so'ralmasligi kerak (`/my-earnings` — profil va o'z hisobi). */
 const HOME_ONLY_GET = new Set(["analytics/dashboard", "orders/extra-cost-approvals"]);
 
 export const expectNoLeakRequests = (mock: MarketOperatorMock, { home = true }: { home?: boolean } = {}) => {
@@ -159,7 +183,10 @@ export const expectNoLeakRequests = (mock: MarketOperatorMock, { home = true }: 
     expect(mock.requested).toContain("orders/extra-cost-approvals");
   }
   expect(mock.requested.filter((path) => !ALLOWED_GET.has(path))).toEqual([]);
-  if (!home) expect(mock.requested.filter((path) => HOME_ONLY_GET.has(path))).toEqual([]);
+  if (!home) {
+    expect(mock.requested.filter((path) => HOME_ONLY_GET.has(path))).toEqual([]);
+    for (const path of MY_EARNINGS_GET) expect(mock.requested).toContain(path);
+  }
   expect(mock.leaked).toEqual([]);
 };
 

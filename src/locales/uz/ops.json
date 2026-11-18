@@ -10,15 +10,10 @@
     "tabErrorHint": "Boshqa bo'limlar ishlashda davom etadi."
   },
   "tabs": {
-    "finance": "Moliya operatorlari",
     "expenseCategories": "Xarajat kategoriyalari",
     "shiftSettings": "Kassa smenasi",
-    "investors": "Investorlar",
-    "deliveryPricing": "Yetkazish narxi",
     "dailySchedule": "Kun tartibi",
-    "identity": "Xodimlar",
-    "system": "Tizim holati",
-    "auth": "Kirish diagnostikasi"
+    "system": "Tizim holati"
   },
   "common": {
     "count": "{{count}} ta",
@@ -29,74 +24,6 @@
       "notFound": "Topilmadi (404). ID to'g'riligini tekshiring.",
       "conflict": "Holat allaqachon o'zgargan (409). Ro'yxatni yangilab, qayta urinib ko'ring.",
       "forbidden": "Bu amal sizning rolingiz uchun ochilmagan (403)."
-    }
-  },
-  "finance": {
-    "intro": {
-      "title": "Operator hisob-kitobi",
-      "description": "Operatorning ishlab topgan, to'langan va qoldiq summasi, daromad va to'lov tarixi. Yangi to'lovni shu yerda qayd qiling."
-    },
-    "lookup": {
-      "formLabel": "Operatorni yuklash",
-      "label": "Operator ID",
-      "placeholder": "Operator ID",
-      "submit": "Yuklash",
-      "invalid": "Operator ID faqat raqamlardan iborat bo'lishi kerak"
-    },
-    "balance": {
-      "title": "Operator {{id}} balansi",
-      "subtitle": "Qoldiq = ishlab topgan − to'langan",
-      "due": "Operatorga to'lanishi kerak",
-      "earned": "Ishlab topgan",
-      "paid": "To'langan",
-      "rest": "Qoldiq",
-      "paidShare": "To'langan ulushi",
-      "paidShareAria": "Ishlab topilganning {{value}} to'langan",
-      "waterfallAria": "Qoldiq {{balance}}: ishlab topgan {{earned}}, to'langan {{paid}} ayiriladi",
-      "loadError": "Operator balansini olib bo'lmadi"
-    },
-    "payment": {
-      "title": "To'lov qayd qilish",
-      "description": "Operatorga berilgan to'lovni yozib qo'ying — qoldiq avtomatik kamayadi",
-      "amount": "Summa (so'm)",
-      "amountPlaceholder": "Masalan, 200 000",
-      "amountRequired": "Summani kiriting",
-      "note": "Izoh",
-      "notePlaceholder": "Masalan, oktabr uchun",
-      "submit": "To'lovni saqlash",
-      "success": "To'lov qayd qilindi",
-      "error": "To'lovni qayd qilib bo'lmadi",
-      "confirmTitle": "To'lovni qayd qilasizmi?",
-      "confirmDescription": "Operator {{id}} ga to'lov yoziladi — qoldiq shu summaga kamayadi.",
-      "confirmAmount": "To'lov summasi",
-      "confirmNote": "Izoh",
-      "confirmLoading": "Saqlanmoqda…"
-    },
-    "earnings": {
-      "title": "Daromadlar",
-      "description": "Har bir buyurtma uchun hisoblangan ulush",
-      "order": "Buyurtma",
-      "amount": "Miqdor",
-      "date": "Sana",
-      "summary": "{{from}}–{{to}} / {{total}} ta",
-      "pagesLabel": "Daromadlar sahifalari",
-      "empty": "Hali daromad yo'q",
-      "emptyHint": "Operator buyurtma olganda ulushi shu yerda paydo bo'ladi.",
-      "loadError": "Daromadlarni olib bo'lmadi"
-    },
-    "payouts": {
-      "title": "To'lovlar tarixi",
-      "description": "Operatorga berilgan to'lovlar",
-      "amount": "Miqdor",
-      "note": "Izoh",
-      "date": "Sana",
-      "count": "{{count}} ta to'lov",
-      "total": "Jami:",
-      "summary": "{{from}}–{{to}} / {{total}} ta to'lov",
-      "pagesLabel": "To'lovlar sahifalari",
-      "empty": "Hali to'lov yo'q",
-      "emptyHint": "Qayd qilingan to'lovlar shu yerda ko'rinadi.",
-      "loadError": "To'lovlar tarixini olib bo'lmadi"
     }
   },
   "expenseCategories": {
@@ -153,12 +80,6 @@
       "saveError": "Kategoriyani saqlab bo'lmadi",
       "notFound": "Kategoriya topilmadi",
       "notFoundDescription": "U o'chirilgan bo'lishi mumkin — ro'yxat yangilandi"
-    }
-  },
-  "deliveryPricing": {
-    "intro": {
-      "title": "Yetkazish narxi — tariflar va hisob qoidalari",
-      "description": "Tariflar, hisob qoidalari (hajm bo'yicha hisoblash chegarasi ham), narx kalkulyatori va o'zgarishlar tarixi. Xuddi shu bo'lim: Hududlar → Yetkazish tariflari (admin ham ko'radi)."
     }
   },
   "dailySchedule": {
@@ -226,39 +147,6 @@
       "note": "Tizimning avtomatik ochishi yoki yopishi xato bilan tugasa ham xabar keladi, sababi bilan."
     }
   },
-  "investors": {
-    "intro": {
-      "title": "Investorlar",
-      "description": "Barcha investorlar ro'yxati va yangi investor qo'shish."
-    },
-    "list": {
-      "title": "Investorlar ro'yxati",
-      "id": "ID",
-      "name": "Ism",
-      "phone": "Telefon",
-      "share": "Ulush",
-      "summary": "{{from}}–{{to}} / {{total}} ta investor",
-      "empty": "Investorlar yo'q",
-      "emptyHint": "Yangi investorni o'ngdagi forma orqali qo'shing.",
-      "loadError": "Investorlar ro'yxatini olib bo'lmadi",
-      "open": "Kabinetni ko'rish",
-      "openAria": "{{name}} — kabinetni ko'rish",
-      "actions": "Amallar"
-    },
-    "create": {
-      "title": "Yangi investor",
-      "description": "Investor ro'yxatga darhol qo'shiladi",
-      "name": "Investor ismi",
-      "namePlaceholder": "Ism va familiya",
-      "nameRequired": "Investor ismini kiriting",
-      "phone": "Telefon raqami",
-      "phonePlaceholder": "90 123 45 67",
-      "phoneRequired": "Telefon raqamini to'liq kiriting",
-      "submit": "Qo'shish",
-      "success": "Investor muvaffaqiyatli qo'shildi",
-      "error": "Investorni qo'shib bo'lmadi"
-    }
-  },
   "branches": {
     "intro": {
       "title": "Filiallar — operatsiyalar",
@@ -273,22 +161,6 @@
       "emptyHint": "Filialga yangi buyurtma kelganda u shu ro'yxatda chiqadi.",
       "loadError": "Filiallar ro'yxatini olib bo'lmadi",
       "open": "{{name}} — filial sahifasini ochish"
-    }
-  },
-  "identity": {
-    "intro": {
-      "title": "Xodimlar — ro'yxatlar",
-      "description": "Adminlar, menejerlar va registratorlar ro'yxatini ko'rish."
-    },
-    "lists": {
-      "admins": "Adminlar",
-      "managers": "Menejerlar",
-      "registrators": "Registratorlar",
-      "id": "ID",
-      "name": "Ism",
-      "email": "Email",
-      "empty": "Ro'yxat bo'sh",
-      "loadError": "Ro'yxatni olib bo'lmadi"
     }
   },
   "system": {
@@ -641,27 +513,6 @@
       "loadError": "Analitika ko'rsatkichlarini olib bo'lmadi",
       "loadErrorText": "Analitika xizmati javob bermadi.",
       "loadingLabel": "Analitika ko'rsatkichlari yuklanmoqda"
-    }
-  },
-  "auth": {
-    "intro": {
-      "title": "Kirish diagnostikasi",
-      "description": "Kirish tokenini yangilash so'rovini sinab ko'radi.",
-      "journalPrefix": "Jurnal uchun:",
-      "journalLink": "Tizim → Faoliyat jurnali",
-      "journalMobile": "Jurnal: Tizim → Faoliyat jurnali"
-    },
-    "test": {
-      "title": "Token yangilash sinovi",
-      "description": "Joriy sessiyaning yangilash tokeni bilan yangi kirish tokeni so'raladi",
-      "endpoint": "So'rov manzili",
-      "submit": "Sinov so'rovini yuborish",
-      "submitting": "Yuborilmoqda",
-      "result": "Natija",
-      "success": "Token muvaffaqiyatli yangilandi",
-      "successDetail": "Yangi token olindi: {{token}}…",
-      "error": "Token yangilanmadi",
-      "errorDetail": "Yangilash so'rovida xatolik yuz berdi."
     }
   }
 }

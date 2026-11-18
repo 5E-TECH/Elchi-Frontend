@@ -6,13 +6,17 @@ import type { RootState } from "../config/store";
 import AppRouter from "./routes";
 
 /**
- * F2NzXpMv (ruxsat — hujjat va guard bir xil): Ops vositalari (`/ops`, to'g'ridan-to'g'ri `*-ops`, `/finance-operators`)
- * va «Kirish diagnostikasi» (`/logs`) — FAQAT superadmin; «Faoliyat jurnali» (`/activity-logs`) — superadmin va admin.
- * Boshqa rol — shell ichida 403.
+ * F2NzXpMv (ruxsat — hujjat va guard bir xil): Ops vositalari (`/ops`, to'g'ridan-to'g'ri `*-ops`) va eski `/logs` —
+ * FAQAT superadmin; «Faoliyat jurnali» (`/activity-logs`) — superadmin va admin. Boshqa rol — shell
+ * ichida 403.
  *
- * F2NzXpMv + bhitm9do («ikki eshik» yopildi): `/investors-ops`, `/system-ops`, `/logs` — `/ops?tab=<k>` ga, ko'chgan
- * `/branch-ops` — `/batches` ga yo'naltiradi; `/logistics-ops` — «Pochta → Qaytarish» ga (u5HTJtqK, Ops nusxasi
- * olib tashlandi); guard o'sha, admin ularga o'tmaydi.
+ * F2NzXpMv + bhitm9do («ikki eshik» yopildi): `/system-ops` — `/ops?tab=system` ga, ko'chgan `/branch-ops` — `/batches`
+ * ga yo'naltiradi; `/logistics-ops` — «Pochta → Qaytarish» ga (u5HTJtqK, Ops nusxasi olib tashlandi). LIuf0DcD (ega
+ * 2026-11-16, 2026-11-18): olib tashlangan tablarning eski yo'llari — `/logs` → `/activity-logs`, `/identity-ops` →
+ * `/all-users`, `/investors-ops` → `/all-users?role=investor`. Guard o'sha, admin ularga o'tmaydi.
+ *
+ * F2qp6FtE: «Moliya operatorlari» olib tashlandi — `/finance-operators` superadminni «Foydalanuvchilar → Market
+ * operatorlari» ga (`/all-users?role=market_operator`) yo'naltiradi (guard o'sha, admin — 403).
  */
 
 vi.mock("../../widgets/layout/dashboardLayout", async () => {
@@ -44,20 +48,34 @@ vi.mock("../../pages/mails", async () => {
   return { default: MailsStub };
 });
 vi.mock("../../pages/batches", () => stub("Ops sahifasi /batches"));
-vi.mock("../../pages/finance-operators", () => stub("Ops sahifasi /finance-operators"));
 vi.mock("../../pages/integrations", () => stub("Ops sahifasi /integrations"));
-vi.mock("../../pages/identity-ops", () => stub("Ops sahifasi /identity-ops"));
-vi.mock("../../pages/activity-logs", () => stub("Faoliyat jurnali sahifasi"));
+vi.mock("../../pages/activity-logs", async () => {
+  const { useLocation } = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  const ActivityLogsStub = () => <p>{`Ops sahifasi ${useLocation().pathname}`}</p>;
+  return { default: ActivityLogsStub };
+});
+vi.mock("../../pages/users/list/UserListPage", async () => {
+  const { useLocation } = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  const UsersStub = () => {
+    const { pathname, search } = useLocation();
+    return <p>{`Ops sahifasi ${pathname}${search}`}</p>;
+  };
+  return { default: UsersStub };
+});
 
-const OPS_PATHS = ["/ops", "/finance-operators", "/identity-ops"];
+const OPS_PATHS = ["/ops"];
 
 const OPS_REDIRECTS = [
   ["/integrations-ops", "/integrations"],
-  ["/investors-ops", "/ops?tab=investors"],
   ["/logistics-ops", "/mails/return"],
   ["/branch-ops", "/batches"],
   ["/system-ops", "/ops?tab=system"],
-  ["/logs", "/ops?tab=auth"],
+  // LIuf0DcD: olib tashlangan tablar — o'rnini bosuvchi sahifaga.
+  ["/logs", "/activity-logs"],
+  ["/identity-ops", "/all-users"],
+  ["/investors-ops", "/all-users?role=investor"],
+  // F2qp6FtE: market o'z operatoriga o'zi to'laydi — «Market operatorlari» ro'yxatiga.
+  ["/finance-operators", "/all-users?role=market_operator"],
 ];
 
 const signedInAs = (role: string): Partial<RootState> => ({
@@ -131,7 +149,7 @@ describe("«Faoliyat jurnali» — superadmin va admin", () => {
   it.each(["superadmin", "admin"])("%s: /activity-logs ochiladi", async (role) => {
     renderAt("/activity-logs", role);
     expect(
-      await screen.findByText("Faoliyat jurnali sahifasi", undefined, { timeout: 5000 }),
+      await screen.findByText("Ops sahifasi /activity-logs", undefined, { timeout: 5000 }),
     ).toBeInTheDocument();
   });
 

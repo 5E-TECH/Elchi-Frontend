@@ -43,7 +43,6 @@ export const SHARED_ROOTS_RATCHET = {
   "BRANCHES.DISPATCH_DESTINATIONS": ["branches", "courier-transfer"],
   "DISTRICTS.BASE": ["district-sato", "region-district-catalog"],
   "INTEGRATIONS.RECEIVABLES": ["integ-cov", "integration-settlement"],
-  "MANAGERS.BASE": ["identity-cov", "managers"],
   "ORDERS.EXTERNAL": ["incoming-external-orders", "orders"],
   "REGIONS.BASE": ["region-district-catalog", "region-districts-admin", "regions"],
   "SCAN.BY_TOKEN": ["misc-cov", "scan-detail"],

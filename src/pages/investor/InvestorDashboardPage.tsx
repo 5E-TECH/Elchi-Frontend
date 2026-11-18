@@ -94,7 +94,7 @@ const InvestorDashboardPage = ({ now, investorId }: { now?: Date; investorId?: s
     <div className="flex flex-col gap-6 max-md:gap-4">
       {control ? (
         <PageHeader
-          back="/ops?tab=investors"
+          back="/all-users?role=investor"
           backLabel={t("control.back")}
           title={name ? t("home.cabinetOf", { name }) : t("home.cabinet")}
           meta={<Badge>{t("control.badge")}</Badge>}
