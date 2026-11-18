@@ -228,7 +228,7 @@ test("muddati o'tgan to'lov: qulf izohi, «Muddatni o'zgartirish» → sozlamala
   await expect(detail.getByRole("button", { name: "Qaytarish" })).toHaveCount(0);
   await expect(detail.getByRole("button", { name: "Summani tahrirlash" })).toHaveCount(0);
   await note.getByRole("link", { name: "Muddatni o'zgartirish" }).click();
-  await expect(page).toHaveURL(/\/payments\/shift-settings$/);
+  await expect(page).toHaveURL(/\/ops\?tab=shift-settings$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(leaked).toEqual([]);
 });

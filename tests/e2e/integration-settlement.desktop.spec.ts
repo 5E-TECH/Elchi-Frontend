@@ -87,6 +87,31 @@ test.describe("Integratsiya — Hisob-kitob, desktop", () => {
     });
   }
 
+  test("⭐ ZE5zqXxu: tarmoq uzildi — qayta «Yozish» o'sha Idempotency-Key bilan, bitta kirim", async ({ page }) => {
+    const { remittances, remittanceKeys, leaked } = await mockSettlementApi(page, { dropFirstRemittance: true });
+    await openSettlement(page);
+    await page.getByRole("region", { name: "Qoldiq" }).getByRole("button", { name: "To'lov olindi" }).click();
+    const dialog = page.getByRole("dialog", { name: "Tashuvchidan olingan to'lov" });
+    await dialog.getByRole("textbox", { name: /Summa/ }).fill("1500000");
+    await dialog.getByRole("button", { name: "Yozish" }).click();
+
+    // Javob yo'qoldi — «yozilmadi» deyilmaydi, oyna summa va ichida ogohlantirish bilan ochiq.
+    await expect(dialog.getByRole("alert").filter({ hasText: "Javob kelmadi" })).toBeVisible();
+    await expect(page.getByText("To'lovni yozib bo'lmadi", { exact: true })).toHaveCount(0);
+    await expect(dialog.getByRole("textbox", { name: /Summa/ })).toHaveValue("1 500 000");
+
+    await dialog.getByRole("button", { name: "Yozish" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText("To'lov avval yozilgan edi", { exact: true })).toBeVisible();
+    expect(remittanceKeys).toHaveLength(2);
+    expect(remittanceKeys[0]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(remittanceKeys[1]).toBe(remittanceKeys[0]);
+    // Ikkala tana ham bir xil — kalit tanada emas, sarlavhada.
+    expect(remittances).toEqual([{ amount: 1_500_000 }, { amount: 1_500_000 }]);
+    expect(new Set(remittanceKeys).size).toBe(1);
+    expect(leaked).toEqual([]);
+  });
+
   test("kassaga yozilmadi — natija oynasida ogohlantirish va Asosiy kassa havolasi", async ({ page }) => {
     const { leaked } = await mockSettlementApi(page, {
       remittanceResponse: { remittance_id: 90, remitted_amount: 1_500_000, settled_amount: 1_500_000, settled_count: 6, unapplied_amount: 0, advance_applied: 0, advance_balance: 350_000, cashbox_posted: false },

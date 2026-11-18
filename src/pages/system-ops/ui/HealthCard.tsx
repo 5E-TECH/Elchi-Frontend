@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useMiscCoverage } from "../../../entities/coverage/miscCoverage";
+import { useNotificationBotHealth } from "../../../entities/coverage/notificationBotHealth";
 import { cx } from "../../../shared/lib/cx";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -39,6 +40,8 @@ import {
   type HealthSummary,
   type ServiceState,
 } from "../lib/systemHealth";
+import { botIssueTitle, readBotIssue } from "../lib/botStatus";
+import { BotStatusPanel } from "./BotStatusPanel";
 
 /**
  * «Tizim holati» kartasi (maketlar `superadmin-ops-system[-loading|-error|-partial|-down|-critical]`).
@@ -52,6 +55,11 @@ import {
  * daraja o'zgarsa yana maket qoidasi ishlaydi («biror narsa ishlamasa — ochiq»).
  * Oflayn (so'rov `paused`) — cheksiz skelet emas, «Internet aloqasi yo'q». Xatodan «Qayta urinish» bilan tiklansa,
  * fokus kartaga o'tadi (tugma yo'qolib, fokus `<body>` ga tushmasin).
+ *
+ * BOT-DIAG-FE: NOTIFICATION `down` + `reported` bo'lsa `GET /health/notification-bot` (faqat superadmin) so'raladi —
+ * xulosa ostida aniq sabab, keyingi qadam va «Qayta tekshirish» (`BotStatusPanel`), jadval qatorida sabab
+ * sarlavhasi. So'rov xato bersa (404/405 — backend deploy qilinmagan, 403, 503) yoki bot sog' bo'lsa — umumiy
+ * matn jimgina qoladi. «Yangilash» bot holatini ham qayta o'qiydi.
  */
 
 const LEVEL_TONE: Record<HealthLevel, Tone> = { ok: "success", partial: "warning", critical: "danger", down: "danger" };
@@ -88,6 +96,11 @@ export const HealthCard = () => {
   const failed = !loading && summary === null;
   const fetching = query.isFetching;
 
+  const notificationReported =
+    summary?.services.some((s) => s.key === "NOTIFICATION" && s.state === "down" && s.problem === "reported") ?? false;
+  const botQuery = useNotificationBotHealth({ enabled: notificationReported });
+  const bot = notificationReported && botQuery.isSuccess ? readBotIssue(botQuery.data) : null;
+
   const hasSummary = summary !== null;
   useEffect(() => {
     if (!hasSummary || !focusOnRecovery.current) return;
@@ -107,6 +120,7 @@ export const HealthCard = () => {
 
   const refresh = () => {
     void query.refetch();
+    if (notificationReported) void botQuery.refetch();
   };
   const retry = () => {
     focusOnRecovery.current = true;
@@ -195,6 +209,8 @@ export const HealthCard = () => {
           serviceName={serviceName}
           serviceArea={serviceArea}
           list={list}
+          notificationReason={bot ? botIssueTitle(t, bot.issue) : null}
+          botPanel={bot ? <BotStatusPanel health={bot.health} issue={bot.issue} /> : null}
         />
       ) : null}
     </Card>
@@ -232,9 +248,24 @@ type BodyProps = {
   serviceName: (service: HealthService) => string;
   serviceArea: (service: HealthService) => string;
   list: (items: readonly string[]) => string;
+  /** NOTIFICATION nosozligining aniq sababi (bot holatidan) — jadval qatorida umumiy matn o'rniga. */
+  notificationReason: string | null;
+  /** Telegram bot bloki (sabab, keyingi qadam, «Qayta tekshirish») — xulosa ostida. */
+  botPanel: ReactNode;
 };
 
-const HealthBody = ({ summary, expanded, onToggle, listId, ms, serviceName, serviceArea, list }: BodyProps) => {
+const HealthBody = ({
+  summary,
+  expanded,
+  onToggle,
+  listId,
+  ms,
+  serviceName,
+  serviceArea,
+  list,
+  notificationReason,
+  botPanel,
+}: BodyProps) => {
   const { t } = useTranslation("ops");
   const Icon = LEVEL_ICON[summary.level];
   const tone = LEVEL_TONE[summary.level];
@@ -313,6 +344,9 @@ const HealthBody = ({ summary, expanded, onToggle, listId, ms, serviceName, serv
   const problemText = (service: HealthService) => {
     if (!service.problem) return null;
     const base = `system.health.problem.${service.problem}`;
+    if (service.problem === "reported" && service.key === "NOTIFICATION" && notificationReason) {
+      return { title: notificationReason, hint: t(`${base}.title`) };
+    }
     const hint =
       service.problem === "reported" && service.key === "NOTIFICATION"
         ? t(`${base}.hintNotification`)
@@ -393,6 +427,8 @@ const HealthBody = ({ summary, expanded, onToggle, listId, ms, serviceName, serv
           ) : null}
         </div>
       </div>
+
+      {botPanel}
 
       <Pressable
         aria-expanded={expanded}

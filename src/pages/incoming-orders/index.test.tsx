@@ -20,6 +20,14 @@ vi.mock("../../shared/api/api", () => ({
   },
 }));
 
+/** Skan signali kuzatiladi (ibora — «Ovozli xabar» — hodisada yo'q), asli chaqiriladi: hodisa va ekrandagi xabar o'zgarmaydi. */
+const feedbackSpy = vi.hoisted(() => ({ play: vi.fn() }));
+vi.mock("../../shared/lib/scanner/feedback", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../shared/lib/scanner/feedback")>();
+  feedbackSpy.play.mockImplementation(actual.playScanFeedback);
+  return { ...actual, playScanFeedback: feedbackSpy.play };
+});
+
 const adminState = {
   role: { id: "admin-1", role: "admin", region: null, name: "Admin" },
 } as never;
@@ -1393,16 +1401,22 @@ describe("IncomingOrdersPage — chala qop", () => {
     renderPage();
     expect(await screen.findByText("Mijoz 1")).toBeInTheDocument();
 
+    feedbackSpy.play.mockClear();
     scan(BAG);
     const message = await screen.findByText("Qop BP-24817: 2/3 keldi");
     expect(message.closest("[data-tone]")).toHaveAttribute("data-tone", "warning");
     expect(message.closest("[data-tone]")).toHaveTextContent("2 ta posilka belgilandi, 1 tasi yetishmaydi");
     expect(sounds).toEqual(["error"]);
+    // DamKku7C: posilkalar ro'yxatga qo'shildi — ohang xato (S5), ibora «Qo'shildi», tur bo'yicha «Xatolik bo'ldi» emas.
+    expect(feedbackSpy.play).toHaveBeenLastCalledWith("error", "Qop BP-24817: 2/3 keldi", undefined, { voice: "added" });
 
     scan(FULL);
     const full = await screen.findByText("Qop: 2 posilkadan 2 tasi belgilandi");
     expect(full.closest("[data-tone]")).toHaveAttribute("data-tone", "success");
     expect(sounds).toEqual(["error", "success"]);
+    expect(feedbackSpy.play).toHaveBeenLastCalledWith("success", "Qop: 2 posilkadan 2 tasi belgilandi", undefined, {
+      voice: "added",
+    });
   });
 
   it("⭐ chala qopni qabul qilish — tasdiq; «Bekor qilish» so'rov yubormaydi, «Baribir qabul qilish» yuboradi", async () => {

@@ -11,6 +11,7 @@ import type {
   UpdateDeliveryPricingSettingsRequest,
 } from "../model/types";
 import {
+  cancelDeliveryTariff,
   createDeliveryTariff,
   getDeliveryTariffs,
   getPricingSettings,
@@ -189,7 +190,13 @@ export const useCreateDeliveryTariff = () => {
   });
 };
 
-/** `PATCH /delivery/pricing-settings` — javob darhol keshga, so'ng tariflar va narx taxminlari qayta so'raladi. */
+/**
+ * `PATCH /delivery/pricing-settings` — javob darhol keshga, so'ng tariflar va narx taxminlari qayta so'raladi.
+ *
+ * Takror so'rov xavfsiz (B0ILd7YI): tana — mutlaq qiymatlar (delta emas), backend o'zgarishsiz PATCH'da yangi
+ * versiya ham, jurnal ham yozmaydi. Shuning uchun vaqt tugagach (504 / tarmoq) qayta bosish ikkinchi bir xil versiya
+ * yaratmaydi. Xatoda qoidalar va tarix qayta so'raladi — birinchi so'rov aslida yozilgan bo'lsa forma buni ko'radi.
+ */
 export const useUpdatePricingSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -198,5 +205,22 @@ export const useUpdatePricingSettings = () => {
       if (settings) queryClient.setQueryData(queryKeys.deliveryPricing.settings, settings);
       return queryClient.invalidateQueries({ queryKey: queryKeys.deliveryPricing.all });
     },
+    onError: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.deliveryPricing.settings }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.deliveryPricing.settingsHistory }),
+      ]),
+  });
+};
+
+/**
+ * `POST /delivery/tariffs/:id/cancel` (B0ILd7YI) — rejalashtirilgan versiyani bekor qilish. Natija qanday bo'lmasin
+ * (muvaffaqiyat, 409 «allaqachon kuchga kirgan», 404) tariflar, tarix va narx taxminlari qayta so'raladi.
+ */
+export const useCancelDeliveryTariff = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => cancelDeliveryTariff(id),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.deliveryPricing.all }),
   });
 };

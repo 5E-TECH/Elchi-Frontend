@@ -54,7 +54,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   MO-1 dan keyin: 2 (`SalaryPaymentPopup`, `PrintModeSelect`).
 - design-guard `named-colour` + `V2_SCOPES` (papkalar ro'yxati — `scripts/design-guard.mjs`, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
   `OUTPUT_FORMAT_FILES` 4; `design/guard-baseline.json` faqat kamaydi (87 → 17 fayl yozuvi).
-- Vizual snapshotlar: 23 sahna × kunduzgi/tungi × 1440/390 = 92 (`tests/visual/`, mock API), CI «Visual»
+- Vizual snapshotlar: 24 sahna × kunduzgi/tungi × 1440/390 = 96 (`tests/visual/`, mock API), CI «Visual»
   (`.github/workflows/visual.yml`); baseline'lar `shodiyor` da (bot commit `a107f5e`, `616bc03` da yaratilgan;
   `47bcb53` gacha bironta sahna o'zgarmagani lokal A/B chizish bilan tasdiqlangan), `dev` da hali yo'q.
 - Bosqich B integratsiyasida iste'molchisi qolmagan 61 v1 fayl o'chirildi (testlari bilan): `PhoneInput`,
@@ -346,6 +346,22 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
 - `/mails/old` Excel 20 000 qator chegarasida «Fayl to'liq emas» ogohlantirishi bor (`old.exportCapped`).
 - Ochiq: D-12 — yangi to'lanmagan buyurtmada «To'lanishi kerak 0» (`to_be_paid` semantikasi, backend bilan).
 
+### 2.4 Rejada: AI bilim bazasi (ega qarori 2026-11-15, boshlanishi — 2026-11-16 yoki kelasi hafta)
+
+Eslatma, kod hali yozilmagan. Tahlil (ikkala qism, bitta jadval): https://claude.ai/artifact/KSJPJZhB3KhdifTKpdLPig.
+Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
+
+- Yo'l: «AI so'raydi — ega qaror qiladi». AI bilimni o'zi yozmaydi: ega yozadi → AI «Men shunday tushundim» deb
+  qaytaradi → mavjud bilim va kod bilan solishtiriladi → ziddiyat ko'rsatiladi → tasdiqdan keyin yangi versiya.
+- 1-qadam (BE-2 ichida): 8000 belgilik bitta `owner_notes` o'rniga alohida yozuvlar (soha, qamrov, muddat,
+  ≤ 500 belgi, muallif); band ID va turi (ta'rif / kutilgan tartib / siyosat / izoh); formulani kod bilan
+  solishtiradigan test; versiyalar faqat qo'shiladi.
+- Frontend: AI sahifasida alohida «Bilim bazasi» tabi (sohalar, yozuvlar, ziddiyatlar, versiyalar, AI savollari);
+  Sozlamalardagi tab — qisqa xulosa va havola. **Maket yo'q** — kod yozishdan oldin chiziladi va ega tasdiqlaydi.
+- Ko'rish va yozish — faqat superadmin. Qo'lda yozish dastlab 3 moliya sohasida: kuryer puli, filial → HQ,
+  kassa smenasi; tekshirib bo'lmaydigan gap — «izoh», 180 kunlik muddat; kuniga ≤ 10, jami ≤ 40 faol yozuv.
+- Boshlashdan oldin egadan qolgan qarorlar so'raladi (tahlil sahifasining oxirida: 2-qism — 8 ta, 1-qism — 18 ta).
+
 ## 3. Ish usuli (o'zini oqlagan)
 
 - **Har guruh = bitta ish oqimi.** Ketma-ketligi:
@@ -487,6 +503,36 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - Ko'rib chiqishdan keyin: suhbat maketlarida `SendHorizontal` → `Send` (reestr); `ThumbsUp` / `ThumbsDown`
     («Foydali / Foydasiz») reestrda yo'q — ochiq savol, ega reestrga qo'shishi kerak (kod ularni backend chiqquncha
     chizmaydi); R3 dagi MAD — «Mediana og'ishi» (sozlamalar oynasida ham).
+- **2026-11-15 (AI tekshiruvlari, «AI izi», Hududlar qamrovi — ega 11 ta maketni tasdiqladi; izohlar —
+  `design/kit/route-map.json` → `newViews`, kodda hali yo'q):**
+  - ekranlar: A — `superadmin-neworders-create-ai-preview-checks`, `admin-neworders-create-ai-checks`,
+    `manager-new-orders-create-ai-checks`, `registrator-new-orders-create-ai-checks`,
+    `market-new-orders-create-ai-preview-checks`; B — `superadmin-orders-detail-ai-trace-dialog`,
+    `admin-orders-detail-ai-trace-dialog`; C — `superadmin-regions-coverage-warning`, `superadmin-regions-coverage-dialog`,
+    `admin-regions-coverage-warning`, `admin-regions-coverage-dialog`;
+  - A — AI preview kartasida tasdiq belgisi (bloklaydi, karta «Tasdiq kutmoqda») faqat `district_low_confidence`
+    («Tuman to'g'ri, tasdiqlayman») va `price_check` («Narx to'g'ri, tasdiqlayman») uchun; `qty_check`,
+    `duplicate_items`, `phone_is_market`, `same_phone_multi` — sariq izoh, bloklamaydi. Backend `ack_checks` ni
+    tekshiradi (Elchi-Backend PR #658) — belgisiz yaratish faqat FE'da emas, serverda ham to'xtaydi;
+  - B — «AI izi» oynasi faqat superadmin va admin, faqat o'qish (bitta «Yopish»), kirish — buyurtma tafsilotidagi
+    «Yaratish usuli: AI bilan · AI izi» qatori;
+  - C — `/regions` dagi qamrov ogohlantirishi superadmin va admin uchun (yopilmaydi, hammasi tasdiqlangach yo'qoladi),
+    «Avtomatik qo'shilgan tumanlar» oynasida har qatorda «Tasdiqlash» va «O'zgartirish» (→ `/regions/sato-management`);
+    backend — Elchi-Backend PR #656: `GET /region/district-coverage`, `POST /region/district/:id/confirm-assignment`.
+    «N ta rasmiy tuman bazada yo'q» qatori faqat superadmin (SATO preview adminga 403);
+  - ochiq: A izohidagi ega savoli — summa «Matnda» qiymatlaridan biriga tahrirlansa `price_check` belgisi kerakmi.
+- **2026-11-15 (Pochta → HQ kuryeri, Carrier API faqat HQ kuryeri; izohlar — `design/kit/route-map.json`
+  `/mails/:id`, `/integrations/connections`, `/all-users/:id`):**
+  - pochtani jo'natishda filial bilan birga HQ kuryeri ham: viloyat HQ viloyati bo'lsa — barcha faol HQ kuryerlari,
+    boshqa viloyatda — «Xizmat viloyatlari»da shu viloyat belgilangan (yoki «Barcha viloyatlar») HQ kuryeri. Bu ega
+    qarori 6 dan istisno — FAQAT Pochta yo'lida (`/dispatch` va skan-biriktirish qoidalari o'zgarmagan);
+  - adashmaslik uchun turlar rangsiz (neytral badge — §8): tablar, ikonkalar (`Building2` / `Truck`), yorliqlar,
+    turli asosiy tugma matni va kuryer yo'lida oyna ichidagi tasdiq bosqichi; yangi maket chizilmaydi — «Maket yo'q —
+    eng yaqini …» (`SendPostModal`, `CourierRegionsCard`);
+  - Carrier API yangi akkaunti — faqat HQ'da ochilgan kuryer (maketdagi «Davom etish mumkin, lekin tavsiya: HQ»
+    ziddiyati shu qaror bilan hal qilindi, maket fayllari tegilmadi); HQ'dagi bog'langan kuryerni HQ'dan boshqa
+    filialga o'tkazish backendda rad etiladi (409 `courier_carrier_linked`);
+  - kuryer tafsilotida (superadmin, admin) «Xizmat viloyatlari» kartasi va tahrirlash oynasi (`PUT couriers/:id/regions`).
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;

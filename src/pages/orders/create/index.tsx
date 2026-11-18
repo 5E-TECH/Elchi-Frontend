@@ -28,6 +28,7 @@ import { isAiTabHidden, useAiAvailability } from "../../../entities/ai-order";
 import { marketOperatorKeys } from "../../../entities/market-operator";
 import { ORDER_KEY, useOrders } from "../../../entities/order/api/orderApi";
 import { useCreateOrderIdempotencyKeys } from "../../../entities/order/model/createIdempotency";
+import { todayOrdersByMarketKey } from "../../../entities/orders/queryKeys";
 import type { RootState } from "../../../app/config/store";
 import {
   buildCreateOrderPayload,
@@ -638,7 +639,8 @@ const OrderCreateFormContent = () => {
                 </SectionErrorBoundary>
               ) : null}
               {showToday && selectedMarketId ? (
-                <SectionErrorBoundary>
+                // «Qayta urinish» — `GET orders/markets/:id/new` qayta yuboriladi: javob tuzalgach karta tiklanadi.
+                <SectionErrorBoundary queryKeys={[todayOrdersByMarketKey(selectedMarketId)]}>
                   <TodayOrdersCard
                     marketId={selectedMarketId}
                     marketName={selectedMarketName}

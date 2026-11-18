@@ -18,8 +18,8 @@ Qoidalar: [`AGENTS.md`](../AGENTS.md) va [`docs/DESIGN_SYSTEM.md`](../docs/DESIG
 
 | Yo'l | Nima |
 |---|---|
-| `fragments/<rol>--<viewId>.html` + `.json` | 734 ta maket fragmenti: ekranning kontent qismi (shell'siz), `el-*` kit klasslari bilan. `.json`: `kind` (`page` = ilova shell'i ichida, `screen` = shell'siz to'liq ekran, masalan skaner; `standalone` = taxta yoki kirish sahifasi), `height`, ixtiyoriy `dialog`, `devices` |
-| `kit/views.json` | 863 ta ekran: `role`, `viewId`, `menuKey` (menyu bo'limi), `title`, `fragment`, `kind` (`page` / `dialog` / `standalone`) |
+| `fragments/<rol>--<viewId>.html` + `.json` | 741 ta maket fragmenti: ekranning kontent qismi (shell'siz), `el-*` kit klasslari bilan. `.json`: `kind` (`page` = ilova shell'i ichida, `screen` = shell'siz to'liq ekran, masalan skaner; `standalone` = taxta yoki kirish sahifasi), `height`, ixtiyoriy `dialog`, `devices` |
+| `kit/views.json` | 874 ta ekran: `role`, `viewId`, `menuKey` (menyu bo'limi), `title`, `fragment`, `kind` (`page` / `dialog` / `standalone`) |
 | `kit/roles.json` | rollar: menyu, persona (ism, filial), pastki menyu, ikonkalar |
 | `kit/helmet.html` | maket kiti: tokenlar (kunduzgi/tungi) va barcha `el-*` klasslari. Kodga to'g'ridan-to'g'ri o'tmaydi, tarjimasi [`CODE-MAP.md`](CODE-MAP.md) da |
 | `kit/AUTHORING.md` | maketlar qanday chizilgan: qoidalar, matn standarti, holat → ton, grafik qoidalari (v3–v6 bo'limlari) |
@@ -32,7 +32,7 @@ Qoidalar: [`AGENTS.md`](../AGENTS.md) va [`docs/DESIGN_SYSTEM.md`](../docs/DESIG
 | [`CODE-MAP.md`](CODE-MAP.md) | maket klassi → Tailwind v4 + tokenlar → mavjud komponent → 1-bosqich primitivi |
 | `.build/`, `shots/` | lokal natijalar, git'ga kirmaydi |
 
-Rollar (ekranlar soni): `superadmin` 345 · `admin` 191 · `manager` 94 · `registrator` 54 · `market` 42 ·
+Rollar (ekranlar soni): `superadmin` 349 · `admin` 195 · `manager` 95 · `registrator` 55 · `market` 43 ·
 `market_operator` 5 · `courier` 67 · `logist` 10 · `investor` 13 · `common` 20 (umumiy: kirish, bildirishnomalar, profil…) ·
 `tizim` 22 (dizayn tizimi taxtalari). `market_operator`, `logist`, `investor` — ega 2026-10-19 da tasdiqlagan yangi rollar,
 kodda hali yo'q (menyulari — `kit/route-map.json` → `plannedMenu`; marketning yangi pastki menyusi — `plannedBottomNav`;
@@ -41,7 +41,7 @@ menyu testlari `src/widgets/Sidebar` ularni `src/test/designMenu.ts` orqali chet
 ## Ekran nomi
 
 Ekran nomi `<rol>-<viewId>` (**bitta** tire), masalan `manager-orders-list-all`. Fragment fayli esa
-`<rol>--<viewId>` (**ikki** tire). Bir fragment bir nechta ekranga xizmat qilishi mumkin: 129 ta ekran boshqa rolning
+`<rol>--<viewId>` (**ikki** tire). Bir fragment bir nechta ekranga xizmat qilishi mumkin: 133 ta ekran boshqa rolning
 fragmentini ishlatadi (masalan admin ko'p superadmin fragmentlarini). Ekranning fragmenti `views.json` dagi
 `"fragment"` maydonida yozilgan. Istisno: `tizim--main` taxtasining yig'ilgan fayli `Main.dc.html`, ekran nomi `Main`
 (`design:shot` va `design:build -- --view` `tizim-main` ni ham qabul qiladi).
@@ -79,6 +79,8 @@ npm run app:shot -- /orders --role manager --lang ru --split 1200
 npm run app:shot -- / /orders --role manager --branch-type REGIONAL  # menejer menyusi filial turiga bog'liq
 npm run app:shot -- /orders --device phone --width 375             # 375 telefon; --device desktop --width 1024 — chegara
 npm run app:shot -- /profile --sessions locked                    # «Sessiyalar»: yangi qurilma cheklovi (48 soat)
+npm run app:shot -- /mails/74 --tag courier --click 'role=button[name="Barchasini tanlash"]' \
+  --click 'role=button[name=/Pochtani jo.natish — 4 ta/]' --click 'role=radio[name=/HQ kuryeriga/]'  # oyna holati
 ```
 
 Bayroqlar (bir nechta route bitta buyruqda): `--device desktop|tablet|phone` (sukut — uchalasi: 1440 / 768 / 390) ·
@@ -88,6 +90,13 @@ bo'laklarga: `-1.png`, `-2.png` …) · `--wait <css-selektor>` (shu element chi
 kontent) · `--sessions locked` (profil «Sessiyalar» yangi qurilma cheklovi bilan: `can_revoke_others: false`, vaqt —
 30 soatdan keyin; fayl nomiga `-sessions-locked`).
 
+- `--click <Playwright selektori>` (takrorlanadi, yozilgan tartibda) — sahifa tayyor bo'lgach bosiladi: oyna, tab yoki
+  ro'yxatni ochish (`role=button[name="…"]`, `text=…`). Bosilgan bo'lsa surat oyna balandligida olinadi (sahifa
+  cho'zilmaydi — dialog / pastki varaqa joyida); topilmagan selektor hisobotdagi `consoleErrors` ga yoziladi.
+  `--tag <nom>` — fayl nomiga qo'shiladi (bir route'ning bir nechta holati: `mails-74-courier--phone-light.png`).
+  Soxta ma'lumotli holatlar: `/mails/<id>` — jo'natilmagan HQ pochtasi, filiallar va HQ kuryerlari («Manzilni
+  tanlang»); `/all-users/1062` — HQ kuryeri va «Xizmat viloyatlari»; `/integrations/connections?scope=carrier&new=1` —
+  HQ kuryerlari tanlovi.
 - `--width <px>` — tanlangan qurilma oynasining kengligi (320…3840). Balandlik va sensorli rejim `--device` dan qoladi
   (`phone` — 844, sensorli; `tablet` — 1024; `desktop` — 900). Qobiq chegaralarini (375 / 1024) tekshirish uchun.
   Fayl nomiga `-w<px>` qo'shiladi: `orders--phone-w375-light.png`.

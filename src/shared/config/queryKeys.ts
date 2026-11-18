@@ -39,6 +39,12 @@ export const queryKeys = {
     withSentBatches: (params: object) => ["branches", "with-sent-batches", params] as const,
     detail: (id: string) => ["branches", "detail", id] as const,
     employees: (id: string) => ["branches", id, "employees"] as const,
+    /**
+     * HQ kuryerlari — Carrier API «Yangi tashqi yetkazuvchi» tanlovi (`GET branches/:id/users`, faqat `COURIER`,
+     * `CarrierCourier` shaklida). `employees(id)` prefiksi ostida — xodimlar o'zgarsa birga eskiradi, lekin shakli
+     * boshqa bo'lgani uchun alohida kalit (bitta kalitda ikki shakl bo'lmasin).
+     */
+    carrierCouriers: (id: string) => ["branches", id, "employees", "carrier-couriers"] as const,
     /** Filial id → nomi (`GET /branches/dispatch-destinations`, «Qaytarish»dagi filial o'tkazmasi guruhlari). */
     dispatchNames: ["branches", "dispatch-destinations", "names"] as const,
     /** HQ filiali (`GET branches/hq`; SUPERADMIN, ADMIN) — Carrier API kuryerining «HQ'dami» tavsiyasi. */
@@ -60,6 +66,11 @@ export const queryKeys = {
      * `["regions"]` invalidatsiyasi buni ham qamraydi (prefiks).
      */
     options: ["regions", "options"] as const,
+  },
+  /** Kuryerning «Xizmat viloyatlari» (`GET couriers/:id/regions`; super-kuryer bayroqlari, viloyatlar va tariflari). */
+  courierRegions: {
+    all: ["courier-regions"] as const,
+    detail: (courierId: string) => ["courier-regions", courierId] as const,
   },
   courierTransfer: {
     all: ["courier-transfer"] as const,

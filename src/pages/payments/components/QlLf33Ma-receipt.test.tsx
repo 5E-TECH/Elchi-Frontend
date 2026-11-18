@@ -333,7 +333,7 @@ describe("Kassadan xarajat — chek rasmi (QlLf33Ma)", () => {
     expect(first[2].headers["Idempotency-Key"]).toBe(second[2].headers["Idempotency-Key"]);
   });
 
-  it("superadminda «Sozlamalar» havolasi bor, adminda yo'q; AI o'chiq — izoh", async () => {
+  it("«Sozlamalar» havolasi yo'q (ega 2026-11-17 — Ops → «Kassa smenasi»); AI o'chiq — izoh", async () => {
     manualExpense = { photo_required: true, ai_enabled: false };
     const user = userEvent.setup();
     const dialog = await openDialog(user, admin);
@@ -352,8 +352,9 @@ describe("Kassadan xarajat — chek rasmi (QlLf33Ma)", () => {
     const user = userEvent.setup();
     const dialog = await openDialog(user);
 
-    const superadminLink = await within(dialog).findByRole("link", { name: "Sozlamalar" });
-    expect(superadminLink).toHaveAttribute("href", "/payments/shift-settings");
+    // Superadminda ham «Sozlamalar» havolasi yo'q — chek sozlamalari Ops → «Kassa smenasi» tabida (ega 2026-11-17).
+    await within(dialog).findByRole("button", { name: /Chek rasmini yuklash/ });
+    expect(within(dialog).queryByRole("link", { name: "Sozlamalar" })).not.toBeInTheDocument();
     await user.click(saveButton(dialog));
     expect(await within(dialog).findByText("Chek rasmini yuklang")).toBeInTheDocument();
     expect(spendCalls()).toHaveLength(0);

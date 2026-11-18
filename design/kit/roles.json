@@ -77,18 +77,6 @@
      }
     },
     {
-     "key": "returns",
-     "label": "Qaytarishlar",
-     "icon": "i6",
-     "group": "Ish"
-    },
-    {
-     "key": "replacements",
-     "label": "Almashtirishlar",
-     "icon": "Repeat",
-     "group": "Ish"
-    },
-    {
      "key": "payments",
      "label": "To'lovlar",
      "icon": "i7",
@@ -248,18 +236,6 @@
       "ru": "Пакеты",
       "en": "Batches"
      }
-    },
-    {
-     "key": "returns",
-     "label": "Qaytarishlar",
-     "icon": "i6",
-     "group": "Ish"
-    },
-    {
-     "key": "replacements",
-     "label": "Almashtirishlar",
-     "icon": "Repeat",
-     "group": "Ish"
     },
     {
      "key": "payments",
@@ -442,12 +418,6 @@
       "ru": "Пакеты",
       "en": "Batches"
      }
-    },
-    {
-     "key": "returns",
-     "label": "Qaytarishlar",
-     "icon": "i6",
-     "group": "Ish"
     },
     {
      "key": "payments",

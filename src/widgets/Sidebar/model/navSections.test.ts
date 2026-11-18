@@ -213,6 +213,12 @@ describe("getActiveNavTo — faol band (maketdagi menuKey)", () => {
     expect(getActiveNavTo(itemsOf("manager"), "/inbox")).toBeNull();
   });
 
+  it("/replacement-returns → «Buyurtmalar» (ega 2026-11-16: yon menyuda yo'q, /orders tugmasi orqali)", () => {
+    for (const role of ["superadmin", "admin", "market"]) {
+      expect(getActiveNavTo(itemsOf(role), "/replacement-returns"), role).toBe("/orders");
+    }
+  });
+
   it("to'g'ridan-to'g'ri mos band ustun: suriluvchi menyudagi shaxsiy /inbox faol qoladi", () => {
     expect(getActiveNavTo([...itemsOf("superadmin"), { to: "/inbox" }], "/inbox")).toBe("/inbox");
   });

@@ -33,6 +33,7 @@ import {
   type DataTableColumn,
   type Tone,
 } from "../../../shared/ui/primitives";
+import { CourierRegionsCard } from "./CourierRegionsCard";
 import { MarketTelegramGroupsCard } from "./MarketTelegramGroupsCard";
 
 const STATUS_TONE: Record<UserStatus, Tone> = { active: "success", inactive: "neutral", blocked: "danger" };
@@ -250,6 +251,8 @@ export interface UserDetailViewProps {
  * TG-B (`*-users-detail-telegram`): market tafsilotida superadmin va admin uchun «Telegram guruhi» kartasi
  * (`MarketTelegramGroupsCard`: har tur holati va «Ulash», «Guruhda mijoz ismi va telefoni» kaliti — «Ruxsatlar»
  * dan ko'chdi). Menejer va ro'yxatchi kartani ham, kalitni ham ko'rmaydi (maket `manager-users-detail`).
+ * Kuryer tafsilotida superadmin va admin uchun «Xizmat viloyatlari» kartasi (`CourierRegionsCard`, ega qarori
+ * 2026-11-15; maket yo'q — eng yaqini `superadmin-users-detail`).
  */
 export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailViewProps) => {
   const { t, i18n } = useTranslation(["users", "common"]);
@@ -279,15 +282,24 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const canReceiveSellCancelPermission = user.role === "manager";
   // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning uchun yagona kirish joyi shu sahifa.
   const canTransferCourier = isCourier && canManagePrivilegedToggles;
-  // xtXKLUwT: backend bilan bir xil huquq; o'ziga — 403 (o'z parolini profilda almashtiradi). Menejerga begona kuryer
-  // backend tomonida 403 — matni tasdiq oynasida.
-  const canResetPassword = String(viewerId ?? "") !== String(user.id) && canManagePasswordSms(currentRole, user.role);
-  // 2026-11-12: menejer o'zi yaratgan marketni ochadi (faqat ko'rish) — `PATCH /users/:id` unga 403
-  // (market filial a'zosi emas), shuning uchun «Tahrirlash» chizilmaydi.
-  const canEdit = !(isManagerViewer && isMarket);
+  const isSelfView = String(viewerId ?? "") === String(user.id);
+  // KQINMdeQ (ega, 2026-11-17): huquq backend'da — nishonning HOZIRGI filiali bo'yicha (`created_by` emas).
+  // `can_manage` (`GET /users/:id`) — so'rovchi shu foydalanuvchini `PATCH /users/:id` bilan boshqara oladimi:
+  // menejerga o'z filialidagi kuryer va ro'yxatchi; boshqa menejer va o'zi yaratgan market (2026-11-12, faqat
+  // ko'rish) — yo'q. Maydon kelmasa (eski backend) — zaxira: menejer ko'ruvchiga market va boshqa menejerda
+  // «Tahrirlash» yo'q.
+  const canEdit =
+    user.can_manage ?? !(isManagerViewer && (isMarket || (user.role === "manager" && !isSelfView)));
+  // xtXKLUwT: backend bilan bir xil huquq; o'ziga — 403 (o'z parolini profilda almashtiradi). KQINMdeQ: menejer —
+  // o'z filialidagi kuryer va ro'yxatchi; `can_manage: false` (boshqa filialga o'tkazilgan va h.k.) — tugma yo'q.
+  const canResetPassword =
+    !isSelfView && user.can_manage !== false && canManagePasswordSms(currentRole, user.role);
   // «Telegram guruhi» (holat, «Ulash», PII kaliti) — superadmin va admin (ega javobi tg-link S2; backend
   // `GET /notifications` va `POST /telegram/link-code` ikkalasiga ochiq).
   const showMarketTelegramGroups = isMarket && canManagePrivilegedToggles;
+  // «Xizmat viloyatlari» (`GET / PUT couriers/:id/regions` — SUPERADMIN, ADMIN): HQ kuryeri shu viloyatlar
+  // pochtasida «HQ kuryeriga» ro'yxatida chiqadi (ega qarori 2026-11-15).
+  const showCourierRegions = isCourier && canManagePrivilegedToggles;
   const proofConditions = useMemo(
     () => (Array.isArray(user.expense_proof_conditions) ? user.expense_proof_conditions : []),
     [user.expense_proof_conditions],
@@ -536,6 +548,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
                       ["cancel_any", "cancelProof"],
                       ["sell_extra_cost", "sellExtraProof"],
                       ["cancel_extra_cost", "cancelExtraProof"],
+                      ["partly_sell", "partlySellProof"],
                     ] as const
                   ).map(([condition, key]) => (
                     <SettingSwitch
@@ -581,7 +594,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const hasAiPrice = aiPrice !== null && Number.isFinite(aiPrice);
   const tariffCard =
     isMarket || isCourier || (user.role === "manager" && hasTariffs) ? (
-      <Card as="section" title={t("v2.detail.tariff")} divided>
+      <Card key="tariff" as="section" title={t("v2.detail.tariff")} divided>
         <dl className="m-0 flex flex-col">
           {isMarket ? (
             <InfoRow
@@ -614,7 +627,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     user.role === "admin" || user.role === "manager" || user.role === "registrator" || user.role === "logist";
   const profileCard =
     !isCustomer && !isMarket && (isStaff || hasSalary || hasPaymentDay || branchName) ? (
-      <Card as="section" title={t("v2.detail.profile")} divided>
+      <Card key="profile" as="section" title={t("v2.detail.profile")} divided>
         <dl className="m-0 flex flex-col">
           {branchName ? <InfoRow label={t("v2.detail.branch")} value={branchName} /> : null}
           {isStaff || hasSalary ? <InfoRow label={t("v2.detail.salary")} value={money(user.salary)} /> : null}
@@ -631,6 +644,8 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const sideCards = [
     profileCard,
     tariffCard,
+    // Ega qarori 2026-11-15: «Xizmat viloyatlari» — kuryerda, faqat superadmin/admin (backend ham shunday).
+    showCourierRegions ? <CourierRegionsCard key={`courier-regions-${user.id}`} user={user} /> : null,
     showMarketTelegramGroups ? (
       // `key`: boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) oyna holati qolmaydi.
       <MarketTelegramGroupsCard key={`tg-group-${user.id}`} user={user} mode="staff" />

@@ -6,6 +6,7 @@ import type { SellOrderPayload } from "./sellPayment";
 import type { ExtraCostRejectReason } from "./extraCostDecision";
 import type { ExtraCostItem, ExtraCostMode } from "./extraCostRequest";
 import type { RollbackTarget } from "./rollbackTarget";
+import { EXTRA_COST_APPROVALS_QUERY_KEY, todayOrdersByMarketKey } from "./queryKeys";
 
 export {
   EXTRA_COST_REJECT_REASONS,
@@ -154,6 +155,13 @@ export type UpdateNewOrderPayload = Partial<{
   items: { product_id: string; quantity: number }[];
 }>;
 
+/**
+ * Bekorlarni marketga topshirish (skan = topshirish): ochiq ro'yxatlar ko'pi bilan shuncha vaqtda bir marta
+ * yangilanadi — bitta qurilma ≤ 12 GET/daqiqa har route'ga, bir necha xodim bitta IP'dan 60 limitga sig'adi.
+ */
+const HANDOVER_REFRESH_INTERVAL_MS = 5000;
+let handoverRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+
 export const useOrders = () => {
   const client = useQueryClient();
 
@@ -212,7 +220,7 @@ export const useOrders = () => {
     enabled = true,
   ) =>
     useQuery<ExtraCostApprovalsResponse>({
-      queryKey: [orders, "extra-cost-approvals", status],
+      queryKey: [...EXTRA_COST_APPROVALS_QUERY_KEY, status],
       queryFn: () =>
         api
           .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status } })
@@ -235,7 +243,7 @@ export const useOrders = () => {
    */
   const useAutoApprovedExtraCostApprovals = (enabled = true) =>
     useQuery<ExtraCostApprovalsResponse>({
-      queryKey: [orders, "extra-cost-approvals", "approved", "auto"],
+      queryKey: [...EXTRA_COST_APPROVALS_QUERY_KEY, "approved", "auto"],
       queryFn: () =>
         api
           .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status: "approved", auto_approved: true } })
@@ -302,7 +310,7 @@ export const useOrders = () => {
     enabled: boolean = true,
   ) =>
     useQuery({
-      queryKey: [orders, marketId, params],
+      queryKey: [...todayOrdersByMarketKey(marketId), params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId), { params }).then((res) => res.data),
       enabled: enabled && Boolean(marketId),
@@ -492,8 +500,16 @@ export const useOrders = () => {
         .then((res) => res.data),
     onSuccess: () => {
       // `[orders]` bekor qilinganlar ro'yxati va tab sonini ham qamraydi (prefiks) — alohida yangilash ularni 2–3
-      // marta so'rardi.
-      client.invalidateQueries({ queryKey: [orders] });
+      // marta so'rardi. SKAN = TOPSHIRISH: har skan alohida POST. Darhol — faqat «eskirgan» belgisi (tarmoqsiz:
+      // boshqa sahifa ochilsa, yangisini so'raydi); ochiq ro'yxatlar esa ko'pi bilan `HANDOVER_REFRESH_INTERVAL_MS`
+      // da bir marta va oxirgi skandan keyin albatta yangilanadi (sahifa topshirilganini o'zi ro'yxatdan
+      // chiqaradi). Har skanda GET bo'lsa, backend'ning global per-IP limiti (60/daqiqa, HQ bitta IP) 429 berardi.
+      void client.invalidateQueries({ queryKey: [orders], refetchType: "none" });
+      if (handoverRefreshTimer !== undefined) return;
+      handoverRefreshTimer = setTimeout(() => {
+        handoverRefreshTimer = undefined;
+        void client.refetchQueries({ queryKey: [orders], type: "active" });
+      }, HANDOVER_REFRESH_INTERVAL_MS);
     },
   });
 

@@ -13,8 +13,6 @@ import {
   MapPinned,
   Inbox,
   Package,
-  RotateCcw,
-  Repeat,
   Receipt,
   CreditCard,
   Wallet,
@@ -92,9 +90,10 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     // fix3 CODE-21: marshrut guardi (`canViewBatchesPage`/`canViewReturnsPage`)
     // superadminga ochiq edi, lekin menyuda yo'q edi — faqat URL orqali.
     { to: "/batches", icon: Package, label: "batches" },
-    { to: "/returns", icon: RotateCcw, label: "returns" },
-    // lQjt6sKP: «Almashtirishlar» — almashtirishga tanlangan eski buyurtmalar (BeePost menyusidagidek; `roles.json`, «Ish»).
-    { to: "/replacement-returns", icon: Repeat, label: "replacements" },
+    // Ega 2026-11-16: «Qaytarishlar» (/returns) yon menyuda yo'q — «Pochta» da ham bor. Sahifa URL va paket
+    // tafsilotidagi «← Qaytarishlar» havolasi orqali ochiladi (superadmin, admin, menejer).
+    // Ega 2026-11-16: «Almashtirishlar» (/replacement-returns, lQjt6sKP) yon menyuda yo'q — /orders sarlavhasidagi
+    // «Almashtirishlar» tugmasi orqali ochiladi; sahifada «Buyurtmalar» faol (`navSections` ACTIVE_ALIASES_BY_PATH).
     { to: "/products", icon: Tag, label: "products" },
     // yXC91RRx: «Ombor» — viloyat filiallaridagi omborlar (maket `roles.json`, «Ma'lumotnoma», Mahsulotlardan keyin).
     { to: "/warehouses", icon: Warehouse, label: "warehouse" },
@@ -120,9 +119,6 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/mails", icon: Mail, label: "mails" },
     { to: "/batches", icon: Package, label: "batches" },
-    { to: "/returns", icon: RotateCcw, label: "returns" },
-    // lQjt6sKP: «Almashtirishlar» (BeePost: superadmin, admin; registrator backend'da 403 — menyusida yo'q).
-    { to: "/replacement-returns", icon: Repeat, label: "replacements" },
     { to: "/products", icon: Tag, label: "products" },
     // yXC91RRx: «Ombor» (maket `roles.json`).
     { to: "/warehouses", icon: Warehouse, label: "warehouse" },
@@ -269,9 +265,10 @@ export const MANAGER_CAPABILITIES: Record<BranchType, ManagerCapability[]> = {
    * qiladi, shuning uchun HQ menejeri qabul ekranini ko'rishi kerak.
    *
    * `staff` 2026-10-06 da QO'SHILDI (HQ va PICKUP ga) — backend endi HAR QANDAY
-   * menejerga xodimlar ro'yxatini qaytaradi (tahrir faqat o'zi yaratgan xodim
-   * bilan cheklanadi), shuning uchun har bir menejer "Xodimlar" bandini
-   * ko'rishi kerak. REGIONAL/HYBRID da allaqachon bor edi.
+   * menejerga xodimlar ro'yxatini qaytaradi (KQINMdeQ, 2026-11-17: tahrir —
+   * HOZIR o'z filialidagi kuryer va ro'yxatchi, kim yaratganidan qat'i nazar),
+   * shuning uchun har bir menejer "Xodimlar" bandini ko'rishi kerak.
+   * REGIONAL/HYBRID da allaqachon bor edi.
    */
   HQ: ['intake', 'mails', 'finance', 'staff'],
 };
@@ -296,7 +293,6 @@ const MANAGER_MENU_ORDER: { item: NavItem; capability: ManagerCapability | null 
   // kuryerlari va o'zi yozgan xarajatlar).
   { item: { to: "/extra-costs", icon: Receipt, label: "extraCosts" }, capability: null },
   { item: { to: "/batches", icon: Package, label: "batches" }, capability: 'intake' },
-  { item: { to: "/returns", icon: RotateCcw, label: "returns" }, capability: 'intake' },
   // Mahsulotlar — menejer filiali uchun mahsulot qo'sha oladi (registrator
   // menyusidagidek shartsiz; backend POST /product MANAGER ga ruxsat beradi).
   { item: { to: "/products", icon: Tag, label: "products" }, capability: null },
@@ -449,9 +445,6 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/dispatch": 'work',
   "/courier-bulk": 'work',
   "/batches": 'work',
-  "/returns": 'work',
-  // lQjt6sKP: almashtirish qaytarmalari.
-  "/replacement-returns": 'work',
   // GykuOz8f: qo'shimcha xarajatli buyurtmalar.
   "/extra-costs": 'work',
   // Moliya

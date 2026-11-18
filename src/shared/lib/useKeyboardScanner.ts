@@ -9,7 +9,16 @@ interface UseKeyboardScannerOptions {
 }
 
 const DEFAULT_IDLE_MS = 80;
+
+/**
+ * Skaner (USB/Bluetooth HID) belgilari orasidagi eng katta oraliq — bundan tezroq kelgan belgilar skaner oqimi
+ * (odam bunday tez yozmaydi). Sarlavhaning harfli tezkor tugmalari (`widgets/header/model/headerShortcuts.ts`)
+ * shu chegara bilan skan matnini tugma bosish deb olmaydi.
+ */
+export const SCANNER_KEY_GAP_MS = DEFAULT_IDLE_MS;
 const DEFAULT_CLEAR_MS = 350;
+/** Oxirgi skan belgisidan Enter gacha eng katta oraliq — keyinroq kelgan Enter skanning oxiri emas. */
+export const SCANNER_ENTER_GAP_MS = DEFAULT_CLEAR_MS;
 
 /**
  * US tartibidagi belgi (`event.code` → [Shift'siz, Shift bilan]). USB/Bluetooth skaner (HID) tugma
@@ -92,7 +101,7 @@ export const isEditableTarget = (target: EventTarget | null) => {
  * tashlanardi (2026-11-07, lokal sinov: tez ketma-ket 8 skandan 2 tasi kesilgan token bilan ketdi).
  * Hodisa vaqti esa skaner yuborgan oraliqni saqlaydi.
  */
-const keyTime = (event: KeyboardEvent) =>
+export const scannerKeyTime = (event: KeyboardEvent) =>
   Number.isFinite(event.timeStamp) && event.timeStamp > 0 ? event.timeStamp : performance.now();
 
 export const useKeyboardScanner = ({
@@ -131,7 +140,7 @@ export const useKeyboardScanner = ({
 
       if (event.key === "Enter") {
         // Oxirgi belgidan `clearMs` dan keyin kelgan Enter — skan emas (bufer eskirgan).
-        const stale = keyTime(event) - scannerLastKeyAtRef.current > clearMs;
+        const stale = scannerKeyTime(event) - scannerLastKeyAtRef.current > clearMs;
         const scannedValue = stale ? "" : scannerBufferRef.current.trim();
         clearScannerBuffer();
 
@@ -147,7 +156,7 @@ export const useKeyboardScanner = ({
       const char = readScannerKey(event);
       if (char === null) return;
 
-      const now = keyTime(event);
+      const now = scannerKeyTime(event);
       if (now - scannerLastKeyAtRef.current > idleMs) {
         scannerBufferRef.current = "";
       }

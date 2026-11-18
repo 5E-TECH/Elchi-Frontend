@@ -250,7 +250,7 @@ export const splitCountdown = (seconds: number): { minutes: number; seconds: num
 };
 
 /**
- * Market QR bosqichi (sahifa ogohlantirishi va «Marketga jo'natish» shu bo'yicha):
+ * Market QR bosqichi (sahifa ogohlantirishi va skan = topshirish ruxsati shu bo'yicha):
  *  - `notRequired` — marketda `cancelled_handover_qr_required === false`: QR kerak emas;
  *  - `required`    — QR kerak va hali skanerlanmagan (yoki muddati tugagan);
  *  - `scanned`     — market QR skanerlangan, topshirish tokeni amal qilmoqda.
@@ -269,27 +269,3 @@ export const resolveHandoverQrStage = ({
   if (!qrRequired) return "notRequired";
   return qrScanned && authorizationToken ? "scanned" : "required";
 };
-
-/**
- * «Marketga jo'natish» mumkinmi — v1 dagi shart AYNAN: tanlov bor, so'rov ketmayapti, market ma'lum va
- * QR talab qilinsa — skanerlangan va token bor. (Market QR'siz jo'natish faqat marketda QR o'chirilgan bo'lsa.)
- */
-export const canSendHandover = ({
-  selectedCount,
-  pending,
-  marketId,
-  qrRequired,
-  qrScanned,
-  authorizationToken,
-}: {
-  selectedCount: number;
-  pending: boolean;
-  marketId: string;
-  qrRequired: boolean;
-  qrScanned: boolean;
-  authorizationToken: string;
-}): boolean =>
-  selectedCount > 0 &&
-  !pending &&
-  Boolean(marketId) &&
-  !(qrRequired && (!qrScanned || !authorizationToken));

@@ -9,7 +9,8 @@ export type ProofAction = "sell" | "cancel";
  *     xarajat > 0 bo'lsa `sell_extra_cost`; amal summasi 0 bo'lsa
  *     `sell_zero_total` (qisman sotishda — yangi, qisman summa);
  *   - bekor qilish: `cancel_any`; xarajat > 0 → `cancel_extra_cost`;
- *     buyurtma summasi 0 → `cancel_zero_total`.
+ *     buyurtma summasi 0 → `cancel_zero_total`;
+ *   - `partly_sell` (2026-11-16) — faqat qisman sotishda (`partly: true`), to'liq sotuvga ta'sir qilmaydi.
  *
  * Ilgari oyna faqat `*_any` ni tekshirardi: market `sell_extra_cost` ni
  * yoqqan bo'lsa kuryer isbotsiz yuborardi va backend 400 "isbot majburiy"
@@ -21,13 +22,14 @@ export type ProofAction = "sell" | "cancel";
  */
 export const isProofRequiredByConditions = (
   conditions: readonly string[] | null | undefined,
-  params: { action: ProofAction; extraCost: number; totalPrice: number | null },
+  params: { action: ProofAction; extraCost: number; totalPrice: number | null; partly?: boolean },
 ): boolean => {
   const enabled = Array.isArray(conditions) ? conditions : [];
   if (enabled.length === 0) return false;
 
   const { action, extraCost, totalPrice } = params;
   if (enabled.includes(`${action}_any`)) return true;
+  if (action === "sell" && params.partly === true && enabled.includes("partly_sell")) return true;
   if (extraCost > 0 && enabled.includes(`${action}_extra_cost`)) return true;
   if (totalPrice !== null && !(totalPrice > 0) && enabled.includes(`${action}_zero_total`)) {
     return true;

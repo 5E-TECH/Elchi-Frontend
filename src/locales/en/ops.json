@@ -12,6 +12,7 @@
   "tabs": {
     "finance": "Finance operators",
     "expenseCategories": "Expense categories",
+    "shiftSettings": "Cash shift",
     "investors": "Investors",
     "deliveryPricing": "Delivery pricing",
     "dailySchedule": "Daily schedule",
@@ -336,7 +337,7 @@
   "branches": {
     "intro": {
       "title": "Branches — operations",
-      "description": "Branches with new orders and branch package management."
+      "description": "Branches with new orders. To cancel a batch, open the batch page (only a batch that has not been sent yet)."
     },
     "list": {
       "title": "Branches with new orders",
@@ -345,24 +346,8 @@
       "newOrders": "New orders",
       "empty": "No branches with new orders",
       "emptyHint": "A branch appears here when it receives a new order.",
-      "loadError": "Couldn't load the branch list"
-    },
-    "cancel": {
-      "title": "Cancel package",
-      "description": "A package ID and a reason of at least 10 characters are required; the action runs after confirmation.",
-      "batchId": "Package ID",
-      "batchPrefix": "B-",
-      "reason": "Cancellation reason",
-      "reasonHint": "{{count}} characters · at least {{min}}",
-      "reasonTooShort": "The reason must be at least {{min}} characters (now {{count}})",
-      "submit": "Cancel package",
-      "confirmTitle": "Cancel this package?",
-      "confirmDescription": "The package will be cancelled and all its orders detached from it.",
-      "confirmLabel": "Yes, cancel it",
-      "cancelLabel": "No",
-      "success": "Package cancelled",
-      "error": "Couldn't cancel the package",
-      "rejected": "The batch can't be cancelled in its current status (400): it may already be received or cancelled. Check the batch ID and status."
+      "loadError": "Couldn't load the branch list",
+      "open": "{{name}} — open the branch page"
     }
   },
   "identity": {
@@ -468,6 +453,56 @@
         "failed": {
           "title": "The service returned an error",
           "hint": "The detailed reason is in the server log"
+        }
+      },
+      "bot": {
+        "label": "Telegram bot status",
+        "tokenRejected": {
+          "title": "Telegram rejected the bot token",
+          "titleStatus": "Telegram rejected the bot token ({{status}})",
+          "text": "Get a new token from BotFather, put it in .env.production on the server and restart the notification service (notification-service)."
+        },
+        "network": {
+          "title": "The server can't reach Telegram",
+          "text": "Check the server's internet connection. Once the network is back, the bot recovers on its own within 5 minutes."
+        },
+        "timeout": {
+          "title": "The server can't reach Telegram",
+          "text": "Telegram didn't respond in time. Once the network is back, the bot recovers on its own within 5 minutes."
+        },
+        "telegramError": {
+          "title": "Telegram returned an error",
+          "titleStatus": "Telegram returned an error ({{status}})",
+          "rateLimit": "Too many requests — wait a little and check again.",
+          "server": "The problem is on Telegram's side and usually clears on its own. Check again a bit later.",
+          "other": "Check again a bit later. If the error persists, send the technical reason to a developer."
+        },
+        "unknown": {
+          "title": "Unexpected error",
+          "text": "The bot check ended with an unexpected error. Send the technical reason to a developer."
+        },
+        "pending": {
+          "title": "Check not finished yet",
+          "text": "The notification service hasn't checked the bot token yet. Check again a bit later."
+        },
+        "disabled": {
+          "title": "Bot is off — no token configured",
+          "text": "Get a token from BotFather, put it in .env.production on the server and restart the notification service (notification-service)."
+        },
+        "technical": "Technical reason:",
+        "checkedAt": "Last check: {{time}}",
+        "neverChecked": "No check yet",
+        "restartRequired": "Restart required",
+        "recheck": "Check again",
+        "rechecking": "Checking",
+        "result": {
+          "healthy": "The bot is working",
+          "healthyUser": "Telegram confirmed @{{username}}",
+          "failing": "The bot still fails the check",
+          "error": "Couldn't check again",
+          "unavailable": "The notification service didn't respond. Try again a bit later.",
+          "tooMany": "Too many requests — wait a little and try again.",
+          "retryLater": "Try again a bit later."
         }
       },
       "error": {

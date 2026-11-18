@@ -37,6 +37,9 @@ type TariffRow = {
   valid_from: string;
   createdAt: string;
   created_by_name?: string | null;
+  /** B0ILd7YI — bekor qilingan rejalashtirilgan versiya (server: `is_active = false`). */
+  cancelled_at?: string | null;
+  cancelled_by_name?: string | null;
 };
 
 const SEED: TariffRow[] = [
@@ -46,7 +49,7 @@ const SEED: TariffRow[] = [
 ];
 
 let rows: TariffRow[] = [];
-let settings = { id: "1", volumetric_divisor: 5000, volumetric_from_kg: 0, first_kg_included: 1, min_billable_kg: 0.1, billable_step_kg: 0.1, round_to: 500, pickup_fee: 20000, pickup_free_from_count: 10, express_multiplier: 1.4 };
+let settings: Record<string, number | string | null> & { first_kg_included: number; round_to: number; volumetric_from_kg: number } = { id: "1", volumetric_divisor: 5000, volumetric_from_kg: 0, first_kg_included: 1, min_billable_kg: 0.1, billable_step_kg: 0.1, round_to: 500, pickup_fee: 20000, pickup_free_from_count: 10, express_multiplier: 1.4, min_delivery_price: null, extra_cost_limit_amount: null };
 let settingsHistory: Record<string, unknown>[] = [];
 const now = () => Date.now();
 
@@ -55,7 +58,7 @@ const tariffsResponse = () => {
     (["city", "center", "address"] as const).map((id) => [
       id,
       rows
-        .filter((row) => row.tariff_id === id && Date.parse(row.valid_from) <= now())
+        .filter((row) => row.tariff_id === id && !row.cancelled_at && Date.parse(row.valid_from) <= now())
         .sort((a, b) => Date.parse(b.valid_from) - Date.parse(a.valid_from))[0] ?? null,
     ]),
   );
@@ -66,7 +69,12 @@ const tariffsResponse = () => {
       current,
       versions: [...rows]
         .sort((a, b) => Date.parse(b.valid_from) - Date.parse(a.valid_from) || Number(b.id) - Number(a.id))
-        .map((row) => ({ ...row, is_current: currentIds.has(row.id), is_scheduled: Date.parse(row.valid_from) > now() })),
+        .map((row) => ({
+          ...row,
+          is_current: currentIds.has(row.id),
+          is_scheduled: !row.cancelled_at && Date.parse(row.valid_from) > now(),
+          is_cancelled: Boolean(row.cancelled_at),
+        })),
     },
   };
 };
@@ -120,6 +128,16 @@ const respond = () => {
   });
   mocks.post.mockImplementation((url: string, body: Record<string, unknown>) => {
     if (url === "delivery/quote/by-tariff") return Promise.resolve({ data: quoteResponse(body as QuoteBody) });
+    const cancel = /^delivery\/tariffs\/(\d+)\/cancel$/.exec(url);
+    if (cancel) {
+      // Server kabi (backend #696): faqat kelajakdagi versiya; takror — 200 `already_cancelled`; kuchga kirgan — 409.
+      const row = rows.find((item) => item.id === cancel[1]);
+      if (!row) return Promise.reject(httpError(404));
+      if (row.cancelled_at) return Promise.resolve({ data: { statusCode: 200, data: { ...row, already_cancelled: true } } });
+      if (Date.parse(row.valid_from) <= now()) return Promise.reject(httpError(409));
+      Object.assign(row, { cancelled_at: new Date().toISOString(), cancelled_by_name: "Shodiyor Ergashev" });
+      return Promise.resolve({ data: { statusCode: 200, data: { ...row, is_cancelled: true, already_cancelled: false } } });
+    }
     if (url === "delivery/tariffs") {
       rows = [
         ...rows,
@@ -139,7 +157,10 @@ const respond = () => {
     return Promise.reject(new Error(`kutilmagan: ${url}`));
   });
   mocks.patch.mockImplementation((_url: string, body: Record<string, unknown>) => {
-    settings = { ...settings, ...body };
+    // Server kabi: qiymatlar mutlaq, hech narsa o'zgarmasa — yangi versiya yo'q («Sozlamalar o'zgarmadi»).
+    if (Object.entries(body).every(([key, value]) => settings[key] === value))
+      return Promise.resolve({ data: { statusCode: 200, message: "Sozlamalar o'zgarmadi", data: settings } });
+    settings = { ...settings, ...(body as typeof settings) };
     // Tarix yuritilayotgan bo'lsa (BE #565) — yangi faol versiya tepaga.
     if (settingsHistory.length > 0) {
       settingsHistory = [
@@ -159,6 +180,17 @@ const renderPage = (role = "admin") =>
 
 const calls = (mock: typeof mocks.post, url: string) => mock.mock.calls.filter(([called]) => called === url);
 
+/** axios xatosi shakli (`response.status`). */
+function httpError(status: number) {
+  return Object.assign(new Error(`HTTP ${status}`), { isAxiosError: true, response: { status, data: {} } });
+}
+
+/** «Qoidalarni saqlash» → tasdiq oynasi (B0ILd7YI): tasdiqsiz so'rov ketmaydi. */
+const openSaveConfirm = async (user: ReturnType<typeof userEvent.setup>, rules: HTMLElement) => {
+  await user.click(within(rules).getByRole("button", { name: "Qoidalarni saqlash" }));
+  return screen.findByRole("alertdialog", { name: "Hisob qoidalarini saqlaysizmi?" });
+};
+
 const fill = async (user: ReturnType<typeof userEvent.setup>, input: HTMLElement, value: string) => {
   await user.clear(input);
   await user.type(input, value);
@@ -170,7 +202,7 @@ beforeEach(() => {
     // Rejalashtirilgan: Markazgacha — har kg 4 000 → 4 500, kelajakda.
     { id: "9", tariff_id: "center", base_price: 40000, extra_per_kg: 4500, days_min: 1, days_max: 2, valid_from: "2099-10-25T00:00:00+05:00", createdAt: new Date().toISOString() },
   ];
-  settings = { ...settings, first_kg_included: 1, round_to: 500, volumetric_from_kg: 0 };
+  settings = { ...settings, first_kg_included: 1, round_to: 500, volumetric_from_kg: 0, min_delivery_price: null, extra_cost_limit_amount: null };
   settingsHistory = [];
   respond();
 });
@@ -297,11 +329,18 @@ describe("DeliveryTariffsPage — hisob qoidalari va kalkulyator", () => {
     expect(
       within(rules).getByText(/2,0 kg asosiy narxga kiradi → qolgan 1,4 kg yuqoriga yaxlitlanib 2 kg → 40\s000 \+ 2 × 4\s000 = 48\s000 so'm\. Hozirgi chegara 1,0 kg da: .*52\s000 so'm\./),
     ).toBeInTheDocument();
-    await user.click(within(rules).getByRole("button", { name: "Qoidalarni saqlash" }));
+    const dialog = await openSaveConfirm(user, rules);
+    expect(mocks.patch).not.toHaveBeenCalled();
+    expect(within(dialog).getByText("Asosiy narxga kiradigan og'irlik")).toBeInTheDocument();
+    expect(within(dialog).getByText("1 kg edi, 2 kg bo'ladi")).toBeInTheDocument();
+    expect(within(dialog).getByText("Darhol kuchga kiradi — yangi narxlar shu qoidalar bilan hisoblanadi")).toBeInTheDocument();
+    expect(within(dialog).getByText("Saytdagi narx kalkulyatori ham darhol o'zgaradi")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Qoidalarni saqlash" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
     expect(mocks.patch).toHaveBeenCalledWith("delivery/pricing-settings", { first_kg_included: 2 });
     expect(await screen.findByText("Qoidalar saqlandi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     await waitFor(() => expect(within(prices).getAllByRole("listitem")[1]).toHaveTextContent(/48\s000 so'm/));
     expect(within(calculator).getByText("2,0 kg asosiy + 2 kg qo'shimcha")).toBeInTheDocument();
     expect(within(table()).getByRole("columnheader", { name: "Asosiy narx · 2,0 kg gacha" })).toBeInTheDocument();
@@ -398,7 +437,9 @@ describe("DeliveryTariffsPage — hajm bo'yicha hisoblash chegarasi (ega 2026-10
     expect(
       within(rules).getByText("50 × 35 × 20 sm, 0,8 kg → hajmli vazn 7,0 kg → hisob 7,0 kg (hajm bo'yicha)"),
     ).toBeInTheDocument();
-    await user.click(within(rules).getByRole("button", { name: "Qoidalarni saqlash" }));
+    const dialog = await openSaveConfirm(user, rules);
+    expect(within(dialog).getByText("0 kg edi, 3 kg bo'ladi")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Qoidalarni saqlash" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
     expect(mocks.patch).toHaveBeenCalledWith("delivery/pricing-settings", { volumetric_from_kg: 3 });
@@ -433,6 +474,156 @@ describe("DeliveryTariffsPage — hajm bo'yicha hisoblash chegarasi (ega 2026-10
     await user.click(within(rules).getByRole("button", { name: "Qoidalarni saqlash" }));
     expect(await within(rules).findByText(/^0 dan 1\s000 gacha kiriting$/)).toBeInTheDocument();
     expect(mocks.patch).not.toHaveBeenCalled();
+  });
+});
+
+describe("DeliveryTariffsPage — «Qoidalarni saqlash» tasdig'i va takror so'rov (B0ILd7YI)", () => {
+  const rulesRegion = () => screen.findByRole("region", { name: "Hisob qoidalari — qo'shimcha haq qachon boshlanadi" });
+
+  it("tasdiqsiz saqlanmaydi: oynada «Bekor qilish» — PATCH yo'q, forma tahrirda qoladi", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const rules = await rulesRegion();
+    const roundTo = await within(rules).findByRole("textbox", { name: "Narxni yaxlitlash" });
+    await fill(user, roundTo, "1000");
+
+    const dialog = await openSaveConfirm(user, rules);
+    expect(within(dialog).getByText("Narxni yaxlitlash")).toBeInTheDocument();
+    expect(within(dialog).getByText(/^500 so'm edi, 1\s000 so'm bo'ladi$/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(mocks.patch).not.toHaveBeenCalled();
+    expect((roundTo as HTMLInputElement).value).toMatch(/^1\s?000$/);
+  });
+
+  it("faqat soni o'zgargan maydonlar: «1,0» → «1» — o'zgarish emas, so'rovsiz izoh", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const rules = await rulesRegion();
+    await fill(user, await within(rules).findByRole("textbox", { name: /Asosiy narxga kiradigan og'irlik/ }), "1");
+    await user.click(within(rules).getByRole("button", { name: "Qoidalarni saqlash" }));
+    expect(await screen.findByText("Qoidalarda o'zgarish yo'q")).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(mocks.patch).not.toHaveBeenCalled();
+  });
+
+  it("vaqt tugasa: xato oynada, qayta bosish o'sha tanani yuboradi — ikkinchi bir xil versiya yaratilmaydi", async () => {
+    settingsHistory = [{ ...settings, id: "1", is_active: true, created_by: null, createdAt: "2026-10-08T04:00:00.000Z" }];
+    const user = userEvent.setup();
+    const respondPatch = mocks.patch.getMockImplementation()!;
+    // Birinchi so'rov serverda YOZILADI, lekin javob kelmaydi (gateway vaqti tugadi).
+    mocks.patch.mockImplementationOnce(async (url: string, body: Record<string, unknown>) => {
+      await respondPatch(url, body);
+      throw Object.assign(new Error("timeout of 20000ms exceeded"), { isAxiosError: true, code: "ECONNABORTED" });
+    });
+    renderPage("superadmin");
+    const rules = await rulesRegion();
+    await fill(user, await within(rules).findByRole("textbox", { name: "Narxni yaxlitlash" }), "1000");
+
+    const dialog = await openSaveConfirm(user, rules);
+    const save = within(dialog).getByRole("button", { name: "Qoidalarni saqlash" });
+    await user.click(save);
+    expect(await within(dialog).findByText("Qoidalarni saqlab bo'lmadi")).toBeInTheDocument();
+    expect(mocks.patch).toHaveBeenCalledTimes(1);
+
+    // Qayta bosish — aynan o'sha tana; server «o'zgarmadi» deydi, yangi versiya yo'q.
+    await user.click(within(dialog).getByRole("button", { name: "Qoidalarni saqlash" }));
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(2));
+    expect(mocks.patch.mock.calls[1]).toEqual(mocks.patch.mock.calls[0]);
+    expect(mocks.patch).toHaveBeenLastCalledWith("delivery/pricing-settings", { round_to: 1000 });
+    expect(await screen.findByText("Qoidalar saqlandi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(settingsHistory).toHaveLength(2);
+
+    const history = screen.getByRole("list", { name: "O'zgarishlar tarixi" });
+    expect(await within(history).findAllByText(/^Hisob qoidalari · yaxlitlash 500 → 1\s000 so'm$/)).toHaveLength(1);
+  });
+
+  it("sotuv chegaralari: «Minimal yetkazish narxi» va «Kuryer qo'shimcha xarajati chegarasi» — PATCH, bo'sh — `null`", async () => {
+    settings = { ...settings, extra_cost_limit_amount: 20000 };
+    const user = userEvent.setup();
+    renderPage();
+    const rules = await rulesRegion();
+    const minPrice = await within(rules).findByRole("textbox", { name: "Minimal yetkazish narxi" });
+    const extraLimit = within(rules).getByRole("textbox", { name: "Kuryer qo'shimcha xarajati chegarasi" });
+    expect(minPrice).toHaveValue("");
+    expect((extraLimit as HTMLInputElement).value).toMatch(/^20\s?000$/);
+
+    await fill(user, minPrice, "15000");
+    await user.clear(extraLimit);
+    const dialog = await openSaveConfirm(user, rules);
+    expect(within(dialog).getByText(/^chegarasiz edi, 15\s000 so'm bo'ladi$/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/^20\s000 so'm edi, sukut \(asosiy narxlar farqi\) bo'ladi$/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Qoidalarni saqlash" }));
+
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    expect(mocks.patch).toHaveBeenCalledWith("delivery/pricing-settings", {
+      min_delivery_price: 15000,
+      extra_cost_limit_amount: null,
+    });
+    expect(await screen.findByText("Qoidalar saqlandi")).toBeInTheDocument();
+  });
+});
+
+describe("DeliveryTariffsPage — rejalashtirilgan tarifni bekor qilish (B0ILd7YI)", () => {
+  const scheduledLine = /^Rejalashtirilgan: Markazgacha — har qo'shimcha kg 4\s000 → 4\s500 so'm, 25\.10\.2099 dan\.$/;
+  const cancelButton = () =>
+    screen.findByRole("button", { name: "Markazgacha — 25.10.2099 dan rejalashtirilgan tarifni bekor qilish" });
+
+  it("«Bekor qilish» → tasdiq → `POST delivery/tariffs/9/cancel`; rejalashtirilgan qator yo'qoladi, tarixda «Bekor qilingan»", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    expect(await screen.findByText(scheduledLine)).toBeInTheDocument();
+
+    await user.click(await cancelButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Rejalashtirilgan tarifni bekor qilasizmi?" });
+    expect(within(dialog).getByText("Markazgacha")).toBeInTheDocument();
+    expect(within(dialog).getByText(/^har qo'shimcha kg 4\s000 → 4\s500 so'm$/)).toBeInTheDocument();
+    expect(within(dialog).getByText("25.10.2099 dan kuchga kirishi kerak edi")).toBeInTheDocument();
+    expect(calls(mocks.post, "delivery/tariffs/9/cancel")).toHaveLength(0);
+
+    await user.click(within(dialog).getByRole("button", { name: "Tarifni bekor qilish" }));
+    await waitFor(() => expect(calls(mocks.post, "delivery/tariffs/9/cancel")).toHaveLength(1));
+    expect(mocks.post).toHaveBeenCalledWith("delivery/tariffs/9/cancel");
+    expect(await screen.findByText("Rejalashtirilgan tarif bekor qilindi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText(scheduledLine)).not.toBeInTheDocument());
+
+    const history = screen.getByRole("list", { name: "O'zgarishlar tarixi" });
+    expect(await within(history).findByText("Bekor qilingan")).toBeInTheDocument();
+    expect(within(history).queryByText("Rejalashtirilgan")).not.toBeInTheDocument();
+    expect(within(history).getByText(/bekor qilindi .* · Shodiyor Ergashev$/)).toBeInTheDocument();
+    // Hozirgi tarif o'zgarmagan.
+    expect(within(table()).getAllByRole("row")[2]).toHaveTextContent(/4\s000 so'm/);
+  });
+
+  it("oynada «Yopish» — so'rov yo'q, versiya rejalashtirilganicha qoladi", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await cancelButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Rejalashtirilgan tarifni bekor qilasizmi?" });
+    await user.click(within(dialog).getByRole("button", { name: "Yopish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(calls(mocks.post, "delivery/tariffs/9/cancel")).toHaveLength(0);
+    expect(screen.getByText(scheduledLine)).toBeInTheDocument();
+  });
+
+  it("409 — versiya allaqachon kuchga kirgan: xato oynada, «Tarifni bekor qilish» o'chadi, ro'yxat qayta so'raladi", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await cancelButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Rejalashtirilgan tarifni bekor qilasizmi?" });
+    // Oyna ochiq turganda versiya kuchga kirdi.
+    rows = rows.map((row) => (row.id === "9" ? { ...row, valid_from: "2026-10-09T00:00:00+05:00" } : row));
+    const tariffLoads = calls(mocks.get, "delivery/tariffs").length;
+
+    await user.click(within(dialog).getByRole("button", { name: "Tarifni bekor qilish" }));
+    expect(
+      await within(dialog).findByText("Tarif allaqachon kuchga kirgan. Narxni o'zgartirish uchun yangi versiya yarating."),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Tarifni bekor qilish" })).toBeDisabled();
+    await waitFor(() => expect(calls(mocks.get, "delivery/tariffs").length).toBeGreaterThan(tariffLoads));
+    expect(calls(mocks.post, "delivery/tariffs/9/cancel")).toHaveLength(1);
   });
 });
 

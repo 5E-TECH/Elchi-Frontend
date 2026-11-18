@@ -30,7 +30,7 @@ const STRONG = <strong className="font-semibold text-text" />;
  *
  * Ichki tablar (2026-11-10, BeePost «Market kutilmoqda» kabi) — butun enni ikkiga bo'luvchi katta segment:
  *  - «Kutilmoqda» — yuqoridagi marketlar ro'yxati (HQ'da turgan, hali marketga berilmagan bekorlar);
- *  - «Topshirilgan» (`?tab=handed`) — har «Marketga jo'natish» bitta karta (`HandoverBatches`).
+ *  - «Topshirilgan» (`?tab=handed`) — har topshirish sessiyasi (market QR / PIN) bitta karta (`HandoverBatches`).
  * Tab sonlari: marketlar soni va joriy filtr (sukut — joriy oy) bo'yicha topshirishlar soni.
  */
 const CancelledMarkets = () => {

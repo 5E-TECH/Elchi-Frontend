@@ -482,3 +482,39 @@ describe("describeTrackingEvent — filial menejeri «kelmagan» qaytarish so'ro
     expect(en.sentence.after).toBe(" reported the order did not arrive at the branch — a return request was sent");
   });
 });
+
+/** 2026-11-16: operatori yo'q buyurtmaga keyin operator biriktirildi (`operator_assigned`, holat o'zgarmaydi). */
+describe("describeTrackingEvent — operator biriktirildi", () => {
+  it("belgi «Operator biriktirildi», xom «Operator Assigned» emas", () => {
+    const v = view({
+      action: "operator_assigned",
+      changed_by_role: "admin",
+      actor: { name: "TEST Claude admin", role: "admin" },
+      from_status: "new",
+      to_status: "new",
+      note: "Operator biriktirildi: Aziza Karimova",
+    });
+    expect(v.actionName).toBe("Operator biriktirildi");
+    expect(v.actionName).not.toMatch(/Assigned/);
+  });
+
+  it("⭐ sotilgan buyurtmada ham «… operator biriktirdi: ism», «sotdi» emas; izoh takrorlanmaydi", () => {
+    const v = view({
+      action: "operator_assigned",
+      changed_by_role: "superadmin",
+      actor: { name: "Super Admin", role: "superadmin" },
+      from_status: "sold",
+      to_status: "sold",
+      old_value: { operator_id: null, operator: null },
+      new_value: { operator_id: "432", operator: "Aziza Karimova" },
+      note: "Operator biriktirildi: Aziza Karimova",
+    });
+    expect(sentence(v)).toBe("Superadmin Super Admin buyurtmaga operator biriktirdi: Aziza Karimova");
+    expect(v.note).toBe("");
+  });
+
+  it("ismsiz eski yozuv — qisqa jumla", () => {
+    const v = view({ action: "operator_assigned", from_status: "new", to_status: "new" });
+    expect(sentence(v)).toBe("Ro'yxatchi Bobur Xolmatov buyurtmaga operator biriktirdi");
+  });
+});

@@ -3,8 +3,9 @@ import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "
 import { useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Trans, useTranslation } from "react-i18next";
-import { QrCode, RotateCcw, ScanLine, Send } from "lucide-react";
+import { CircleCheck, QrCode, RotateCcw, ScanLine } from "lucide-react";
 import { useOrders } from "../../../entities/orders";
+import type { CancelHandoverInfo } from "../../../entities/order";
 import {
   CANCELLED_MANUAL_REASONS,
   DEFAULT_CANCELLED_MANUAL_REASON,
@@ -12,8 +13,10 @@ import {
   toCancelledManualReason,
 } from "./utils";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import { isScannerCameraMounted } from "../../../shared/lib/scanner/scannerHost";
 import { scanNotify } from "../../../shared/lib/scanner/scanSession";
 import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
@@ -39,9 +42,7 @@ import {
 } from "../components/marketOrders/marketOrdersModel";
 import { useHasNewOrdersTabs } from "../model/useNewOrdersTabs";
 import NewOrdersTabs from "../ui/NewOrdersTabs";
-import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
 import {
-  canSendHandover,
   extractMarketCancelledQrToken,
   formatCountdown,
   getDecodedScannerText,
@@ -75,29 +76,34 @@ import { MarketQrDialog } from "./ui/MarketQrDialog";
  * BEKOR QILINGANLARNI MARKETGA TOPSHIRISH — `/new-orders/cancelled/:marketId`, dizayn v2.
  *
  *  - Xodim (superadmin/admin/HQ registratori; qobiq `bare`): «← Bekor qilinganlar» · market nomi ·
- *    «6 ta bekor qilingan buyurtma · jami …», asosiy amal «Marketga jo'natish — N ta». Ostida market QR
- *    holati (`HandoverStatusAlert`: kerak / skanerlandi + taymer / talab qilinmaydi), so'ng karta
- *    «Bekor qilingan buyurtmalarni tayyorlash»: «USB skaner tayyor», tanlov qatori, jadval.
+ *    «6 ta bekor qilingan buyurtma · jami …». Ostida market QR holati (`HandoverStatusAlert`: kerak / skanerlandi +
+ *    taymer / talab qilinmaydi), so'ng karta «Bekor qilingan buyurtmalarni topshirish»: «USB skaner tayyor» va
+ *    hali topshirilmaganlar jadvali; pastda «Topshirildi (N)» (`HandedOverCard`).
  *  - KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `*-neworders-cancelled-scanner-dialog`,
- *    `superadmin-neworders-cancelled-handover-camera`, `admin-neworders-cancelled-detail-camera`): v1 «Kamera»
- *    tugmalari, sarlavhadagi «Market QR skanerlash» va `ScannerCameraModal` olib tashlandi (ega qarori — oqim
- *    ichida kamera tugmasi yo'q, tizim-scanner §09). Faqat markaziy «Skaner» (desktopda «Skanerlash») shu
- *    sahifaning skan maqsadini ochadi; kamera skani USB bilan aynan bir yo'l (`useOrderQrScanner`: buyurtma QR → tanlov, `MCR-` → market QR
- *    tekshiruvi). Matn holatga qarab: avval «Market QR skanerlash», QR'dan keyin «Buyurtmalarni tanlash · QR 04:12
- *    amal qiladi» — kamera yopilmaydi.
+ *    `superadmin-neworders-cancelled-handover-camera`, `admin-neworders-cancelled-detail-camera`): oqim ichida kamera
+ *    tugmasi yo'q (ega qarori, tizim-scanner §09). Faqat markaziy «Skaner» (desktopda «Skanerlash») shu sahifaning
+ *    skan maqsadini ochadi; kamera skani USB bilan aynan bir yo'l (`useOrderQrScanner`: buyurtma QR → topshirish,
+ *    `MCR-` → market QR tekshiruvi). Matn holatga qarab: avval «Market QR skanerlash», QR'dan keyin «Marketga
+ *    topshirish · QR 04:12 amal qiladi» — kamera yopilmaydi, ro'yxatida topshirilganlar.
  *  - KOD (zkRab9M2, BG6; maket `superadmin-neworders-cancelled-pin-dialog`): «Market QR kerak» holatida «PIN kodni
  *    kiritish» → `MarketPinDialog` — market QR oynasidagi 6 xonali kod `POST scan/market-cancelled { market_id, pin }`
- *    ga; muvaffaqiyat QR skani bilan AYNAN bir xil (`applyAuthorization`: token, taymer, hamma bekorlar tanlanadi),
- *    topshirilganlarda usul «Parol orqali» (`pin`). Oyna ochiq paytda sahifa skaneri to'xtatiladi — 6 raqam + Enter
- *    buyurtma skani deb olinmasin.
+ *    ga; muvaffaqiyat QR skani bilan AYNAN bir xil (`applyAuthorization`: token va taymer), topshirilganlarda usul
+ *    «Parol orqali» (`pin`). Oyna ochiq paytda sahifa skaneri to'xtatiladi — 6 raqam + Enter buyurtma skani deb
+ *    olinmasin; maydonga skaner yozgan market QR'i esa kod deb yuborilmaydi — QR skani bo'ladi (`scanInPinDialog`),
+ *    boshqa skan — maydon ostida xato (urinish yeyilmaydi).
  *  - Market (qobiq `hosted`): karta «Yangi buyurtmalar / Bekor qilinganlar» tablari bilan; «Bekor qilingan
  *    buyurtmalarni pochtaga topshirish» bloki («Qabul qilish» → QR oynasi) va o'z ro'yxati.
  *
- * ⚠️ BIZNES QOIDA (o'zgarmaydi): bekor qilingan buyurtma marketga FAQAT market QR skanerlangach qaytadi
- * (skanerlansa marketning barcha bekorlari tanlanadi va topshirish tokeni olinadi). Buyurtma QR buzilgan
- * bo'lsa — sessiya ichida «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Marketda QR
- * o'chirilgan bo'lsa (`cancelled_handover_qr_required === false`) — skaner bilan birma-bir tanlanadi.
- * Skaner, ovoz, xabarlar, so'rovlar va yuk (payload) — dizayn v2 gacha bo'lgani AYNAN.
+ * ⚠️ BIZNES QOIDA (o'zgarmaydi): bekor qilingan buyurtma marketga FAQAT market QR skanerlangach (yoki uning
+ * 6 xonali kodi kiritilgach) qaytadi — topshirish tokeni olinadi.
+ * ⚠️ SKAN = TOPSHIRISH (ega qarori 2026-11-15, BeePost «Marketga topshirish» naqshi): market QR / kodi hech narsani
+ * avtomatik tanlamaydi va «tanlash → Marketga jo'natish» bosqichi YO'Q. Ruxsat (5 daqiqa) ichida har buyurtma QR
+ * skani o'sha zahoti bitta so'rov bilan topshiriladi (`complete([id])`, backend ruxsatni ko'p marta qabul qiladi
+ * va hammasini bitta «Topshirilgan» partiyasiga yozadi) — qator ro'yxatdan chiqib «Topshirildi» ga o'tadi, xato
+ * bo'lsa ro'yxatda qoladi. Ruxsatsiz (QR kerak, hali skanerlanmagan) buyurtma skani — «Avval market QR'ini
+ * skanerlang», hech narsa yuborilmaydi. Topshirilganni qayta skanerlash — «Allaqachon topshirilgan». Buyurtma QR
+ * buzilgan bo'lsa — ruxsat ichida «QR buzilganini tasdiqlash» oynasi → «Qo'lda topshirish» (sabab — backend enum
+ * kodi). Marketda QR o'chirilgan bo'lsa (`cancelled_handover_qr_required === false`) — skan tokensiz topshiradi.
  */
 const CancelledMarketDetail = () => {
   const { t, i18n } = useTranslation(["newOrders", "orders", "common"]);
@@ -117,12 +123,14 @@ const CancelledMarketDetail = () => {
   const hasTabs = useHasNewOrdersTabs();
   const hintId = useId();
   const cardTitleId = useId();
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [manualSelectedIds, setManualSelectedIds] = useState<Set<string>>(new Set());
-  const [manualOverrideReasons, setManualOverrideReasons] = useState<Record<string, string>>({});
   const [manualConfirmOrder, setManualConfirmOrder] = useState<MarketOrder | null>(null);
   const [manualReason, setManualReason] = useState("");
+  // Topshirilganlar (ro'yxatdan chiqadi) va hozir so'rovi ketayotganlar — skan callback'lari uchun sinxron nusxa
+  // ham (`ref`): tez ketma-ket skanda bir buyurtma ikki marta yuborilmasin.
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  const sentRef = useRef<Set<string>>(new Set());
+  const [handingIds, setHandingIds] = useState<Set<string>>(new Set());
+  const handingRef = useRef<Set<string>>(new Set());
   // «Topshirildi (N)» — shu sahifada (sessiya ichida) topshirilganlar; sahifa yangilansa tozalanadi.
   const [handedOver, setHandedOver] = useState<HandedOverOrder[]>([]);
   const [isQrOpen, setIsQrOpen] = useState(false);
@@ -136,22 +144,26 @@ const CancelledMarketDetail = () => {
   const [isPinOpen, setIsPinOpen] = useState(false);
   const [pinValue, setPinValue] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
-  // Market QR ruxsati hozir amaldami (token + skanerlandi) — skan callback'lari uchun sinxron nusxa: kamera QR'dan
-  // keyin ochiq qoladi, shu market QR yana o'qilsa ikkinchi so'rov yuborilmaydi (backend «QR allaqachon
-  // ishlatilgan» deydi va xato tirik ruxsatni o'chirib yubormasin).
+  // Market QR ruxsati hozir amaldami (token + skanerlandi) va uning tokeni — skan callback'lari uchun sinxron nusxa:
+  // kamera QR'dan keyin ochiq qoladi, shu market QR yana o'qilsa ikkinchi so'rov yuborilmaydi (backend «QR allaqachon
+  // ishlatilgan» deydi va xato tirik ruxsatni o'chirib yubormasin); ruxsat olingan zahoti keyingi skan topshiradi.
   const authorizationLiveRef = useRef(false);
+  const authorizationTokenRef = useRef("");
   useEffect(() => {
     authorizationLiveRef.current = Boolean(authorizationToken) && isHandoverQrScanned;
+    authorizationTokenRef.current = authorizationToken;
   }, [authorizationToken, isHandoverQrScanned]);
   const [marketSort, setMarketSort] = useState<DataTableSort | null>(DEFAULT_MARKET_ORDERS_SORT);
   const rawOrders = useMemo(() => extractCancelledOrders(query.data), [query.data]);
   const orders = useMemo(
-    () => rawOrders.filter((order) => !sentIds.has(order.id)),
+    () => rawOrders.filter((order) => !sentIds.has(String(order.id))),
     [rawOrders, sentIds],
   );
-  const selectableOrders = useMemo(
-    () => orders,
-    [orders],
+  // Skaner ro'yxati: qolganlar + shu sahifada topshirilganlar — topshirilganni qayta skanerlash «Bu ro'yxatda yo'q»
+  // emas, «Allaqachon topshirilgan» bo'lsin (ro'yxat yangilangach u serverdan kelmaydi).
+  const scanOrders = useMemo(
+    () => [...orders, ...handedOver.map((row) => row.order)],
+    [handedOver, orders],
   );
   const isMarketRole = role === "market";
   // vOczoOUE 2-bosqich (BG3): market — «Olib ketishga tayyor · Yo'lda · Olganlarim» (`?view=`); «Olganlarim» sukut
@@ -202,6 +214,16 @@ const CancelledMarketDetail = () => {
       manualReasonOptions.find((option) => option.value === value)?.label ?? value,
     [manualReasonOptions],
   );
+
+  /** Ruxsat tugadi (taymer yoki backend 403) — sahifa «Market QR kerak» holatiga qaytadi. */
+  const clearAuthorization = useCallback(() => {
+    authorizationLiveRef.current = false;
+    authorizationTokenRef.current = "";
+    setAuthorizationToken("");
+    setAuthorizationExpiresAt(null);
+    setIsHandoverQrScanned(false);
+  }, []);
+
   useEffect(() => {
     if (!authorizationToken || !authorizationExpiresAt) {
       setAuthorizationRemainingSeconds(0);
@@ -214,31 +236,122 @@ const CancelledMarketDetail = () => {
 
       if (remainingSeconds > 0) return;
 
-      setAuthorizationToken("");
-      setAuthorizationExpiresAt(null);
-      setIsHandoverQrScanned(false);
+      clearAuthorization();
     };
 
     updateRemaining();
     const timer = window.setInterval(updateRemaining, 1000);
 
     return () => window.clearInterval(timer);
-  }, [authorizationExpiresAt, authorizationToken]);
+  }, [authorizationExpiresAt, authorizationToken, clearAuthorization]);
 
-  const selectOrder = useCallback((order: OrderListItem) => {
-    if (selectedIds.has(order.id)) {
-      void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      scanNotify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
-      return;
-    }
+  /**
+   * Bitta buyurtmani DARHOL marketga topshirish (skan yoki «Qo'lda topshirish»). Har chaqiriq — alohida so'rov
+   * (`mutateAsync`: tez ketma-ket skanlarda har biri o'z javobini oladi; `mutate` callback'lari faqat oxirgisiga
+   * keladi). Muvaffaqiyat — qator «Topshirildi» ga; xato — qator ro'yxatda qoladi, ruxsat 403 bo'lsa (muddati
+   * tugagan / boshqa xodim) — ruxsat tozalanadi va sahifa «Market QR kerak» ni ko'rsatadi.
+   */
+  const handOver = useCallback(
+    async (order: OrderListItem, options: { manualReason?: string } = {}) => {
+      const orderId = String(order.id);
+      const manualReasonCode = options.manualReason;
+      const isManual = manualReasonCode !== undefined;
+      if (!marketId) return;
 
-    setSelectedIds((previous) => {
-      const next = new Set(previous);
-      next.add(order.id);
-      return next;
-    });
-    void playScanFeedback("success", t("cancelled.camera.selected", { id: order.id }), undefined, { voice: "selected" });
-  }, [selectedIds, t]);
+      if (sentRef.current.has(orderId)) {
+        const message = t("cancelled.camera.alreadyHanded", { id: orderId });
+        void playScanFeedback("duplicate", message);
+        if (!isManual) scanNotify.warning(message, { duration: 2000 });
+        return;
+      }
+      // So'rov hali ketmoqda — «topshirilgan» deb aytilmaydi (409/403 bilan qaytishi mumkin); yakuniy natijani
+      // ketayotgan so'rovning o'zi bitta ovoz bilan aytadi. Ikkinchi so'rov yuborilmaydi.
+      if (handingRef.current.has(orderId)) {
+        const message = t("cancelled.camera.handing", { id: orderId });
+        // Kamera ochiq bo'lsa toast jim (`scanNotify`) — xabar kamera qatorida, ovozsiz (natija ovozi keyin keladi).
+        if (isScannerCameraMounted()) {
+          void playScanFeedback("duplicate", message, undefined, { silent: true, step: true });
+        } else if (!isManual) {
+          scanNotify.info(message, { duration: 1500 });
+        }
+        return;
+      }
+
+      const token = authorizationTokenRef.current;
+      if (isCancelledHandoverQrRequired && (!authorizationLiveRef.current || !token)) {
+        void playScanFeedback("error", t("cancelled.camera.qrFirst"));
+        scanNotify.warning(t("cancelled.notify.qrFirst"), {
+          description: t("cancelled.notify.qrFirstDescription"),
+          duration: 3000,
+        });
+        return;
+      }
+
+      const handover: CancelHandoverInfo = isManual
+        ? { method: "manual", reason: manualReasonCode }
+        : { method: isCancelledHandoverQrRequired ? authorizationMethod : "no_qr", reason: null };
+
+      handingRef.current.add(orderId);
+      setHandingIds(new Set(handingRef.current));
+      try {
+        await handoverCancelledOrders.mutateAsync({
+          marketId,
+          orderIds: [orderId],
+          authorizationToken: isCancelledHandoverQrRequired ? token : undefined,
+          // Faqat enum kodi — tarjima yoki "QR buzilgan" fallback'i EMAS (FE-RET-05).
+          manualOverrides: isManual ? [{ order_id: orderId, reason: manualReasonCode }] : [],
+        });
+        sentRef.current.add(orderId);
+        setSentIds(new Set(sentRef.current));
+        setHandedOver((previous) => [
+          { order, at: Date.now(), handover },
+          ...previous.filter((row) => String(row.order.id) !== orderId),
+        ]);
+        if (isManual) {
+          notify.success(t("cancelled.manual.success"), {
+            description: `#${orderId} · ${getManualReasonLabel(manualReasonCode)}`,
+            duration: 3000,
+          });
+        } else {
+          void playScanFeedback("success", t("cancelled.camera.handed", { id: orderId }));
+        }
+      } catch (error: unknown) {
+        const title = t("cancelled.notify.handError", { id: orderId });
+        const message = getBackendErrorMessage(error) ?? title;
+        // Faqat SHU so'rovning tokeni hali joriy bo'lsa: eski (muddati o'tgan) tokenning kechikkan 403 javobi
+        // keyin skanerlangan yangi market QR / PIN ruxsatini o'chirmasin (market QR bir martalik).
+        if (
+          isCancelledHandoverQrRequired &&
+          getErrorStatus(error) === 403 &&
+          authorizationTokenRef.current === token
+        ) {
+          clearAuthorization();
+        }
+        if (isManual) {
+          notify.error(title, { description: message });
+        } else {
+          void playScanFeedback("error", message);
+          scanNotify.error(title, { description: message, duration: 4000 });
+        }
+      } finally {
+        handingRef.current.delete(orderId);
+        setHandingIds(new Set(handingRef.current));
+      }
+    },
+    [
+      authorizationMethod,
+      clearAuthorization,
+      getManualReasonLabel,
+      handoverCancelledOrders,
+      isCancelledHandoverQrRequired,
+      marketId,
+      t,
+    ],
+  );
+
+  const handleOrderScan = useCallback((order: OrderListItem) => {
+    void handOver(order);
+  }, [handOver]);
 
   const isGeneratedQrMatch = useCallback((rawValue: string) => {
     if (!handoverQr) return false;
@@ -255,27 +368,24 @@ const CancelledMarketDetail = () => {
   }, [handoverQr]);
 
   /**
-   * Market ruxsati olindi (QR skani yoki 6 xonali kod — javob bir xil): token va taymer, barcha bekorlar tanlanadi.
-   * Token yo'q javob — xato (`normalizeCancelledAuthorization` tashlaydi), holat o'zgarmaydi.
+   * Market ruxsati olindi (QR skani yoki 6 xonali kod — javob bir xil): token va taymer. Hech narsa avtomatik
+   * tanlanmaydi va yuborilmaydi — ega qarori 2026-11-15 (BeePost naqshi): ilgari shu yerda marketning BARCHA bekorlari
+   * tanlanardi va xodim qo'lidagi posilkalarni skanerlamasdan hammasini «topshirilgan» deb yuborardi. Endi faqat
+   * jismonan skanerlangani (yoki «QR buzilgan» bilan qo'lda topshirilgani) marketga o'tadi. Token yo'q javob — xato
+   * (`normalizeCancelledAuthorization` tashlaydi), holat o'zgarmaydi.
    */
   const applyAuthorization = useCallback((response: unknown, method: HandoverAuthMethod) => {
     const authorization = normalizeCancelledAuthorization(response);
 
     authorizationLiveRef.current = Boolean(authorization.authorizationToken);
+    authorizationTokenRef.current = authorization.authorizationToken;
     setAuthorizationToken(authorization.authorizationToken);
     setAuthorizationExpiresAt(authorization.expiresAt);
     setAuthorizationMethod(method);
-    setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
     setIsHandoverQrScanned(true);
 
     const title = method === "pin" ? t("cancelled.notify.pinAccepted") : t("cancelled.notify.qrAccepted");
-    const options = {
-      description: t("cancelled.notify.qrAcceptedDescription", {
-        count: selectableOrders.length,
-        value: formatNumberLocalized(selectableOrders.length, { language }),
-      }),
-      duration: 3000,
-    };
+    const options = { description: t("cancelled.notify.qrAcceptedDescription"), duration: 3000 };
     if (method === "pin") {
       // Kod oynada yozildi — kamera yo'q, oddiy xabar.
       notify.success(title, options);
@@ -284,7 +394,7 @@ const CancelledMarketDetail = () => {
     // Oraliq qadam: «Uzluksiz skanerlash» o'chiq bo'lsa ham kamera yopilmaydi — buyurtmalar shu kamerada.
     void playScanFeedback("success", title, undefined, { step: true, voice: "received" });
     scanNotify.success(title, options);
-  }, [language, selectableOrders, t]);
+  }, [t]);
 
   const verifyHandoverQr = useCallback(async (rawValue: string) => {
     if (!marketId) return false;
@@ -311,18 +421,17 @@ const CancelledMarketDetail = () => {
     } catch (error: unknown) {
       const message = getBackendErrorMessage(error) ?? t("cancelled.notify.scanMissing");
       // Shu orada (parallel skan) ruxsat olingan bo'lsa — u o'chirilmaydi.
-      if (!authorizationLiveRef.current) {
-        setAuthorizationToken("");
-        setAuthorizationExpiresAt(null);
-        setIsHandoverQrScanned(false);
-      }
-      void playScanFeedback("missing", message);
+      if (!authorizationLiveRef.current) clearAuthorization();
+      // Market QR o'qildi, lekin server rad etdi (muddati tugagan, ishlatilgan, boshqa market) — bu «Bu ro'yxatda
+      // yo'q» EMAS (2026-11-15: xodim «1-skanda ro'yxatda yo'q deydi» deb ko'rdi), xato ovozi va server matni.
+      void playScanFeedback("error", message);
       // Skaner oqimi: xato qisqa turadi (v1 dagidek 4 s) — keyingi skanerlashda ekran to'silib qolmasin.
       scanNotify.error(t("cancelled.notify.qrNotFound"), { description: message, duration: 4000 });
       return true;
     }
   }, [
     applyAuthorization,
+    clearAuthorization,
     handoverQr?.payload,
     handoverQr?.token,
     isGeneratedQrMatch,
@@ -386,6 +495,22 @@ const CancelledMarketDetail = () => {
     setPinError(null);
   }, [applyAuthorization, language, marketId, pinValue, t, verifyMarketCancelledPin]);
 
+  /**
+   * Kod oynasi ochiq paytda maydonga USB skaner PIN bo'lmagan matn yozdi (`MarketPinDialog`): market QR'i bo'lsa —
+   * oyna yopiladi va QR skani bilan aynan bir yo'l (urinish yeyilmaydi); boshqa kod — maydon ostida xato.
+   */
+  const scanInPinDialog = useCallback((rawValue: string) => {
+    if (verifyMarketCancelledPin.isPending) return;
+    setPinValue("");
+    if (extractMarketCancelledQrToken(rawValue)) {
+      setPinError(null);
+      setIsPinOpen(false);
+      void verifyHandoverQr(rawValue);
+      return;
+    }
+    setPinError(t("cancelled.pin.scanned"));
+  }, [t, verifyHandoverQr, verifyMarketCancelledPin.isPending]);
+
   const handleMissingOrder = useCallback((rawValue?: string) => {
     if (rawValue && extractMarketCancelledQrToken(rawValue)) {
       void verifyHandoverQr(rawValue);
@@ -397,62 +522,23 @@ const CancelledMarketDetail = () => {
     scanNotify.warning(t("cancelled.notify.qrNotFound"), { description: message, duration: 3000 });
   }, [t, verifyHandoverQr]);
 
-  const confirmManualSelect = useCallback(() => {
-    if (!manualConfirmOrder || !canManualSelectDamagedQr || selectedIds.has(manualConfirmOrder.id)) return;
-
-    setSelectedIds((previous) => {
-      const next = new Set(previous);
-      next.add(manualConfirmOrder.id);
-      return next;
-    });
-    setManualSelectedIds((previous) => {
-      const next = new Set(previous);
-      next.add(manualConfirmOrder.id);
-      return next;
-    });
+  /** «Qo'lda topshirish»: oyna yopiladi va buyurtma sabab bilan darhol topshiriladi (qator «Topshirilmoqda…»). */
+  const confirmManualHandover = useCallback(() => {
+    if (!manualConfirmOrder || !canManualSelectDamagedQr) return;
+    const orderId = String(manualConfirmOrder.id);
+    const order = rawOrders.find((item) => String(item.id) === orderId);
     const reasonCode = toCancelledManualReason(manualReason);
-    setManualOverrideReasons((previous) => ({
-      ...previous,
-      [manualConfirmOrder.id]: reasonCode,
-    }));
-    notify.warning(t("cancelled.manual.success"), {
-      description: `#${manualConfirmOrder.id} · ${getManualReasonLabel(reasonCode)}`,
-      duration: 3000,
-    });
     setManualConfirmOrder(null);
     setManualReason("");
-  }, [canManualSelectDamagedQr, getManualReasonLabel, manualConfirmOrder, manualReason, selectedIds, t]);
+    if (order) void handOver(order, { manualReason: reasonCode });
+  }, [canManualSelectDamagedQr, handOver, manualConfirmOrder, manualReason, rawOrders]);
 
   const openManualSelectModal = useCallback((order: MarketOrder) => {
-    if (!canManualSelectDamagedQr || selectedIds.has(order.id)) return;
+    const orderId = String(order.id);
+    if (!canManualSelectDamagedQr || sentRef.current.has(orderId) || handingRef.current.has(orderId)) return;
     setManualConfirmOrder(order);
     setManualReason(DEFAULT_CANCELLED_MANUAL_REASON);
-  }, [canManualSelectDamagedQr, selectedIds]);
-
-  const toggleManualOrderSelection = useCallback((order: MarketOrder) => {
-    if (!canManualSelectDamagedQr) return;
-
-    if (!selectedIds.has(order.id)) {
-      openManualSelectModal(order);
-      return;
-    }
-
-    setSelectedIds((previous) => {
-      const next = new Set(previous);
-      next.delete(order.id);
-      return next;
-    });
-    setManualSelectedIds((previous) => {
-      const next = new Set(previous);
-      next.delete(order.id);
-      return next;
-    });
-    setManualOverrideReasons((previous) => {
-      const { [order.id]: _removed, ...rest } = previous;
-      void _removed;
-      return rest;
-    });
-  }, [canManualSelectDamagedQr, openManualSelectModal, selectedIds]);
+  }, [canManualSelectDamagedQr]);
 
   const closeManualSelectModal = useCallback(() => {
     setManualConfirmOrder(null);
@@ -475,102 +561,6 @@ const CancelledMarketDetail = () => {
     });
   }, [generateCancelledMarketQr, marketId, t]);
 
-  const handleSendToMarket = useCallback(() => {
-    if (
-      selectedIds.size === 0 ||
-      handoverCancelledOrders.isPending ||
-      !marketId ||
-      (isCancelledHandoverQrRequired && (!isHandoverQrScanned || !authorizationToken))
-    ) return;
-    const orderIds = Array.from(selectedIds);
-    const manualOverrides = orderIds
-      .filter((orderId) => manualSelectedIds.has(orderId))
-      .map((orderId) => ({
-        order_id: orderId,
-        // Faqat enum kodi — tarjima yoki "QR buzilgan" fallback'i EMAS (FE-RET-05).
-        reason: toCancelledManualReason(manualOverrideReasons[orderId]),
-      }));
-
-    handoverCancelledOrders.mutate({
-      marketId,
-      orderIds,
-      authorizationToken: isCancelledHandoverQrRequired ? authorizationToken : undefined,
-      manualOverrides,
-    }, {
-      onSuccess: () => {
-        const handedAt = Date.now();
-        const handedRows = orders
-          .filter((order) => selectedIds.has(order.id))
-          .map<HandedOverOrder>((order) => ({
-            order,
-            at: handedAt,
-            handover: manualSelectedIds.has(order.id)
-              ? { method: "manual", reason: toCancelledManualReason(manualOverrideReasons[order.id]) }
-              : { method: isCancelledHandoverQrRequired ? authorizationMethod : "no_qr", reason: null },
-          }));
-        setHandedOver((previous) => [
-          ...handedRows,
-          ...previous.filter((row) => !handedRows.some((item) => item.order.id === row.order.id)),
-        ]);
-        setSentIds((previous) => new Set([...previous, ...orderIds]));
-        setSelectedIds(new Set());
-        setManualSelectedIds(new Set());
-        setManualOverrideReasons({});
-        setAuthorizationToken("");
-        setAuthorizationExpiresAt(null);
-        setIsHandoverQrScanned(false);
-        notify.success(t("cancelled.notify.sendSuccess"), {
-          description: t("cancelled.notify.sendSuccessDescription", {
-            count: orderIds.length,
-            value: formatNumberLocalized(orderIds.length, { language }),
-          }),
-        });
-        void query.refetch();
-      },
-      onError: (error: unknown) => {
-        notify.error(t("cancelled.notify.sendError"), {
-          description: getBackendErrorMessage(error) ?? t("cancelled.notify.sendError"),
-        });
-      },
-    });
-  }, [
-    authorizationMethod,
-    authorizationToken,
-    handoverCancelledOrders,
-    isCancelledHandoverQrRequired,
-    isHandoverQrScanned,
-    language,
-    marketId,
-    manualOverrideReasons,
-    manualSelectedIds,
-    orders,
-    query,
-    selectedIds,
-    t,
-  ]);
-
-  /** Kamera «Bekor qilish»: tanlovdan chiqariladi (jo'natish hali bo'lmagan); qo'lda tasdiq sababi ham olinadi. */
-  const deselectOrder = useCallback((orderId: string) => {
-    setSelectedIds((previous) => {
-      if (!previous.has(orderId)) return previous;
-      const next = new Set(previous);
-      next.delete(orderId);
-      return next;
-    });
-    setManualSelectedIds((previous) => {
-      if (!previous.has(orderId)) return previous;
-      const next = new Set(previous);
-      next.delete(orderId);
-      return next;
-    });
-    setManualOverrideReasons((previous) => {
-      if (!(orderId in previous)) return previous;
-      const { [orderId]: _removed, ...rest } = previous;
-      void _removed;
-      return rest;
-    });
-  }, []);
-
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
   const rows = useMemo<MarketOrder[]>(() => orders.map(toOrderCardData), [orders]);
   const marketRows = useMemo(() => sortMarketOrders(rows, marketSort), [marketSort, rows]);
@@ -590,39 +580,38 @@ const CancelledMarketDetail = () => {
   });
   const cameraMarket = marketName ?? t("cancelled.titleFallback");
   const cameraCount = number(orders.length);
+  // Kamera ro'yxati — shu sahifada topshirilganlar (yangisi tepada); «Bekor qilish» yo'q: topshirish server amali.
   const cameraList = useMemo<ScanTargetListItem[]>(
     () =>
-      rows
-        .filter((order) => selectedIds.has(order.id))
-        .map((order) => ({
-          key: order.id,
-          title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
-          subtitle: manualSelectedIds.has(order.id)
+      handedOver.map(({ order, handover }) => {
+        const card = toOrderCardData(order);
+        const isManual = handover.method === "manual";
+        return {
+          key: String(order.id),
+          title: [`№${order.id}`, card.customer?.name?.trim()].filter(Boolean).join(" · "),
+          subtitle: isManual
             ? t("cancelled.camera.manualRow")
-            : [order.district?.name?.trim() || order.region?.name?.trim(), formatMoneyLocalized(order.total_price, { language })]
+            : [card.district?.name?.trim() || card.region?.name?.trim(), formatMoneyLocalized(card.total_price, { language })]
                 .filter(Boolean)
                 .join(" · "),
-          tone: manualSelectedIds.has(order.id) ? "warning" : "success",
-          onUndo: () => deselectOrder(order.id),
-        })),
-    [deselectOrder, language, manualSelectedIds, rows, selectedIds, t],
+          tone: isManual ? "warning" : "success",
+        };
+      }),
+    [handedOver, language, t],
   );
   const qrTime = formatCountdown(authorizationRemainingSeconds);
   // Kamera maqsadi holatga qarab: market QR kutilmoqda → «Market QR skanerlash»; QR skanerlangan yoki talab
-  // qilinmaydi → «Buyurtmalarni tanlash» (hisoblagich, ro'yxat, «Tugatish»). Kamera bir maqsadda qoladi (id bir xil).
+  // qilinmaydi → «Marketga topshirish» (hisoblagich, topshirilganlar, «Tugatish»). Kamera bir maqsadda qoladi (id bir xil).
   const waitingForMarketQr = stage === "required";
-  const scannerEnabled = !isMarketRole && !handoverCancelledOrders.isPending && !scanMarketCancelledQr.isPending;
+  const scannerEnabled = !isMarketRole && !scanMarketCancelledQr.isPending;
   useOrderQrScanner({
-    orders: selectableOrders,
+    orders: scanOrders,
     enabled: !isMarketRole,
-    // Server amali ketayotganda skan e'tiborsiz (avvalgidek), lekin ochiq kamera yopilmaydi. Kod oynasi ochiq
-    // paytda ham — 6 raqam + Enter buyurtma skani deb olinmasin (oyna o'zi ham `data-scanner-ignore`).
-    paused:
-      handoverCancelledOrders.isPending ||
-      scanMarketCancelledQr.isPending ||
-      verifyMarketCancelledPin.isPending ||
-      isPinOpen,
-    onMatch: selectOrder,
+    // Market QR / kod tekshirilayotganda skan e'tiborsiz (ochiq kamera yopilmaydi). Kod oynasi ochiq paytda ham —
+    // 6 raqam + Enter buyurtma skani deb olinmasin (oyna o'zi ham `data-scanner-ignore`). Topshirish so'rovi
+    // ketayotganda esa TO'XTAMAYDI — skan = topshirish, xodim ketma-ket skanerlayveradi.
+    paused: scanMarketCancelledQr.isPending || verifyMarketCancelledPin.isPending || isPinOpen,
+    onMatch: handleOrderScan,
     onMissing: handleMissingOrder,
     camera: waitingForMarketQr
       ? {
@@ -645,7 +634,11 @@ const CancelledMarketDetail = () => {
                 ? t("cancelled.camera.selectNoteTextQr", { market: cameraMarket, time: qrTime })
                 : t("cancelled.camera.selectNoteText", { market: cameraMarket }),
           },
-          progress: { done: selectedIds.size, total: orders.length, label: t("cancelled.camera.meter") },
+          progress: {
+            done: handedOver.length,
+            total: handedOver.length + orders.length,
+            label: t("cancelled.camera.meter"),
+          },
           list: cameraList,
           listTitle: t("cancelled.camera.listTitle"),
           finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
@@ -794,16 +787,7 @@ const CancelledMarketDetail = () => {
     );
   }
 
-  const canSend = canSendHandover({
-    selectedCount: selectedIds.size,
-    pending: false,
-    marketId,
-    qrRequired: isCancelledHandoverQrRequired,
-    qrScanned: isHandoverQrScanned,
-    authorizationToken,
-  });
   const hasOrders = isLoaded && orders.length > 0;
-  const selectedCount = selectedIds.size;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
@@ -819,26 +803,11 @@ const CancelledMarketDetail = () => {
             </>
           ) : null
         }
-        actions={
-          <Button
-            leftIcon={Send}
-            disabled={!canSend}
-            aria-describedby={stage === "required" && hasOrders ? hintId : undefined}
-            loading={handoverCancelledOrders.isPending}
-            loadingText={t("cancelled.sending")}
-            onClick={handleSendToMarket}
-          >
-            {selectedCount > 0
-              ? t("cancelled.send", { count: selectedCount, value: number(selectedCount) })
-              : t("cancelled.sendNone")}
-          </Button>
-        }
       />
 
       {hasOrders ? (
         <HandoverStatusAlert
           stage={stage}
-          readyCount={orders.length}
           remainingSeconds={authorizationRemainingSeconds}
           hintId={hintId}
           method={authorizationMethod}
@@ -870,52 +839,40 @@ const CancelledMarketDetail = () => {
           ) : null}
         </div>
 
-        {hasOrders ? (
-          <SelectionRegion
-            inline
-            idle={selectedCount === 0}
-            label={t("cancelled.selection.region")}
-            title={
-              selectedCount > 0
-                ? t("cancelled.selection.selected", { count: selectedCount, value: number(selectedCount) })
-                : t("cancelled.selection.none")
-            }
-            hint={
-              selectedCount > 0
-                ? t("cancelled.selection.hint")
-                : stage === "required"
-                  ? t("cancelled.selection.noneHintQr")
-                  : t("cancelled.selection.noneHintScan")
-            }
-          />
-        ) : null}
-
         <QueryBoundary
           query={listQuery}
           skeleton="table"
           loadingLabel={t("cancelled.table.loading")}
           empty={
-            <EmptyState
-              icon={RotateCcw}
-              title={t("cancelled.table.emptyTitle")}
-              description={t("cancelled.table.emptyDescription")}
-            />
+            handedOver.length > 0 ? (
+              <EmptyState
+                icon={CircleCheck}
+                title={t("cancelled.table.allHandedTitle")}
+                description={t("cancelled.table.allHandedDescription", {
+                  count: handedOver.length,
+                  value: number(handedOver.length),
+                })}
+              />
+            ) : (
+              <EmptyState
+                icon={RotateCcw}
+                title={t("cancelled.table.emptyTitle")}
+                description={t("cancelled.table.emptyDescription")}
+              />
+            )
           }
-          className={hasOrders ? undefined : "border-t border-border"}
+          className="border-t border-border"
         >
           {(list, { isRefetching }) => (
             <CancelledOrdersTable
               variant="handover"
               rows={list}
               label={t("cancelled.table.label")}
-              isSelected={(order) => selectedIds.has(order.id)}
-              manualReasonOf={(order) =>
-                manualSelectedIds.has(order.id)
-                  ? getManualReasonLabel(toCancelledManualReason(manualOverrideReasons[order.id]))
-                  : null
-              }
+              isHanding={(order) => handingIds.has(String(order.id))}
               canManualSelect={canManualSelectDamagedQr}
-              onToggle={toggleManualOrderSelection}
+              // Qo'lda topshirish ham market ruxsati bilan (backend token so'raydi) — QR kutilayotganda o'chiq.
+              manualDisabled={stage === "required"}
+              manualDisabledHint={t("cancelled.notify.qrFirst")}
               onManualSelect={openManualSelectModal}
               busy={isRefetching}
             />
@@ -930,7 +887,7 @@ const CancelledMarketDetail = () => {
         reason={manualReason}
         onReasonChange={setManualReason}
         onCancel={closeManualSelectModal}
-        onConfirm={confirmManualSelect}
+        onConfirm={confirmManualHandover}
       />
 
       <MarketPinDialog
@@ -941,6 +898,7 @@ const CancelledMarketDetail = () => {
         error={pinError}
         pending={verifyMarketCancelledPin.isPending}
         onSubmit={() => void submitPin()}
+        onScan={scanInPinDialog}
         onClose={closePinDialog}
       />
     </div>

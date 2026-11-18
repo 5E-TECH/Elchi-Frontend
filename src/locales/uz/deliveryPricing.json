@@ -81,7 +81,10 @@
       "noTariff": "Faol tarif yo'q",
       "scheduled": "Rejalashtirilgan: {{name}} — {{changes}}, {{date}} dan.",
       "loading": "Tariflar yuklanmoqda",
-      "loadFailed": "Tariflarni yuklab bo'lmadi"
+      "loadFailed": "Tariflarni yuklab bo'lmadi",
+      "scheduledList": "Rejalashtirilgan o'zgarishlar",
+      "cancelScheduled": "Bekor qilish",
+      "cancelScheduledAria": "{{name}} — {{date}} dan rejalashtirilgan tarifni bekor qilish"
     },
     "changes": {
       "base": "asosiy narx {{from}} → {{to}}",
@@ -175,7 +178,25 @@
         "integer": "Butun son kiriting",
         "precision": "Ko'pi bilan 3 ta kasr xona"
       },
-      "noChanges": "Qoidalarda o'zgarish yo'q"
+      "noChanges": "Qoidalarda o'zgarish yo'q",
+      "valueKg": "{{value}} kg",
+      "valueTimes": "×{{value}}",
+      "saleTitle": "Sotuvdagi narx chegaralari",
+      "saleDescription": "Narx dvigateli sotuvga ulanganda qo'llanadi; bo'sh maydon — sukut qoidasi.",
+      "minPrice": "Minimal yetkazish narxi",
+      "minPriceHint": "Sotuvda hisoblangan narx bundan past bo'lsa — shu summa olinadi. Bo'sh — chegara yo'q (faqat kuryer va filial ulushi).",
+      "minPriceNone": "chegarasiz",
+      "extraLimit": "Kuryer qo'shimcha xarajati chegarasi",
+      "extraLimitHint": "Sotuvda kuryer qo'shimcha xarajatining eng ko'p summasi. Bo'sh — «Uygacha» va «Markazgacha» asosiy narxlari farqi.",
+      "extraLimitDefault": "sukut (asosiy narxlar farqi)",
+      "confirm": {
+        "title": "Hisob qoidalarini saqlaysizmi?",
+        "description": "Qoidalar hamma tariflarga birdek qo'llanadi.",
+        "change": "{{from}} edi, {{to}} bo'ladi",
+        "immediate": "Darhol kuchga kiradi — yangi narxlar shu qoidalar bilan hisoblanadi",
+        "website": "Saytdagi narx kalkulyatori ham darhol o'zgaradi",
+        "journal": "Jurnalga yoziladi: oldingi va yangi qiymat"
+      }
     },
     "calculator": {
       "title": "Narx kalkulyatori",
@@ -212,13 +233,33 @@
         "pickupFree": "pickup tekin {{from}} → {{to}}",
         "express": "tezkor koeffitsiyent ×{{from}} → ×{{to}}",
         "pickupNever": "hech qachon",
-        "pickupFrom": "{{count}} tadan"
-      }
+        "pickupFrom": "{{count}} tadan",
+        "minPrice": "minimal yetkazish narxi {{from}} → {{to}}",
+        "extraLimit": "kuryer qo'shimcha xarajati chegarasi {{from}} → {{to}}"
+      },
+      "cancelled": "Bekor qilingan",
+      "cancelledAt": "bekor qilindi {{date}}",
+      "cancelledPlain": "bekor qilindi"
     },
     "saveErrors": {
       "invalid": "Ma'lumotni tekshiring — qiymat noto'g'ri yoki sana o'tib ketgan bo'lishi mumkin.",
       "forbidden": "Bu amal faqat superadmin va admin uchun.",
       "conflict": "Faol sozlama topilmadi — sahifani yangilab, qayta urinib ko'ring."
+    },
+    "cancelScheduled": {
+      "title": "Rejalashtirilgan tarifni bekor qilasizmi?",
+      "description": "Bu versiya kuchga kirmaydi. Hozirgi tarif o'zgarmaydi.",
+      "confirm": "Tarifni bekor qilish",
+      "close": "Yopish",
+      "loading": "Bekor qilinmoqda...",
+      "from": "{{date}} dan kuchga kirishi kerak edi",
+      "keepCurrent": "Hozirgi narx va sayt kalkulyatori o'zgarmaydi",
+      "history": "Versiya tarixda «Bekor qilingan» bo'lib qoladi, jurnalga yoziladi",
+      "error": "Bekor qilib bo'lmadi",
+      "conflict": "Tarif allaqachon kuchga kirgan. Narxni o'zgartirish uchun yangi versiya yarating.",
+      "notFound": "Bu versiya topilmadi — ro'yxat yangilandi.",
+      "success": "Rejalashtirilgan tarif bekor qilindi",
+      "successDescription": "{{name}}: {{date}} dan o'zgarish bo'lmaydi, hozirgi tarif amalda"
     }
   }
 }

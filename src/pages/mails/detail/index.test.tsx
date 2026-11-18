@@ -8,6 +8,8 @@ import MailDetailPage from "./index";
 
 const mocks = vi.hoisted(() => ({
   getDispatchDestinations: vi.fn(),
+  getPostCourierDestinations: vi.fn(),
+  dispatchCourierMutateAsync: vi.fn(),
   getBranches: vi.fn(),
   getActiveManagerBranchIds: vi.fn(),
   useMailDetail: vi.fn(),
@@ -38,6 +40,12 @@ vi.mock("../../../entities/mails", () => ({
     isPending: false,
     reset: vi.fn(),
   }),
+  useDispatchPostToCourier: () => ({
+    mutateAsync: mocks.dispatchCourierMutateAsync,
+    isPending: false,
+    reset: vi.fn(),
+  }),
+  getPostCourierDestinations: mocks.getPostCourierDestinations,
 }));
 
 vi.mock("../../../entities/batch", () => ({
@@ -104,6 +112,23 @@ const branch15: Branch = {
 
 const destinations = (items: Branch[]) => ({ data: items, total: items.length, page: 1, limit: 10 });
 
+const hqCourier = {
+  courier_user_id: "77",
+  name: "Ali Valiyev",
+  phone: "+998901234567",
+  region_match: "listed" as const,
+  carrier_name: "BeePost",
+  carrier_active: true,
+};
+
+const courierDestinations = (couriers: (typeof hqCourier)[] = []) => ({
+  post_id: POST_ID,
+  region_id: REGION_ID,
+  is_hq_region: false,
+  couriers,
+  carrier_lookup_failed: false,
+});
+
 const stateFor = (role: string, branchType?: string) =>
   ({
     role: { id: `${role}-1`, role, region: null, name: role },
@@ -131,7 +156,7 @@ const selectAllAndSend = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole("button", { name: /Pochtani jo'natish/ }));
 };
 
-describe("MailDetailPage — pochtani filialga jo'natish", () => {
+describe("MailDetailPage — pochtani jo'natish (filial yoki HQ kuryeri)", () => {
   beforeEach(() => {
     mocks.useMailDetail.mockImplementation((postId: string) => ({
       data: postId ? { data: { allOrdersByPostId: [order("101"), order("102")] } } : undefined,
@@ -141,7 +166,9 @@ describe("MailDetailPage — pochtani filialga jo'natish", () => {
     }));
     mocks.useRefusedByPostId.mockReturnValue({ data: undefined, isLoading: false, isError: false });
     mocks.getDispatchDestinations.mockResolvedValue(destinations([branch15]));
+    mocks.getPostCourierDestinations.mockResolvedValue(courierDestinations());
     mocks.dispatchMutateAsync.mockResolvedValue({ statusCode: 200 });
+    mocks.dispatchCourierMutateAsync.mockResolvedValue({ statusCode: 200 });
   });
 
   it("HQ registratori: faqat getDispatchDestinations chaqiriladi, modal filialni ko'rsatadi, submit dispatch qiladi", async () => {
@@ -152,13 +179,16 @@ describe("MailDetailPage — pochtani filialga jo'natish", () => {
 
     await waitFor(() => expect(mocks.getDispatchDestinations).toHaveBeenCalledTimes(1));
     expect(mocks.getDispatchDestinations).toHaveBeenCalledWith({ region_id: REGION_ID });
+    // Ikkala ro'yxat bir bosishda parallel olinadi.
+    expect(mocks.getPostCourierDestinations).toHaveBeenCalledTimes(1);
+    expect(mocks.getPostCourierDestinations).toHaveBeenCalledWith(POST_ID);
     expect(mocks.getBranches).not.toHaveBeenCalled();
     expect(mocks.getActiveManagerBranchIds).not.toHaveBeenCalled();
 
-    const dialog = await screen.findByRole("dialog", { name: "Filialni tanlang" });
+    const dialog = await screen.findByRole("dialog", { name: "Manzilni tanlang" });
     expect(within(dialog).getByText("2 ta buyurtma tanlangan filialga jo'natiladi")).toBeInTheDocument();
     expect(within(dialog).getByRole("group", { name: "Sirdaryo viloyatidagi faol filiallar" })).toBeInTheDocument();
-    const submit = within(dialog).getByRole("button", { name: "Jo'natish — 2 ta" });
+    const submit = within(dialog).getByRole("button", { name: "Filialga jo'natish — 2 ta" });
     expect(submit).toBeDisabled();
     await user.click(within(dialog).getByRole("radio", { name: /E2E Filial Sirdaryo/ }));
     expect(within(dialog).getByRole("radio", { name: /E2E Filial Sirdaryo/ })).toBeChecked();
@@ -195,11 +225,19 @@ describe("MailDetailPage — pochtani filialga jo'natish", () => {
     },
   );
 
-  it("backend rad etsa — backend xabari ko'rinadi", async () => {
+  it("sahifa ochilganda manzil ro'yxatlari so'ralmaydi — faqat «Pochtani jo'natish» bosilganda", async () => {
     const user = userEvent.setup();
-    mocks.getDispatchDestinations.mockRejectedValue({
-      response: { status: 403, data: { message: "Pochta jo'natish uchun ruxsat yo'q" } },
-    });
+    renderPage(stateFor("superadmin"));
+    await user.click(screen.getByRole("button", { name: "test-select-all" }));
+    expect(mocks.getDispatchDestinations).not.toHaveBeenCalled();
+    expect(mocks.getPostCourierDestinations).not.toHaveBeenCalled();
+  });
+
+  it("backend rad etsa (ikkalasi) — backend xabari ko'rinadi", async () => {
+    const user = userEvent.setup();
+    const forbidden = { response: { status: 403, data: { message: "Pochta jo'natish uchun ruxsat yo'q" } } };
+    mocks.getDispatchDestinations.mockRejectedValue(forbidden);
+    mocks.getPostCourierDestinations.mockRejectedValue(forbidden);
     renderPage(stateFor("registrator", "HQ"));
 
     await selectAllAndSend(user);
@@ -218,7 +256,7 @@ describe("MailDetailPage — pochtani filialga jo'natish", () => {
     expect(await screen.findByText("Filiallarni yuklab bo'lmadi.")).toBeInTheDocument();
   });
 
-  it("viloyatda mos filial bo'lmasa — 'aktiv filial yo'q' xabari, modal ochilmaydi", async () => {
+  it("viloyatda mos filial ham, HQ kuryeri ham bo'lmasa — xabar, modal ochilmaydi", async () => {
     const user = userEvent.setup();
     mocks.getDispatchDestinations.mockResolvedValue(
       destinations([{ ...branch15, id: "16", region: { id: "99", name: "Boshqa" } }]),
@@ -227,7 +265,70 @@ describe("MailDetailPage — pochtani filialga jo'natish", () => {
 
     await selectAllAndSend(user);
 
-    expect(await screen.findByText("Bu viloyatda aktiv filial mavjud emas.")).toBeInTheDocument();
+    expect(await screen.findByText("Bu viloyatda faol filial ham, HQ kuryeri ham yo'q.")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("filial yo'q, HQ kuryeri bor — oyna kuryer tabida ochiladi; tasdiqdan keyin POST dispatch-to-courier", async () => {
+    const user = userEvent.setup();
+    mocks.getDispatchDestinations.mockResolvedValue(destinations([]));
+    mocks.getPostCourierDestinations.mockResolvedValue(courierDestinations([hqCourier]));
+    renderPage(stateFor("superadmin"));
+
+    await selectAllAndSend(user);
+
+    const dialog = await screen.findByRole("dialog", { name: "Manzilni tanlang" });
+    const tabs = within(dialog).getByRole("radiogroup", { name: "Manzil turi" });
+    expect(within(tabs).getByRole("radio", { name: "HQ kuryeriga · 1" })).toHaveAttribute("aria-checked", "true");
+    expect(within(dialog).getByText("Tashqi: «BeePost»")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("radio", { name: /Ali Valiyev/ }));
+    await user.click(within(dialog).getByRole("button", { name: "Kuryerga berish — 2 ta" }));
+    const confirm = await screen.findByRole("dialog", { name: "Kuryerga berilsinmi?" });
+    await user.click(within(confirm).getByRole("button", { name: "Ha, kuryerga berish" }));
+
+    await waitFor(() =>
+      expect(mocks.dispatchCourierMutateAsync).toHaveBeenCalledWith({
+        postId: POST_ID,
+        payload: { courierId: "77", orderIds: ["101", "102"] },
+      }),
+    );
+    expect(mocks.dispatchMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("kuryerlar so'rovi 500, filial bor — oyna filial tabida, kuryer tabida xato paneli", async () => {
+    const user = userEvent.setup();
+    mocks.getPostCourierDestinations.mockRejectedValue({
+      response: { status: 500, data: { message: "Server xatosi" } },
+    });
+    renderPage(stateFor("superadmin"));
+
+    await selectAllAndSend(user);
+
+    const dialog = await screen.findByRole("dialog", { name: "Manzilni tanlang" });
+    const tabs = within(dialog).getByRole("radiogroup", { name: "Manzil turi" });
+    expect(within(tabs).getByRole("radio", { name: "Filialga · 1" })).toHaveAttribute("aria-checked", "true");
+    await user.click(within(tabs).getByRole("radio", { name: "HQ kuryeriga" }));
+    expect(within(dialog).getByText("Kuryerlarni yuklab bo'lmadi.")).toBeInTheDocument();
+
+    // «Qayta urinish» — faqat kuryerlar qayta so'raladi.
+    mocks.getPostCourierDestinations.mockResolvedValue(courierDestinations([hqCourier]));
+    await user.click(within(dialog).getByRole("button", { name: "Qayta urinish" }));
+    expect(await within(dialog).findByRole("radio", { name: /Ali Valiyev/ })).toBeInTheDocument();
+    expect(mocks.getPostCourierDestinations).toHaveBeenCalledTimes(2);
+    expect(mocks.getDispatchDestinations).toHaveBeenCalledTimes(1);
+  });
+
+  it("filiallar bo'sh, kuryerlar xato — kuryer xabari (backend matni)", async () => {
+    const user = userEvent.setup();
+    mocks.getDispatchDestinations.mockResolvedValue(destinations([]));
+    mocks.getPostCourierDestinations.mockRejectedValue({
+      response: { status: 503, data: { message: "Filial xizmati javob bermadi" } },
+    });
+    renderPage(stateFor("superadmin"));
+
+    await selectAllAndSend(user);
+
+    expect(await screen.findByText("Filial xizmati javob bermadi")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

@@ -512,7 +512,7 @@ export const cashboxDeletedText = (t: TFunction, subject: DeletedCashboxSubject)
 
 /**
  * Qulf izohi (maket `-locked`, `role="note"`, `Lock` 20): sarlavha (bo'lmasligi mumkin — `COURIER_MOVED` bitta jumla)
- * va matn; `WINDOW_EXPIRED` da «Muddatni o'zgartirish» havolasi (`/payments/shift-settings`).
+ * va matn; `WINDOW_EXPIRED` da «Muddatni o'zgartirish» havolasi (`/ops?tab=shift-settings`).
  */
 const lockOf = (ctx: Ctx, correctable: PaymentCorrectable) => {
   const { t, language } = ctx;

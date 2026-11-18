@@ -158,6 +158,8 @@ describe("hajm chegarasi (volumetricFromKg)", () => {
         pickupFee: 20000,
         pickupFreeFromCount: 10,
         expressMultiplier: 1.4,
+        minDeliveryPrice: null,
+        extraCostLimitAmount: null,
       }),
     ).toEqual({ volumetricDivisor: 5000, billableStepKg: 0.1, minBillableKg: 0.1, volumetricFromKg: 3 });
   });

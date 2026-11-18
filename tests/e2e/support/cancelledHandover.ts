@@ -2,8 +2,11 @@ import { expect, type Page, type Route } from "@playwright/test";
 
 /**
  * Bekor qilinganlarni marketga topshirish (`/new-orders/cancelled/:marketId`) e2e — soxta backend.
- * Biznes qoida: marketga jo'natish FAQAT market QR skanerlangach (skanerlansa — barcha bekorlar tanlanadi va
- * topshirish tokeni olinadi); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — enum kodi).
+ * Biznes qoida: marketga topshirish FAQAT market QR skanerlangach (yoki PIN kod kiritilgach) — topshirish tokeni
+ * olinadi; QR / kod hech narsani avtomatik tanlamaydi va yubormaydi. SKAN = TOPSHIRISH (ega qarori 2026-11-15,
+ * BeePost naqshi): ruxsat ichida har buyurtma skani alohida `POST …/handover { order_ids: [id] }` (backend ruxsatni
+ * ko'p marta qabul qiladi), qator ro'yxatdan chiqib «Topshirildi» ga o'tadi; buzilgan buyurtma QR — «QR buzilganini
+ * tasdiqlash» oynasi → «Qo'lda topshirish» (sabab — enum kodi).
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -57,7 +60,11 @@ export const mockCancelledApi = async (page: Page) => {
     if (path === "auth/my-profile") {
       return reply(route, wrap({ id: "1", role: "superadmin", name: "Bosh admin", status: "active" }));
     }
-    if (path === "orders/markets/201/cancelled") return reply(route, wrap(CANCELLED_ORDERS));
+    // Haqiqiy backend kabi: topshirilgani endi «bekor, HQ'da» emas — ro'yxat yangilansa kelmaydi.
+    if (path === "orders/markets/201/cancelled") {
+      const handed = new Set(handovers.flatMap((body) => body.order_ids));
+      return reply(route, wrap(CANCELLED_ORDERS.filter((order) => !handed.has(order.id))));
+    }
     if (path === "scan/market-cancelled" && request.method() === "POST") {
       const body = request.postDataJSON() as { qr_token?: string; market_id?: string; pin?: string };
       // Kod yo'li (`{ market_id, pin }`): to'g'ri kod — QR bilan bir xil ruxsat; noto'g'ri — 400 + qolgan urinishlar.
@@ -114,4 +121,28 @@ export const openHandover = async (page: Page) => {
 export const usbScan = async (page: Page, value: string) => {
   await page.keyboard.type(value, { delay: 10 });
   await page.keyboard.press("Enter");
+};
+
+/** Hali topshirilmaganlar kartasi (jadval yoki telefonda kartalar). */
+export const pendingCard = (page: Page) =>
+  page.getByRole("region", { name: "Bekor qilingan buyurtmalarni topshirish" });
+
+/** Ro'yxatdagi buyurtma: jadvalda «№10235» havolasi, telefon kartasida «№10235 · tuman · sana». */
+export const pendingOrder = (page: Page, id: string) => pendingCard(page).getByText(new RegExp(`№${id}(?!\\d)`));
+
+/**
+ * Buyurtma QR'larini birma-bir skanerlaydi: har biri O'SHA ZAHOTI topshiriladi — ro'yxatdan chiqadi va «Topshirildi»
+ * kartasiga o'tadi (ega qarori 2026-11-15). `handovers` berilsa — har skan alohida so'rov ekani ham tekshiriladi.
+ */
+export const scanOrders = async (page: Page, ids: readonly string[], handovers?: HandoverBody[]) => {
+  for (const id of ids) {
+    const before = handovers?.length ?? 0;
+    await usbScan(page, `tok-${id}`);
+    await expect(pendingOrder(page, id)).toHaveCount(0);
+    await expect(page.getByTestId("handed-over-card").getByText(new RegExp(`№${id}(?!\\d)`)).first()).toBeVisible();
+    if (handovers) {
+      expect(handovers.length).toBe(before + 1);
+      expect(handovers.at(-1)!.order_ids).toEqual([id]);
+    }
+  }
 };

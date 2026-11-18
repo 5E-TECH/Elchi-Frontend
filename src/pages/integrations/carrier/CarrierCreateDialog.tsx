@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import {
   CircleCheck,
   Clock,
@@ -18,6 +18,7 @@ import {
   type CarrierAccount,
   type CreateCarrierAccountDto,
 } from "../../../entities/integrations/carriers";
+import { queryKeys } from "../../../shared/config/queryKeys";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { cx } from "../../../shared/lib/cx";
 import { formatPhone } from "../../../shared/lib/formatPhone";
@@ -25,6 +26,7 @@ import { notify } from "../../../shared/lib/notify";
 import {
   Button,
   Dialog,
+  ErrorState,
   Field,
   Select,
   TextInput,
@@ -45,22 +47,33 @@ import { NumberedSteps } from "./carrierParts";
 import type { CarrierKeyReveal } from "./CarrierKeyDialog";
 import { IpAllowlistField } from "./IpAllowlistField";
 import { checkIpAllowlist } from "./ipAllowlist";
-import { invalidateCarrierCourier, useCourierCandidates } from "./useCarrierCouriers";
+import { invalidateCarrierCourier, useHqCourierCandidates } from "./useCarrierCouriers";
 
 /**
  * YANGI TASHQI YETKAZUVCHI (maket `*-carrier-create-dialog`): nom, kuryer (guruhlangan tanlov: «Bog'lash mumkin» /
  * «Bog'lab bo'lmaydi» — sababi bilan), IP ro'yxati (qatorma-qator) → `POST admin/carriers` → kalit oynasi.
  *
+ * Kuryer — FAQAT HQ'da ochilgani (ega qarori 2026-11-15, «faqat HQ ga ochilgan o'z kurieri»): tanlov manbai
+ * `GET branches/:hqId/users` (`COURIER`), boshqa filial kuryeri ro'yxatga chiqmaydi; tanlangan kuryer HQ'da bo'lmasa
+ * — «Bog'lab bo'lmaydi» (maketdagi «Davom etish mumkin, lekin tavsiya: HQ» ogohlantirishi olib tashlandi — maket
+ * ziddiyati shu ega qarori bilan hal qilingan, maket fayllari tegilmadi). HQ aniqlanmasa (`GET branches/hq` yiqildi
+ * yoki HQ yo'q) — kuryer maydoni o'rnida `ErrorState` + «Qayta urinish», maydon va «Yaratish» o'chiq.
+ *
  * Server rad etsa — xato forma tepasida (409 kuryer band: akkaunt nomi va havolasi YUKLANGAN ro'yxatdan
  * `courier_user_id` bo'yicha — har chizishda, shuning uchun xatodan keyingi ro'yxat yangilanishi (`onSettled`)
- * poyga holatidagi nomsiz matnni nomli «X»ni ochish» ga almashtiradi; 400/404 kuryer; 503). Natija noma'lum bo'lsa (javob kelmadi,
+ * poyga holatidagi nomsiz matnni nomli «X»ni ochish» ga almashtiradi; 400 `courier_not_hq` — «kuryer HQ'da emas»;
+ * 400/404 kuryer; 503). Natija noma'lum bo'lsa (javob kelmadi,
  * 502/504/500, javobda kalit yo'q) — «Javob kelmadi» (akkaunt yaratilgan bo'lishi mumkin: qayta yaratish o'rniga
  * ro'yxatni yangilash). So'rov ketayotganda sahifani yangilash / yopish brauzer tasdig'ini so'raydi, «Orqaga» bekor
  * qilinadi (`useLeaveGuard`) va «Kuryer qo'shish» havolasi chizilmaydi — javobdagi kalit yo'qolmasin.
  *
  * Har ochilishda forma toza (`useOpenCount` → `key`); yopilganda o'sha nusxa so'nadi (qiymatlar joyida).
  */
-type ServerError = { kind: "busy"; courierId: string } | { kind: "courier" } | { kind: "unavailable" };
+type ServerError =
+  | { kind: "busy"; courierId: string }
+  | { kind: "notHq" }
+  | { kind: "courier" }
+  | { kind: "unavailable" };
 
 export type CarrierCreated = { accountId: string; reveal: CarrierKeyReveal };
 
@@ -127,7 +140,14 @@ const CreateForm = ({
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  const candidates = useCourierCandidates(search, open);
+  const hqLabel = hqName || t("carrier.hqFallback");
+  const candidates = useHqCourierCandidates(hqBranchId, hqLabel, search, open);
+  // HQ hali so'ralmoqda yoki javob kelmagan (`useHqBranch`) — `null` «topilmadi» degani emas: xato faqat so'rov
+  // tugagach (`useIsFetching` o'zgarganda qayta chiziladi va holat keshdan o'qiladi).
+  const hqFetching = useIsFetching({ queryKey: queryKeys.branches.hq }) > 0;
+  const hqStatus = client.getQueryState(queryKeys.branches.hq)?.status;
+  const hqMissing = !hqBranchId && !hqFetching && (hqStatus === "success" || hqStatus === "error");
+  const hqLoading = !hqBranchId && !hqMissing;
 
   const close = () => {
     if (create.isPending) return;
@@ -143,9 +163,9 @@ const CreateForm = ({
 
   const eligibility = useMemo(() => {
     const map = new Map<string, CourierEligibility>();
-    for (const item of pool) map.set(item.id, courierEligibility(item, accounts));
+    for (const item of pool) map.set(item.id, courierEligibility(item, accounts, hqBranchId));
     return map;
-  }, [pool, accounts]);
+  }, [pool, accounts, hqBranchId]);
 
   const okCount = pool.filter((item) => eligibility.get(item.id)?.ok).length;
   const blockedCount = pool.length - okCount;
@@ -172,11 +192,8 @@ const CreateForm = ({
 
   const reasonOf = (item: CarrierCourier) => {
     const result = eligibility.get(item.id);
-    if (!result || result.ok) {
-      return hqBranchId && item.branch && item.branch.id !== hqBranchId
-        ? { text: t("carrier.create.reasonNotHq"), warn: false }
-        : null;
-    }
+    if (!result || result.ok) return null;
+    if (result.reason === "notHq") return { text: t("carrier.create.reasonNotHq"), warn: true };
     if (result.reason === "inactive")
       return { text: t("carrier.create.reasonInactive"), warn: true };
     return {
@@ -194,7 +211,8 @@ const CreateForm = ({
 
   const nameError = touched && !name.trim() ? t("carrier.create.nameEmpty") : undefined;
   const courierError = touched && !courier ? t("carrier.create.courierRequired") : undefined;
-  const canSubmit = Boolean(name.trim()) && Boolean(courier) && check.valid;
+  const courierOk = Boolean(courier && eligibility.get(courier.id)?.ok);
+  const canSubmit = Boolean(name.trim()) && courierOk && Boolean(hqBranchId) && check.valid;
 
   const submit = async (event?: FormEvent) => {
     event?.preventDefault();
@@ -225,6 +243,10 @@ const CreateForm = ({
       const kind = classifyCarrierError(error, { serverErrorUnknown: true });
       if (kind === "busy") {
         setServerError({ kind, courierId: courier.id });
+      } else if (kind === "notHq") {
+        // Kuryer shu orada HQ'dan o'tkazilgan (yoki ro'yxat eskirgan) — tanlov ro'yxati qayta so'raladi.
+        invalidateCarrierCourier(client, courier.id);
+        setServerError({ kind });
       } else if (kind === "courier") {
         invalidateCarrierCourier(client, courier.id);
         setServerError({ kind });
@@ -240,10 +262,6 @@ const CreateForm = ({
     }
   };
 
-  const hqLabel = hqName || t("carrier.hqFallback");
-  const selectedNotHq = Boolean(
-    courier && hqBranchId && courier.branch && courier.branch.id !== hqBranchId,
-  );
   const selectedHq = Boolean(courier && hqBranchId && courier.branch?.id === hqBranchId);
 
   const busyAccount =
@@ -284,6 +302,10 @@ const CreateForm = ({
           ? t("carrier.create.busyKnown", { name: busyAccount.name, id: busyAccount.id })
           : t("carrier.create.busyRace")}
       </InlineAlert>
+    ) : serverError.kind === "notHq" ? (
+      <InlineAlert tone="danger" title={t("carrier.create.notHqFailTitle")}>
+        {t("carrier.create.notHqFailText", { hq: hqLabel })}
+      </InlineAlert>
     ) : serverError.kind === "courier" ? (
       <InlineAlert tone="danger" title={t("carrier.create.courierFailTitle")}>
         {t("carrier.create.courierFailText")}
@@ -317,7 +339,7 @@ const CreateForm = ({
               leftIcon={KeyRound}
               // IP xatosi — darhol (maket «Tekshiruv: HQ tavsiyasi va IP xatolari»); nom / kuryer — birinchi
               // bosishdan keyin (bosish bo'sh majburiy maydonlarni ko'rsatadi).
-              disabled={!check.valid || (touched && !canSubmit)}
+              disabled={!check.valid || !hqBranchId || (touched && !canSubmit)}
               loading={create.isPending}
             >
               {t("carrier.create.submit")}
@@ -371,11 +393,12 @@ const CreateForm = ({
             labelAs="span"
             required
             error={courierError}
-            hint={courier ? undefined : t("carrier.create.courierHint")}
+            hint={courier ? undefined : t("carrier.create.courierHint", { hq: hqLabel })}
           >
             <Select
               searchable
               filter={false}
+              disabled={!hqBranchId}
               value={courier?.id ?? null}
               onChange={(value) => {
                 setCourier(value ? (byId.get(value) ?? null) : null);
@@ -387,7 +410,7 @@ const CreateForm = ({
               placeholder={t(
                 pickerOpen ? "carrier.create.courierSearch" : "carrier.create.courierPlaceholder",
               )}
-              loading={candidates.isLoading || (candidates.isFetching && options.length === 0)}
+              loading={hqLoading || candidates.isLoading || (candidates.isFetching && options.length === 0)}
               loadingText={t("carrier.create.courierLoading")}
               noOptionsText={candidates.isError ? t("carrier.create.courierLoadError") : undefined}
               renderOption={(option, { selected }) => {
@@ -431,13 +454,16 @@ const CreateForm = ({
               }}
             />
           </Field>
-          {courier && selectedNotHq ? (
-            <InlineAlert
-              tone="warning"
-              title={t("carrier.create.notHqTitle", { branch: courier.branch?.name ?? "" })}
-            >
-              {t("carrier.create.notHqText", { branch: courier.branch?.name ?? "", hq: hqLabel })}
-            </InlineAlert>
+          {hqMissing ? (
+            <ErrorState
+              size="chart"
+              kind="section"
+              title={t("carrier.create.hqMissing")}
+              description={null}
+              onRetry={() => void client.refetchQueries({ queryKey: queryKeys.branches.hq })}
+              retrying={hqFetching}
+              className="-mt-2 min-h-0"
+            />
           ) : courier && selectedHq ? (
             <p className="-mt-2 flex items-start gap-2 text-[13px] leading-[18px] text-success-fg">
               <CircleCheck size={16} aria-hidden="true" className="mt-px flex-none" />

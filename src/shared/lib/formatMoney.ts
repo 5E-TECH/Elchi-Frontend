@@ -159,6 +159,36 @@ export const formatPercentLocalized = (
 };
 
 /**
+ * So'm yozuvlari, katta harfga keltirib: backend `sanitizeCurrency` so'm deb oladiganlarning hammasi (`UZS`, `SO'M`,
+ * `SOM`, `SUM`, `СУМ`) va undan kengroq — egri apostroflar (`so‘m`, `soʻm`), `СЎМ`.
+ */
+const UZS_CURRENCY = /^(?:UZS|SO['‘’ʻʼ`]?M|SUM|СУМ|СЎМ)$/u;
+
+/**
+ * Tashqi valyuta yozuvi so'mmi (AI chekdan o'qigan `currency` kabi): `"UZS"`, `"uzs"`, `"so'm"`, `"сум"`, `"SUM"` →
+ * `true`; `"USD"` → `false`; bo'sh / `null` → `false` (valyuta noma'lum — qanday tushunishni chaqiruvchi hal qiladi).
+ * Backend `sanitizeCurrency` ning so'm yozuvlarini qamraydi, lekin undan kengroq (bir xil emas).
+ */
+export const isUzsCurrencyLabel = (value: string | null | undefined): boolean =>
+  typeof value === "string" && UZS_CURRENCY.test(value.trim().toUpperCase());
+
+/**
+ * Boshqa valyutadagi summa (AI chekdan o'qigan USD, EUR …): son + ISO kodi, 2 xonagacha kasr, ortiqcha nolsiz —
+ * uz/ru «1 250,5 USD», en «1,250.5 USD». So'm yozuvi kelsa — oddiy `formatMoneyLocalized`; kod bo'sh — faqat son
+ * (valyuta noma'lum, so'm deb ko'rsatilmaydi).
+ */
+export const formatCurrencyAmountLocalized = (
+  value: unknown,
+  currency: string | null | undefined,
+  options: { language?: string | null } = {},
+): string => {
+  if (isUzsCurrencyLabel(currency)) return formatMoneyLocalized(value, options);
+  const code = currency?.trim().toUpperCase() ?? "";
+  const amount = formatNumberLocalized(value, { language: options.language, fractionDigits: 2 });
+  return code ? `${amount} ${code}` : amount;
+};
+
+/**
  * AQSH dollari (S4, OS-2 — AI xarajati va kunlik limit): doim 2 kasr xona (nollar saqlanadi), mingliklar ajratkichi
  * tildan. uz/ru — «12,40 $» / «1 234,50 $» (belgi oxirida, maket `superadmin-ops-system-ai-cap`), en — «$12.40»
  * (ingliz yozuvi; ega javob bermagan — sukut). Manfiy → «−12,40 $» / «−$12.40» (U+2212); yaxlitlab nol — minussiz.

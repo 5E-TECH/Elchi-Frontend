@@ -9,6 +9,8 @@ import type {
  * `round_to` butun ≥ 1, `pickup_fee` ≥ 0, `pickup_free_from_count` butun ≥ 1 yoki bo'sh (`null` — hech qachon tekin
  * emas), `express_multiplier` ≥ 1, `volumetric_from_kg` («Hajm bo'yicha hisoblash chegarasi») 0..1000, 3 kasr
  * (0 — har doim hajm bo'yicha). `volumetric_divisor` — doimiy, faqat ko'rsatiladi (yuborilmaydi).
+ * B0ILd7YI: «Minimal yetkazish narxi» (`min_delivery_price`) va «Kuryer qo'shimcha xarajati chegarasi»
+ * (`extra_cost_limit_amount`) — so'm, butun ≥ 0 yoki bo'sh (`null` — chegara yo'q / sukut).
  */
 export type RulesFormValues = {
   firstKg: string;
@@ -19,6 +21,8 @@ export type RulesFormValues = {
   express: string;
   pickupFee: string;
   pickupFree: string;
+  minPrice: string;
+  extraLimit: string;
 };
 
 export type RulesField = keyof RulesFormValues;
@@ -30,18 +34,36 @@ type Rule = {
   optional?: boolean;
   /** API maydoni. */
   key: keyof UpdateDeliveryPricingSettingsRequest;
+  /** Saqlangan qiymat (`GET` javobidagi maydon) — «eski → yangi» va o'zgarishsiz maydonni tashlash uchun. */
+  saved: keyof Omit<DeliveryPricingSettings, "id" | "volumetricDivisor">;
 };
 
 export const RULES: Record<RulesField, Rule> = {
-  firstKg: { kind: "decimal", min: 0, max: 1000, key: "first_kg_included" },
-  volumetricFrom: { kind: "decimal", min: 0, max: 1000, key: "volumetric_from_kg" },
-  minKg: { kind: "decimal", min: 0.001, max: 1000, key: "min_billable_kg" },
-  step: { kind: "decimal", min: 0.001, max: 1000, key: "billable_step_kg" },
-  roundTo: { kind: "integer", min: 1, key: "round_to" },
-  express: { kind: "decimal", min: 1, key: "express_multiplier" },
-  pickupFee: { kind: "integer", min: 0, key: "pickup_fee" },
-  pickupFree: { kind: "integer", min: 1, optional: true, key: "pickup_free_from_count" },
+  firstKg: { kind: "decimal", min: 0, max: 1000, key: "first_kg_included", saved: "firstKgIncluded" },
+  volumetricFrom: { kind: "decimal", min: 0, max: 1000, key: "volumetric_from_kg", saved: "volumetricFromKg" },
+  minKg: { kind: "decimal", min: 0.001, max: 1000, key: "min_billable_kg", saved: "minBillableKg" },
+  step: { kind: "decimal", min: 0.001, max: 1000, key: "billable_step_kg", saved: "billableStepKg" },
+  roundTo: { kind: "integer", min: 1, key: "round_to", saved: "roundTo" },
+  express: { kind: "decimal", min: 1, key: "express_multiplier", saved: "expressMultiplier" },
+  pickupFee: { kind: "integer", min: 0, key: "pickup_fee", saved: "pickupFee" },
+  pickupFree: { kind: "integer", min: 1, optional: true, key: "pickup_free_from_count", saved: "pickupFreeFromCount" },
+  minPrice: { kind: "integer", min: 0, optional: true, key: "min_delivery_price", saved: "minDeliveryPrice" },
+  extraLimit: { kind: "integer", min: 0, optional: true, key: "extra_cost_limit_amount", saved: "extraCostLimitAmount" },
 };
+
+/** Forma tartibi — tasdiq oynasidagi «eski → yangi» qatorlari shu tartibda. */
+export const RULES_ORDER: readonly RulesField[] = [
+  "firstKg",
+  "minKg",
+  "step",
+  "roundTo",
+  "express",
+  "pickupFee",
+  "pickupFree",
+  "volumetricFrom",
+  "minPrice",
+  "extraLimit",
+];
 
 const normalize = (value: string) => value.replace(/\s/g, "").replace(",", ".");
 const NUMBER = /^\d+(?:\.\d+)?$/;
@@ -85,19 +107,41 @@ export const toRulesForm = (settings: DeliveryPricingSettings, language?: string
   express: decimalInput(settings.expressMultiplier, language),
   pickupFee: String(Math.round(settings.pickupFee)),
   pickupFree: settings.pickupFreeFromCount === null ? "" : String(settings.pickupFreeFromCount),
+  minPrice: settings.minDeliveryPrice === null ? "" : String(Math.round(settings.minDeliveryPrice)),
+  extraLimit: settings.extraCostLimitAmount === null ? "" : String(Math.round(settings.extraCostLimitAmount)),
 });
 
-/** `PATCH` tanasi — faqat o'zgargan maydonlar (hech narsa o'zgarmasa — bo'sh obyekt). */
+/** Bitta qoida o'zgarishi: `from` — saqlangan, `to` — yuboriladigan qiymat (`null` — bo'sh). */
+export type RuleChange = { field: RulesField; from: number | null; to: number | null };
+
+/**
+ * O'zgargan qoidalar (`RULES_ORDER` tartibida): tegilgan (`dirty`) va qiymati saqlangandan farq qiladigan maydonlar.
+ * «1,0» ni «1» ga almashtirish — o'zgarish emas (son bir xil); bo'sh ixtiyoriy maydon — `null`.
+ */
+export const diffRules = (
+  values: RulesFormValues,
+  dirty: Partial<Record<RulesField, boolean | undefined>>,
+  saved?: DeliveryPricingSettings,
+): RuleChange[] =>
+  RULES_ORDER.flatMap((field): RuleChange[] => {
+    if (!dirty[field]) return [];
+    const to = parseRuleValue(values[field]);
+    if (to === null && !RULES[field].optional) return [];
+    const from = saved ? saved[RULES[field].saved] : null;
+    if (saved && (from === null ? to === null : to !== null && Math.abs(from - to) < 1e-9)) return [];
+    return [{ field, from, to }];
+  });
+
+/** `PATCH` tanasi — `diffRules` dan (hech narsa o'zgarmasa — bo'sh obyekt). */
+export const toPatchBody = (changes: readonly RuleChange[]): UpdateDeliveryPricingSettingsRequest =>
+  Object.fromEntries(changes.map((change) => [RULES[change.field].key, change.to])) as UpdateDeliveryPricingSettingsRequest;
+
+/**
+ * `PATCH` tanasi — faqat o'zgargan maydonlar (hech narsa o'zgarmasa — bo'sh obyekt). `saved` berilsa — qiymati
+ * saqlangan bilan bir xil maydon ham tashlanadi.
+ */
 export const toSettingsPatch = (
   values: RulesFormValues,
   dirty: Partial<Record<RulesField, boolean | undefined>>,
-): UpdateDeliveryPricingSettingsRequest => {
-  const body: Record<string, number | null> = {};
-  for (const field of Object.keys(RULES) as RulesField[]) {
-    if (!dirty[field]) continue;
-    const parsed = parseRuleValue(values[field]);
-    if (parsed === null && !RULES[field].optional) continue;
-    body[RULES[field].key] = parsed;
-  }
-  return body as UpdateDeliveryPricingSettingsRequest;
-};
+  saved?: DeliveryPricingSettings,
+): UpdateDeliveryPricingSettingsRequest => toPatchBody(diffRules(values, dirty, saved));

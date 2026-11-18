@@ -97,8 +97,10 @@ describe("menyu tuzatishlari (fix3 RBAC-18, CODE-21)", () => {
     }
   });
 
-  it("superadmin menyusida /batches va /returns bor (guard avvaldan ochiq edi)", () => {
-    expect(paths("superadmin")).toEqual(expect.arrayContaining(["/batches", "/returns"]));
-    expect(paths("admin")).toEqual(expect.arrayContaining(["/batches", "/returns"]));
+  it("superadmin menyusida /batches bor (guard avvaldan ochiq edi); /returns — ega 2026-11-16 dan menyuda yo'q («Pochta» da bor)", () => {
+    expect(paths("superadmin")).toContain("/batches");
+    expect(paths("admin")).toContain("/batches");
+    expect(paths("superadmin")).not.toContain("/returns");
+    expect(paths("admin")).not.toContain("/returns");
   });
 });

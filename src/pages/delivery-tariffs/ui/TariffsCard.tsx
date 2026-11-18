@@ -22,6 +22,7 @@ import {
 } from "../../../shared/ui/primitives";
 import { scheduledChanges } from "../model/history";
 import { CardHead } from "./CardHead";
+import { useCancelScheduledTariff } from "./useCancelScheduledTariff";
 import { useTariffText } from "./useTariffText";
 
 type Row = { id: DeliveryTariffId; tariff: DeliveryTariff | null };
@@ -36,7 +37,8 @@ export type TariffsCardProps = {
  * «TARIFLAR — ASOSIY NARX VA HAR KG NARXI» (maket `superadmin-regions-delivery-tariffs`): jadval «Yo'nalish ·
  * Asosiy narx · {chegara} kg gacha · Har qo'shimcha kg · Muddat · Kuchga kirgan» (planshetda oxirgi ikkisi
  * yashirin) + «O'zgartirish» (yangi versiya oynasi); telefonda kartalar. Pastda kelajakdagi versiyalar —
- * «Rejalashtirilgan: …».
+ * «Rejalashtirilgan: …» va har birida «Bekor qilish» (B0ILd7YI; tasdiq oynasi — `useCancelScheduledTariff`; tugma —
+ * `*-notifications-campaign-cancel-dialog` jadvalidagi `danger-soft sm`).
  */
 export const TariffsCard = ({ query, settings, onEdit }: TariffsCardProps) => {
   const { t, language, money, days, changes, name } = useTariffText();
@@ -46,6 +48,7 @@ export const TariffsCard = ({ query, settings, onEdit }: TariffsCardProps) => {
     [query.data],
   );
   const scheduled = useMemo(() => (query.data ? scheduledChanges(query.data) : []), [query.data]);
+  const cancelScheduled = useCancelScheduledTariff();
 
   const baseHeader = settings
     ? t("page.tariffs.columns.baseUpTo", { first: formatKgValue(settings.firstKgIncluded, language) })
@@ -154,17 +157,31 @@ export const TariffsCard = ({ query, settings, onEdit }: TariffsCardProps) => {
       aria-labelledby={titleId}
       footer={
         scheduled.length ? (
-          <div className="flex min-w-0 flex-col gap-1">
+          <ul className="m-0 flex min-w-0 list-none flex-col gap-2 p-0" aria-label={t("page.tariffs.scheduledList")}>
             {scheduled.map((entry) => (
-              <p key={entry.version.id} className="m-0 text-[13px] text-text-muted">
-                {t("page.tariffs.scheduled", {
-                  name: name(entry.version.tariffId),
-                  changes: changes(entry.changes),
-                  date: formatDateLocalized(entry.version.validFrom),
-                })}
-              </p>
+              <li key={entry.version.id} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <p className="m-0 min-w-0 flex-[1_1_240px] text-[13px] text-text-muted">
+                  {t("page.tariffs.scheduled", {
+                    name: name(entry.version.tariffId),
+                    changes: changes(entry.changes),
+                    date: formatDateLocalized(entry.version.validFrom),
+                  })}
+                </p>
+                <Button
+                  variant="danger-soft"
+                  size="sm"
+                  aria-label={t("page.tariffs.cancelScheduledAria", {
+                    name: name(entry.version.tariffId),
+                    date: formatDateLocalized(entry.version.validFrom),
+                  })}
+                  onClick={() => void cancelScheduled(entry)}
+                  className="max-md:w-full"
+                >
+                  {t("page.tariffs.cancelScheduled")}
+                </Button>
+              </li>
             ))}
-          </div>
+          </ul>
         ) : undefined
       }
     >

@@ -32,6 +32,15 @@ describe("isProofRequiredByConditions", () => {
     expect(isProofRequiredByConditions(["sell_zero_total"], sell(0, null))).toBe(false);
     expect(isProofRequiredByConditions(["cancel_zero_total"], cancel(0, 0))).toBe(true);
   });
+
+  it("partly_sell (2026-11-16) — faqat qisman sotishda, to'liq sotuv va bekor qilishga ta'sir qilmaydi", () => {
+    expect(isProofRequiredByConditions(["partly_sell"], { ...sell(0, 90000), partly: true })).toBe(true);
+    // Summa hali kiritilmagan bo'lsa ham — isbot kerakligi oldindan ko'rinadi.
+    expect(isProofRequiredByConditions(["partly_sell"], { ...sell(0, null), partly: true })).toBe(true);
+    expect(isProofRequiredByConditions(["partly_sell"], sell(0, 90000))).toBe(false);
+    expect(isProofRequiredByConditions(["partly_sell"], { ...sell(5000, 0), partly: false })).toBe(false);
+    expect(isProofRequiredByConditions(["partly_sell"], { ...cancel(0, 0), partly: true })).toBe(false);
+  });
 });
 
 describe("toKnownAmount", () => {

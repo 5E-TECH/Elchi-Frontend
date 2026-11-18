@@ -1,7 +1,6 @@
 // dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-scanner-dialog, superadmin-neworders-cancelled-pin-dialog, superadmin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-scanner-dialog, admin-neworders-cancelled-manual-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-scanner-dialog, registrator-new-orders-cancelled-manual-dialog
 import { CircleCheck, Clock, Info, KeyRound, QrCode } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { Button } from "../../../../shared/ui/primitives";
 import { DetailAlert } from "../../components/detail/DetailAlert";
 import {
@@ -13,8 +12,8 @@ import {
 
 /**
  * Market QR holati (sahifa ogohlantirishi, `.el-alert`):
- *  - `required`    — `warning` «Market QR kerak» (maket `*-scanner-dialog`); matni «Marketga jo'natish»
- *                    tugmasining tavsifi ham (`hintId` → `aria-describedby`);
+ *  - `required`    — `warning` «Market QR kerak» (maket `*-scanner-dialog`); matn `hintId` bilan (tashqi
+ *                    `aria-describedby` uchun);
  *  - `scanned`     — `success` «Market QR skanerlandi» + o'ngda «QR amal qilish vaqti» taymeri
  *                    (`role="timer"`; maket `*-cancelled-handover`), telefonda matn ostida;
  *  - `notRequired` — `neutral` «Market QR talab qilinmaydi» (maket `*-manual-dialog`).
@@ -27,8 +26,6 @@ import {
 
 type HandoverStatusAlertProps = {
   stage: HandoverQrStage;
-  /** Jo'natishga tayyor bekor qilingan buyurtmalar soni («6 ta … jo'natishga tayyor»). */
-  readyCount: number;
   remainingSeconds: number;
   hintId: string;
   /** Ruxsat qanday olingan (`scanned` sarlavhasi uchun). */
@@ -41,14 +38,12 @@ const BODY = "text-[13px] text-text-muted";
 
 export const HandoverStatusAlert = ({
   stage,
-  readyCount,
   remainingSeconds,
   hintId,
   method = "qr",
   onPinClick,
 }: HandoverStatusAlertProps) => {
-  const { t, i18n } = useTranslation("newOrders");
-  const language = i18n.resolvedLanguage ?? i18n.language;
+  const { t } = useTranslation("newOrders");
 
   if (stage === "notRequired") {
     return (
@@ -110,9 +105,8 @@ export const HandoverStatusAlert = ({
         </div>
       }
     >
-      <p className={BODY}>
-        {t("cancelled.alert.scannedBody", { count: readyCount, value: formatNumberLocalized(readyCount, { language }) })}
-      </p>
+      {/* Ruxsat hech narsani avtomatik tanlamaydi (ega qarori 2026-11-15) — matnda «N ta tayyor» emas, keyingi qadam. */}
+      <p className={BODY}>{t("cancelled.alert.scannedBody")}</p>
     </DetailAlert>
   );
 };

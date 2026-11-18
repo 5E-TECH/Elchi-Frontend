@@ -238,6 +238,8 @@
   "metaPost": "Почта",
   "metaCourier": "Курьер",
   "metaCourierNone": "Ещё не назначен",
+  "metaOperator": "Оператор",
+  "metaOperatorNone": "Не выбран",
   "metaHolder": "Сейчас у кого",
   "metaHolderHQ": "В головном офисе (HQ)",
   "metaHolderBranch": "В филиале: {{name}}",
@@ -571,6 +573,8 @@
       "cancelledPostReturnedToNamedBranch": "{{actor}} вернул отмененный заказ из HQ в {{branch}}",
       "cancelledPostReturnedShort": "{{actor}} вернул отмененный заказ из HQ в филиал-отправитель",
       "courierReturnRequested": "{{actor}} сообщил(а): заказ не пришёл — отправлен запрос на возврат",
+      "operatorAssigned": "{{actor}} назначил(а) оператора: {{operator}}",
+      "operatorAssignedShort": "{{actor}} назначил(а) оператора",
       "branchReturnRequested": "{{actor}} сообщил(а): заказ не пришёл в филиал — отправлен запрос на возврат"
     },
     "roleValue": {
@@ -633,6 +637,7 @@
       "returnRequested": "Запрошен возврат",
       "returnedToMarket": "Передан маркету",
       "warehouseReturned": "Возвращён на склад",
+      "operatorAssigned": "Оператор назначен",
       "postBranchReassigned": "Переведён в другой филиал",
       "cancelledPostReturned": "Возвращён в филиал",
       "courierReturnRequested": "Не пришёл — запрошен возврат",
@@ -1090,6 +1095,18 @@
     "pickedHint": "Заказ и комиссия записываются на этого оператора",
     "otherLabel": "Оператора нет в списке",
     "loadFailed": "Не удалось загрузить список операторов — введите имя вручную"
+  },
+  "operatorAssign": {
+    "open": "Назначить",
+    "title": "Назначить оператора · #{{id}}",
+    "hint": "Выберите одного из активных операторов маркета заказа. После назначения изменить нельзя.",
+    "placeholder": "Выберите оператора",
+    "submit": "Назначить",
+    "required": "Выберите оператора",
+    "empty": "У этого маркета нет активных операторов — сначала добавьте маркету оператора.",
+    "loadFailed": "Не удалось загрузить список операторов — обновите страницу и попробуйте снова.",
+    "success": "Оператор назначен",
+    "successEarning": "Оператор назначен — доля по проданному заказу начислена оператору"
   },
   "fulfillment": {
     "tag": "Со склада",

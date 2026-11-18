@@ -524,6 +524,31 @@ export const useReceiveTransferBatch = () => {
   });
 };
 
+/**
+ * Paketni bekor qilish (oP02jE2P) — `POST transfer-batches/:id/cancel { reason }`, faqat `PENDING` paket (`SENT` —
+ * 409 `batch_in_transit`). Muvaffaqiyatda paket buyurtmalari paketdan yechiladi: paketlar (tafsilot, tarix, tab
+ * sonlari), buyurtmalar, «Yangi buyurtmali filiallar» (`branch-cov`) va HQ «Filial paketlari» yangilanadi.
+ * Rad etilsa ham `[BATCH_KEY]` qayta o'qiladi: paket holati shu orada o'zgargan bo'lishi mumkin (jo'natilgan, qabul
+ * qilingan, bekor qilingan) — sahifa yangi holatni ko'rsatadi, tugma yo'qoladi.
+ */
+export const useCancelTransferBatch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ batchId, reason }: { batchId: string; reason: string }) =>
+      api.post(API_ENDPOINTS.BATCHES.CANCEL(batchId), { reason }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({ queryKey: ["branch-cov"] });
+      void queryClient.invalidateQueries({ queryKey: [...WITH_SENT_BATCHES_KEY] });
+    },
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
+    },
+  });
+};
+
 export const useReceiveTransferBatchOrders = () => {
   const queryClient = useQueryClient();
 

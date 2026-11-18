@@ -23,7 +23,9 @@ export type ExpenseProofCondition =
   | "sell_zero_total"
   | "cancel_any"
   | "cancel_extra_cost"
-  | "cancel_zero_total";
+  | "cancel_zero_total"
+  // 2026-11-16 (Dilshod): faqat qisman sotishda (soni yoki narxi kamaytirilib); to'liq sotuvga ta'sir qilmaydi.
+  | "partly_sell";
 
 export interface OrderItem {
   id: string;
@@ -140,6 +142,13 @@ export interface User {
    */
   branch_id?: string | number | null;
   branch?: { id: string | number; name: string } | null;
+  /**
+   * KQINMdeQ: so'rovchi shu foydalanuvchini `PATCH /users/:id` (tahrir oynasi, parol SMS) bilan boshqara oladimi —
+   * `GET /users/:id` va `GET /users` qatorlarida. Superadmin — hammasi; admin — o'zi va admin/superadmin
+   * bo'lmaganlar; menejer — o'zi va HOZIR o'z filialidagi kuryer/ro'yxatchi (`created_by` emas). Eski backend'da yo'q
+   * (`undefined`) — UI zaxira qoidaga tushadi. Faqat ko'rsatish uchun: backend har so'rovda qayta tekshiradi.
+   */
+  can_manage?: boolean;
   /** x6IO746K: market operatori marketi (`GET /users`, `/users/:id`); boshqa rollarda yo'q. */
   market?: { id: string | number; name: string; add_order?: boolean } | null;
   avatar?: string;

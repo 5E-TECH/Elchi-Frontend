@@ -486,7 +486,7 @@ const assignOk = (id: string, name: string, idempotent = false) => ({
 const otherCourier = () =>
   Object.assign(new Error("Bad request"), {
     isAxiosError: true,
-    response: { status: 400, data: { message: "Order allaqachon boshqa courierga biriktirilgan" } },
+    response: { status: 400, data: { message: "Buyurtma allaqachon boshqa kuryerga biriktirilgan" } },
   });
 
 /** Telefonda «Qo'lda kiritish» varag'i orqali kod (kamera skani bilan bitta handler). */

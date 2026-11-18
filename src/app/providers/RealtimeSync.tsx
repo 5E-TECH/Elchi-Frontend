@@ -8,7 +8,7 @@ import type { RootState } from "../config/store";
 import type { InboxNotification } from "../../entities/notification-inbox/model/types";
 import { queryKeys } from "../../shared/config/queryKeys";
 import { BASE_URL } from "../../shared/const";
-import { notify } from "../../shared/lib/notify";
+import { notify, toastStore } from "../../shared/lib/notify";
 import { logRealtime, realtimeUrl, setRealtimeConnected } from "../../shared/lib/realtime";
 import {
   handleSessionRevokedEvent,
@@ -31,6 +31,9 @@ import {
  * - Hodisalar 400 ms ichida yig'iladi: inbox, sanoq va badge bitta so'rov bilan yangilanadi
  *   (`notificationsInbox.all`); ko'rinib turgan tabda bitta qator — `notify.info` (kaliti push'dagi bilan bir xil,
  *   `elchi-push-<id>` — push va socket orqali kelsa ham ikki marta chiqmaydi), bir nechta — «N ta yangi bildirishnoma».
+ *   Bu xabar ochiq turganda kelgan keyingi partiyalar (bitta qator ham) uning soniga QO'SHILADI — xabar u chiqqandan
+ *   beri kelgan jami yangi bildirishnomalarni ko'rsatadi (3 + 2 → «5 ta», G6F68ti6 17-band); xabar yopilsa sanoq
+ *   boshidan.
  * - Har ulanishda (birinchi ham) inbox yangilanadi — ulanmagan oraliqdagi xabarlar yo'qolmaydi.
  * - Polling zaxira: ulanganda sanoq 5 daqiqada, uzilganda 60 s da (`useUnreadCount`).
  * - Buyurtma hodisasi (`category: "order"`, qatorli yoki signal) — ochiq buyurtma so'rovlari (`["orders"]`: ro'yxat,
@@ -62,6 +65,12 @@ const ORDERS_QUERY_PREFIX = "orders";
 /** Bir vaqtda kelgan hodisalarni yig'ish oynasi — bitta so'rov va bitta xabar. */
 const BATCH_MS = 400;
 
+/** «N ta yangi bildirishnoma» xabarining kaliti — ochiq bo'lsa yangi partiya shu xabarga qo'shiladi. */
+const BATCH_TOAST_ID = "elchi-realtime-batch";
+
+const isBatchToastOpen = () =>
+  toastStore.getSnapshot().some((toast) => toast.id === BATCH_TOAST_ID && !toast.closing);
+
 /**
  * NDmZMzCP: ulanish `SESSION_CHECK_UNAVAILABLE` bilan rad etilsa (identity vaqtincha javob bermadi) — chiqish emas,
  * shuncha kutib (+ tasodifiy 0–5 s, hamma qurilma bir soniyada urinmasin) qayta ulanadi.
@@ -90,6 +99,11 @@ const RealtimeSync = () => {
   /** `realtimeAdvisor` — socket ulanishidan oldin yuklanadi, shuning uchun hodisa kelganda tayyor. */
   const advisorRef = useRef<AdvisorModule | null>(null);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * Ochiq «N ta yangi bildirishnoma» xabarida sanalgan qatorlar (`id`): keyingi partiya shu songa qo'shiladi, bir xil
+   * `id` ikki marta sanalmaydi. Xabar yopilgan (yoki yopilayotgan) bo'lsa — keyingi partiyada boshidan.
+   */
+  const batchIdsRef = useRef(new Set<string>());
 
   // Ishlovchi — eng so'nggi `t` / `navigate` bilan; ulanish ular o'zgarganda qayta ochilmaydi.
   const flushRef = useRef<() => void>(() => {});
@@ -132,9 +146,13 @@ const RealtimeSync = () => {
       }
       // Yashirin tabda xabar emas (badge baribir yangilanadi).
       if (!others.length || document.visibilityState !== "visible") return;
-      if (others.length > 1) {
-        notify.info(t("realtime.manyNew", { count: others.length }), {
-          id: "elchi-realtime-batch",
+      const counted = batchIdsRef.current;
+      if (!isBatchToastOpen()) counted.clear();
+      // Bir nechta qator yoki «N ta» xabari hali ochiq (bitta qator ham unga qo'shiladi) — jami son bitta xabarda.
+      if (others.length > 1 || counted.size > 0) {
+        for (const row of others) counted.add(row.id as string);
+        notify.info(t("realtime.manyNew", { count: counted.size }), {
+          id: BATCH_TOAST_ID,
           action: { label: t("push.toastOpen"), onClick: () => navigate("/inbox") },
         });
         return;

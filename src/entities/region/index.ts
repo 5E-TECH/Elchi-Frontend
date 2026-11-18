@@ -3,6 +3,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
+export { extractRegionOptions, useRegionOptions, type RegionOption } from "./api/regionOptions";
 export {
   pendingOf,
   regionsOfLogist,
@@ -597,13 +598,16 @@ export const toRegionMapItems = (regions: RegionItem[]): RegionMapItem[] =>
     },
   }));
 
+/** Hudud statistikasi kalit prefiksi (umumiy, viloyat tafsiloti, o'z tumanlari) — bo'lim «Qayta urinish»i (QKCeGZ3N). */
+export const REGION_STATS_QUERY_KEY = ["region-stats"] as const;
+
 /** Hudud statistikasini olib, normallashtirilgan holda qaytaruvchi hook. */
 export const useRegionStats = (
   params?: { startDate?: string; endDate?: string },
   enabled = true,
 ) =>
   useQuery({
-    queryKey: ["region-stats", params],
+    queryKey: [...REGION_STATS_QUERY_KEY, params],
     queryFn: async () => {
       const res = await api.get(API_ENDPOINTS.REGIONS.STATS_ALL, { params });
       const detail = normalizeRegionDetailStats(res.data);
@@ -629,7 +633,7 @@ export const useRegionDetailStats = (
   enabled = true,
 ) =>
   useQuery({
-    queryKey: ["region-stats", "detail", regionId, params],
+    queryKey: [...REGION_STATS_QUERY_KEY, "detail", regionId, params],
     queryFn: async () => {
       const res = await api.get(API_ENDPOINTS.REGIONS.STATS_BY_ID(regionId), { params });
       return normalizeRegionDetailStats(res.data);
@@ -672,7 +676,7 @@ export const useMyRegionDistrictStats = (
   enabled = true,
 ) =>
   useQuery({
-    queryKey: ["region-stats", "my-district-stats", params],
+    queryKey: [...REGION_STATS_QUERY_KEY, "my-district-stats", params],
     queryFn: async () => {
       const res = await api.get(API_ENDPOINTS.REGIONS.MY_DISTRICT_STATS, { params });
       return normalizeMyRegionDistrictStats(res.data);

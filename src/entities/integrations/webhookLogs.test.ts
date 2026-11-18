@@ -101,6 +101,26 @@ describe("webhookOutcome", () => {
     expect(out).toEqual({ labelKey: "woNotCreated", tone: "danger" });
   });
 
+  it("⭐ kiruvchi webhook o'chiq (`skipped_disabled`) — NEYTRAL, «xato» emas (DOZ6dtJn)", () => {
+    /**
+     * Operator «Ish rejimi»da kiruvchi webhookni o'chirgan: backend hodisani jurnalga yozadi, lekin
+     * qo'llamaydi. `error` ustunida matn bor — xaritada bo'lmasa u qizil «xato» bo'lib, operator uni
+     * yiqilgan hodisa deb o'ylardi.
+     */
+    const out = webhookOutcome(
+      row({ status: "skipped_disabled", error: "apply: webhook_disabled — kiruvchi webhook o'chirilgan" }),
+    );
+    expect(out).toEqual({ labelKey: "woWebhookDisabled", tone: "neutral" });
+    expectTranslated(out.labelKey);
+    expect(dictOf("uz")[out.labelKey]).toBe("kiruvchi webhook o'chirilgan");
+
+    // `error` bo'sh kelsa ham — `status` bo'yicha; `apply: webhook_disabled` boshqa status bilan ham.
+    expect(webhookOutcome(row({ status: "skipped_disabled", error: null }))).toEqual(out);
+    expect(webhookOutcome(row({ status: "processed", error: "apply: webhook_disabled" }))).toEqual(out);
+    // Imzo xato bo'lsa — baribir imzo ustun.
+    expect(webhookOutcome(row({ status: "skipped_disabled", signature_valid: false })).labelKey).toBe("woBadSignature");
+  });
+
   it("xato yo'q bo'lsa toza qo'llanildi", () => {
     expect(webhookOutcome(row()).labelKey).toBe("woApplied");
   });

@@ -109,7 +109,7 @@ test.describe("Universal skaner — pochta va topshirish rejimlari (vNcGDnNh), 3
     await expect(dialog.getByText("№10212 · Shoxrux Rahmonov")).toBeVisible();
     await dialog.getByRole("button", { name: "Tugatish" }).click();
     await expect(dialog).toBeHidden();
-    // Jo'natish — sahifaning o'z tugmasi va «Filialni tanlang» oynasi.
+    // Jo'natish — sahifaning o'z tugmasi va «Manzilni tanlang» oynasi.
     await expect(page.getByRole("button", { name: "Pochtani jo'natish — 1 ta" })).toBeVisible();
     await expectNoHorizontalScroll(page);
     expect(leaked).toEqual([]);
@@ -151,8 +151,8 @@ test.describe("Universal skaner — pochta va topshirish rejimlari (vNcGDnNh), 3
     await expect(dialog).toBeVisible({ timeout: 60_000 });
     await enterCode(page, dialog, marketQr);
     await expect.poll(() => marketQrScans).toEqual([marketQr]);
-    // Kamera yopilmaydi — o'sha maqsad keyingi bosqichda (buyurtmalarni tanlash).
-    await expect(page.getByRole("dialog", { name: "Buyurtmalarni tanlash" })).toBeVisible();
+    // Kamera yopilmaydi — o'sha maqsad keyingi bosqichda: skan = topshirish («Marketga topshirish»).
+    await expect(page.getByRole("dialog", { name: "Marketga topshirish" })).toBeVisible();
     await expectNoHorizontalScroll(page);
     expect(leaked).toEqual([]);
   });

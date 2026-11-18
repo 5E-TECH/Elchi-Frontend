@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Building2, Eye, EyeOff, Pencil, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
-import { useUser } from "../../../../entities/user/api/userApi";
+import { user as userQueryKey, useUser } from "../../../../entities/user/api/userApi";
 import { useSetMarketWarehouseOrder } from "../../../../entities/warehouse";
 import type { ChangeableUserRole, UpdateUserRequest, User as UserType } from "../../../../entities/user/types/user";
 import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser";
@@ -15,6 +15,7 @@ import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { isChangeableUserRole } from "../../../../entities/user/lib/changeableRole";
 import type { RootState } from "../../../../app/config/store";
 import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
+import { getErrorStatus } from "../../../../shared/lib/errorKind";
 import {
   checkPasswordPolicy,
   getPasswordPolicyServerMessage,
@@ -174,9 +175,11 @@ const FormSection = ({
  *
  * FY-1: market — «Market nomi *» va «AI narxi (1 buyurtma)» (`superadmin-users-edit-market-ai`; faqat superadmin/
  * admin — backend boshqasiga 403; bo'sh → `null`, ya'ni global narx; sukut 300 ko'rsatilmaydi — FY-S5); logist —
- * «Maosh va to'lov kuni»; kuryer — «Ish hududi» faqat o'qish (viloyat; tuman — backend kerak, maket
- * `superadmin-users-edit-courier-district` qisman), filial «Boshqa filialga o'tkazish» orqali (FY-S4). O'lik
- * `region_id` maydoni olib tashlandi (identity `updateUser` uni e'tiborsiz qoldiradi).
+ * «Maosh va to'lov kuni»; kuryer — «Ish hududi»: viloyat faqat o'qish (filial biriktiruvidan), «Tuman» —
+ * `CourierDistrictField` (shu viloyat tumanlari, ixtiyoriy; o'zgargan bo'lsa `PATCH /users/:id` `district_id`,
+ * tozalansa `null`; DtKKY0V8, PvxiVwQO, maket `superadmin-users-edit-courier-district`), filial «Boshqa filialga
+ * o'tkazish» orqali (FY-S4). O'lik `region_id` maydoni olib tashlandi (identity `updateUser` uni e'tiborsiz
+ * qoldiradi).
  *
  * FY-2 (K3scaE0W): superadmin uchun yuqorida «Rol» bo'limi (`features/user/change-role`; faqat admin ⇄ menejer ⇄
  * ro'yxatchi ⇄ logist, o'zini emas). Saqlash: tasdiq «Rolni o'zgartirasizmi?» → avval `PATCH /users/:id/role`, keyin
@@ -509,6 +512,19 @@ export const UpdateUserModal = memo(({
     }
   };
 
+  /**
+   * KQINMdeQ: saqlashda 403 — shu foydalanuvchi tafsiloti tozalanib qayta so'raladi (`resetQueries`: oddiy
+   * invalidatsiyada TanStack eski ma'lumotni saqlaydi va sahifa xato holatini ko'rsatmasdi), qolgan `[user]`
+   * keshlari (ro'yxat) — odatdagi invalidatsiya (bir so'rov ikki marta ketmasin — tafsilot undan chiqarilgan).
+   */
+  const refreshAfterForbidden = () => {
+    if (!userId) return;
+    const isThisDetail = (query: { queryKey: readonly unknown[] }) =>
+      query.queryKey[1] === "detail" && String(query.queryKey[2]) === String(userId);
+    void queryClient.resetQueries({ queryKey: [userQueryKey, "detail"], predicate: isThisDetail });
+    void queryClient.invalidateQueries({ queryKey: [userQueryKey], predicate: (query) => !isThisDetail(query) });
+  };
+
   const onSubmit = (values: UpdateUserFormValues) => submitForm(values, false);
 
   /** `skipRoleConfirm` — «Qayta urinish» (rol tasdig'i olingan, tanlov o'zgarmagan). */
@@ -668,6 +684,15 @@ export const UpdateUserModal = memo(({
           : t("userUpdatedPasswordReset", { name: userData.name }),
       errorMessage: t("editUserError"),
       onError: (error) => {
+        // KQINMdeQ: huquq har so'rovda tekshiriladi — oyna ochiq turganda xodim boshqa filialga o'tkazilgan bo'lsa
+        // (yoki boshqa sabab bilan ruxsat yo'q) 403. Xabar yuqorida chiqdi; oyna yopiladi, tafsilot qaytadan
+        // so'raladi (eski ma'lumotsiz — sahifa yangi holatni ko'rsatadi: 403 — «Foydalanuvchini yuklab bo'lmadi»,
+        // aks holda `can_manage` bo'yicha «Tahrirlash»siz), ro'yxatlar eskirgan deb belgilanadi.
+        if (!isOwnProfile && getErrorStatus(error) === 403) {
+          refreshAfterForbidden();
+          onClose();
+          return;
+        }
         applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP);
         // aidsxJ2H: 400 OLD_PASSWORD_REQUIRED / OLD_PASSWORD_INVALID — «Joriy parol» ostida (chiqarilmaydi).
         const oldKind = getOldPasswordErrorKind(error);

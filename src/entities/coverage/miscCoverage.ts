@@ -3,11 +3,15 @@ import { AxiosError } from "axios";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import { ANALYTICS_KPI_QUERY_KEY } from "../dashboard/lib/queryKeys";
 
 type QueryParams = Record<string, unknown>;
 
 /** Readiness: 200 — hammasi ishlayapti, 503 — kamida bittasi ishlamayapti (ikkalasi ham javob). */
 const isReadinessStatus = (status: number) => status === 200 || status === 503;
+
+/** «Tizim holati» readiness so'rovi kaliti (bot «Qayta tekshirish» dan keyin ham shu qayta o'qiladi). */
+export const HEALTH_READINESS_QUERY_KEY = ["misc-cov", "health-readiness"] as const;
 
 export const useMiscCoverage = () => {
   const client = useQueryClient();
@@ -16,7 +20,7 @@ export const useMiscCoverage = () => {
 
   const useGetAnalyticsKpi = (params?: QueryParams, options?: SilentErrorOption) =>
     useQuery({
-      queryKey: ["misc-cov", "analytics-kpi", params],
+      queryKey: [...ANALYTICS_KPI_QUERY_KEY, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ANALYTICS.KPI, { params }).then((res) => res.data),
       ...silentErrorMeta(options),
@@ -132,7 +136,7 @@ export const useMiscCoverage = () => {
    */
   const useGetHealthReadiness = (options?: SilentErrorOption) =>
     useQuery({
-      queryKey: ["misc-cov", "health-readiness"],
+      queryKey: HEALTH_READINESS_QUERY_KEY,
       queryFn: () =>
         api
           .get(API_ENDPOINTS.HEALTH.READINESS, { validateStatus: isReadinessStatus })

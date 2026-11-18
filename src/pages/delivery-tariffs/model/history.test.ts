@@ -19,8 +19,11 @@ const version = (
   createdAt: null,
   createdBy: null,
   createdByName: null,
+  cancelledAt: null,
+  cancelledByName: null,
   isCurrent: false,
   isScheduled: false,
+  isCancelled: false,
   ...extra,
 });
 
@@ -56,6 +59,20 @@ describe("tarix", () => {
     expect(result).toHaveLength(1);
     expect(result[0].changes).toEqual([{ kind: "perKg", from: 4000, to: 4500 }]);
   });
+
+  it("bekor qilingan versiya (B0ILd7YI): «Rejalashtirilgan» ro'yxatida yo'q va keyingisi uchun «oldingi» emas", () => {
+    const current = version("2", "center", 4000, "2026-10-08", { isCurrent: true });
+    const cancelled = version("9", "center", 4500, "2099-10-25", { isCancelled: true, cancelledAt: "2026-11-17T10:00:00Z" });
+    const next = version("10", "center", 4800, "2099-11-01", { isScheduled: true });
+    const versions = [next, cancelled, current];
+    const history = buildHistory(versions);
+    // Yangi rejalashtirilgan — hozirgi (4 000) bilan, bekor qilingan 4 500 bilan emas.
+    expect(history[0].changes).toEqual([{ kind: "perKg", from: 4000, to: 4800 }]);
+    // Bekor qilinganning o'zi — nima o'zgarishi kerak edi.
+    expect(history[1].changes).toEqual([{ kind: "perKg", from: 4000, to: 4500 }]);
+    const scheduled = scheduledChanges({ current: { city: null, center: current, address: null }, versions });
+    expect(scheduled.map((entry) => entry.version.id)).toEqual(["10"]);
+  });
 });
 
 const settingsVersion = (
@@ -73,6 +90,8 @@ const settingsVersion = (
   pickupFee: 20000,
   pickupFreeFromCount: 10,
   expressMultiplier: 1.4,
+  minDeliveryPrice: null,
+  extraCostLimitAmount: null,
   isActive: false,
   createdAt,
   createdBy: null,
@@ -81,6 +100,14 @@ const settingsVersion = (
 });
 
 describe("hisob qoidalari tarixi (47WFHzlx)", () => {
+  it("diffSettings: sotuv chegaralari — minimal narx va kuryer qo'shimcha xarajati (B0ILd7YI)", () => {
+    const a = settingsVersion("1", "2026-10-08T04:00:00.000Z");
+    expect(diffSettings(a, { ...a, minDeliveryPrice: 15000, extraCostLimitAmount: null })).toEqual([
+      { kind: "minPrice", from: null, to: 15000 },
+    ]);
+    expect(diffSettings({ ...a, extraCostLimitAmount: 20000 }, a)).toEqual([{ kind: "extraLimit", from: 20000, to: null }]);
+  });
+
   it("diffSettings: chegara, yaxlitlash va pickup tekin (null — hech qachon)", () => {
     const before = settingsVersion("1", "2026-10-08T04:00:00Z");
     const after = settingsVersion("2", "2026-10-20T10:00:00Z", { firstKgIncluded: 2, roundTo: 1000, pickupFreeFromCount: null });

@@ -106,6 +106,21 @@ describe("Ops vositalari — faqat superadmin (F2NzXpMv)", () => {
   );
 });
 
+describe("Ega 2026-11-16: «Kassa smenasi sozlamalari» — Ops vositalarida alohida tab", () => {
+  it("superadmin: eski /payments/shift-settings → /ops?tab=shift-settings", async () => {
+    renderAt("/payments/shift-settings", "superadmin");
+    expect(
+      await screen.findByText("Ops sahifasi /ops?tab=shift-settings", undefined, { timeout: 5000 }),
+    ).toBeInTheDocument();
+  });
+
+  it("admin: /payments/shift-settings — 403 (sozlama faqat superadmin)", async () => {
+    renderAt("/payments/shift-settings", "admin");
+    expect(await forbidden()).toBeInTheDocument();
+    expect(screen.queryByText(/^Ops sahifasi/)).not.toBeInTheDocument();
+  });
+});
+
 describe("«Faoliyat jurnali» — superadmin va admin", () => {
   it.each(["superadmin", "admin"])("%s: /activity-logs ochiladi", async (role) => {
     renderAt("/activity-logs", role);

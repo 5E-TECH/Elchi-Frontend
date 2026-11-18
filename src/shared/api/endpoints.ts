@@ -44,10 +44,10 @@ export const API_ENDPOINTS = {
     // Rolni o'zgartirish (FY-2, K3scaE0W; faqat SUPERADMIN): PATCH { role } — faqat admin ⇄ registrator ⇄ manager ⇄
     // logist. 409 — filialga biriktirilgan, 503 — biriktiruv tekshirilmadi yoki logist viloyatlari bo'shatilmadi.
     ROLE: (id: string | number) => `users/${id}/role`,
-    // aidsxJ2H — vaqtinchalik parol SMS'i (superadmin; admin — admin/superadmin'dan boshqasi; menejer — faqat o'zi
-    // yaratgan kuryer; o'ziga — 403). POST (tanasiz) → `{ user_id, must_change_password, password_sms }` — YANGI
-    // parol + SMS, foydalanuvchi sessiyalari yopiladi; 429 PASSWORD_SMS_COOLDOWN (60 s) / PASSWORD_SMS_DAILY_LIMIT
-    // (kuniga 5), `retry_after_seconds`.
+    // aidsxJ2H — vaqtinchalik parol SMS'i (superadmin; admin — admin/superadmin'dan boshqasi; menejer — HOZIR o'z
+    // filialidagi kuryer va ro'yxatchi, KQINMdeQ; o'ziga — 403). POST (tanasiz) →
+    // `{ user_id, must_change_password, password_sms }` — YANGI parol + SMS, foydalanuvchi sessiyalari yopiladi;
+    // 429 PASSWORD_SMS_COOLDOWN (60 s) / PASSWORD_SMS_DAILY_LIMIT (kuniga 5), `retry_after_seconds`.
     PASSWORD_RESEND_SMS: (id: string | number) => `users/${id}/password/resend-sms`,
     // GET → `{ user_id, must_change_password, password_sms | null }` — oxirgi parol SMS'ining jonli holati.
     PASSWORD_SMS_STATUS: (id: string | number) => `users/${id}/password/sms-status`,
@@ -111,6 +111,9 @@ export const API_ENDPOINTS = {
     // (pul, qo'ldagi buyurtma, qaytarilmagan pochta), keyin o'tkazish.
     TRANSFER_CHECK: (id: string | number) => `couriers/${id}/transfer-check`, // GET
     BRANCH: (id: string | number) => `couriers/${id}/branch`, // PATCH { branch_id }
+    // «Xizmat viloyatlari» (super-kuryer, hEjjuJaT; superadmin/admin): GET — bayroqlar + viloyatlar (tarif bilan);
+    // PUT { is_super_courier, serves_all_regions, regions: [{ region_id, tariff_home, tariff_center }] } — to'liq almashtiradi.
+    REGIONS: (id: string | number) => `couriers/${id}/regions`,
   },
 
   // ── Logistics: Regions / Districts (admin/registrator; superadmin delete) ─
@@ -159,6 +162,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
     TRACKING: (id: string | number) => `orders/${id}/tracking`, // GET history timeline
+    OPERATOR: (id: string | number) => `orders/${id}/operator`, // PUT — operatori yo'q buyurtmaga operator biriktirish
     SETTLEMENT_STATE: (id: string | number) => `orders/${id}/settlement`, // GET per-order settlement state
     QR_CODE: (token: string | number) => `orders/qr-code/${token}`,
     ASSIGN_COURIER: "orders/assign-to-courier", // POST manager bulk-assign
@@ -167,7 +171,7 @@ export const API_ENDPOINTS = {
     MARKETS_NEW: "orders/markets/new", // GET markets with NEW orders
     MARKET_NEW: (marketId: string | number) => `orders/markets/${marketId}/new`,
     MARKETS_CANCELLED: "orders/markets/cancelled", // GET markets with cancelled orders
-    // «Bekor qilinganlar → Topshirilgan» (2026-11-10): HQ «Marketga jo'natish» partiyalari (1 bosish = 1 karta).
+    // «Bekor qilinganlar → Topshirilgan» (2026-11-10): HQ topshirish partiyalari (1 market QR / PIN sessiyasi = 1 karta).
     MARKETS_CANCELLED_HANDOVERS: "orders/markets/cancelled/handovers", // GET ?search&start_day&end_day&page&limit
     MARKETS_CANCELLED_HANDOVER_BATCH: (batchId: string) =>
       `orders/markets/cancelled/handovers/${encodeURIComponent(batchId)}`, // GET { batch, data, total }
@@ -398,6 +402,8 @@ export const API_ENDPOINTS = {
     // GET → data.current { city, center, address } + data.versions (is_current, is_scheduled) · POST yangi versiya
     // { tariff_id, base_price, extra_per_kg, days_min, days_max, valid_from? } — SUPERADMIN, ADMIN (47WFHzlx)
     TARIFFS: "delivery/tariffs",
+    // POST (tanasiz) — faqat rejalashtirilgan versiya; takror — 200 `already_cancelled`, kuchga kirgan — 409 (B0ILd7YI)
+    TARIFF_CANCEL: (id: string) => `delivery/tariffs/${encodeURIComponent(id)}/cancel`,
     SETTINGS: "delivery/pricing-settings", // GET faol versiya · PATCH qisman (yangi versiya) — SUPERADMIN, ADMIN
     // GET → data.versions (yangisi tepada, is_active, created_by_name) — SUPERADMIN, ADMIN (47WFHzlx)
     SETTINGS_HISTORY: "delivery/pricing-settings/history",
@@ -557,6 +563,11 @@ export const API_ENDPOINTS = {
     POST_DISPATCH: (postId: string | number) => `branches/posts/${postId}/dispatch`,
     // POST {destination_branch_id} — jo'natilgan, hali qabul qilinmagan pochta boshqa filialga (superadmin/admin)
     POST_REASSIGN: (postId: string | number) => `branches/posts/${postId}/reassign`,
+    // Pochta → HQ kuryeri (ega qarori 2026-11-15; superadmin/admin/HQ registratori): GET — pochta viloyatiga xizmat
+    // qiladigan faol HQ kuryerlari (`region_match`, tashqi yetkazuvchi belgisi); POST {courier_id, order_ids} —
+    // tanlanganlar kuryerning bugungi pochtasiga o'tadi (filialga bormaydi).
+    POST_COURIER_DESTINATIONS: (postId: string | number) => `branches/posts/${postId}/courier-destinations`,
+    POST_DISPATCH_TO_COURIER: (postId: string | number) => `branches/posts/${postId}/dispatch-to-courier`,
     // Pochta jo'natish oynasi uchun manzil filiallar (superadmin/admin/HQ registratori)
     DISPATCH_DESTINATIONS: "branches/dispatch-destinations",
     // Markaziy ombor (Pa1KaXmj): HQ filiali — «Ombor ochish» oynasi uchun (SUPERADMIN/ADMIN, pul maydonlarisiz;
@@ -625,6 +636,9 @@ export const API_ENDPOINTS = {
     ROOT: "", // GET / — gateway health via identity service
     LIVENESS: "health",
     READINESS: "health/readiness",
+    // BOT-DIAG: Telegram bot nosozligi sababi (faqat SUPERADMIN; konvertsiz `{ status, bot, timestamp }`)
+    NOTIFICATION_BOT: "health/notification-bot",
+    NOTIFICATION_BOT_RECHECK: "health/notification-bot/recheck", // POST, tanasiz — getMe hozir (≤ 3,5 s)
   },
 
   // ── AI admin (api-gateway `AiGatewayController`, SUPERADMIN/ADMIN) ───────

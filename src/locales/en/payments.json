@@ -1203,7 +1203,6 @@
     "settings": {
       "title": "Cashbox shift settings",
       "subtitle": "Main cashbox and branches · only a superadmin can change",
-      "back": "Main cashbox",
       "save": "Save",
       "saving": "Saving…",
       "saved": "Settings saved",
@@ -1408,7 +1407,6 @@
   "receipt": {
     "field": {
       "label": "Receipt photo",
-      "settings": "Settings",
       "upload": "Upload receipt photo",
       "formats": "JPG, PNG or WEBP · up to 5 MB",
       "pickAnother": "Tap to choose another photo",
@@ -1542,6 +1540,8 @@
       "unreadableText": "AI could not read the amount: the photo is blurry, cropped or not a receipt. Check the photo yourself.",
       "errorText": "AI analysis failed: the service did not respond. Start the re-analysis.",
       "disabledText": "AI analysis was off when the receipt was saved — the amount was not compared.",
+      "currencyText": "The receipt is in another currency ({{currency}}) — it can't be compared with the amount in UZS. Check the amount on the photo.",
+      "currencyTextNoCode": "The receipt is in another currency — it can't be compared with the amount in UZS. Check the amount on the photo.",
       "attemptsOver": "Attempts used up: {{attempts}} / {{max}}",
       "loading": "Loading receipt",
       "loadError": "Could not load the receipt data",

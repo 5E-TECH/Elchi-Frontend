@@ -505,13 +505,16 @@ const CashDetail = () => {
     }),
     [dateParams, isCourierDetailRequest, isHqBranchReceiveRequest, isMarketDetailRequest],
   );
+  // 2026-11-15: HQ ko'rinishida asosiy kassa qatorlari `source_branch_id` bilan — faqat filial → HQ va uning
+  // teskari yozuvi. `source_user_id` da market/kuryer id'lari ham turadi (filial id'lari alohida sanaladi): prod'da
+  // HQ'ning id'si 11 bo'lgan marketga to'lovi «Toshkent Shahar» (filial 11) tarixida «Market to'lovi» bo'lib chiqqan.
   const branchHistoryParams = useMemo(
     () => ({
       page: 1,
       limit: HISTORY_PAGE_LIMIT,
       ...(id
         ? isHqBranchReceiveRequest
-          ? { source_user_id: id, cashbox_type: "main" }
+          ? { source_branch_id: id, cashbox_type: "main" }
           : { user_id: id, cashbox_type: "branch" }
         : {}),
       ...dateParams,

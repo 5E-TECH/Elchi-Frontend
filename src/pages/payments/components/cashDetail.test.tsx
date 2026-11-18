@@ -17,7 +17,11 @@ const cashboxState = vi.hoisted(() => ({
 const cashboxRefetch = vi.hoisted(() => vi.fn(async () => ({ data: cashboxState.response })));
 const marketsState = vi.hoisted(() => ({ data: undefined as unknown }));
 /** GET /finance/history (filial sahifasi) — sukut bo'yicha bo'sh. */
-const historyState = vi.hoisted(() => ({ data: undefined as unknown }));
+const historyState = vi.hoisted(() => ({
+  data: undefined as unknown,
+  /** 2026-11-15: `useGetFinanceHistory` chaqiruvlari (params, enabled). */
+  calls: [] as Array<{ params: unknown; enabled: unknown }>,
+}));
 const marketPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const courierPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const branchPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
@@ -151,7 +155,10 @@ vi.mock("../../../entities/payments", async (importOriginal) => {
           refetch: cashboxRefetch,
         };
       },
-      useGetFinanceHistory: () => ({ ...idleQuery, data: historyState.data }),
+      useGetFinanceHistory: (params: unknown, enabled?: unknown) => {
+        historyState.calls.push({ params, enabled });
+        return { ...idleQuery, data: historyState.data };
+      },
       useGetFinanceHistoryById: () => idleQuery,
       createPaymentCourier: courierPayment,
       createPaymentBranchToMain: branchPayment,
@@ -338,6 +345,16 @@ describe("CashDetail without router state (F5 / shared link)", () => {
     expect(screen.queryByText("Market kassasi")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Filialdan qabul qilish" })).toBeInTheDocument();
     expect(screen.getByText("Pul filial kassasidan asosiy kassaga tushadi")).toBeInTheDocument();
+  });
+
+  it("2026-11-15: HQ filial tarixi asosiy kassadan `source_branch_id` bilan (id'si filialnikiga teng market to'lovi aralashmaydi)", () => {
+    historyState.calls = [];
+    openWithoutState("/payments/cash-detail/11?type=branch");
+
+    const enabledParams = historyState.calls.filter((call) => call.enabled !== false).map((call) => call.params);
+    expect(enabledParams).toContainEqual(expect.objectContaining({ source_branch_id: "11", cashbox_type: "main" }));
+    expect(enabledParams).toContainEqual(expect.objectContaining({ user_id: "11", cashbox_type: "branch" }));
+    expect(historyState.calls.some((call) => Object.hasOwn(call.params as object, "source_user_id"))).toBe(false);
   });
 
   it("keeps the type from the URL (?type=branch) even before the cashbox loads", () => {

@@ -13,7 +13,7 @@ const noOverflow = () => document.documentElement.scrollWidth <= window.innerWid
 
 test("superadmin: «7 kun» → «Saqlash» — PATCH { window_days: 7 } (son), xabar va «Oxirgi o'zgarish»", async ({ page }) => {
   const mock = await mockShiftAutoReport(page);
-  await page.goto("/payments/shift-settings");
+  await page.goto("/ops?tab=shift-settings");
   const card = page.getByRole("region", { name: "To'lovlarni tuzatish muddati" });
   await expect(card.getByRole("radio", { name: "30 kun" })).toHaveAttribute("aria-checked", "true");
   await expect(card.getByText("Sukut qiymati — hali hech kim o'zgartirmagan")).toBeVisible();
@@ -38,7 +38,7 @@ test("superadmin: «7 kun» → «Saqlash» — PATCH { window_days: 7 } (son), 
 
 test("superadmin: «Boshqa» — 400 xato va «Saqlash» o'chiq, 45 → PATCH { window_days: 45 }", async ({ page }) => {
   const mock = await mockShiftAutoReport(page);
-  await page.goto("/payments/shift-settings");
+  await page.goto("/ops?tab=shift-settings");
   const card = page.getByRole("region", { name: "To'lovlarni tuzatish muddati" });
   const save = page.getByRole("button", { name: "Saqlash" });
 
@@ -68,7 +68,7 @@ test("superadmin: server qiymati 45 — «Boshqa» + 45; smena va muddat birga o
   const mock = await mockShiftAutoReport(page, {
     correction: { window_days: 45, updated_by: "7", updated_at: "2026-10-01T05:15:00.000Z" },
   });
-  await page.goto("/payments/shift-settings");
+  await page.goto("/ops?tab=shift-settings");
   const card = page.getByRole("region", { name: "To'lovlarni tuzatish muddati" });
   await expect(card.getByRole("radio", { name: "Boshqa" })).toHaveAttribute("aria-checked", "true");
   await expect(card.getByRole("textbox", { name: "Kunlar soni" })).toHaveValue("45");

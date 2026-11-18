@@ -46,6 +46,8 @@ import {
   MARKET_OPERATOR_CREATE_PATH,
   resolveMarketOperatorNewOrdersAccess,
 } from "../../pages/new_orders/model/newOrdersShell";
+// Ops tab kalitlari — sof ma'lumot (JSX'siz), eski yo'llarni hub tabiga yo'naltirish uchun.
+import { opsTabPath, SHIFT_SETTINGS_TAB } from "../../pages/ops/tabs";
 // ✅ Login page: `lazy` + to'g'ridan-to'g'ri `/login` da oldindan yuklash.
 import Login from "./loginPage";
 
@@ -131,7 +133,6 @@ const MailDetail = lazy(() => import("../../pages/mails/detail"));
 const Payments = lazy(() => import("../../pages/payments"));
 // kiZgTybn — smena hisoboti (kartalar, AI holati) va smena sozlamalari (faqat superadmin).
 const ShiftReportPage = lazy(() => import("../../pages/payments/shiftReport"));
-const ShiftSettingsPage = lazy(() => import("../../pages/payments/shiftSettings"));
 const MainCashbox = lazy(
   () => import("../../pages/payments/components/mainCashbox"),
 );
@@ -975,7 +976,7 @@ const AppRouter = () => {
                   ),
                 },
                 {
-                  // «Bekor qilinganlar → Topshirilgan» kartasi: bitta «Marketga jo'natish» buyurtmalari.
+                  // «Bekor qilinganlar → Topshirilgan» kartasi: bitta topshirish sessiyasi buyurtmalari.
                   path: "cancelled/handovers/:batchId",
                   element: (
                     <ProtectedRoute canActivate={canHandoverCancelledToMarket}>
@@ -1110,10 +1111,14 @@ const AppRouter = () => {
                 },
                 { path: "shift-report/:id", element: <LegacyShiftReportRedirect /> },
                 {
+                  /**
+                   * Ega 2026-11-16: «Kassa smenasi sozlamalari» Ops vositalarida alohida tab (`/ops?tab=shift-settings`) —
+                   * eski yo'l (xatcho'p, eski havola) shu tabga yo'naltiradi. Guard o'sha (faqat superadmin).
+                   */
                   path: "shift-settings",
                   element: (
                     <ProtectedRoute canActivate={canManageShiftSettings}>
-                      <ShiftSettingsPage />
+                      <Navigate replace to={opsTabPath(SHIFT_SETTINGS_TAB)} />
                     </ProtectedRoute>
                   ),
                 },

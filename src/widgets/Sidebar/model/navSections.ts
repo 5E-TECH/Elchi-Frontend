@@ -147,7 +147,9 @@ export const getTileAccessibleName = (compact: string, full: string): string | u
  * Menyuda alohida bandi yo'q, lekin maketda (`design/kit/views.json` → `menuKey`) shu bandga tegishli sahifalar —
  * ular ochilganda ota band faol (taxta `tizim-states-navigation`, qoida 1: «ichki sahifada ota bo'lim faol»):
  *   - Ops vositalarining eski manzillari (`pages/ops/tabs.ts` → `legacyPath`, maketda `menuKey: "ops"`);
- *   - superadminning shaxsiy qutisi `/inbox` (maket `superadmin-notifications-inbox`, `menuKey: "notifications"`).
+ *   - superadminning shaxsiy qutisi `/inbox` (maket `superadmin-notifications-inbox`, `menuKey: "notifications"`);
+ *   - «Almashtirishlar» `/replacement-returns` — ega 2026-11-16 dan yon menyuda yo'q, /orders sarlavhasidagi tugma
+ *     orqali ochiladi → «Buyurtmalar» faol.
  * Faqat to'g'ridan-to'g'ri mos band bo'lmasa qo'llanadi: suriluvchi menyudagi «Shaxsiy → Bildirishnomalar»
  * (`/inbox`) o'zi mos keladi va faol qoladi.
  */
@@ -162,6 +164,7 @@ const ACTIVE_ALIASES_BY_PATH: Record<string, readonly string[]> = {
     "/logs",
   ],
   "/notifications": ["/inbox"],
+  "/orders": ["/replacement-returns"],
 };
 
 /** Faol band: avval eng uzun mos yo'l (`getActiveNavPath`), bo'lmasa maketdagi ota band (`ACTIVE_ALIASES_BY_PATH`). */

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import {
-  canSendHandover,
   extractMarketCancelledQrToken,
   formatCountdown,
   formatHandoverPin,
@@ -46,38 +45,16 @@ const order = (overrides: Partial<OrderListItem> = {}): OrderListItem =>
     ...overrides,
   }) as OrderListItem;
 
-describe("market QR bosqichi va jo'natish sharti", () => {
+describe("market QR bosqichi", () => {
   it("QR o'chirilgan market — `notRequired`, token so'ralmaydi", () => {
     expect(resolveHandoverQrStage({ qrRequired: false, qrScanned: false, authorizationToken: "" })).toBe("notRequired");
-    expect(
-      canSendHandover({
-        selectedCount: 2,
-        pending: false,
-        marketId: "201",
-        qrRequired: false,
-        qrScanned: false,
-        authorizationToken: "",
-      }),
-    ).toBe(true);
   });
 
-  it("QR kerak: skanerlanmaguncha (yoki token yo'q bo'lsa) jo'natib bo'lmaydi", () => {
+  it("QR kerak: skanerlanmaguncha (yoki token yo'q bo'lsa) — `required`, skan topshirmaydi", () => {
     expect(resolveHandoverQrStage({ qrRequired: true, qrScanned: false, authorizationToken: "" })).toBe("required");
     expect(resolveHandoverQrStage({ qrRequired: true, qrScanned: true, authorizationToken: "" })).toBe("required");
+    expect(resolveHandoverQrStage({ qrRequired: true, qrScanned: false, authorizationToken: "tok" })).toBe("required");
     expect(resolveHandoverQrStage({ qrRequired: true, qrScanned: true, authorizationToken: "tok" })).toBe("scanned");
-
-    const base = { selectedCount: 3, pending: false, marketId: "201", qrRequired: true };
-    expect(canSendHandover({ ...base, qrScanned: false, authorizationToken: "" })).toBe(false);
-    expect(canSendHandover({ ...base, qrScanned: true, authorizationToken: "" })).toBe(false);
-    expect(canSendHandover({ ...base, qrScanned: false, authorizationToken: "tok" })).toBe(false);
-    expect(canSendHandover({ ...base, qrScanned: true, authorizationToken: "tok" })).toBe(true);
-  });
-
-  it("tanlov bo'sh, so'rov ketmoqda yoki market noma'lum — jo'natilmaydi", () => {
-    const ready = { qrRequired: true, qrScanned: true, authorizationToken: "tok" };
-    expect(canSendHandover({ ...ready, selectedCount: 0, pending: false, marketId: "201" })).toBe(false);
-    expect(canSendHandover({ ...ready, selectedCount: 1, pending: true, marketId: "201" })).toBe(false);
-    expect(canSendHandover({ ...ready, selectedCount: 1, pending: false, marketId: "" })).toBe(false);
   });
 });
 
@@ -254,14 +231,15 @@ describe("newOrders:cancelled — uz/ru/en kalitlari", () => {
   });
 
   it("o'zbekcha matnlar maketdagidek (fragment — matn manbai)", () => {
-    expect(uz.cancelled.card.title).toBe("Bekor qilingan buyurtmalarni tayyorlash");
+    // Ega qarori 2026-11-15 (BeePost naqshi): skan = darhol topshirish — maketdagi «tayyorlash», «tanlanadi» va
+    // «Skanerlangach, barcha buyurtmalar avtomatik tanlanadi» endi noto'g'ri; tanlash bosqichi yo'q.
+    expect(uz.cancelled.card.title).toBe("Bekor qilingan buyurtmalarni topshirish");
     expect(uz.cancelled.card.hint).toBe(
-      "Buyurtmalar faqat QR skaner orqali tanlanadi. QR buzilgan bo'lsa, qo'lda tasdiqlash mumkin.",
+      "Skanerlangan buyurtma darhol marketga topshiriladi. QR buzilgan bo'lsa, qo'lda topshirish mumkin.",
     );
     expect(uz.cancelled.alert.requiredBody).toBe(
-      "Jo'natish uchun avval market chiqargan QR kodni skanerlang. Skanerlangach, barcha buyurtmalar avtomatik tanlanadi.",
+      "Topshirish uchun avval market chiqargan QR kodni skanerlang yoki PIN kodni kiriting. Keyin buyurtmalarni birma-bir skanerlang — har biri darhol marketga topshiriladi.",
     );
-    expect(uz.cancelled.selection.hint).toBe("Tanlangan buyurtmalar market uchun qaytarish pochtasiga qo'shiladi.");
     expect(uz.cancelled.manual.note).toBe(
       "Bu amal faoliyat jurnalida qo'lda tasdiqlangan buyurtma sifatida ko'rinadi.",
     );

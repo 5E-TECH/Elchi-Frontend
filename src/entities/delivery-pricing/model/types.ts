@@ -77,6 +77,16 @@ export type DeliveryPricingSettings = {
   /** `null` — pickup hech qachon tekin emas. */
   pickupFreeFromCount: number | null;
   expressMultiplier: number;
+  /**
+   * «Minimal yetkazish narxi», so'm (`min_delivery_price`, KmWO9gTA darvoza 1): narx dvigateli sotuvga ulanganda
+   * hisoblangan narx shundan past bo'lsa — shu summa. `null` — chegara yo'q (faqat kuryer + filial ulushi).
+   */
+  minDeliveryPrice: number | null;
+  /**
+   * «Kuryer qo'shimcha xarajati chegarasi», so'm (`extra_cost_limit_amount`, darvoza 2). `null` — «Uygacha» va
+   * «Markazgacha» asosiy narxlari farqi.
+   */
+  extraCostLimitAmount: number | null;
 };
 
 /** `GET /delivery/pricing-settings/history` — sozlama versiyasi (yangisi tepada, faoli ham). */
@@ -103,13 +113,19 @@ export type DeliveryTariff = {
   createdBy: string | null;
   /** Kim yaratdi — ism (`created_by_name`, gateway qo'shadi); topilmasa `null`. */
   createdByName: string | null;
+  /** B0ILd7YI — rejalashtirilgan versiya bekor qilingan vaqt (ISO); bekor qilinmagan — `null`. */
+  cancelledAt: string | null;
+  /** Kim bekor qildi — ism (`cancelled_by_name`); topilmasa `null`. */
+  cancelledByName: string | null;
 };
 
 export type DeliveryTariffVersion = DeliveryTariff & {
   /** Hozir amaldagi versiya. */
   isCurrent: boolean;
-  /** Kelajakda kuchga kiradi. */
+  /** Kelajakda kuchga kiradi (bekor qilinmagan). */
   isScheduled: boolean;
+  /** Bekor qilingan rejalashtirilgan versiya — hech qachon kuchga kirmaydi, tarixda qoladi (`is_cancelled`). */
+  isCancelled: boolean;
 };
 
 export type DeliveryTariffsData = {
@@ -138,4 +154,8 @@ export type UpdateDeliveryPricingSettingsRequest = Partial<{
   pickup_fee: number;
   pickup_free_from_count: number | null;
   express_multiplier: number;
+  /** `null` — chegara yo'q. */
+  min_delivery_price: number | null;
+  /** `null` — sukut (asosiy narxlar farqi). */
+  extra_cost_limit_amount: number | null;
 }>;

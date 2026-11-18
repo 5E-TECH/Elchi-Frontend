@@ -10,7 +10,7 @@ test.use({ timezoneId: "Asia/Tashkent" });
 
 test("390: muddat segmenti va «Kunlar soni» — 44 px, xato, saqlash, toshish yo'q", async ({ page }) => {
   const mock = await mockShiftAutoReport(page);
-  await page.goto("/payments/shift-settings");
+  await page.goto("/ops?tab=shift-settings");
   const card = page.getByRole("region", { name: "To'lovlarni tuzatish muddati" });
   await card.scrollIntoViewIfNeeded();
   const group = card.getByRole("radiogroup", { name: "Muddat" });

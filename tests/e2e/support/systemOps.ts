@@ -143,12 +143,47 @@ export const aiFlag = (enabled: boolean): MockReply => ({
   body: { statusCode: 200, message: "success", data: { enabled, state: enabled ? "enabled" : "disabled" } },
 });
 
+/**
+ * `GET /health/notification-bot` (BOT-DIAG-BE, faqat superadmin) — konvertsiz `{ status, bot, timestamp }`.
+ * Sukut: server Telegram'ga ulana olmayapti (`network`).
+ */
+export const botHealth = (bot: Record<string, unknown> = {}, extra: Record<string, unknown> = {}): MockReply => ({
+  status: 200,
+  body: {
+    status: bot.healthy === true ? "ok" : "degraded",
+    bot: {
+      enabled: true,
+      mode: "off",
+      healthy: false,
+      username: null,
+      reason: "getMe o'tmadi",
+      checked_at: new Date(Date.now() - 4 * 60_000).toISOString(),
+      error_kind: "network",
+      error_status: null,
+      error_text: "Telegram getMe failed (0): fetch failed (ENOTFOUND)",
+      restart_required: false,
+      ...bot,
+    },
+    timestamp: new Date().toISOString(),
+    ...extra,
+  },
+});
+
 export const mockSystemOpsApi = async (
   page: Page,
-  options: { health?: MockReply[]; kpi?: MockReply[]; ai?: MockReply[]; aiFlag?: MockReply } = {},
+  options: {
+    health?: MockReply[];
+    kpi?: MockReply[];
+    ai?: MockReply[];
+    aiFlag?: MockReply;
+    /** `GET /health/notification-bot` navbati (berilmasa — sukut konvert, bot bloki chizilmaydi). */
+    bot?: MockReply[];
+    /** `POST /health/notification-bot/recheck` navbati (berilmasa — `leaked`). */
+    recheck?: MockReply[];
+  } = {},
 ) => {
   const leaked: string[] = [];
-  const calls = { health: 0, kpi: 0, ai: 0 };
+  const calls = { health: 0, kpi: 0, ai: 0, bot: 0, recheck: 0 };
   // Navbatdagi javob; oxirgisi keyingi so'rovlarda takrorlanadi.
   const next = (list: MockReply[] | undefined, index: number, fallback: MockReply) =>
     list && list.length ? list[Math.min(index, list.length - 1)] : fallback;
@@ -176,6 +211,16 @@ export const mockSystemOpsApi = async (
     if (path === "ai/status") {
       const result = next(options.ai, calls.ai, aiStatus());
       calls.ai += 1;
+      return reply(route, result.body, result.status);
+    }
+    if (path === "health/notification-bot" && options.bot) {
+      const result = next(options.bot, calls.bot, botHealth());
+      calls.bot += 1;
+      return reply(route, result.body, result.status);
+    }
+    if (path === "health/notification-bot/recheck" && request.method() === "POST" && options.recheck) {
+      const result = next(options.recheck, calls.recheck, botHealth());
+      calls.recheck += 1;
       return reply(route, result.body, result.status);
     }
     if (path === "orders/ai-availability") {

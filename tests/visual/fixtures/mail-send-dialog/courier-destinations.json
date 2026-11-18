@@ -1,0 +1,36 @@
+{
+  "statusCode": 200,
+  "message": "HQ couriers for post region",
+  "data": {
+    "post_id": "74",
+    "region_id": "6",
+    "is_hq_region": false,
+    "couriers": [
+      {
+        "courier_user_id": "1055",
+        "name": "FastPost kuryeri",
+        "phone": "+998909774040",
+        "region_match": "listed",
+        "carrier_name": "FastPost Logistics",
+        "carrier_active": true
+      },
+      {
+        "courier_user_id": "1062",
+        "name": "Jasur Tursunov",
+        "phone": "+998904121855",
+        "region_match": "listed",
+        "carrier_name": null,
+        "carrier_active": null
+      },
+      {
+        "courier_user_id": "1077",
+        "name": "Vodiy Kargo kuryeri",
+        "phone": "+998913306214",
+        "region_match": "all_regions",
+        "carrier_name": "Vodiy Kargo",
+        "carrier_active": false
+      }
+    ],
+    "carrier_lookup_failed": false
+  }
+}

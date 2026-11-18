@@ -1,0 +1,35 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "items": [
+      {
+        "id": "21",
+        "name": "Samarqand filiali",
+        "type": "REGIONAL",
+        "status": "active",
+        "has_manager": true,
+        "phone_number": "+998662331020",
+        "region": {
+          "id": "6",
+          "name": "Samarqand viloyati"
+        },
+        "region_id": "6"
+      },
+      {
+        "id": "23",
+        "name": "Urgut filiali",
+        "type": "HYBRID",
+        "status": "active",
+        "has_manager": false,
+        "phone_number": "+998662450713",
+        "region": {
+          "id": "6",
+          "name": "Samarqand viloyati"
+        },
+        "region_id": "6"
+      }
+    ],
+    "total": 2
+  }
+}
