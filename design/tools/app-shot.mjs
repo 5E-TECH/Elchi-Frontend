@@ -704,6 +704,65 @@ const operatorPaymentsMock = (path, query) => {
   return null;
 };
 
+/**
+ * B1te60bD — superadmin/admin market operatori hisobini KO'RADI (faqat o'qish): `/all-users/41` — Madina Xoliqova
+ * (Baraka Shop; to'lovlar: market, bekor qilingan, eski Elchi kassasidan va kassasiz Elchi yozuvi; 82 ta daromad —
+ * sahifalash), `/all-users/42` — Sevara Usmonova (ortiqcha to'langan, qat'iy stavka). `GET users/:id` va
+ * `finance/operators/:id/{balance,payments,earnings}` (backend shakli: entity qatorlari, `createdAt`, `{ rows, total }`).
+ */
+const ACCOUNT_EXTRA_PAYMENTS = [
+  { id: '290', operator_id: '41', amount: 150000, paid_at: '2026-08-20', note: 'Avgust avansi', source: 'elchi', status: 'active', affects_cashbox: false },
+];
+const ACCOUNT_EARNINGS = {
+  41: [
+    ['10241', 360000, '2026-11-17T08:52:00.000Z'], ['10238', 500000, '2026-11-17T06:20:00.000Z'],
+    ['10233', 240000, '2026-11-16T11:47:00.000Z'], ['10230', 300000, '2026-11-16T07:15:00.000Z'],
+    ['10228', 440000, '2026-11-15T14:40:00.000Z'], ['10219', 185000, '2026-11-14T10:05:00.000Z'],
+    ['10214', 270000, '2026-11-13T09:30:00.000Z'], ['10209', 320000, '2026-11-12T12:10:00.000Z'],
+    ['10205', 150000, '2026-11-11T08:00:00.000Z'], ['10201', 410000, '2026-11-10T13:25:00.000Z'],
+  ],
+  42: [['10236', 280000, '2026-11-16T09:12:00.000Z'], ['10222', 650000, '2026-11-14T15:30:00.000Z']],
+};
+const operatorAccountMock = (path) => {
+  if (!USER_SHOT) return null;
+  const user = /^users\/(41|42)$/.exec(path);
+  if (user) {
+    const op = OPERATORS.find((item) => item.id === user[1]);
+    return {
+      statusCode: 200,
+      data: {
+        id: op.id, name: op.name, phone_number: `+99890${op.id}11223`, username: op.id === '41' ? 'madina_op' : 'sevara_op',
+        role: 'market_operator', status: op.status, salary: 0, payment_day: null, market_id: '1',
+        market: { id: '1', name: 'Baraka Shop' }, commission_type: op.commission_type, commission_value: op.commission_value,
+        createdAt: '2026-09-02T09:05:00.000Z', updatedAt: '2026-11-15T09:30:00.000Z',
+      },
+    };
+  }
+  const account = /^finance\/operators\/(41|42)\/(balance|payments|earnings)$/.exec(path);
+  if (!account) return null;
+  const [, id, kind] = account;
+  const op = OPERATORS.find((item) => item.id === id);
+  if (kind === 'balance') {
+    return { statusCode: 200, message: 'operator balance', data: { operator_id: id, earned: op.earned, paid: op.paid, balance: op.earned - op.paid } };
+  }
+  if (kind === 'payments') {
+    const rows = [...OPERATOR_PAYMENTS, ...ACCOUNT_EXTRA_PAYMENTS]
+      .filter((row) => row.operator_id === id)
+      .map((row) => {
+        const { operator_name: _name, can_cancel: _cancel, created_at: createdAt, ...view } = operatorPaymentView(row);
+        return { ...view, createdAt, updatedAt: createdAt, isDeleted: false };
+      });
+    return { statusCode: 200, message: 'operator payments', data: { rows, total: rows.length, limit: 10, offset: 0 } };
+  }
+  const rows = ACCOUNT_EARNINGS[id].map(([orderId, total, createdAt], index) => ({
+    id: String(9100 - index), operator_id: id, order_id: orderId, market_id: '1',
+    amount: op.commission_type === 'percent' ? Math.round((total * op.commission_value) / 100) : op.commission_value,
+    commission_type: op.commission_type, commission_value: op.commission_value, order_total_price: total, createdAt,
+    updatedAt: createdAt, isDeleted: false,
+  }));
+  return { statusCode: 200, message: 'operator earnings', data: { rows, total: id === '41' ? 82 : rows.length, limit: 10, offset: 0 } };
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   if (path === 'auth/sessions') return sessionsMock();
@@ -721,6 +780,8 @@ const mockBody = (path, themeName, query) => {
   if (returnRequests) return returnRequests;
   const mail = mailMock(path);
   if (mail) return mail;
+  const operatorAccount = operatorAccountMock(path);
+  if (operatorAccount) return operatorAccount;
   const userDetail = userMock(path);
   if (userDetail) return userDetail;
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };

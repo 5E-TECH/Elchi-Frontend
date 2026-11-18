@@ -3,8 +3,11 @@ import { API_ENDPOINTS } from "../../../shared/api";
 import type {
   MyOperatorBalance,
   MyOperatorPaymentList,
+  OperatorAccountPageParams,
   OperatorBalance,
   OperatorBalances,
+  OperatorEarning,
+  OperatorEarningList,
   OperatorPayment,
   OperatorPaymentList,
   OperatorPaymentListParams,
@@ -14,7 +17,8 @@ import type {
 
 /**
  * F2qp6FtE — operatorga to'lov yozuvlari (backend `OperatorPaymentGatewayController`, faqat MARKET; operator o'zi —
- * `finance/operators/me/*`). Javoblar `{ statusCode, message, data }`; konvertsiz shakl ham o'qiladi.
+ * `finance/operators/me/*`; superadmin/admin ko'radi — `finance/operators/:operator_id/*`, B1te60bD). Javoblar
+ * `{ statusCode, message, data }`; konvertsiz shakl ham o'qiladi.
  */
 
 type Raw = Record<string, unknown>;
@@ -140,6 +144,38 @@ export const normalizeEarningsTotal = (value: unknown): number | null => {
   return toNumber(record.total);
 };
 
+const toNullableNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+/** `OperatorEarning` qatori (`/operators/:id/earnings` va `/me/earnings` — AYNI shakl). */
+export const normalizeOperatorEarning = (value: unknown): OperatorEarning => {
+  const item = asRecord(value) ?? {};
+  const type = item.commission_type;
+  return {
+    id: toText(item.id),
+    orderId: toText(item.order_id),
+    amount: toNumber(item.amount),
+    commissionType: type === "percent" || type === "fixed" ? type : null,
+    commissionValue: toNullableNumber(item.commission_value),
+    orderTotal: toNullableNumber(item.order_total_price),
+    createdAt: toNullableText(item.createdAt ?? item.created_at),
+  };
+};
+
+/** `{ rows, total, limit, offset }` (yoki `items`). */
+export const normalizeOperatorEarnings = (value: unknown): OperatorEarningList => {
+  const data = unwrap(value);
+  const record = asRecord(data) ?? {};
+  const rows = Array.isArray(data) ? data : Array.isArray(record.rows) ? record.rows : Array.isArray(record.items) ? record.items : [];
+  return {
+    items: rows.map(normalizeOperatorEarning).filter((item) => item.id),
+    total: "total" in record ? toNumber(record.total) : rows.length,
+  };
+};
+
 // ───────────────────────────── so'rovlar ─────────────────────────────
 
 export const getOperatorBalances = async (): Promise<OperatorBalances> => {
@@ -186,6 +222,29 @@ export const getMyOperatorPayments = async (params: { limit: number; offset: num
 export const getMyOperatorEarningsTotal = async (): Promise<number | null> => {
   const response = await api.get(API_ENDPOINTS.FINANCE.OPERATORS_ME_EARNINGS, { params: { limit: 1, offset: 0 } });
   return normalizeEarningsTotal(response.data);
+};
+
+// B1te60bD — superadmin/admin operator hisobini KO'RADI (faqat o'qish; `operator_id` — operator foydalanuvchi id'si).
+
+export const getOperatorAccountBalance = async (operatorId: string): Promise<MyOperatorBalance | null> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_BALANCE(operatorId));
+  return normalizeMyOperatorBalance(response.data);
+};
+
+export const getOperatorAccountPayments = async (
+  operatorId: string,
+  params: OperatorAccountPageParams,
+): Promise<MyOperatorPaymentList> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_PAYOUTS(operatorId), { params });
+  return normalizeMyOperatorPayments(response.data);
+};
+
+export const getOperatorAccountEarnings = async (
+  operatorId: string,
+  params: OperatorAccountPageParams,
+): Promise<OperatorEarningList> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_EARNINGS(operatorId), { params });
+  return normalizeOperatorEarnings(response.data);
 };
 
 /** Har mantiqiy to'lov uchun yangi kalit. */

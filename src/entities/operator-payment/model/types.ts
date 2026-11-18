@@ -74,3 +74,25 @@ export type MyOperatorBalance = { earned: number; paid: number; balance: number 
 
 /** `GET finance/operators/me/payments` — `{ rows, total }` (limit/offset). */
 export type MyOperatorPaymentList = { items: OperatorPayment[]; total: number };
+
+/**
+ * B1te60bD — operator hisobini superadmin/admin KO'RADI (faqat o'qish): `GET finance/operators/:operator_id/{balance,
+ * payments,earnings}` (`operator_id` — market operatori foydalanuvchi id'si). Shakli `/me/*` bilan AYNI.
+ */
+export type OperatorAccountPageParams = { limit: number; offset: number };
+
+/** Bitta sotuvdan yozilgan komissiya (`OperatorEarning` qatori; summa sotuv paytidagi stavka bilan qotirilgan). */
+export type OperatorEarning = {
+  id: string;
+  orderId: string;
+  amount: number;
+  /** Sotuv paytidagi stavka (`null` — belgilanmagan / eski yozuv). */
+  commissionType: "percent" | "fixed" | null;
+  commissionValue: number | null;
+  /** Buyurtma narxi (sotuv paytida). */
+  orderTotal: number | null;
+  createdAt: string | null;
+};
+
+/** `{ rows, total, limit, offset }`. */
+export type OperatorEarningList = { items: OperatorEarning[]; total: number };

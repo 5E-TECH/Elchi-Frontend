@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
-import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 import { refreshCashboxQueries } from "./index";
 
 export const useFinanceCoverage = () => {
@@ -108,38 +107,8 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  // ── Operator balance / earnings / payouts — faqat o'qish (SA/ADMIN/MANAGER). F2qp6FtE: superadmin endi operatorga
-  // to'lamaydi — market o'zi yozadi (`entities/operator-payment`, Elchi kassasiga ta'sir qilmaydi). ──
-
-  const useGetOperatorBalance = (operatorId: string, enabled: boolean = true, options?: SilentErrorOption) =>
-    useQuery({
-      queryKey: ["finance-cov", "operator-balance", operatorId],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.FINANCE.OPERATOR_BALANCE(operatorId))
-          .then((res) => res.data),
-      enabled,
-      ...silentErrorMeta(options),
-    });
-
-  const useGetOperatorEarnings = (operatorId: string, enabled: boolean = true, params?: any, options?: SilentErrorOption) =>
-    useQuery({
-      queryKey: ["finance-cov", "operator-earnings", operatorId, params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.FINANCE.OPERATOR_EARNINGS(operatorId), { params })
-          .then((res) => res.data),
-      enabled,
-      ...silentErrorMeta(options),
-    });
-
-  const useGetOperatorPayouts = (operatorId: string, enabled: boolean = true, params?: any, options?: SilentErrorOption) =>
-    useQuery({
-      queryKey: ["finance-cov", "operator-payouts", operatorId, params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.FINANCE.OPERATOR_PAYOUTS(operatorId), { params })
-          .then((res) => res.data),
-      enabled,
-      ...silentErrorMeta(options),
-    });
+  // Operator balance / earnings / payouts — `entities/operator-payment` (`useOperatorAccount*`, B1te60bD): bitta
+  // endpoint — bitta kesh ildizi (`operator-payments`), shuning uchun bu yerdagi eski `finance-cov` hooklari olindi.
 
   // ── Salary ────────────────────────────────────────────────────────────────
 
@@ -186,10 +155,6 @@ export const useFinanceCoverage = () => {
     useGetFinancialBalanceTopImpacts,
     // Health
     useGetFinanceHealth,
-    // Operator
-    useGetOperatorBalance,
-    useGetOperatorEarnings,
-    useGetOperatorPayouts,
     // Salary
     createSalary,
     updateSalary,
