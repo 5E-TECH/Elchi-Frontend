@@ -2,6 +2,11 @@
 // service's activity-log rows and enriches them with resolved actor/entity
 // objects. See Elchi-Backend audit-gateway.controller + audit-enrichment.service.
 
+/**
+ * `/activity-logs` xizmat oyoqlari (gateway `audit-gateway.controller.ts`, `service` filtri). `ai` — AI maslahatchi
+ * (BE-5 §11): `ai.advisor.alert.resolve|dismiss`, `ai.advisor.settings.update`, `ai.cap.raise`; band bo'lsa (3 s)
+ * javobda `meta.failed_services: ["ai"]`, qolgan jurnal kutmaydi.
+ */
 export const ACTIVITY_SERVICES = [
   "identity",
   "order",
@@ -12,6 +17,7 @@ export const ACTIVITY_SERVICES = [
   "catalog",
   "investor",
   "notification",
+  "ai",
 ] as const;
 export type ActivityService = (typeof ACTIVITY_SERVICES)[number];
 

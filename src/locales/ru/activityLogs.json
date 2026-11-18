@@ -30,7 +30,8 @@
     "logistics": "Логистика",
     "catalog": "Каталог",
     "investor": "Инвесторы",
-    "notification": "Уведомления"
+    "notification": "Уведомления",
+    "ai": "AI-советник"
   },
   "categories": {
     "order": "Заказ",

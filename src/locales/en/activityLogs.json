@@ -30,7 +30,8 @@
     "logistics": "Logistics",
     "catalog": "Catalog",
     "investor": "Investors",
-    "notification": "Notifications"
+    "notification": "Notifications",
+    "ai": "AI advisor"
   },
   "categories": {
     "order": "Order",

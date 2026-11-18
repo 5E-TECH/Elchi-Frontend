@@ -291,6 +291,32 @@ describe("ActivityLogViewer — dizayn v2 (y8CxCtcK, `superadmin-activity-logs-l
     expect(screen.queryByRole("table", { name: "Maydon o'zgarishlari" })).toBeNull();
   });
 
+  it("BE-5 §11: «Xizmat» filtrida «AI maslahatchi» — tanlansa `service: ai` so'raladi; `ai` yozuvida xizmat nomi", async () => {
+    const user = userEvent.setup();
+    mocks.logs.mockReturnValue(
+      listResult([
+        log({
+          id: "ai-1",
+          service: "ai",
+          entity_type: "ai_advisor_alert",
+          entity_id: "1045",
+          action: "ai.advisor.alert.resolve",
+          action_meta: null,
+          entity: null,
+        }),
+      ]),
+    );
+    renderWithProviders(<ActivityLogViewer />);
+
+    const table = screen.getByRole("table", { name: "Faoliyat jurnali yozuvlari" });
+    expect(within(table).getByText("AI maslahatchi")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: "Xizmat" }));
+    const listbox = await screen.findByRole("listbox", { name: "Xizmat" });
+    await user.click(within(listbox).getByRole("option", { name: "AI maslahatchi" }));
+    await waitFor(() => expect(lastParams()).toMatchObject({ service: "ai", page: 1 }));
+  });
+
   it("reyestr kelmasa (eski backend) — fe'llar guruhsiz, humanize", async () => {
     const user = userEvent.setup();
     mocks.actions.mockReturnValue({ data: { actions: ["order.sell"], registry: [], categories: [] }, isLoading: false });
