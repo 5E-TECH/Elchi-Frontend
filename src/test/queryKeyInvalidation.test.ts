@@ -64,6 +64,8 @@ const READ_ONLY: Record<string, string> = {
   "queryKeys.activityLogs.list":
     "Amallar jurnali ro'yxati — faqat o'qiladi (yuqoridagi sabab); filtr/sahifa almashganda yangi kalit bilan so'raladi.",
   "SMS_KEYS.tariffs": "SMS tariflari — faqat o'qiladi (provayder narxlari), ilovada o'zgartiruvchi mutatsiya yo'q.",
+  "queryKeys.aiAdvisor.alertDetails":
+    "Ogohlantirish tafsilotlari prefiksi — o'zi so'ralmaydi, faqat ochiq oynani aniqlash uchun (`findAll` + `isActive`, D16); har tafsilot (`alert(id)`) PATCH'da `setQueryData` / invalidatsiya bilan yangilanadi.",
 };
 
 // ── Manba fayllar ──────────────────────────────────────────────────────────────────────────────────────────
