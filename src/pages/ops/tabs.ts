@@ -127,12 +127,13 @@ export const OPS_TABS: OpsTabMeta[] = [
 ];
 
 /**
- * Hub'dan ko'chgan tablar: logistika va filiallar vositasi ish sahifasi ichida, faqat superadmin ko'radi
- * (F2NzXpMv); integratsiya vositalari — konsol panellarida: qarzlar «Hisob-kitob», navbat «Ish rejimi» (Dj70iDbD).
- * Eski `/ops?tab=<key>` havolasi yangi joyga o'tadi.
+ * Hub'dan ko'chgan tablar: filiallar vositasi ish sahifasi ichida, faqat superadmin ko'radi (F2NzXpMv); integratsiya
+ * vositalari — konsol panellarida: qarzlar «Hisob-kitob», navbat «Ish rejimi» (Dj70iDbD); logistika (qaytarish
+ * so'rovlari) — «Pochta → Qaytarish» (u5HTJtqK: `/returns` dagi superadmin nusxasi olib tashlandi, tasdiqlash va rad
+ * etish o'sha tabda, tasdiq oynasi bilan). Eski `/ops?tab=<key>` havolasi yangi joyga o'tadi.
  */
 export const MOVED_OPS_TABS: Readonly<Record<string, string>> = {
-  logistics: "/returns",
+  logistics: "/mails/return",
   branches: "/batches",
   integrations: "/integrations",
 };

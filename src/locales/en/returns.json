@@ -35,18 +35,5 @@
   "clearFilter": "Clear filter",
   "messages": {
     "loadFailed": "Could not load return batches"
-  },
-  "opsReturnRequests": {
-    "title": "Logistics — return requests",
-    "description": "Return requests list and approval panel.",
-    "columns": {
-      "id": "ID",
-      "order": "Order",
-      "status": "Status",
-      "courier": "Courier"
-    },
-    "selectHint": "Select orders in the list to approve.",
-    "loadError": "Could not load return requests",
-    "empty": "No return requests"
   }
 }

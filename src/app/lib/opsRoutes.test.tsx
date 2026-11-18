@@ -11,7 +11,8 @@ import AppRouter from "./routes";
  * Boshqa rol — shell ichida 403.
  *
  * F2NzXpMv + bhitm9do («ikki eshik» yopildi): `/investors-ops`, `/system-ops`, `/logs` — `/ops?tab=<k>` ga, ko'chgan
- * `/logistics-ops` — `/returns` ga, `/branch-ops` — `/batches` ga yo'naltiradi; guard o'sha, admin ularga o'tmaydi.
+ * `/branch-ops` — `/batches` ga yo'naltiradi; `/logistics-ops` — «Pochta → Qaytarish» ga (u5HTJtqK, Ops nusxasi
+ * olib tashlandi); guard o'sha, admin ularga o'tmaydi.
  */
 
 vi.mock("../../widgets/layout/dashboardLayout", async () => {
@@ -37,6 +38,11 @@ vi.mock("../../pages/ops", async () => {
   return { default: OpsHubStub };
 });
 vi.mock("../../pages/returns", () => stub("Ops sahifasi /returns"));
+vi.mock("../../pages/mails", async () => {
+  const { useLocation } = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  const MailsStub = () => <p>{`Ops sahifasi ${useLocation().pathname}`}</p>;
+  return { default: MailsStub };
+});
 vi.mock("../../pages/batches", () => stub("Ops sahifasi /batches"));
 vi.mock("../../pages/finance-operators", () => stub("Ops sahifasi /finance-operators"));
 vi.mock("../../pages/integrations", () => stub("Ops sahifasi /integrations"));
@@ -48,7 +54,7 @@ const OPS_PATHS = ["/ops", "/finance-operators", "/identity-ops"];
 const OPS_REDIRECTS = [
   ["/integrations-ops", "/integrations"],
   ["/investors-ops", "/ops?tab=investors"],
-  ["/logistics-ops", "/returns"],
+  ["/logistics-ops", "/mails/return"],
   ["/branch-ops", "/batches"],
   ["/system-ops", "/ops?tab=system"],
   ["/logs", "/ops?tab=auth"],

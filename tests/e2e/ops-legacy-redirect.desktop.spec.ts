@@ -4,7 +4,8 @@ import { OPS_MOVED, OPS_REDIRECTS, expectOpsHub, mockOpsHub } from "./support/op
 /**
  * F2NzXpMv + bhitm9do — «ikki eshik» yopildi: `/investors-ops`, `/logistics-ops`, `/branch-ops`, `/system-ops` va `/logs`
  * alohida sahifa bo'lib ochilmaydi, faqat `/ops?tab=<k>` hub ichida (eski havola buzilmaydi). Guard o'sha — admin 403.
- * Soxta backend, 1440px.
+ * u5HTJtqK: `/logistics-ops` va `/ops?tab=logistics` — «Pochta → Qaytarish» (`/mails/return`) ga; `/returns` da
+ * qaytarish so'rovlari nusxasi yo'q. Soxta backend, 1440px.
  */
 test.use({ viewport: { width: 1440, height: 900 } });
 test.describe.configure({ timeout: 120_000 });
@@ -53,6 +54,36 @@ for (const { from, tab, to, panel } of OPS_MOVED) {
     await expect(page.getByRole("heading", { name: "Bu sahifaga ruxsatingiz yo'q" })).toBeVisible({ timeout: 60_000 });
   });
 }
+
+test("⭐ superadmin: /logistics-ops va /ops?tab=logistics → /mails/return (u5HTJtqK), /returns da nusxa yo'q", async ({
+  page,
+}) => {
+  const { leaked } = await mockOpsHub(page, "superadmin");
+  // «Pochta» qobig'ining kartasi — joriy tab nomi bilan (`section[aria-label]`).
+  const returnTab = page.getByRole("region", { name: "Qaytarish so'rovlari", exact: true });
+  await page.goto("/logistics-ops");
+  await expect(page).toHaveURL(/\/mails\/return$/, { timeout: 60_000 });
+  await expect(returnTab).toBeVisible({ timeout: 60_000 });
+
+  await page.goto("/ops?tab=logistics");
+  await expect(page).toHaveURL(/\/mails\/return$/, { timeout: 60_000 });
+  await expect(returnTab).toBeVisible({ timeout: 60_000 });
+
+  await page.goto("/returns");
+  await expect(page.locator("[data-shell-slot=content]").getByRole("heading", { level: 1 })).toBeVisible({
+    timeout: 60_000,
+  });
+  await expect(page.getByRole("heading", { level: 2, name: "Logistika — qaytarish so'rovlari" })).toHaveCount(0);
+  expect(leaked).toEqual([]);
+});
+
+test("⭐ admin: /logistics-ops — 403 (guard o'sha), «Pochta → Qaytarish» esa ochiladi", async ({ page }) => {
+  await mockOpsHub(page, "admin");
+  await page.goto("/logistics-ops");
+  await expect(page.getByRole("heading", { name: "Bu sahifaga ruxsatingiz yo'q" })).toBeVisible({ timeout: 60_000 });
+  await page.goto("/mails/return");
+  await expect(page.getByRole("region", { name: "Qaytarish so'rovlari", exact: true })).toBeVisible({ timeout: 60_000 });
+});
 
 test("⭐ SLA va «Analitika KPI» — superadmin bosh sahifasida, «Tizim holati» da yo'q", async ({ page }) => {
   await mockOpsHub(page, "superadmin");

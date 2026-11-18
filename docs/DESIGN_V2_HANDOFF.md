@@ -533,6 +533,12 @@ Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
     ziddiyati shu qaror bilan hal qilindi, maket fayllari tegilmadi); HQ'dagi bog'langan kuryerni HQ'dan boshqa
     filialga o'tkazish backendda rad etiladi (409 `courier_carrier_linked`);
   - kuryer tafsilotida (superadmin, admin) «Xizmat viloyatlari» kartasi va tahrirlash oynasi (`PUT couriers/:id/regions`).
+- **2026-11-16 (Ops tahlili → u5HTJtqK, «Pochta → Qaytarish»):** bitta bosish tasdiqsiz buyurtmani omborga
+  qaytarmasin, bir ish ikki joyda bo'lmasin. `/mails/return` da «Tasdiqlash» va «Rad etish» — faqat tasdiq oynasi
+  orqali (maket `superadmin-ops-logistics-approve-dialog`, Ops'dagi OS-3 oqimi ko'chdi: kuryer guruhlari, natija —
+  `notify` + o'tkazib yuborilgan raqamlar, 409 — «Tanlov eskirgan»); `/returns` ostidagi superadmin nusxasi
+  (`pages/logistics-ops`) o'chirildi, `/logistics-ops` va `/ops?tab=logistics` → `/mails/return` (guard o'sha).
+  Bu F2NzXpMv dagi «/logistics-ops → /returns» qarorini almashtiradi.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;
