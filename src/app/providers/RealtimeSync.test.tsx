@@ -404,6 +404,62 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
     });
   });
 
+  describe("AI maslahatchi: `ai.advisor.alert_changed` (§12, summasiz o'zgarish signali)", () => {
+    const change = (extra: Record<string, unknown> = {}) => ({
+      alert_id: "1045",
+      rule_key: "R7",
+      severity: "critical",
+      status: "seen",
+      change: "explanation",
+      explanation_status: "ready",
+      at: "2026-11-16T09:00:00.000Z",
+      ...extra,
+    });
+
+    it("⭐ AI izohi tayyor — overview, ro'yxatlar va ochiq tafsilot bir marta qayta o'qiladi; inbox va xabar yo'q", async () => {
+      const { queryClient } = renderSync();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      invalidate.mockClear();
+
+      act(() => {
+        // Bir tekshiruvda bir nechta hodisa — bitta yangilash; ayni ID bir marta.
+        lastSocket().fire("ai.advisor.alert_changed", change());
+        lastSocket().fire("ai.advisor.alert_changed", change({ change: "status", status: "resolved" }));
+        lastSocket().fire("ai.advisor.alert_changed", change({ alert_id: "1046", change: "opened", status: "new" }));
+      });
+
+      await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.aiAdvisor.overview }));
+      expect(invalidate.mock.calls.map(([filters]) => filters?.queryKey)).toEqual([
+        queryKeys.aiAdvisor.overview,
+        queryKeys.aiAdvisor.alertLists,
+        queryKeys.aiAdvisor.alert("1045"),
+        queryKeys.aiAdvisor.alert("1046"),
+      ]);
+      expect(invalidate).not.toHaveBeenCalledWith({ queryKey: queryKeys.notificationsInbox.all });
+      expect(toastStore.getSnapshot()).toEqual([]);
+    });
+
+    it("GET'ning o'z «Ko'rildi»si (`status`, `seen`) — ro'yxat va nishon, tafsilot emas; yaroqsiz ID — hech narsa", async () => {
+      const { queryClient } = renderSync();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+      invalidate.mockClear();
+
+      act(() => lastSocket().fire("ai.advisor.alert_changed", change({ alert_id: "../x" })));
+      act(() => lastSocket().fire("ai.advisor.alert_changed", null));
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      expect(invalidate).not.toHaveBeenCalled();
+
+      act(() => lastSocket().fire("ai.advisor.alert_changed", change({ change: "status", status: "seen" })));
+      await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(2));
+      expect(invalidate.mock.calls.map(([filters]) => filters?.queryKey)).toEqual([
+        queryKeys.aiAdvisor.overview,
+        queryKeys.aiAdvisor.alertLists,
+      ]);
+    });
+  });
+
   it("⭐ TC4/TC11: ulanganda polling 5 daqiqa; uzilsa sanoq darhol so'raladi va 60 s ga qaytadi; qayta ulanganda inbox yangilanadi", async () => {
     const { queryClient } = renderSync();
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");

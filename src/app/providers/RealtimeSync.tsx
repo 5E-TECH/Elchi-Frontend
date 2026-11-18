@@ -44,7 +44,9 @@ import {
  *   turadigan xabar (`duration: 0`, kalit o'sha `elchi-push-<id>`, «Ochish» → ogohlantirish oynasi); bir oynada bir
  *   nechtasi — bitta «N ta jiddiy ogohlantirish» («Ochish» → faqat jiddiylar ro'yxati). Yashirin
  *   tabda ham chiqadi — u o'zi yopilmaydi, foydalanuvchi qaytganda ko'radi (bu tur uchun push yo'q). Matn va
- *   yangilash — `realtimeAdvisor` (socket bilan birga dinamik).
+ *   yangilash — `realtimeAdvisor` (socket bilan birga dinamik). Ogohlantirish o'zgarishi (`ai.advisor.alert_changed`:
+ *   ochilish, takror, «Ko'rildi», yopilish, AI izohi tayyor) — inbox'ga tegmaydi: shu oynada yig'ilib, `overview`,
+ *   ro'yxatlar va ochiq tafsilot (GET'ning o'z «Ko'rildi»sidan tashqari) bir marta qayta o'qiladi.
  * - Sessiya boshqa qurilmadan yopilsa (Elchi Pochta #3): `auth:session_revoked` `{ session_id, reason }` — joriy
  *   token `sid` iga mos bo'lsa — yoki yopilgan sessiya tokeni bilan ulanish rad etilsa (`error` / `connect_error`
  *   «SESSION_REVOKED») — qurilma joyida chiqadi (`auth/sessionRevoked` → `logoutRevokedSession`, `POST auth/logout`
@@ -98,6 +100,9 @@ const RealtimeSync = () => {
   const advisorChangedRef = useRef(false);
   /** `realtimeAdvisor` — socket ulanishidan oldin yuklanadi, shuning uchun hodisa kelganda tayyor. */
   const advisorRef = useRef<AdvisorModule | null>(null);
+  /** `ai.advisor.alert_changed` yig'ish oynasi: tafsiloti qayta o'qiladigan ogohlantirishlar va taymer. */
+  const advisorChangeIdsRef = useRef(new Set<string>());
+  const advisorChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
    * Ochiq «N ta yangi bildirishnoma» xabarida sanalgan qatorlar (`id`): keyingi partiya shu songa qo'shiladi, bir xil
@@ -185,9 +190,25 @@ const RealtimeSync = () => {
       flushTimerRef.current = setTimeout(() => flushRef.current(), BATCH_MS);
   }).current;
 
+  // Ogohlantirish o'zgarishi — tekshiruvda bir nechtasi birga keladi: `BATCH_MS` ichida bitta yangilash; inbox emas.
+  const handleAdvisorChanged = useRef((payload: unknown) => {
+    const advisor = advisorRef.current;
+    const change = advisor?.readAdvisorAlertChange(payload);
+    if (!advisor || !change) return;
+    if (change.refetchDetail) advisorChangeIdsRef.current.add(change.alertId);
+    if (advisorChangeTimerRef.current) return;
+    advisorChangeTimerRef.current = setTimeout(() => {
+      advisorChangeTimerRef.current = null;
+      const ids = [...advisorChangeIdsRef.current];
+      advisorChangeIdsRef.current.clear();
+      void advisor.refreshAdvisorQueries(queryClient, ids);
+    }, BATCH_MS);
+  }).current;
+
   useEffect(
     () => () => {
       if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+      if (advisorChangeTimerRef.current) clearTimeout(advisorChangeTimerRef.current);
     },
     [],
   );
@@ -276,6 +297,7 @@ const RealtimeSync = () => {
         client.on("notification:new", (payload: RealtimePayload) =>
           handleNotification(payload ?? {}),
         );
+        client.on(advisor.ADVISOR_CHANGED_EVENT, (payload: unknown) => handleAdvisorChanged(payload));
         for (const event of finance.FINANCE_EVENTS) {
           client.on(event, (payload: unknown) => finance.handleFinanceEvent(queryClient, tRef.current, event, payload));
         }
@@ -292,7 +314,7 @@ const RealtimeSync = () => {
       }
       setRealtimeConnected(false);
     };
-  }, [accessToken, handleNotification, isAuthenticated, queryClient]);
+  }, [accessToken, handleAdvisorChanged, handleNotification, isAuthenticated, queryClient]);
 
   return null;
 };

@@ -4,10 +4,12 @@ import i18n from "../../i18n";
 import { queryKeys } from "../../shared/config/queryKeys";
 import {
   ADVISOR_ALERT_TYPE,
+  ADVISOR_CHANGED_EVENT,
   ADVISOR_CRITICAL_LIST_LINK,
   advisorAlertsBatchToast,
   advisorAlertToast,
   isAdvisorAlert,
+  readAdvisorAlertChange,
   refreshAdvisorQueries,
 } from "./realtimeAdvisor";
 
@@ -112,6 +114,40 @@ describe("realtimeAdvisor — jiddiy AI ogohlantirishi jonli kanalda (60PWUbgC �
       queryKeys.aiAdvisor.alertLists,
     ]);
   });
+  it("yangilash `alertIds` bilan — ochiq tafsilot ham (faqat faol so'rov qayta o'qiladi)", async () => {
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    await refreshAdvisorQueries(client, ["1045", "1046"]);
+    expect(invalidate.mock.calls.map(([filters]) => filters?.queryKey)).toEqual([
+      queryKeys.aiAdvisor.overview,
+      queryKeys.aiAdvisor.alertLists,
+      queryKeys.aiAdvisor.alert("1045"),
+      queryKeys.aiAdvisor.alert("1046"),
+    ]);
+  });
+
+  it("`ai.advisor.alert_changed` (§12): ID yaroqli — yangilash; GET'ning o'z «Ko'rildi»si — tafsilotsiz; izoh tayyor — tafsilot ham", () => {
+    expect(ADVISOR_CHANGED_EVENT).toBe("ai.advisor.alert_changed");
+    const event = (extra: Record<string, unknown>) => ({
+      alert_id: "1045",
+      rule_key: "R7",
+      severity: "critical",
+      status: "seen",
+      change: "explanation",
+      explanation_status: "ready",
+      at: "2026-11-16T09:00:00.000Z",
+      ...extra,
+    });
+    expect(readAdvisorAlertChange(event({}))).toEqual({ alertId: "1045", refetchDetail: true });
+    expect(readAdvisorAlertChange(event({ change: "status", status: "seen" }))).toEqual({ alertId: "1045", refetchDetail: false });
+    expect(readAdvisorAlertChange(event({ change: "status", status: "resolved" }))).toEqual({ alertId: "1045", refetchDetail: true });
+    expect(readAdvisorAlertChange(event({ change: "occurred", status: "new" }))).toEqual({ alertId: "1045", refetchDetail: true });
+    expect(readAdvisorAlertChange(event({ alert_id: 1046 }))).toEqual({ alertId: "1046", refetchDetail: true });
+    for (const bad of [null, "1045", [], event({ alert_id: "../x" }), event({ alert_id: undefined })]) {
+      expect(readAdvisorAlertChange(bad), JSON.stringify(bad)).toBeNull();
+    }
+  });
+
   it("bir nechtasi — «N ta jiddiy ogohlantirish» (ru — ko'plik shakli), qisqa nomlar takrorsiz, havola — faqat jiddiylar", async () => {
     const r2 = { alert_id: "1041", rule_key: "R2", severity: "critical", subject_name: "Toshkent HQ" };
     const rows = [row(R7_RECEIPT), row(r2, { id: "n-501" }), row({ ...r2, alert_id: "1042" }, { id: "n-502" })];

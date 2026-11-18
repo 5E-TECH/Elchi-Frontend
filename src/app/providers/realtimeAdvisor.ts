@@ -16,6 +16,9 @@ import { formatNumberLocalized } from "../../shared/lib/formatMoney";
  * ro'yxatlari (sanoqlar ham shu prefiks ostida) qayta o'qiladi; qatorli hodisa — foydalanuvchi yopguncha turadigan
  * xabar (`RealtimeSync`). Tafsilot (`GET alerts/:id`) bu yerda so'ralmaydi — u ogohlantirishni «Ko'rildi» qiladi.
  *
+ * Ogohlantirish o'zgarishi (`ai.advisor.alert_changed`, summasiz) — `readAdvisorAlertChange` → `overview`, ro'yxatlar va
+ * ochiq tafsilot qayta o'qiladi (AI izohi tayyor bo'lganda ham — poll'dan oldin).
+ *
  * Xabar matni (maket): «Jiddiy ogohlantirish» + «{qisqa nom} — {joy}» («Chekda farq bor — Urgut filiali»). Qisqa nom
  * `data.rule_key` (+ R7 da `data.variant`) dan, uchala tilda (`aiAdvisor:rules.*`); joy — `data.subject_name`
  * (`branch?.name ?? subject.name`, server bergan nom). Qoida noma'lum bo'lsa — serverning o'zbekcha `title`i
@@ -48,12 +51,44 @@ export type AdvisorAlertToast = {
 export const isAdvisorAlert = (payload: AdvisorRealtimePayload | null | undefined): boolean =>
   payload?.type === ADVISOR_ALERT_TYPE;
 
-/** `overview` (tab nishoni, banner) va ro'yxatlar (sanoqlar ham) — ochiqlari darhol, qolgani keyingi ochilishda. */
-export const refreshAdvisorQueries = (client: QueryClient) =>
+/**
+ * `overview` (tab nishoni, banner) va ro'yxatlar (sanoqlar ham) — ochiqlari darhol, qolgani keyingi ochilishda.
+ * `alertIds` — ochiq tafsilot oynasi ham (faqat faol so'rov qayta o'qiladi: yopiq oyna uchun `GET :id` — u «Ko'rildi»
+ * qiladi — yuborilmaydi, kesh eskirgan deb belgilanadi).
+ */
+export const refreshAdvisorQueries = (client: QueryClient, alertIds: readonly string[] = []) =>
   Promise.all([
     client.invalidateQueries({ queryKey: queryKeys.aiAdvisor.overview }),
     client.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alertLists }),
+    ...alertIds.map((id) => client.invalidateQueries({ queryKey: queryKeys.aiAdvisor.alert(id) })),
   ]);
+
+/**
+ * Backend realtime hodisasi (§12, BE-5 4–5-qism): superadminlarga, summasiz —
+ * `{alert_id, rule_key, severity, status, change: opened|occurred|status|explanation, explanation_status, at}`.
+ * Ochilish / takror (har tekshiruv), «Ko'rildi», «Hal qilindi» / «Ahamiyatsiz» va AI izohi tayyor / xato bo'lganda.
+ */
+export const ADVISOR_CHANGED_EVENT = "ai.advisor.alert_changed";
+
+export type AdvisorAlertChange = {
+  alertId: string;
+  /** Ochiq tafsilotni qayta o'qish kerakmi (izoh tayyor, holat o'zgardi, yangi takror). */
+  refetchDetail: boolean;
+};
+
+/**
+ * `ai.advisor.alert_changed` yuki → yangilash rejasi; ID yaroqsiz — `null` (hech narsa qilinmaydi). `GET :id` ning
+ * o'zi chiqaradigan «Ko'rildi» (`change: status`, `status: seen`, faqat new → seen) — ro'yxat va nishon yangilanadi,
+ * tafsilot emas (u hozirgina o'qilgan). `change: explanation` — izoh `pending` dan chiqdi: tafsilot qayta o'qiladi va
+ * poll to'xtaydi (`useAdvisorAlert`).
+ */
+export const readAdvisorAlertChange = (payload: unknown): AdvisorAlertChange | null => {
+  const data = readData(payload);
+  const id = typeof data.alert_id === "number" ? String(data.alert_id) : data.alert_id;
+  if (!isAlertId(id)) return null;
+  const seenOnly = data.change === "status" && data.status === "seen";
+  return { alertId: id, refetchDetail: !seenOnly };
+};
 
 const readData = (data: unknown): Record<string, unknown> =>
   data && typeof data === "object" && !Array.isArray(data) ? (data as Record<string, unknown>) : {};
