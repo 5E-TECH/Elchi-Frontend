@@ -334,7 +334,8 @@ export const expectNoHorizontalOverflow = async (page: Page) => {
 // ── 60PWUbgC — AI maslahatchi (`ai/advisor/*`) ─────────────────────────────────────────────────────────────
 
 /**
- * Maslahatchi backend'i (shartnoma v0.3 + BE #644):
+ * Maslahatchi backend'i (shartnoma v0.3 + backend dev: #644, #651–#657 va review tuzatishlari — tekshiruv tartibi va
+ * kodlar `advisor-alerts.service.ts` / `advisor-settings.rules.ts` dagidek):
  * - `off` (sukut, bugungi prod) — har `ai/advisor/*` → 404: sahifa avvalgidek faqat suhbat;
  * - `forbidden` — 403 (ruxsat yo'q — ham faqat suhbat);
  * - `on` — fixture'lar (`src/test/aiAdvisorFixtures.ts`) holat bilan: ro'yxat 22 ta (maketdagi 8 + 14 ta yopilgan),
@@ -526,24 +527,34 @@ export const createAdvisorMock = ({
       }
 
       if (!explainPath && method === "PATCH") {
+        // Backend `AdvisorAlertsService.update` tartibi: holat (kodsiz 400) → ayni foydalanuvchi ayni holat — 200
+        // o'zgarishsiz → yopilgan — 409 (izoh xatosidan oldin) → izoh (`normalizeNote`: matn emas — `required`,
+        // boshqaruv belgisi — kodsiz 400, avval `too_long`, keyin «Hal qilindi» uchun `required` / `too_short`).
         const { status, note } = (body ?? {}) as { status?: string; note?: unknown };
         if (status !== "resolved" && status !== "dismissed") return badRequest("status noto'g'ri");
+        if (state.patch !== "closed" && alert.status === status && alert.resolved_by?.id === "1") return ok(alert, 200, "AI advisor alert");
+        if (state.patch === "closed") return fail(fx.errors.closed);
+        if (closed) return fail({ ...fx.errors.closed, alert_status: alert.status });
+        if (note !== undefined && note !== null && typeof note !== "string") {
+          return fail({ ...fx.errors.noteRequired, message: "Izoh matn bo'lishi kerak" });
+        }
+        // eslint-disable-next-line no-control-regex -- backend `CONTROL_CHARS` (\n, \t dan tashqari) bilan bir xil
+        if (typeof note === "string" && /[\u0000-\u0008\u000b-\u001f\u007f]/.test(note)) {
+          return badRequest("Izohda ruxsat etilmagan belgi bor");
+        }
         const text = typeof note === "string" ? note.trim() : "";
+        if (text.length > 500) return fail(fx.errors.noteTooLong);
         if (status === "resolved") {
           if (!text) return fail(fx.errors.noteRequired);
           if (text.length < 3) return fail(fx.errors.noteTooShort);
         }
-        if (text.length > 500) return fail(fx.errors.noteTooLong);
-        if (state.patch === "closed" || (closed && alert.status !== status)) return fail({ ...fx.errors.closed, alert_status: alert.status });
-        if (!closed) {
-          Object.assign(alert, {
-            status,
-            resolved_at: new Date().toISOString(),
-            resolved_by: { id: "1", name: "Shodiyor Ergashev" },
-            resolution_note: text || null,
-          });
-        }
-        return ok(alert);
+        Object.assign(alert, {
+          status,
+          resolved_at: new Date().toISOString(),
+          resolved_by: { id: "1", name: "Shodiyor Ergashev" },
+          resolution_note: text || null,
+        });
+        return ok(alert, 200, "AI advisor alert");
       }
     }
 
@@ -551,17 +562,34 @@ export const createAdvisorMock = ({
       if (state.settingsMode === "off") return notFound(method, path);
       if (method === "GET") return ok(state.settings);
       if (method === "PATCH") {
-        // #644 `parseSettingsPatch` + `AdvisorSettingsService.update` tartibi: avval tana (400), keyin versiya (409);
-        // `severity` — 400; `enabled` / `telegram` — faqat boolean; o'zgarishsiz PATCH versiyani oshirmaydi.
-        const { version, rules, ...rest } = (body ?? {}) as { version?: unknown; rules?: Record<string, Record<string, unknown>> };
-        if (typeof version !== "number") return fail(fx.errors.invalidSetting);
-        if (Object.keys(rest).length) return fail({ ...fx.errors.invalidSetting, field: Object.keys(rest)[0] });
+        // Backend `parseSettingsPatch` + `AdvisorSettingsService.update` tartibi: noma'lum top kalit → `version` →
+        // `telegram`/`budget`/`schedule` (BE-1 gacha) → qoidalar (noma'lum qoida / maydon, `severity`, boolean
+        // `enabled`/`telegram`, chegara `limits` bo'yicha — 400 `INVALID_RULE {field, min, max}`) → versiya (409);
+        // qisman birlashtirish (yuborilmagan maydon, masalan R8 `min_count`, o'zgarmaydi); o'zgarishsiz PATCH
+        // versiyani oshirmaydi.
+        const patchBody = (body ?? {}) as Record<string, unknown>;
+        const unknownKey = Object.keys(patchBody).find((key) => !["version", "rules", "telegram", "budget", "schedule"].includes(key));
+        if (unknownKey) return fail({ ...fx.errors.invalidSetting, field: unknownKey });
+        const { version } = patchBody;
+        if (typeof version !== "number" || !Number.isInteger(version) || version < 1) return fail(fx.errors.invalidSetting);
+        const notOwned = (["telegram", "budget", "schedule"] as const).find((key) => patchBody[key] !== undefined && patchBody[key] !== null);
+        if (notOwned) return fail({ ...fx.errors.invalidSetting, field: notOwned });
+        const rules = (patchBody.rules ?? undefined) as Record<string, Record<string, unknown>> | undefined;
         for (const [rule, patchRule] of Object.entries(rules ?? {})) {
           if (!(ADVISOR_RULES as readonly string[]).includes(rule)) return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}` });
-          if ("severity" in patchRule) return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}.severity` });
-          for (const field of ["enabled", "telegram"]) {
-            if (field in patchRule && typeof patchRule[field] !== "boolean") {
-              return fail({ ...fx.errors.invalidSetting, field: `rules.${rule}.${field}` });
+          const limits = (state.settings.limits.rules as Record<string, Record<string, { min: number; max: number; step: number }>>)[rule] ?? {};
+          for (const [field, value] of Object.entries(patchRule)) {
+            const path = `rules.${rule}.${field}`;
+            if (field === "severity") return fail({ ...fx.errors.invalidSetting, field: path });
+            if (field === "enabled" || field === "telegram") {
+              if (typeof value !== "boolean") return fail({ ...fx.errors.invalidSetting, field: path });
+              continue;
+            }
+            const limit = Object.hasOwn(limits, field) ? limits[field] : undefined;
+            if (!limit) return fail({ ...fx.errors.invalidSetting, field: path });
+            const onStep = limit.step >= 1 ? Number.isInteger(value) : Math.abs((value as number) / limit.step - Math.round((value as number) / limit.step)) < 1e-9;
+            if (typeof value !== "number" || !Number.isFinite(value) || value < limit.min || value > limit.max || !onStep) {
+              return fail({ ...fx.errors.invalidRule, field: path, min: limit.min, max: limit.max });
             }
           }
         }

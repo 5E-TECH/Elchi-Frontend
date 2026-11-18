@@ -326,6 +326,54 @@ test("chuqur havola ?tab=alerts&alert=1039 (R7): chek tekshiruvi; Esc — `alert
   expect(advisorCalls(advisor, "ai/advisor/alerts/1039")).toHaveLength(1);
 });
 
+test("backend dev holatlari: R7 chek so'mda emas («100 USD», «Farq» —), o'tkazma («HQ kartasiga tushmagan»), R8 baza 0", async ({
+  page,
+}) => {
+  const { advisor, advisorFixtures } = await mockAiAssistantApi(page, { advisor: "on" });
+  for (const detail of [advisorFixtures.detail.r7Currency, advisorFixtures.detail.r7Transfer, advisorFixtures.detail.r8NoBaseline]) {
+    advisor.alerts.push(structuredClone(detail));
+  }
+
+  await page.goto("/ai-assistant?tab=alerts&alert=1050");
+  const currency = page.getByRole("dialog", { name: "Chek so'mda emas — Urgut filiali yoqilg'i xarajati" });
+  await expect(currency).toBeVisible({ timeout: 60_000 });
+  const currencyFacts = currency.getByRole("group", { name: "Asosiy ma'lumotlar" });
+  await expect(currencyFacts.getByRole("definition")).toHaveText([
+    "Qo'lda chiqim · Yoqilg'i",
+    "Urgut filiali",
+    "1 250 000 so'm",
+    "100 USD",
+    "—",
+    /^Ravshan Ortiqov · /,
+  ]);
+  await expect(currency).toContainText("Chek boshqa valyutada (USD) — so'mdagi summa bilan solishtirib bo'lmadi.");
+  await expect(currency.getByRole("region", { name: "Chek tekshiruvi" })).toContainText("So'mda emas");
+  await page.keyboard.press("Escape");
+  await expect(currency).toHaveCount(0);
+
+  await page.goto("/ai-assistant?tab=alerts&alert=1051");
+  const transfer = page.getByRole("dialog", { name: "Pul HQ kartasiga tushmagan — Samarqand filiali kuryer topshirig'i" });
+  await expect(transfer).toBeVisible({ timeout: 60_000 });
+  await expect(transfer.getByRole("group", { name: "Asosiy ma'lumotlar" }).getByRole("term")).toHaveText([
+    "Operatsiya",
+    "Jo'natuvchi",
+    "Kiritilgan",
+    "Chekda",
+    "Kiritgan",
+  ]);
+  const check = transfer.getByRole("region", { name: "Chek tekshiruvi" });
+  await expect(check).toContainText("HQ kartasiga tushmagan");
+  await expect(check).toContainText("··1209HQ kartasi emas");
+  await expect(transfer.getByRole("link", { name: "Operatsiyaga o'tish" })).toHaveAttribute("href", "/payments/main-cashbox?history=99301");
+  await page.keyboard.press("Escape");
+
+  await page.goto("/ai-assistant?tab=alerts&alert=1053");
+  const corrections = page.getByRole("dialog", { name: /4 ta tuzatish — oldingi 30 kunda tuzatish bo'lmagan$/ });
+  await expect(corrections).toBeVisible({ timeout: 60_000 });
+  await expect(corrections.getByRole("group", { name: "Asosiy ma'lumotlar" })).toContainText("Oldingi 30 kunda tuzatish bo'lmagan");
+  expect(advisorCalls(advisor, "ai/advisor/alerts/1050")).toHaveLength(1);
+});
+
 test("R2–R6, R8: ro'yxatdan ochiladi — har qoidaning faktlari, o'lchagich / dalil jadvali va asosiy havolasi", async ({ page }) => {
   const { advisor } = await mockAiAssistantApi(page, { advisor: "on" });
   await openAiAlerts(page);
@@ -467,6 +515,8 @@ test("⭐ sozlamalar: chegara va kalit → tasdiq («eski → yangi», izoh) →
   const patches = advisorCalls(advisor, "ai/advisor/settings", "PATCH");
   expect(patches.map((request) => request.body)).toEqual([{ version: 4, rules: { R1: { shortage_uzs: 30_000 }, R8: { enabled: false } } }]);
   expect(advisor.settings.version).toBe(5);
+  // R8 `ratio` / `min_count` (Q12) — formada yo'q, PATCH ga kirmaydi, backend qisman birlashtiradi — saqlangani qoladi.
+  expect(advisor.settings.rules.R8).toMatchObject({ enabled: false, ratio: 2, min_count: 3 });
 
   const again = await openSettings(page);
   await expect(again.getByRole("textbox", { name: "Bir smenadagi kamomad" })).toHaveValue("30 000");
