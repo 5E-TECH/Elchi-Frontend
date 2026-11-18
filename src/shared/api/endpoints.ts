@@ -44,10 +44,10 @@ export const API_ENDPOINTS = {
     // Rolni o'zgartirish (FY-2, K3scaE0W; faqat SUPERADMIN): PATCH { role } — faqat admin ⇄ registrator ⇄ manager ⇄
     // logist. 409 — filialga biriktirilgan, 503 — biriktiruv tekshirilmadi yoki logist viloyatlari bo'shatilmadi.
     ROLE: (id: string | number) => `users/${id}/role`,
-    // aidsxJ2H — vaqtinchalik parol SMS'i (superadmin; admin — admin/superadmin'dan boshqasi; menejer — faqat o'zi
-    // yaratgan kuryer; o'ziga — 403). POST (tanasiz) → `{ user_id, must_change_password, password_sms }` — YANGI
-    // parol + SMS, foydalanuvchi sessiyalari yopiladi; 429 PASSWORD_SMS_COOLDOWN (60 s) / PASSWORD_SMS_DAILY_LIMIT
-    // (kuniga 5), `retry_after_seconds`.
+    // aidsxJ2H — vaqtinchalik parol SMS'i (superadmin; admin — admin/superadmin'dan boshqasi; menejer — HOZIR o'z
+    // filialidagi kuryer va ro'yxatchi, KQINMdeQ; o'ziga — 403). POST (tanasiz) →
+    // `{ user_id, must_change_password, password_sms }` — YANGI parol + SMS, foydalanuvchi sessiyalari yopiladi;
+    // 429 PASSWORD_SMS_COOLDOWN (60 s) / PASSWORD_SMS_DAILY_LIMIT (kuniga 5), `retry_after_seconds`.
     PASSWORD_RESEND_SMS: (id: string | number) => `users/${id}/password/resend-sms`,
     // GET → `{ user_id, must_change_password, password_sms | null }` — oxirgi parol SMS'ining jonli holati.
     PASSWORD_SMS_STATUS: (id: string | number) => `users/${id}/password/sms-status`,
@@ -634,6 +634,9 @@ export const API_ENDPOINTS = {
     ROOT: "", // GET / — gateway health via identity service
     LIVENESS: "health",
     READINESS: "health/readiness",
+    // BOT-DIAG: Telegram bot nosozligi sababi (faqat SUPERADMIN; konvertsiz `{ status, bot, timestamp }`)
+    NOTIFICATION_BOT: "health/notification-bot",
+    NOTIFICATION_BOT_RECHECK: "health/notification-bot/recheck", // POST, tanasiz — getMe hozir (≤ 3,5 s)
   },
 
   // ── AI admin (api-gateway `AiGatewayController`, SUPERADMIN/ADMIN) ───────

@@ -96,9 +96,10 @@ const normalizeRole = (role: string | null | undefined) => {
 };
 
 /**
- * SMS holatini ko'rish va qayta yuborish huquqi — backend `findTempPasswordTarget` bilan AYNAN:
- * superadmin — barcha nishon rollari; admin — admin'dan boshqasi; menejer — faqat kuryer (o'zi yaratgani — natija
- * oynasida doim shunday). Boshqasi — yo'q (tugma va so'rash chizilmaydi; backend baribir 403 beradi).
+ * SMS holatini ko'rish va qayta yuborish huquqi — backend `findTempPasswordTarget` bilan AYNAN (rol bo'yicha qismi):
+ * superadmin — barcha nishon rollari; admin — admin'dan boshqasi; menejer — kuryer va ro'yxatchi (KQINMdeQ: HOZIR o'z
+ * filialida bo'lsa — kim yaratganidan qat'i nazar; filialni backend tekshiradi, tafsilotda `can_manage`). Boshqasi —
+ * yo'q (tugma va so'rash chizilmaydi; backend baribir 403 beradi).
  */
 export const canManagePasswordSms = (viewerRole: string | null | undefined, targetRole: string | null | undefined) => {
   const viewer = normalizeRole(viewerRole);
@@ -106,7 +107,7 @@ export const canManagePasswordSms = (viewerRole: string | null | undefined, targ
   if (!TEMP_PASSWORD_TARGET_ROLES.has(target)) return false;
   if (viewer === "superadmin") return true;
   if (viewer === "admin") return target !== "admin";
-  if (viewer === "manager") return target === "courier";
+  if (viewer === "manager") return target === "courier" || target === "registrator";
   return false;
 };
 
