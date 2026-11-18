@@ -120,8 +120,10 @@ test.describe("Umumiy webhook jurnali — 1440px", () => {
     await mockPartnerJournal(page);
     await page.goto("/ops?tab=system");
     const tabs = page.getByRole("tablist", { name: "Ops bo'limlari" }).getByRole("tab");
-    // 9 tab — 2026-11-10 dan «Kun tartibi», 2026-11-16 dan «Kassa smenasi» ham (ops/tabs.ts); integratsiya tabi yo'q.
-    await expect(tabs).toHaveCount(9, { timeout: 60_000 });
+    // 4 tab — 2026-11-10 dan «Kun tartibi», 2026-11-16 dan «Kassa smenasi» ham; LIuf0DcD da «Investorlar», «Yetkazish
+    // narxi», «Xodimlar», «Kirish diagnostikasi», F2qp6FtE da «Moliya operatorlari» olib tashlandi (ops/tabs.ts);
+    // integratsiya tabi yo'q.
+    await expect(tabs).toHaveCount(4, { timeout: 60_000 });
     await expect(tabs.filter({ hasText: "Kun tartibi" })).toHaveCount(1);
     await expect(tabs.filter({ hasText: "Kassa smenasi" })).toHaveCount(1);
     await expect(tabs.filter({ hasText: "Integratsiya" })).toHaveCount(0);

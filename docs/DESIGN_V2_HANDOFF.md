@@ -243,7 +243,7 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     keyin NIFAnCvf + 2Fj7iw1k (ikkalasi `FinancialAnalysis.tsx`), wLNccBkX + lQP3ojwq (Ops RBAC, bitta PR).
   - **Xarajat kategoriyalari → Ops (2026-10-23, `fe-ops-expcat`):** kassa xarajati kategoriyalari sozlamasi «Asosiy
     kassa» sarlavhasidagi tugma + `ExpenseCategoriesDialog` dan Ops vositalariga ko'chdi: yangi tab «Xarajat
-    kategoriyalari» (`/ops?tab=expense-categories`, moliya guruhi — «Moliya operatorlari» dan keyin; `pages/expense-categories`:
+    kategoriyalari» (`/ops?tab=expense-categories`, moliya guruhi — birinchi tab, F2qp6FtE gacha «Moliya operatorlari» dan keyin edi; `pages/expense-categories`:
     `OpsIntro` + «Kategoriyalar» kartasi, qo'shish / tahrirlash — `ExpenseCategoryFormDialog`, o'chirish — `useConfirm`).
     Hub ichida tug'ilgan tab — `OpsTabMeta.legacyPath` ixtiyoriy, tab maslahatida «Eski manzil» yo'q. Kassa sarlavhasida
     tugma yo'q; «Kassadan xarajat» da faol kategoriya yo'q bo'lsa superadmin havolasi (`<Link>`) shu tabga olib boradi
@@ -539,6 +539,20 @@ Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
   `notify` + o'tkazib yuborilgan raqamlar, 409 — «Tanlov eskirgan»); `/returns` ostidagi superadmin nusxasi
   (`pages/logistics-ops`) o'chirildi, `/logistics-ops` va `/ops?tab=logistics` → `/mails/return` (guard o'sha).
   Bu F2NzXpMv dagi «/logistics-ops → /returns» qarorini almashtiradi.
+- **2026-11-18 (Ops tozalash → LIuf0DcD; ega roziligi 2026-11-16, «Investorlar» — 2026-11-18):** foydasiz va takror
+  vositalar Ops'dan olib tashlandi, hub'da 5 tab qoldi. «Kirish diagnostikasi» (`pages/logs`, token yangilash sinovi)
+  — `/logs` va `?tab=auth` → `/activity-logs`; «Xodimlar» (`pages/identity-ops`, faqat o'qish ro'yxatlari,
+  `entities/identity`) — `/identity-ops` va `?tab=identity` → `/all-users`; «Investorlar» (`pages/investors-ops`, eski
+  forma investorni loginsiz yaratardi) — `/investors-ops`, `?tab=investors` va superadmin `/investor` →
+  `/all-users?role=investor` (yaratish — «Foydalanuvchi qo'shish» → «Investor»); «Yetkazish narxi» (`embedded`
+  nusxa) — `?tab=delivery-pricing` → `/delivery-tariffs`. Yo'naltirishlar `MOVED_OPS_TABS` va `routes.tsx` da, guard
+  o'sha. Favqulodda amallar o'z joyida: nofaol qilish — «Foydalanuvchilar» qator menyusi va tahrirlash oynasi
+  (tasdiq bilan), parol SMS'i — `/all-users/:id`, sessiyalarni yopish — Profil → «Sessiyalar». Maketlar
+  (`superadmin-ops-identity`, `-ops-investors`, `-ops-auth-diagnostics`) o'rnini bosuvchi route'larga «olib
+  tashlangan» izohi bilan bog'langan (`route-map.json` → `partialViews`). Investor kabineti nazorati
+  (`/investor/:id`, superadmin) — «Foydalanuvchilar» dagi investor qatori menyusidagi «Kabinetni ko'rish» (ega
+  2026-11-18; login → investor yozuvi `GET /investors` `user_id` bo'yicha); login'siz eski investor yozuvlari
+  ro'yxatda ko'rinmaydi — ega qabul qildi.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;

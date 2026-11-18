@@ -12,7 +12,12 @@ import UserListPage from "./UserListPage";
  * marketlar, 2026-11-12), KPI va amallar yo'q.
  */
 
-const mocks = vi.hoisted(() => ({ useGetUser: vi.fn() }));
+const mocks = vi.hoisted(() => ({ useGetUser: vi.fn(), useInvestorIdsByUser: vi.fn() }));
+
+// LIuf0DcD: investor kabineti xaritasi (`GET /investors`) — tarmoqqa chiqmasin; `enabled` sharti tekshiriladi.
+vi.mock("../../../entities/investors", () => ({
+  useInvestorIdsByUser: (enabled: boolean) => mocks.useInvestorIdsByUser(enabled),
+}));
 
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
@@ -27,6 +32,10 @@ vi.mock("../../../entities/user/api/userApi", () => ({
 
 beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
+});
+
+beforeEach(() => {
+  mocks.useInvestorIdsByUser.mockReset().mockReturnValue({ data: undefined });
 });
 
 const ITEMS = [
@@ -472,5 +481,20 @@ describe("UserListPage — menejer (maket `manager-users-list`)", () => {
     render("/all-users?telegram=linked", "manager", MANAGER_USER);
     expect(screen.queryByRole("group", { name: "Telegram boti:" })).not.toBeInTheDocument();
     expect(lastListParams()).toEqual({ page: 1, limit: 10 });
+  });
+});
+
+describe("UserListPage — investor kabineti xaritasi (LIuf0DcD)", () => {
+  it("faqat superadmin va «Investorlar» yoki «Hammasi» tabida so'raladi", () => {
+    render("/all-users?role=investor", "superadmin");
+    expect(mocks.useInvestorIdsByUser).toHaveBeenLastCalledWith(true);
+  });
+
+  it("boshqa tabda yoki admin uchun so'ralmaydi", () => {
+    render("/all-users?role=courier", "superadmin");
+    expect(mocks.useInvestorIdsByUser).toHaveBeenLastCalledWith(false);
+    mocks.useInvestorIdsByUser.mockClear();
+    render("/all-users?role=investor", "admin");
+    expect(mocks.useInvestorIdsByUser).toHaveBeenLastCalledWith(false);
   });
 });

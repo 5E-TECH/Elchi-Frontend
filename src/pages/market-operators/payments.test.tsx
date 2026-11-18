@@ -224,7 +224,7 @@ describe("«Operatorlar → To'lovlar» (F2qp6FtE)", () => {
 
   it("oynani yopib qayta ochish — yangi Idempotency-Key (yangi yozuv)", async () => {
     const user = userEvent.setup();
-    api.post.mockReset().mockImplementation(() => ok(payment()));
+    api.post.mockReset().mockImplementation(() => ok(payment({})));
     renderAt("/market-operators?view=payments");
     const table = await screen.findByRole("table", { name: "Operatorlar hisobi" });
     const open = async () => {

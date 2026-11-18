@@ -12,12 +12,8 @@
   "tabs": {
     "expenseCategories": "Expense categories",
     "shiftSettings": "Cash shift",
-    "investors": "Investors",
-    "deliveryPricing": "Delivery pricing",
     "dailySchedule": "Daily schedule",
-    "identity": "Staff",
-    "system": "System status",
-    "auth": "Sign-in diagnostics"
+    "system": "System status"
   },
   "common": {
     "count": "{{count}}",
@@ -86,12 +82,6 @@
       "notFoundDescription": "It may have been deleted — the list was refreshed"
     }
   },
-  "deliveryPricing": {
-    "intro": {
-      "title": "Delivery pricing — tariffs and calculation rules",
-      "description": "Tariffs, calculation rules (including the volumetric pricing threshold), price calculator and change history. The same section: Regions → Delivery tariffs (admins see it too)."
-    }
-  },
   "dailySchedule": {
     "intro": {
       "title": "Daily schedule",
@@ -157,39 +147,6 @@
       "note": "An alert also comes, with the reason, if the system's automatic opening or closing fails."
     }
   },
-  "investors": {
-    "intro": {
-      "title": "Investors",
-      "description": "The list of all investors and adding a new one."
-    },
-    "list": {
-      "title": "Investor list",
-      "id": "ID",
-      "name": "Name",
-      "phone": "Phone",
-      "share": "Share",
-      "summary": "{{from}}–{{to}} of {{total}} investors",
-      "empty": "No investors",
-      "emptyHint": "Add a new investor with the form on the right.",
-      "loadError": "Couldn't load the investor list",
-      "open": "View cabinet",
-      "openAria": "{{name}} — view cabinet",
-      "actions": "Actions"
-    },
-    "create": {
-      "title": "New investor",
-      "description": "The investor is added to the list right away",
-      "name": "Investor name",
-      "namePlaceholder": "First and last name",
-      "nameRequired": "Enter the investor's name",
-      "phone": "Phone number",
-      "phonePlaceholder": "90 123 45 67",
-      "phoneRequired": "Enter the full phone number",
-      "submit": "Add",
-      "success": "Investor added",
-      "error": "Couldn't add the investor"
-    }
-  },
   "branches": {
     "intro": {
       "title": "Branches — operations",
@@ -204,22 +161,6 @@
       "emptyHint": "A branch appears here when it receives a new order.",
       "loadError": "Couldn't load the branch list",
       "open": "{{name}} — open the branch page"
-    }
-  },
-  "identity": {
-    "intro": {
-      "title": "Staff — lists",
-      "description": "View admin, manager and registrar lists."
-    },
-    "lists": {
-      "admins": "Admins",
-      "managers": "Managers",
-      "registrators": "Registrars",
-      "id": "ID",
-      "name": "Name",
-      "email": "Email",
-      "empty": "The list is empty",
-      "loadError": "Couldn't load the list"
     }
   },
   "system": {
@@ -572,27 +513,6 @@
       "loadError": "Couldn't load analytics indicators",
       "loadErrorText": "The analytics service didn't respond.",
       "loadingLabel": "Loading analytics indicators"
-    }
-  },
-  "auth": {
-    "intro": {
-      "title": "Sign-in diagnostics",
-      "description": "Tests the sign-in token refresh request.",
-      "journalPrefix": "For the log:",
-      "journalLink": "System → Activity log",
-      "journalMobile": "Log: System → Activity log"
-    },
-    "test": {
-      "title": "Token refresh test",
-      "description": "A new sign-in token is requested with the current session's refresh token",
-      "endpoint": "Request address",
-      "submit": "Send test request",
-      "submitting": "Sending",
-      "result": "Result",
-      "success": "Token refreshed",
-      "successDetail": "New token received: {{token}}…",
-      "error": "Token wasn't refreshed",
-      "errorDetail": "The refresh request failed."
     }
   }
 }

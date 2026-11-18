@@ -279,11 +279,11 @@ describe("amaldan keyin boshqa ekranlar ham yangilanadi", () => {
     ]);
   });
 
-  it("rol o'zgartirish — menejerlar, identity va (logistga o'tsa) logistlar", async () => {
+  it("rol o'zgartirish — menejerlar va (logistga o'tsa) logistlar", async () => {
     const keys = await run(useChangeUserRole, (m) =>
       m.mutateAsync({ id: "3", role: "logist" as never, from: "courier" }),
     );
-    expectKeys(keys, [["user"], ["managers"], ["identity-cov"], ["logists"], ["region-logists"]]);
+    expectKeys(keys, [["user"], ["managers"], ["logists"], ["region-logists"]]);
   });
 
   it("filialga xodim qo'shish / olib tashlash — foydalanuvchi tafsiloti", async () => {
