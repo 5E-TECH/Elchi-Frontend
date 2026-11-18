@@ -264,6 +264,28 @@ describe("Inbox qatori — amallar", () => {
     expect(screen.getByTestId("path").textContent).toBe("/orders/edit/7");
   });
 
+  it("AI maslahatchi ogohlantirishi (`ai.advisor_alert`, BE-5 §9) — «Muhim», server havolasi bilan ogohlantirish oynasi", async () => {
+    // Tur reyestri yo'q: qator server `link` iga o'tadi — `/ai-assistant?tab=alerts&alert=:id` (oyna `?alert=` ni o'qiydi).
+    listItems = [
+      note(9, {
+        type: "ai.advisor_alert",
+        category: "finance",
+        priority: "critical",
+        title: "Jiddiy ogohlantirish · Chekda farq bor",
+        body: "Urgut filiali · yoqilg'i: kiritilgan 320 000 so'm, chekda 302 000 so'm (−18 000 so'm).",
+        link: "/ai-assistant?tab=alerts&alert=1045",
+        data: { alert_id: "1045", rule_key: "R7", severity: "critical", variant: "receipt", subject_name: "Urgut filiali" },
+      }),
+    ];
+    open();
+    const row = await screen.findByRole("button", { name: /Jiddiy ogohlantirish · Chekda farq bor/ });
+    expect(within(row).getByText("Muhim")).toBeInTheDocument();
+    await userEvent.click(row);
+    await waitFor(() => expect(screen.getByTestId("path").textContent).toBe("/ai-assistant"));
+    expect(screen.getByTestId("search").textContent).toBe("?tab=alerts&alert=1045");
+    expect(mocks.patch).toHaveBeenCalledWith("notifications/inbox/9/read", { read: true });
+  });
+
   it("muhimlik badge'i: critical — «Muhim», high — «Yuqori»; o'qilgan qatorda o'qildi tugmasi yo'q", async () => {
     listItems = [
       note(1, { priority: "critical", title: "Kassa qoldig'i" }),
