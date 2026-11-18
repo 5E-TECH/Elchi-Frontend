@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-integrations, superadmin-ops-investors, superadmin-ops-logistics, superadmin-ops-branches, superadmin-ops-identity, superadmin-ops-system, superadmin-ops-auth-diagnostics
+// dizayn-v2: superadmin-ops-finance-operators, superadmin-ops-integrations, superadmin-ops-logistics, superadmin-ops-branches, superadmin-ops-system
 import { Component, useId, type ErrorInfo, type ReactNode } from "react";
 import { CircleCheck, CircleX, Info, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";

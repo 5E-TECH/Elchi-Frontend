@@ -146,7 +146,9 @@ export const getTileAccessibleName = (compact: string, full: string): string | u
 /**
  * Menyuda alohida bandi yo'q, lekin maketda (`design/kit/views.json` → `menuKey`) shu bandga tegishli sahifalar —
  * ular ochilganda ota band faol (taxta `tizim-states-navigation`, qoida 1: «ichki sahifada ota bo'lim faol»):
- *   - Ops vositalarining eski manzillari (`pages/ops/tabs.ts` → `legacyPath`, maketda `menuKey: "ops"`);
+ *   - Ops vositalarining eski manzillari (`pages/ops/tabs.ts` → `legacyPath`, maketda `menuKey: "ops"`; LIuf0DcD da
+ *     olib tashlangan tablarning eski yo'llari — `/logs`, `/identity-ops`, `/investors-ops` — boshqa bo'limga
+ *     yo'naltiradi, ro'yxatda yo'q);
  *   - superadminning shaxsiy qutisi `/inbox` (maket `superadmin-notifications-inbox`, `menuKey: "notifications"`);
  *   - «Almashtirishlar» `/replacement-returns` — ega 2026-11-16 dan yon menyuda yo'q, /orders sarlavhasidagi tugma
  *     orqali ochiladi → «Buyurtmalar» faol.
@@ -154,15 +156,7 @@ export const getTileAccessibleName = (compact: string, full: string): string | u
  * (`/inbox`) o'zi mos keladi va faol qoladi.
  */
 const ACTIVE_ALIASES_BY_PATH: Record<string, readonly string[]> = {
-  "/ops": [
-    "/finance-operators",
-    "/investors-ops",
-    "/logistics-ops",
-    "/branch-ops",
-    "/identity-ops",
-    "/system-ops",
-    "/logs",
-  ],
+  "/ops": ["/finance-operators", "/logistics-ops", "/branch-ops", "/system-ops"],
   "/notifications": ["/inbox"],
   "/orders": ["/replacement-returns"],
 };

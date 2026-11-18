@@ -307,7 +307,7 @@ const myTelegramGroupsMock = () => ({
 });
 
 /**
- * Yetkazish narxi (`/delivery-tariffs`, Ops → «Yetkazish narxi»): joriy tariflar, hisob qoidalari (hajm chegarasi
+ * Yetkazish narxi (`/delivery-tariffs`; Ops nusxasi LIuf0DcD da olib tashlandi): joriy tariflar, hisob qoidalari (hajm chegarasi
  * 3 kg — ega misoli), qoidalar tarixi va kalkulyator namunasi (0,8 kg, 50 × 35 × 20 → 7,0 kg ≥ 3 — hajm bo'yicha).
  */
 const DELIVERY_TARIFF_ROWS = [

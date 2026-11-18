@@ -2,19 +2,20 @@ import { expect, test } from "@playwright/test";
 import { RAW_BACKEND_MESSAGE, expectNoHorizontalOverflow, mockInvestorHome } from "./support/investorHome";
 
 /**
- * vpKijXce — superadmin investor kabinetini nazorat uchun ko'radi (1440px): Ops → «Investorlar» → «Kabinetni ko'rish»
- * → `/investor/7`; ma'lumot `GET investors/7/dashboard` dan, `investors/me/*` so'ralmaydi, hech narsa yozilmaydi.
+ * vpKijXce — superadmin investor kabinetini nazorat uchun ko'radi (1440px): `/investor/7`; ma'lumot
+ * `GET investors/7/dashboard` dan, `investors/me/*` so'ralmaydi, hech narsa yozilmaydi. LIuf0DcD (ega 2026-11-18): Ops
+ * «Investorlar» tabi olib tashlandi — `/investor` va «← Investorlar» «Foydalanuvchilar → Investorlar» ga olib boradi.
  */
 test.describe.configure({ timeout: 120_000 });
 test.use({ viewport: { width: 1440, height: 900 } });
 
-test("⭐ Ops ro'yxatidan kabinetga: KPI, oylik foyda, «faqat o'qish»; davr almashadi", async ({ page }) => {
+test("⭐ kabinet nazorati: KPI, oylik foyda, «faqat o'qish»; davr almashadi; «← Investorlar» — Foydalanuvchilar", async ({ page }) => {
   const mock = await mockInvestorHome(page, { role: "superadmin" });
   await page.goto("/investor");
-  await expect(page).toHaveURL(/\/ops\?tab=investors$/, { timeout: 90_000 });
+  await expect(page).toHaveURL(/\/all-users\?role=investor$/, { timeout: 90_000 });
+  await expect(page.getByRole("tab", { name: "Investorlar", exact: true, selected: true })).toBeVisible({ timeout: 60_000 });
 
-  await page.getByRole("link", { name: "Habibulla Nazirov — kabinetni ko'rish" }).click({ timeout: 60_000 });
-  await expect(page).toHaveURL(/\/investor\/7$/);
+  await page.goto("/investor/7");
   await expect(page.getByRole("heading", { level: 1, name: "Investor kabineti · Habibulla Nazirov" })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByText("Nazorat · faqat o'qish")).toBeVisible();
   await expect(page.getByRole("region", { name: "Asosiy ko'rsatkichlar" })).toContainText("Mening investitsiyam");
@@ -28,7 +29,7 @@ test("⭐ Ops ro'yxatidan kabinetga: KPI, oylik foyda, «faqat o'qish»; davr al
   expect(mock.leaked).toEqual([]);
 
   await page.getByRole("link", { name: "Investorlar" }).first().click();
-  await expect(page).toHaveURL(/\/ops\?tab=investors$/);
+  await expect(page).toHaveURL(/\/all-users\?role=investor$/);
 });
 
 test("⭐ investor topilmasa (404) — «Investor topilmadi», «Chiqish» yo'q, xom matn yo'q", async ({ page }) => {

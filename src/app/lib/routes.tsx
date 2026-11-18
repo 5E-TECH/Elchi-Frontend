@@ -60,7 +60,6 @@ const SettingsPage = lazy(() => import("../../pages/settings/ui/SettingsPage"));
 const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
 const MarketOperatorsPage = lazy(() => import("../../pages/market-operators"));
 const CourierBulkPage = lazy(() => import("../../pages/courier-bulk"));
-const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
 const OpsPage = lazy(() => import("../../pages/ops"));
 const UiKitPage = lazy(() => import("../../pages/ui-kit"));
 const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
@@ -239,8 +238,9 @@ const canViewBatches = canViewBatchesPage;
 const canViewReturns = canViewReturnsPage;
 
 // «Faoliyat jurnali» (`/activity-logs`) — admin va superadmin (maket `admin-activity-logs-list`). Ops vositalari
-// (`/ops`, `*-ops`, `/finance-operators`) bu guard'da EMAS — ular `canViewOpsPages` (faqat superadmin), `/logs` —
-// `canViewLogs` (faqat superadmin). Backend yozish yo'llarini o'zi 403 qiladi; bu faqat UI darvozasi (Audit I17, F2NzXpMv).
+// (`/ops`, `*-ops`, `/finance-operators`) bu guard'da EMAS — ular `canViewOpsPages` (faqat superadmin), eski `/logs`
+// yo'naltirishi — `canViewLogs` (faqat superadmin). Backend yozish yo'llarini o'zi 403 qiladi; bu faqat UI darvozasi
+// (Audit I17, F2NzXpMv).
 const canViewOps = (state: RootState) => {
   const role = state.role.role;
   return role === "admin" || role === "superadmin";
@@ -309,13 +309,16 @@ const DashboardEntry = () => {
   return <ForbiddenPage />;
 };
 
-/** `/investor` (vpKijXce): investor — o'z kabineti `/`; superadmin — Ops investorlar ro'yxati; boshqa rol — 403. */
+/**
+ * `/investor` (vpKijXce): investor — o'z kabineti `/`; superadmin — «Foydalanuvchilar → Investorlar» (Ops «Investorlar»
+ * tabi LIuf0DcD da olib tashlandi, ega 2026-11-18); boshqa rol — 403.
+ */
 const InvestorEntryRedirect = () => {
   const role = useSelector((state: RootState) => state.role.role);
   if (role === "investor") return <Navigate replace to="/" />;
   return (
     <ProtectedRoute canActivate={canViewInvestorControl}>
-      <Navigate replace to="/ops?tab=investors" />
+      <Navigate replace to="/all-users?role=investor" />
     </ProtectedRoute>
   );
 };
@@ -662,10 +665,13 @@ const AppRouter = () => {
             { path: "settings", element: <SettingsPage /> },
             {
               /**
-               * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda, menyudan ochiladigan kirish nuqtasi.
-               * «Ikki eshik» yopildi (F2NzXpMv, bhitm9do): `/investors-ops`, `/system-ops`, `/logs` — shu hubning
-               * tabiga, `/branch-ops` — `/batches` ga, `/integrations-ops` — `/integrations` ga yo'naltiradi (guard
-               * o'sha). `/logistics-ops` — «Pochta → Qaytarish» ga (u5HTJtqK: Ops nusxasi olib tashlandi).
+               * Ops vositalari markazi — ichki xizmat ekranlari bitta uyda, menyudan ochiladigan kirish nuqtasi.
+               * «Ikki eshik» yopildi (F2NzXpMv, bhitm9do): `/system-ops` — shu hubning tabiga, `/branch-ops` —
+               * `/batches` ga, `/integrations-ops` — `/integrations` ga yo'naltiradi (guard o'sha). `/logistics-ops` —
+               * «Pochta → Qaytarish» ga (u5HTJtqK: Ops nusxasi olib tashlandi). LIuf0DcD (ega 2026-11-16, 2026-11-18):
+               * «Kirish diagnostikasi», «Xodimlar», «Investorlar» va «Yetkazish narxi» tablari olib tashlandi — `/logs`
+               * → `/activity-logs`, `/identity-ops` → `/all-users`, `/investors-ops` → `/all-users?role=investor`
+               * (guard o'sha; `?tab=` — `MOVED_OPS_TABS`).
                */
               path: "ops",
               element: (
@@ -704,10 +710,12 @@ const AppRouter = () => {
               ),
             },
             {
+              // LIuf0DcD (ega 2026-11-18): Ops «Investorlar» olib tashlandi — ro'yxat «Foydalanuvchilar → Investorlar»
+              // da, yaratish «Foydalanuvchi qo'shish» → «Investor» (login bilan). Guard o'sha (faqat superadmin ochardi).
               path: "investors-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <Navigate replace to="/ops?tab=investors" />
+                  <Navigate replace to="/all-users?role=investor" />
                 </ProtectedRoute>
               ),
             },
@@ -730,10 +738,12 @@ const AppRouter = () => {
               ),
             },
             {
+              // LIuf0DcD (ega 2026-11-16): Ops «Xodimlar» (faqat o'qish ro'yxatlari) olib tashlandi — xodimlar
+              // «Foydalanuvchilar» rol tablarida (nofaol qilish, parol SMS'i — o'sha yerda). Guard o'sha.
               path: "identity-ops",
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
-                  <IdentityOpsPage />
+                  <Navigate replace to="/all-users" />
                 </ProtectedRoute>
               ),
             },
@@ -1179,8 +1189,8 @@ const AppRouter = () => {
               ),
             },
             {
-              // vpKijXce: `/investor` — investor o'z kabinetiga (`/`), superadmin investorlar ro'yxatiga (u yerdan
-              // «Kabinetni ko'rish»); `/investor/:id` — kabinet nazorat uchun, faqat o'qish.
+              // vpKijXce: `/investor` — investor o'z kabinetiga (`/`), superadmin investorlar ro'yxatiga
+              // («Foydalanuvchilar → Investorlar»); `/investor/:id` — kabinet nazorat uchun, faqat o'qish.
               path: "investor",
               children: [
                 { index: true, element: <InvestorEntryRedirect /> },
@@ -1314,10 +1324,12 @@ const AppRouter = () => {
               ],
             },
             {
+              // LIuf0DcD (ega 2026-11-16): «Kirish diagnostikasi» (token yangilash sinovi, bhitm9do) olib tashlandi —
+              // eski «Loglar» havolasi haqiqiy jurnalga olib boradi. Guard o'sha (faqat superadmin ochardi).
               path: "logs",
               element: (
                 <ProtectedRoute canActivate={canViewLogs}>
-                  <Navigate replace to="/ops?tab=auth" />
+                  <Navigate replace to="/activity-logs" />
                 </ProtectedRoute>
               ),
             },

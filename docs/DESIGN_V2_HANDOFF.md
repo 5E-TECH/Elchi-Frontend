@@ -539,6 +539,18 @@ Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
   `notify` + o'tkazib yuborilgan raqamlar, 409 — «Tanlov eskirgan»); `/returns` ostidagi superadmin nusxasi
   (`pages/logistics-ops`) o'chirildi, `/logistics-ops` va `/ops?tab=logistics` → `/mails/return` (guard o'sha).
   Bu F2NzXpMv dagi «/logistics-ops → /returns» qarorini almashtiradi.
+- **2026-11-18 (Ops tozalash → LIuf0DcD; ega roziligi 2026-11-16, «Investorlar» — 2026-11-18):** foydasiz va takror
+  vositalar Ops'dan olib tashlandi, hub'da 5 tab qoldi. «Kirish diagnostikasi» (`pages/logs`, token yangilash sinovi)
+  — `/logs` va `?tab=auth` → `/activity-logs`; «Xodimlar» (`pages/identity-ops`, faqat o'qish ro'yxatlari,
+  `entities/identity`) — `/identity-ops` va `?tab=identity` → `/all-users`; «Investorlar» (`pages/investors-ops`, eski
+  forma investorni loginsiz yaratardi) — `/investors-ops`, `?tab=investors` va superadmin `/investor` →
+  `/all-users?role=investor` (yaratish — «Foydalanuvchi qo'shish» → «Investor»); «Yetkazish narxi» (`embedded`
+  nusxa) — `?tab=delivery-pricing` → `/delivery-tariffs`. Yo'naltirishlar `MOVED_OPS_TABS` va `routes.tsx` da, guard
+  o'sha. Favqulodda amallar o'z joyida: nofaol qilish — «Foydalanuvchilar» qator menyusi va tahrirlash oynasi
+  (tasdiq bilan), parol SMS'i — `/all-users/:id`, sessiyalarni yopish — Profil → «Sessiyalar». Maketlar
+  (`superadmin-ops-identity`, `-ops-investors`, `-ops-auth-diagnostics`) o'rnini bosuvchi route'larga «olib
+  tashlangan» izohi bilan bog'langan (`route-map.json` → `partialViews`). Ochiq: investor kabineti nazorati
+  (`/investor/:id`) endi faqat URL orqali — «Foydalanuvchilar → Investorlar» da «Kabinetni ko'rish» yo'q.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;
