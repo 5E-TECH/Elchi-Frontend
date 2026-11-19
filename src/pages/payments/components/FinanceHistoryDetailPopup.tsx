@@ -478,7 +478,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
               </span>,
             )
           : null}
-        {/* P0 63HO6cBU: menejer filial kassasi qatorida «To'lov turi» ni ko'rmaydi (filial kassasi bitta jami). */}
+        {/* To'lov turi — `showsPaymentMethod` (ega Q2: menejer ham ko'radi; kuryer filial qatorida ko'rmaydi). */}
         {showsPaymentMethod(display.cashbox_type, viewerRole)
           ? kvRow(t("v2HistoryDetail.paymentType"), getPaymentMethodLabel(display.payment_method, t))
           : null}

@@ -131,7 +131,7 @@ const HistoryRow = memo(
     const signedAmount = formatSignedMoneyLocalized(getHistoryRowSignedAmount(row, viewerRole));
     const title = getHistoryRowTitle(row, t, viewerRole);
     const actor = resolvePaymentActorName(row);
-    // P0 63HO6cBU: menejer filial kassasi qatorida usulni ko'rmaydi (filial kassasi bitta jami).
+    // P0 63HO6cBU: kuryer filial kassasi qatorida usulni ko'rmaydi; menejer ko'radi (ega Q2) — `showsPaymentMethod`.
     const method =
       row.payment_method && showsPaymentMethod(row.cashbox_type ?? row.cashbox?.cashbox_type, viewerRole)
         ? getPaymentMethodLabel(row.payment_method, t)

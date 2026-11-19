@@ -122,7 +122,7 @@ describe("v2 kassa tarixi yorliqlari (maket matnlari)", () => {
   });
 });
 
-describe("showsPaymentMethod — P0 63HO6cBU (filial kassasi bitta jami)", () => {
+describe("showsPaymentMethod — P0 63HO6cBU (filial kassasi bitta jami; ega Q2 — usul menejerga ham ko'rinadi)", () => {
   it("superadmin/admin: har doim ko'rsatiladi (filial qatorida ham)", () => {
     for (const role of ["superadmin", "admin", "SUPERADMIN"]) {
       expect(showsPaymentMethod("branch", role)).toBe(true);
@@ -131,19 +131,19 @@ describe("showsPaymentMethod — P0 63HO6cBU (filial kassasi bitta jami)", () =>
     }
   });
 
-  it("menejer: filial kassasi qatorida (va kassa turi noma'lum — o'z filiali) yo'q; kuryer / market kassasida bor", () => {
-    expect(showsPaymentMethod("branch", "manager")).toBe(false);
-    expect(showsPaymentMethod("branches", "manager")).toBe(false);
-    expect(showsPaymentMethod(null, "manager")).toBe(false);
-    expect(showsPaymentMethod("couriers", "manager")).toBe(true);
-    expect(showsPaymentMethod("markets", "manager")).toBe(true);
+  it("menejer va registrator (ega Q2): filial kassasi qatorida ham ko'rinadi", () => {
+    for (const role of ["manager", "registrator"]) {
+      expect(showsPaymentMethod("branch", role)).toBe(true);
+      expect(showsPaymentMethod("branches", role)).toBe(true);
+      expect(showsPaymentMethod(null, role)).toBe(true);
+      expect(showsPaymentMethod("couriers", role)).toBe(true);
+    }
   });
 
-  it("kuryer / registrator: filial qatorida yo'q, o'z kassasida bor", () => {
+  it("kuryer: filial qatorida yo'q (backend ham yashiradi), o'z kassasida bor", () => {
     expect(showsPaymentMethod("branch", "courier")).toBe(false);
     expect(showsPaymentMethod("couriers", "courier")).toBe(true);
     expect(showsPaymentMethod(undefined, "courier")).toBe(true);
-    expect(showsPaymentMethod("branch", "registrator")).toBe(false);
   });
 });
 

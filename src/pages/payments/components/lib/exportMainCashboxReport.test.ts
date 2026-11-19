@@ -57,8 +57,8 @@ describe("exportMainCashboxReport — «Izoh» ustuni", () => {
   });
 });
 
-describe("exportMainCashboxReport — P0 63HO6cBU: filial kassasi (menejer) bitta «Summa»", () => {
-  it("singleTotal: naqd / karta / boshqa ustunlari yo'q — bitta summa (usulsiz qator ham), balans — jami", async () => {
+describe("exportMainCashboxReport — P0 63HO6cBU: filial kassasi (menejer) balansi bitta jami", () => {
+  it("singleTotal: balans bir katakda (naqd / karta qoldig'i yo'q); operatsiyalarda to'lov turi ustunlari qoladi (ega Q2)", async () => {
     const html = await exportHtml(
       [
         expense({ id: "1", amount: 150_000, payment_method: "cash" }),
@@ -67,25 +67,20 @@ describe("exportMainCashboxReport — P0 63HO6cBU: filial kassasi (menejer) bitt
       ],
       { singleTotal: true, totalBalance: 3_785_000 },
     );
-    expect(html).not.toContain('<td class="cell subhead">cash</td>');
-    expect(html).not.toContain('<td class="cell subhead">card</td>');
-    expect(html).not.toContain('<td class="cell subhead">other</td>');
-    expect(html).toContain('<td class="cell subhead">amount</td>');
-    expect(html).toContain('colspan="4" class="cell title"');
-    // Chiqim jami 220 000 (usulsiz qator ham kiradi), kirim 90 000.
-    expect(html).toMatch(/summary-blue">220\D000</);
-    expect(html).toMatch(/summary-blue">90\D000</);
-    // Balans bir marta (C4): «Balans» va «jami» da bir xil son takrorlanmaydi.
-    expect(html.match(/3\D785\D000/g)).toHaveLength(1);
-    expect(html).toContain('<td colspan="2" class="cell subhead">balance</td>');
-    expect(html).not.toContain('class="cell num summary-purple"');
-  });
-
-  it("sukut (asosiy kassa): naqd · karta · boshqa ustunlari o'zgarmagan", async () => {
-    const html = await exportHtml([expense({ id: "1" })]);
+    // Operatsiyalar jadvali — asosiy kassadagidek: naqd · karta · boshqa.
     expect(html).toContain('<td class="cell subhead">cash</td>');
     expect(html).toContain('<td class="cell subhead">card</td>');
     expect(html).toContain('<td class="cell subhead">other</td>');
+    expect(html).toContain('colspan="6" class="cell title"');
+    // Balans bir marta, o'ng blokni to'liq egallaydi; «jami» da takrorlanmaydi.
+    expect(html.match(/3\D785\D000/g)).toHaveLength(1);
+    expect(html).toContain('<td colspan="4" class="cell subhead">balance</td>');
+    expect(html).not.toContain('<td class="cell subhead">total</td>');
+  });
+
+  it("sukut (asosiy kassa): balans naqd · karta · jami bilan o'zgarmagan", async () => {
+    const html = await exportHtml([expense({ id: "1" })]);
+    expect(html).toContain('<td class="cell subhead">total</td>');
     expect(html).toContain('colspan="6" class="cell title"');
     expect(html).toContain('class="cell num summary-purple"');
   });

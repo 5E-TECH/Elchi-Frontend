@@ -634,7 +634,7 @@ describe("P0 63HO6cBU — filial kassasi bitta jami (menejer)", () => {
     expect(within(table).getByRole("columnheader", { name: "Jami" })).toBeInTheDocument();
     expect(within(table).queryByRole("columnheader", { name: "Naqd" })).not.toBeInTheDocument();
     expect(within(result).queryByText(/Karta sanalmadi/)).not.toBeInTheDocument();
-    // Excel — menejerda bitta «Summa» ustuni.
+    // Excel — menejerda balans bitta jami (operatsiyalardagi to'lov turi ustunlari qoladi — ega Q2).
     await waitFor(() => expect(exportReport).toHaveBeenCalledTimes(1));
     expect(exportReport.mock.calls[0][0]).toEqual(expect.objectContaining({ singleTotal: true }));
     // Hisobot sarlavhasi — filial kassasi, «Asosiy kassa» emas (C4).
@@ -669,7 +669,7 @@ describe("P0 63HO6cBU — filial kassasi bitta jami (menejer)", () => {
     expect(exportReport.mock.calls[0][0]).toEqual(expect.objectContaining({ singleTotal: false }));
   });
 
-  it("history: manager has no «To'lov turi» column and no method on rows; superadmin keeps it", async () => {
+  it("history (ega Q2): manager sees the «To'lov turi» column and the method too; superadmin unchanged", async () => {
     server.openShift = { id: "12", opened_by: "1" };
     server.historyItems = [
       {
@@ -685,8 +685,8 @@ describe("P0 63HO6cBU — filial kassasi bitta jami (menejer)", () => {
     ];
     const view = open(hqManager);
     const history = await screen.findByRole("table", { name: /Operatsiyalar tarixi|operatsiyalar/i });
-    expect(within(history).queryByRole("columnheader", { name: "To'lov turi" })).not.toBeInTheDocument();
-    expect(within(history).queryByText("Naqd")).not.toBeInTheDocument();
+    expect(within(history).getByRole("columnheader", { name: "To'lov turi" })).toBeInTheDocument();
+    expect(within(history).getAllByText("Naqd").length).toBeGreaterThan(0);
     view.unmount();
 
     open(superadmin);

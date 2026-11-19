@@ -34,15 +34,12 @@ export type MainCashboxReportLabels = {
   comment: string;
   summaryIncome: string;
   summaryExpense: string;
-  /** Bitta jami rejimidagi summa ustuni («Summa»); berilmasa — `total`. */
-  amount?: string;
 };
 
-/** Qator summasi ustunlari: naqd · karta · boshqa yoki (filial kassasi, P0 63HO6cBU) bitta «Summa». */
-type AmountColumn = "cash" | "card" | "other" | "sum";
+/** Qator summasi ustunlari (to'lov turi bo'yicha): naqd · karta · boshqa. */
+type AmountColumn = "cash" | "card" | "other";
 
-const SPLIT_COLUMNS: readonly AmountColumn[] = ["cash", "card", "other"];
-const SINGLE_COLUMNS: readonly AmountColumn[] = ["sum"];
+const COLUMNS: readonly AmountColumn[] = ["cash", "card", "other"];
 
 const formatDateLabel = (date: string | undefined, labels: MainCashboxReportLabels) => {
   if (!date) return labels.defaultReportTitle;
@@ -66,7 +63,6 @@ const buildRows = (rows: PaymentRow[], type: "income" | "expense") => {
       cash: method === "cash" ? amount : 0,
       card: method === "card" ? amount : 0,
       other: method === "other" ? amount : 0,
-      sum: amount,
     };
   });
 };
@@ -112,21 +108,21 @@ export const exportMainCashboxReport = ({
   toDate?: string;
   labels: MainCashboxReportLabels;
   /**
-   * P0 63HO6cBU (ega 2026-11-17): FILIAL kassasi naqd/kartaga bo'linmaydi — menejer hisobotida naqd · karta · boshqa
-   * ustunlari o'rnida bitta «Summa», balans — bitta jami (sarlavha — `labels.mainCashbox` o'rniga chaqiruvchi filial
-   * kassasi nomini beradi). Asosiy kassa (SA/A) hisoboti o'zgarmagan.
+   * P0 63HO6cBU (ega 2026-11-17): FILIAL kassasi naqd/kartaga bo'linmaydi — menejer hisobotida balans bitta jami
+   * (naqd / karta qoldig'i yo'q; sarlavha — chaqiruvchi `labels.mainCashbox` o'rniga filial kassasi nomini beradi).
+   * Operatsiyalar jadvalida to'lov turi ustunlari (naqd · karta · boshqa) qoladi — ega qarori Q2: «Usul menejerga ham
+   * ko'rinsin». Asosiy kassa (SA/A) hisoboti o'zgarmagan.
    */
   singleTotal?: boolean;
 }) => {
-  const columns = singleTotal ? SINGLE_COLUMNS : SPLIT_COLUMNS;
-  const columnLabel = (column: AmountColumn) =>
-    column === "sum" ? labels.amount ?? labels.total : labels[column];
+  const columns = COLUMNS;
+  const columnLabel = (column: AmountColumn) => labels[column];
   // Chap jadval: № · qayerdan · summalar · izoh; o'ng: balans (+ naqd · karta) · jami / izoh · summalar.
   const leftSpan = columns.length + 3;
   const rightSpan = columns.length + 1;
   const subheads = (indent: string) =>
     columns.map((column) => `<td class="cell subhead">${escapeHtml(columnLabel(column))}</td>`).join(`\n${indent}`);
-  // Bitta jami — balans bir marta (ikki ustunni egallaydi; «Balans» va «jami» da bir xil son takrorlanmaydi).
+  // Bitta jami — balans bir marta (o'ng blokni to'liq egallaydi; «Balans» va «jami» da bir xil son takrorlanmaydi).
   const balanceHeads = singleTotal
     ? `<td colspan="${rightSpan}" class="cell subhead">${escapeHtml(labels.balance)}</td>`
     : `<td class="cell subhead">${escapeHtml(labels.balance)}</td>
@@ -140,9 +136,7 @@ export const exportMainCashboxReport = ({
             <td class="cell num">${fmt(cardBalance)}</td>
             <td class="cell num">${fmt(totalBalance)}</td>`;
   const summaryCells = (items: ReportRow[]) =>
-    singleTotal
-      ? `<td class="cell num summary-blue">${fmt(sumBy(items, (row) => row.sum))}</td>`
-      : `<td class="cell num summary-blue">${fmt(sumBy(items, (row) => row.cash))}</td>
+    `<td class="cell num summary-blue">${fmt(sumBy(items, (row) => row.cash))}</td>
             <td class="cell num summary-purple">${fmt(sumBy(items, (row) => row.card))}</td>
             <td class="cell num">${fmt(sumBy(items, (row) => row.other))}</td>`;
   const incomeRows = buildRows(rows, "income");

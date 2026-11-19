@@ -64,7 +64,6 @@
       "openTitleWithOrder": "{{title}} №{{id}}",
       "balanceAfter": "Баланс: {{amount}}",
       "cardLabel": "{{title}}, {{method}}, {{direction}} {{amount}}, баланс {{balance}}, {{date}}",
-      "cardLabelNoMethod": "{{title}}, {{direction}} {{amount}}, баланс {{balance}}, {{date}}",
       "totalOperations": "Всего операций: {{total}}",
       "totalTransfers": "Всего переводов: {{total}}",
       "paginationTransfers": "{{from}}–{{to}} из {{total}} переводов",

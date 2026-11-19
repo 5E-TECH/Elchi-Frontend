@@ -166,16 +166,15 @@ export const getPaymentMethodLabel = (value: string | null | undefined, translat
 const BRANCH_CASHBOX_TYPES: ReadonlySet<string> = new Set(["branch", "branches", "for_branch"]);
 
 /**
- * Tarix qatorida to'lov turi ko'rsatiladimi. P0 63HO6cBU (ega 2026-11-17): FILIAL kassasi naqd/kartaga bo'linmaydi —
- * superadmin/admin bo'lmagan ko'ruvchi (menejer) filial kassasi qatorida usulni ko'rmaydi (backend ham bermaydi);
- * kassa turi noma'lum qator menejerda — o'z filiali kassasi deb olinadi. Superadmin/admin tarixi o'zgarmagan.
+ * Tarix qatorida to'lov turi ko'rsatiladimi. P0 63HO6cBU: filial kassasi naqd/kartaga bo'linmaydi (bitta jami), lekin
+ * ega qarori (Q2): «Usul menejerga ham ko'rinsin, faqat ularda kassa yaxlit bitta bo'lsa yetadi» — superadmin, admin,
+ * menejer va registrator usulni ko'radi (backend ham beradi; `null` — «—»). Faqat kuryer (va boshqa rollar) filial
+ * kassasi qatorida ko'rmaydi (backend usulni yashiradi).
  */
 export const showsPaymentMethod = (cashboxType: string | null | undefined, viewerRole: string | null | undefined) => {
   const role = normalize(viewerRole);
-  if (role === "superadmin" || role === "admin") return true;
-  const type = normalize(cashboxType);
-  if (BRANCH_CASHBOX_TYPES.has(type)) return false;
-  return !(type === "" && role === "manager");
+  if (role === "superadmin" || role === "admin" || role === "manager" || role === "registrator") return true;
+  return !BRANCH_CASHBOX_TYPES.has(normalize(cashboxType));
 };
 
 /**

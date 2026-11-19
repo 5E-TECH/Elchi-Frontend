@@ -124,12 +124,16 @@ describe("FinanceHistoryDetailPopup (v2)", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("P0 63HO6cBU: menejer filial kassasi qatorida «To'lov turi» ni ko'rmaydi; superadmin ko'radi; usulsiz qator — «—»", async () => {
+  it("P0 63HO6cBU (ega Q2): menejer filial kassasi qatorida «To'lov turi» ni ko'radi; kuryer ko'rmaydi; usulsiz qator — «—»", async () => {
     const branchRow: PaymentRow = { ...sellRow, id: "601", cashbox_type: "branch", source_type: "courier_payment", source_id: undefined };
     const managerView = open(branchRow, "manager");
-    const managerDialog = await screen.findByRole("dialog");
-    expect(within(managerDialog).queryByText("To'lov turi", { selector: "dt" })).not.toBeInTheDocument();
+    expect(valueOf(await screen.findByRole("dialog"), "To'lov turi")).toHaveTextContent("Naqd");
     managerView.unmount();
+
+    const courierView = open(branchRow, "courier");
+    const courierDialog = await screen.findByRole("dialog");
+    expect(within(courierDialog).queryByText("To'lov turi", { selector: "dt" })).not.toBeInTheDocument();
+    courierView.unmount();
 
     const adminView = open(branchRow, "superadmin");
     expect(valueOf(await screen.findByRole("dialog"), "To'lov turi")).toHaveTextContent("Naqd");

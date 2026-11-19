@@ -247,7 +247,7 @@ const toPaymentRows = (response: CashboxResponse | undefined, role: CashboxRole)
         transfer_id: toOptionalString(item["transfer_id"]) ?? null,
         reverses_history_id: toOptionalString(item["reverses_history_id"]) ?? null,
         correction: toPaymentCorrection(item["correction"]),
-        // P0 63HO6cBU (BE PR-A): filial kassasi oyog'i — sarlavha va tafsilot uchun.
+        // P0 63HO6cBU (BE PR-A): filial kassasi oyog'i — sarlavha (usul yashirilgan bo'lsa) uchun.
         branch_leg: item["branch_leg"] === true ? true : undefined,
         // Menejer (filial kassasi) qo'lda chiqimining xarajat kategoriyasi — Elchi Pochta №1.
         expense_category_id: toOptionalString(item["expense_category_id"]) ?? null,
@@ -626,11 +626,6 @@ const MyCashboxPage = () => {
   const orderId = (row: PaymentRow) =>
     isOrderLinkedSource(row.source_type) ? String(row.source_id ?? "").trim() : "";
   const methodText = useCallback((row: PaymentRow) => getPaymentMethodLabel(row.payment_method, t), [t]);
-  /**
-   * P0 63HO6cBU (ega 2026-11-17): menejer kassasi — filial kassasi, u naqd/kartaga bo'linmaydi: «To'lov turi» ustuni va
-   * qator ostidagi usul yo'q (backend ham menejerga `payment_method: null` beradi). Kuryer / market — o'zgarmagan.
-   */
-  const showMethod = role !== "manager";
   /** Kuryer → filial o'tkazmasini qabul qilgan xodim (kuryer kassasi yozuvini yaratgan). */
   const receiverName = (row: PaymentRow) =>
     isCourier && row.source_type === "courier_payment"
@@ -785,7 +780,7 @@ const MyCashboxPage = () => {
     const value = direction(row);
     const category = getExpenseCategoryName(row);
     const title = category ? `${labelTitle(row)} · ${category}` : labelTitle(row);
-    return t(showMethod ? "v2MyCashbox.history.cardLabel" : "v2MyCashbox.history.cardLabelNoMethod", {
+    return t("v2MyCashbox.history.cardLabel", {
       title: sub ? `${title} (${sub})` : title,
       method: methodText(row),
       direction: value ? t(value === "income" ? "v2Common.income" : "v2Common.expense") : "",
@@ -835,26 +830,22 @@ const MyCashboxPage = () => {
             {parts.length ? (
               <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
                 {joinParts(parts)}
-                {isCourier || !showMethod ? null : <span className="hidden max-lg:inline">{` · ${methodText(row)}`}</span>}
+                {isCourier ? null : <span className="hidden max-lg:inline">{` · ${methodText(row)}`}</span>}
               </div>
-            ) : isCourier || !showMethod ? null : (
+            ) : isCourier ? null : (
               <div className="hidden text-[13px] text-text-muted max-lg:block">{methodText(row)}</div>
             )}
           </>
         );
       },
     },
-    ...(showMethod
-      ? [
-          {
-            id: "method",
-            header: t("v2MyCashbox.history.columns.paymentType"),
-            hideBelow: "lg",
-            className: "whitespace-nowrap",
-            cell: (row) => methodText(row),
-          } satisfies DataTableColumn<PaymentRow>,
-        ]
-      : []),
+    {
+      id: "method",
+      header: t("v2MyCashbox.history.columns.paymentType"),
+      hideBelow: "lg",
+      className: "whitespace-nowrap",
+      cell: (row) => methodText(row),
+    },
     {
       id: "operation",
       header: t(isCourier ? "v2MyCashbox.history.columns.type" : "v2MyCashbox.history.columns.operation"),
@@ -964,7 +955,7 @@ const MyCashboxPage = () => {
           {amountNode(row)}
         </span>
         <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
-          {joinParts(showMethod ? [...subParts(row), methodText(row)] : subParts(row))}
+          {joinParts([...subParts(row), methodText(row)])}
         </span>
         <span className="flex w-full min-w-0 items-center justify-between gap-3">
           <span className="whitespace-nowrap text-[13px] text-text-muted">{dateText(row)}</span>

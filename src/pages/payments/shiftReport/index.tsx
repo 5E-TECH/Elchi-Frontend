@@ -84,7 +84,8 @@ const SHIFT_SETTINGS_PATH = opsTabPath(SHIFT_SETTINGS_TAB);
  *
  * P0 63HO6cBU (ega 2026-11-17, BE PR-A m5): FILIAL smenasi (`cashbox_type: "branch"`, `card: null`, `accounts: []`,
  * operatsiyalar usulsiz) — bitta jami: KPI izohlarida naqd / kartalar bo'linmasi yo'q, blok sarlavhasi «Jami»,
- * «Kartalar va hisob raqamlar» kartasi yo'q, usulsiz operatsiya ostida «boshqa» yozilmaydi. Asosiy kassa o'zgarmagan.
+ * «Kartalar va hisob raqamlar» kartasi yo'q, usulsiz operatsiya ostida «boshqa» yozilmaydi (usul bilan kelsa — ega Q2:
+ * ko'rsatiladi). Asosiy kassa o'zgarmagan.
  */
 
 const sum = (...values: Array<number | null | undefined>) =>

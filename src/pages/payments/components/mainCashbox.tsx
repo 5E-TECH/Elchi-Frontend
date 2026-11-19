@@ -144,8 +144,8 @@ import {
  *  - P0 63HO6cBU (ega qarori 2026-11-17, maketdan ataylab farq): FILIAL kassasi naqd/kartaga bo'linmaydi — menejerda
  *    balans faqat bitta jami (naqd/karta chizig'i va «Kartalar» oynasi yo'q), «Tezkor amallar» — faqat «Kuryerdan qabul
  *    qilish» va «Marketga to'lov» («Kassadan xarajat» / «Kassani to'ldirish» va ularning oynalari yo'q — backend ham
- *    menejerga 403), smena oynalari — bitta «Sanalgan summa» / «Jami», tarixda «To'lov turi» yo'q, Excel — bitta
- *    «Summa» ustuni. Superadmin/admin asosiy kassasi o'zgarmagan.
+ *    menejerga 403), smena oynalari — bitta «Sanalgan summa» / «Jami», Excel — balans bitta jami. Ega qarori Q2:
+ *    to'lov turi menejerga ham ko'rinadi (tarix ustuni, Excel operatsiyalari). Superadmin/admin asosiy kassasi o'zgarmagan.
  *  - «Bugun / Bu hafta / Bu oy» (telefonda bitta karta + segment), «Pul qayerdan keldi, qayerga ketdi»
  *    (bu oy, manba turi bo'yicha), «Operatsiyalar tarixi» (sana filtri, jadval → telefonda kartalar, tafsilot).
  *
@@ -673,9 +673,9 @@ const MainCashbox = () => {
         comment: t("comment"),
         summaryIncome: t("summaryIncome"),
         summaryExpense: t("summaryExpense"),
-        amount: t("amount"),
       },
-      // Filial kassasi bitta jami (P0 63HO6cBU) — menejer hisobotida naqd/karta ustunlari yo'q.
+      // Filial kassasi bitta jami (P0 63HO6cBU) — menejer hisobotida balans bitta jami (naqd/karta qoldig'i yo'q);
+      // operatsiyalardagi to'lov turi ustunlari qoladi (ega Q2).
       singleTotal: isManagerRole,
     });
   }, [
@@ -877,7 +877,7 @@ const MainCashbox = () => {
     String(value ?? "").trim().toLowerCase() === "click"
       ? t("v2Common.paymentMethod.cardClick")
       : getPaymentMethodLabel(value, t);
-  // P0 63HO6cBU: menejerning filial kassasi tarixida «To'lov turi» yo'q (filial kassasi bitta jami).
+  // To'lov turi — `showsPaymentMethod` (ega Q2: menejer ham ko'radi; usul kelmasa «—»).
   const rowMethodText = (row: PaymentRow) =>
     showsPaymentMethod(row.cashbox_type || row.cashbox?.cashbox_type || viewerCashboxType, normalizedRole)
       ? paymentMethodLabel(row.payment_method)
@@ -1045,17 +1045,13 @@ const MainCashbox = () => {
         );
       },
     },
-    ...(isManagerRole
-      ? []
-      : [
-          {
-            id: "paymentType",
-            header: t("v2MainCashbox.history.columns.paymentType"),
-            hideBelow: "lg",
-            className: "whitespace-nowrap",
-            cell: (row) => rowMethodText(row),
-          } satisfies DataTableColumn<PaymentRow>,
-        ]),
+    {
+      id: "paymentType",
+      header: t("v2MainCashbox.history.columns.paymentType"),
+      hideBelow: "lg",
+      className: "whitespace-nowrap",
+      cell: (row) => rowMethodText(row),
+    },
     {
       id: "operation",
       header: t("v2MainCashbox.history.columns.operation"),

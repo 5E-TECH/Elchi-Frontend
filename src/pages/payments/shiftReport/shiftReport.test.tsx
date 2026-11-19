@@ -196,6 +196,23 @@ describe("ShiftReportPage — filial smenasi bitta jami (P0 63HO6cBU)", () => {
     expect(screen.getByText("+950 000 so'm")).toBeInTheDocument();
   });
 
+  it("ega Q2: operatsiyalar usul bilan kelsa — usul ko'rinadi, lekin smena bitta «Jami» bo'lib qoladi", async () => {
+    render(manager, {
+      ...BRANCH_REPORT,
+      operations: [
+        { operation_type: "income", payment_method: "cash", count: 3, total: 1_000_000 },
+        { operation_type: "income", payment_method: "click", count: 2, total: 250_000 },
+        { operation_type: "expense", payment_method: "cash", count: 1, total: 300_000 },
+      ],
+    });
+    expect(await screen.findByText("Operatsiyalar xulosasi")).toBeInTheDocument();
+    expect(screen.getAllByText("naqd")).toHaveLength(2);
+    expect(screen.getByText("karta")).toBeInTheDocument();
+    expect(screen.getByText("Jami")).toBeInTheDocument();
+    expect(screen.queryByText("Kartalar va hisob raqamlar")).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/naqd .*kartalar/);
+  });
+
   it("asosiy kassa hisobotida avvalgidek: naqd / kartalar izohi, «Naqd» bloki va kartalar kartasi", async () => {
     render(superadmin);
     expect(await screen.findByText("Kartalar va hisob raqamlar")).toBeInTheDocument();

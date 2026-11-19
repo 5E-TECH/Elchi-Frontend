@@ -64,7 +64,6 @@
       "openTitleWithOrder": "{{title}} №{{id}}",
       "balanceAfter": "Balans: {{amount}}",
       "cardLabel": "{{title}}, {{method}}, {{direction}} {{amount}}, balans {{balance}}, {{date}}",
-      "cardLabelNoMethod": "{{title}}, {{direction}} {{amount}}, balans {{balance}}, {{date}}",
       "totalOperations": "Jami {{total}} ta operatsiya",
       "totalTransfers": "Jami {{total}} ta o'tkazma",
       "paginationTransfers": "{{from}}–{{to}} / {{total}} ta o'tkazma",
