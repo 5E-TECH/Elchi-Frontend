@@ -784,6 +784,8 @@
       "title": "Berilishi kerak",
       "description": "Pul to'lanadigan marketni tanlang",
       "summary": "{{count}} ta market, jami {{amount}}",
+      "payableSummary": "{{count}} ta market, to'lash mumkin: jami {{amount}}",
+      "managerEmpty": "Bu filialga buyurtma topshiradigan market yo'q",
       "searchPlaceholder": "Qidirish...",
       "searchLabel": "Marketni nomi bo'yicha qidirish",
       "listLabel": "Marketlar"
@@ -886,6 +888,7 @@
     },
     "settlement": {
       "title": "Hisob-kitob holati",
+      "payable": "To'lash mumkin",
       "counterparty": "Qarshi tomon: {{name}}",
       "receiver": "Qabul qiluvchi: {{name}}",
       "hide": "Summalarni yashirish",
@@ -914,6 +917,8 @@
       "limitHint": "Ko'pi bilan {{amount}} — qabul qilinishi kerak bo'lgan summa",
       "receivableHint": "Qabul qilinishi kerak: {{amount}}",
       "payableHint": "Berilishi kerak: {{amount}}",
+      "payableLimitHint": "To'lash mumkin: {{amount}}",
+      "payableExceeded": "Summa to'lash mumkin bo'lgan summadan oshib ketdi (To'lash mumkin: {{amount}})",
       "paymentType": "To'lov turi",
       "paymentTypeRequired": "To'lov turini tanlang",
       "market": "Market",
@@ -993,6 +998,7 @@
         "courierBranch": "Filial kassasida smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.",
         "courierMain": "Asosiy kassada smena ochilgandan keyin kuryerdan pul qabul qilish ishlaydi.",
         "market": "Asosiy kassada smena ochilgandan keyin marketga to'lov ishlaydi.",
+        "marketBranch": "Filial kassasida smena ochilgandan keyin marketga to'lov ishlaydi.",
         "branchReceive": "Asosiy kassada smena ochilgandan keyin filialdan pul qabul qilish ishlaydi."
       }
     }

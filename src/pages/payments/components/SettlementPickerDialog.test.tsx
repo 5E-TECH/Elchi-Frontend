@@ -12,6 +12,19 @@ const state = vi.hoisted(() => ({
   couriersRefetch: vi.fn(),
   managers: undefined as unknown,
   hqCouriers: undefined as unknown,
+  managerMarkets: { data: undefined, isLoading: false, isError: false, error: null, isFetching: false } as Record<string, unknown>,
+  managerMarketsEnabled: [] as boolean[],
+  managerMarketsRefetch: vi.fn(),
+}));
+
+// 63HO6cBU (BE PR-C): menejer «Berilishi kerak» — GET /finance/cashbox/manager/markets.
+vi.mock("../../../entities/payments/managerMarkets", () => ({
+  useManagerMarkets: (enabled: boolean) => {
+    state.managerMarketsEnabled.push(enabled);
+    return enabled
+      ? { ...state.managerMarkets, refetch: state.managerMarketsRefetch }
+      : { data: undefined, isLoading: false, isError: false, error: null, isFetching: false, refetch: vi.fn() };
+  },
 }));
 
 vi.mock("../../../entities/markets", () => ({
@@ -39,11 +52,19 @@ vi.mock("../../../entities/branch/api/useBranches", () => ({
   useBranches: () => ({ data: undefined, isLoading: false }),
 }));
 
-const open = (kind: SettlementPickerKind, props: { total?: number; branchName?: string } = {}) => {
+const superadmin = { role: { id: "1", role: "superadmin", region: null, name: "Admin" } } as never;
+const managerRole = { role: { id: "198", role: "manager", region: null, name: "Menejer" } } as never;
+
+const open = (
+  kind: SettlementPickerKind,
+  props: { total?: number; branchName?: string } = {},
+  preloadedState = superadmin,
+) => {
   const onSelect = vi.fn();
   const onClose = vi.fn();
   renderWithProviders(
     <SettlementPickerDialog kind={kind} open onClose={onClose} onSelect={onSelect} {...props} />,
+    { preloadedState },
   );
   return { onSelect, onClose };
 };
@@ -56,6 +77,9 @@ beforeEach(() => {
   state.couriersRefetch.mockClear();
   state.managers = undefined;
   state.hqCouriers = undefined;
+  state.managerMarkets = { data: undefined, isLoading: false, isError: false, error: null, isFetching: false };
+  state.managerMarketsEnabled = [];
+  state.managerMarketsRefetch.mockClear();
 });
 
 /** Oynadagi qatorlar tartibi (nom bo'yicha). */
@@ -272,5 +296,158 @@ describe("SettlementPickerDialog", () => {
     open("courier");
     const dialog = await screen.findByRole("dialog", { name: "Kuryerni tanlang" });
     expect(within(dialog).getByText("Kuryerlar · 1 ta")).toBeInTheDocument();
+  });
+});
+
+/**
+ * 63HO6cBU (P0, BE PR-C): menejer «Berilishi kerak» — faqat o'z filiali marketlari (`GET /finance/cashbox/manager/markets`,
+ * `GET /markets` EMAS), qator summasi — «To'lash mumkin» (`payable`), filial ulushi (`branch_share`) emas. «To'lash
+ * mumkin» 0 — ro'yxatda, lekin tanlanmaydi. Bo'sh — «Bu filialga buyurtma topshiradigan market yo'q»; 503 — xato holati.
+ */
+describe("SettlementPickerDialog — menejer «Berilishi kerak» (63HO6cBU, BE PR-C)", () => {
+  const share = (marketId: string, name: string, branchShare: number, payable: number, status = "active") => ({
+    marketId,
+    name,
+    status,
+    branchShare,
+    payable,
+  });
+  const managerList = (items: ReturnType<typeof share>[], totalPayable: number | null = null) => {
+    state.managerMarkets = {
+      data: { branchId: "16", items, totalShare: null, totalPayable, total: items.length },
+      isLoading: false,
+      isError: false,
+      error: null,
+      isFetching: false,
+    };
+  };
+
+  it("⭐ manba — manager/markets (GET /markets so'ralmaydi); qator summasi — payable (ulush emas); 0 — tanlanmaydi", async () => {
+    managerList(
+      [
+        // Ulush 4,82 mln, lekin marketga qarz 1,2 mln — «To'lash mumkin» 1,2 mln.
+        share("2", "Baraka Shop", 4_820_000, 1_200_000),
+        share("3", "Ipak Yo'li Savdo", 900_000, 900_000),
+        // HQ oldindan to'lagan: ulush bor, to'lash mumkin — 0.
+        share("5", "Oila Market", 300_000, 0),
+      ],
+      2_100_000,
+    );
+    const { onSelect } = open("give", {}, managerRole);
+
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(state.marketParams).toEqual([]);
+    expect(state.managerMarketsEnabled.at(-1)).toBe(true);
+    expect(dialog).toHaveAccessibleDescription(
+      "Pul to'lanadigan marketni tanlang · 2 ta market, to'lash mumkin: jami 2 100 000 so'm",
+    );
+    // Summa bir qatorda (raqam o'rtasida bo'linmaydi).
+    expect(within(dialog).getByText("2 100 000 so'm")).toHaveClass("whitespace-nowrap");
+
+    const baraka = within(dialog).getByRole("option", { name: /Baraka Shop/ });
+    expect(baraka).toHaveTextContent("1 200 000 so'm");
+    expect(baraka).not.toHaveTextContent("4 820 000");
+    expect(optionNames(dialog, ["Baraka Shop", "Ipak Yo'li Savdo", "Oila Market"])).toEqual([
+      "Baraka Shop",
+      "Ipak Yo'li Savdo",
+      "Oila Market",
+    ]);
+
+    // «To'lash mumkin» 0 — ro'yxatda, xira, bosilsa ham tanlanmaydi.
+    const oila = within(dialog).getByRole("option", { name: /Oila Market/ });
+    expect(oila).toHaveAttribute("aria-disabled", "true");
+    expect(oila).toHaveTextContent("0 so'm");
+    const user = userEvent.setup();
+    await user.click(oila);
+    expect(oila).toHaveAttribute("aria-selected", "false");
+    expect(within(dialog).getByRole("button", { name: "Tanlash" })).toBeDisabled();
+    await user.dblClick(oila);
+    expect(onSelect).not.toHaveBeenCalled();
+
+    // Klaviatura ham o'tkazib yuboradi: End → oxirgi TANLANADIGAN qator, ↓ — boshiga aylanadi.
+    const search = within(dialog).getByRole("combobox", { name: "Marketni nomi bo'yicha qidirish" });
+    await user.type(search, "{End}");
+    expect(within(dialog).getByRole("option", { name: /Ipak Yo'li Savdo/ })).toHaveAttribute("aria-selected", "true");
+    await user.type(search, "{ArrowDown}");
+    expect(within(dialog).getByRole("option", { name: /Baraka Shop/ })).toHaveAttribute("aria-selected", "true");
+
+    await user.click(within(dialog).getByRole("button", { name: "Tanlash" }));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith({
+      path: "/payments/cash-detail/2?type=market",
+      state: {
+        type: "market",
+        entity: expect.objectContaining({ id: "2", name: "Baraka Shop", amount: 1_200_000, is_inactive: false }),
+      },
+    });
+  });
+
+  it("qidiruv — nomi yoki ID si bo'yicha; «Nofaol» belgisi", async () => {
+    managerList([share("2", "Baraka Shop", 100, 100), share("201", "Grand Moda", 50, 50, "blocked")]);
+    open("give", {}, managerRole);
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(within(dialog).getByRole("option", { name: /Grand Moda/ })).toHaveTextContent("Nofaol");
+
+    await userEvent.setup().type(within(dialog).getByRole("combobox"), "201");
+    expect(within(dialog).getAllByRole("option")).toHaveLength(1);
+    expect(within(dialog).getByRole("option", { name: /Grand Moda/ })).toBeInTheDocument();
+  });
+
+  it("bo'sh ro'yxat — «Bu filialga buyurtma topshiradigan market yo'q»", async () => {
+    managerList([]);
+    open("give", {}, managerRole);
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(within(dialog).getByText("Bu filialga buyurtma topshiradigan market yo'q")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Qarzdorlik yo'q")).not.toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription("Pul to'lanadigan marketni tanlang");
+  });
+
+  it("hammasi «To'lash mumkin» 0 — bo'sh holat emas, qatorlar xira ko'rinadi", async () => {
+    managerList([share("5", "Oila Market", 300_000, 0)]);
+    open("give", {}, managerRole);
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(within(dialog).getByRole("option", { name: /Oila Market/ })).toHaveAttribute("aria-disabled", "true");
+    expect(dialog).toHaveAccessibleDescription("Pul to'lanadigan marketni tanlang · 0 ta market, to'lash mumkin: jami 0 so'm");
+  });
+
+  it("⭐ 503 — bo'sh ro'yxat emas: «Filial ulushini tekshirib bo'lmadi …» + «Qayta urinish»", async () => {
+    const message = "Filial ulushini tekshirib bo'lmadi — birozdan so'ng qayta urinib ko'ring";
+    state.managerMarkets = {
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      isFetching: false,
+      error: Object.assign(new Error("Service Unavailable"), {
+        isAxiosError: true,
+        response: { status: 503, data: { statusCode: 503, message } },
+      }),
+    };
+    open("give", {}, managerRole);
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(within(dialog).getByText("Ro'yxatni yuklab bo'lmadi")).toBeInTheDocument();
+    expect(within(dialog).getByText(message)).toBeInTheDocument();
+    expect(within(dialog).queryByText("Bu filialga buyurtma topshiradigan market yo'q")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("listbox")).not.toBeInTheDocument();
+    await userEvent.setup().click(within(dialog).getByRole("button", { name: "Qayta urinish" }));
+    expect(state.managerMarketsRefetch).toHaveBeenCalled();
+  });
+
+  it("yuklanmoqda — skelet", async () => {
+    state.managerMarkets = { data: undefined, isLoading: true, isError: false, error: null, isFetching: true };
+    open("give", {}, managerRole);
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(within(dialog).getByRole("status", { name: "Ro'yxat yuklanmoqda" })).toBeInTheDocument();
+  });
+
+  it("superadmin — avvalgidek GET /markets (manager/markets so'ralmaydi)", async () => {
+    state.markets = {
+      data: { data: [{ id: "201", name: "Baraka Shop", status: "active", cashbox: { balance: 10 } }] },
+      isLoading: false,
+      isError: false,
+    };
+    open("give");
+    await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(state.marketParams.at(-1)).toEqual({ limit: 10000 });
+    expect(state.managerMarketsEnabled.every((enabled) => !enabled)).toBe(true);
   });
 });

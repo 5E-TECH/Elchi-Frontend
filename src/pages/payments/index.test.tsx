@@ -54,6 +54,10 @@ const pageState = vi.hoisted(() => ({
   /** uzWcMR1C — `useGetPaymentsMeta` holati va `enabled` qiymatlari. */
   paymentsMeta: { data: undefined, isLoading: false, isError: false } as { data: unknown; isLoading: boolean; isError: boolean },
   paymentsMetaEnabled: [] as boolean[],
+  /** `GET /markets` — yoqilgan chaqiruvlar soni (menejer «Berilishi kerak» uni so'ramaydi — 63HO6cBU, BE PR-C). */
+  marketsEnabledCalls: 0,
+  /** 63HO6cBU (BE PR-C): `GET /finance/cashbox/manager/markets` (normallashgan). */
+  managerMarkets: undefined as unknown,
 }));
 /** CB-2: `POST finance/shift/open` (menejer «To'lovlar» — smena yopiq). */
 const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
@@ -157,7 +161,21 @@ vi.mock("../../entities/branch/api/useBranches", () => ({
 
 vi.mock("../../entities/markets", () => ({
   useMarkets: () => ({
-    useGetMarkets: () => ({ data: pageState.markets, isLoading: false }),
+    useGetMarkets: (_params: unknown, enabled?: boolean) => {
+      if (enabled) pageState.marketsEnabledCalls += 1;
+      return { data: pageState.markets, isLoading: false };
+    },
+  }),
+}));
+
+vi.mock("../../entities/payments/managerMarkets", () => ({
+  useManagerMarkets: (enabled: boolean) => ({
+    data: enabled ? pageState.managerMarkets : undefined,
+    isLoading: false,
+    isError: false,
+    error: null,
+    isFetching: false,
+    refetch: vi.fn(),
   }),
 }));
 
@@ -693,15 +711,27 @@ describe("Payments — header and KPI cards", () => {
   });
 
   it("⭐ manager: «Marketga to'lov» (ega 2026-11-11, BeePost kabi) — «Berilishi kerak» oynasi, market → market kassasi", async () => {
-    pageState.markets = {
-      data: [{ id: "2", name: "Baraka Shop", status: "active", cashbox: { balance: 4_820_000 } }],
+    // 63HO6cBU (BE PR-C): manba — o'z filiali marketlari (`manager/markets`), summa — «To'lash mumkin» (`payable`).
+    pageState.managerMarkets = {
+      branchId: "16",
+      items: [{ marketId: "2", name: "Baraka Shop", status: "active", branchShare: 4_820_000, payable: 1_200_000 }],
+      totalShare: 4_820_000,
+      totalPayable: 1_200_000,
+      total: 1,
     };
+    // GET /markets ham javob bersa — menejerda ishlatilmaydi.
+    pageState.markets = {
+      data: [{ id: "9", name: "Boshqa filial marketi", status: "active", cashbox: { balance: 4_820_000 } }],
+    };
+    pageState.marketsEnabledCalls = 0;
     const user = userEvent.setup();
     open(manager);
 
     await user.click(screen.getByRole("button", { name: "Marketga to'lov" }));
     const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
-    expect(within(dialog).getByRole("option", { name: /Baraka Shop/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole("option", { name: /Baraka Shop/ })).toHaveTextContent("1 200 000 so'm");
+    expect(within(dialog).queryByRole("option", { name: /Boshqa filial marketi/ })).not.toBeInTheDocument();
+    expect(pageState.marketsEnabledCalls).toBe(0);
   });
 });
 

@@ -332,6 +332,9 @@ export const API_ENDPOINTS = {
     CASHBOX_USER_MAIN: (id: string | number) => `finance/cashbox/user/${id}/main`, // by user with date filters
     MANAGER_PAYABLE_TO_HQ: "finance/cashbox/manager/payable-to-hq",
     MANAGER_SETTLEMENT: "finance/cashbox/manager/settlement",
+    // 63HO6cBU (BE PR-C) — faqat MANAGER: o'z filiali marketlari, filial ulushi (`branch_share`) va «To'lash mumkin»
+    // (`payable` — to'lov chegarasi). Query: `search`, `page`, `limit` (≤ 100); ulush bo'yicha kamayish tartibida.
+    MANAGER_MARKETS: "finance/cashbox/manager/markets",
     // HQ kuryerlari (superadmin/admin "Qabul qilinishi kerak" ro'yxati uchun)
     HQ_COURIERS: "finance/cashbox/hq-couriers",
     HISTORY: "finance/history",

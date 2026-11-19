@@ -2,7 +2,11 @@
 import { memo, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ArrowDownLeft, Building2, Check, SearchX, Store, Truck, Wallet, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
 import { useMarkets } from "../../../entities/markets";
+import { useManagerMarkets, type ManagerMarketShare } from "../../../entities/payments/managerMarkets";
+import { getBackendMessage, getErrorStatus } from "../../../shared/lib/errorKind";
 import { cx } from "../../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
@@ -38,10 +42,17 @@ import {
  * siljitish, Enter — «Tanlash». Qator kaliti `${kind}:${id}` (filial 15 va kuryer 15 aralashmasin), market — `id`.
  *
  * Ma'lumot faqat oyna ochiqligida: receive/courier — `useReceiveOptions` (`status=active` YO'Q, FE-PAY-13 —
- * bloklangan, lekin puli qolgan qator «Nofaol» belgisi bilan chiqadi); give — `GET /markets?limit=10000`
+ * bloklangan, lekin puli qolgan qator «Nofaol» belgisi bilan chiqadi); give — superadmin/admin: `GET /markets?limit=10000`
  * (`status` YO'Q, puli yo'q bloklangan market chiqmaydi). Tanlov navigatsiyasini chaqiruvchi qiladi.
  *
  * Maketdan farq (Spt8Cj7m, TC matni): «Berilishi kerak» da 0 so'mli market sukut bo'yicha ko'rinmaydi, faqat qidiruvda.
+ *
+ * MENEJER «Berilishi kerak» (63HO6cBU, BE PR-C; maket yo'q — eng yaqini `superadmin-payments-to-give-dialog`): faqat
+ * o'z filiali marketlari — `GET /finance/cashbox/manager/markets` (`GET /markets` EMAS), qator summasi — «To'lash
+ * mumkin» (`payable`, to'lov chegarasi; filial ulushi `branch_share` emas). «To'lash mumkin» 0 bo'lgan market ham
+ * ro'yxatda, lekin tanlab bo'lmaydi (`aria-disabled`, xira). Bo'sh — «Bu filialga buyurtma topshiradigan market yo'q»;
+ * 503 («Filial ulushini tekshirib bo'lmadi …») — bo'sh ro'yxat emas, xato holati + «Qayta urinish». Qidiruv — yuklangan
+ * ro'yxat ichida (nomi yoki ID si).
  */
 
 export type SettlementPickerKind = "receive" | "give" | "courier";
@@ -86,6 +97,8 @@ type PickerRow = {
   subtitle: string;
   amount: number;
   inactive: boolean;
+  /** Tanlab bo'lmaydi (menejer: «To'lash mumkin» 0) — ro'yxatda turadi, lekin xira. */
+  disabled?: boolean;
   search: string;
   target: SettlementPickerTarget;
 };
@@ -167,10 +180,59 @@ const matchesQuery = (row: PickerRow, query: string) => {
  */
 const byAmountDesc = (rows: readonly PickerRow[]) => [...rows].sort((left, right) => right.amount - left.amount);
 
+/**
+ * Menejer qatori: summa — «To'lash mumkin» (`payable`); 0 (yoki manfiy) — tanlab bo'lmaydi. Kassa sahifasiga `entity`
+ * (eski shakl) — summa ham `payable`.
+ */
+const toManagerMarketRow = (market: ManagerMarketShare): PickerRow => {
+  const inactive = isInactiveStatus(market.status);
+  const entity: PaymentMarketOption = {
+    id: market.marketId,
+    name: market.name,
+    phone_number: "",
+    role: "market",
+    amount: market.payable,
+    is_inactive: inactive,
+  };
+  return {
+    key: market.marketId,
+    icon: Store,
+    name: market.name,
+    subtitle: "",
+    amount: market.payable,
+    inactive,
+    disabled: !(market.payable > 0),
+    search: searchText([market.name, market.marketId]),
+    target: {
+      path: `/payments/cash-detail/${market.marketId}?type=market`,
+      state: { type: "market", entity },
+    },
+  };
+};
+
+/** Matndagi summa bir qatorda qoladi (mingliklar ajratkichi oddiy bo'shliq — «jami 2 / 150 000» bo'linmasin). */
+const withNowrapAmount = (text: string, amount: string): ReactNode => {
+  const at = text.lastIndexOf(amount);
+  if (at < 0) return text;
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="whitespace-nowrap">{amount}</span>
+      {text.slice(at + amount.length)}
+    </>
+  );
+};
+
+/** Faqat 503 da backendning o'zbekcha sababi («Filial ulushini tekshirib bo'lmadi …») — xato izohida. */
+const shareCheckMessage = (error: unknown) =>
+  getErrorStatus(error) === 503 ? getBackendMessage(error) : undefined;
+
 /** `.el-option` — tanlash oynasidagi qator (min 56 px, radio belgi, telefonda ikonka yashirin). */
 const ROW =
   "flex min-h-14 w-full cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text " +
   "transition-[background-color] duration-150 motion-reduce:transition-none";
+/** Tanlab bo'lmaydigan qator — `Select` dagi o'chiq variant kabi (`cursor-not-allowed text-text-subtle`). */
+const DISABLED_ROW = "cursor-not-allowed text-text-subtle";
 
 const KIND_ICON: Record<SettlementPickerKind, LucideIcon> = {
   receive: ArrowDownLeft,
@@ -193,14 +255,21 @@ const SettlementPickerDialog = ({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const isMarketList = kind === "give";
+  const role = useSelector((state: RootState) => state.role.role);
+  // 63HO6cBU (PR-C): menejer faqat o'z filiali marketlariga, «To'lash mumkin» doirasida to'laydi.
+  const isManagerMarketList = isMarketList && String(role).toLowerCase() === "manager";
   const receive = useReceiveOptions({ isManagerRole: kind === "courier", enabled: open && !isMarketList });
   const { useGetMarkets } = useMarkets();
   // `status: "active"` YO'Q (FE-PAY-13): bloklangan, lekin puli qolgan market ham to'lanishi kerak.
-  const marketsQuery = useGetMarkets({ limit: FULL_LIST_LIMIT }, open && isMarketList);
+  const marketsQuery = useGetMarkets({ limit: FULL_LIST_LIMIT }, open && isMarketList && !isManagerMarketList);
+  const managerMarketsQuery = useManagerMarkets(open && isManagerMarketList);
 
   const money = (value: number) => formatMoneyLocalized(value, { language });
 
   const rows = useMemo<PickerRow[]>(() => {
+    if (isManagerMarketList) {
+      return (managerMarketsQuery.data?.items ?? []).map(toManagerMarketRow);
+    }
     if (isMarketList) {
       return toPaymentMarketOptions(marketsQuery.data).map((market) => ({
         key: market.id,
@@ -237,13 +306,15 @@ const SettlementPickerDialog = ({
         target: getReceiveDetailTarget(option),
       };
     });
-  }, [isMarketList, kind, marketsQuery.data, receive.options, t]);
+  }, [isManagerMarketList, isMarketList, kind, managerMarketsQuery.data, marketsQuery.data, receive.options, t]);
 
   const searching = query.trim() !== "";
   // «Berilishi kerak» (Spt8Cj7m): 0 qoldiqli market sukut bo'yicha chiqmaydi, qidirilsa topiladi — kassasi ochiladi.
+  // Menejer (PR-C): «To'lash mumkin» 0 bo'lgan market ham ko'rinadi (xira, tanlanmaydi).
+  const hideZero = isMarketList && !isManagerMarketList;
   const visible = useMemo(
-    () => rows.filter((row) => (searching ? matchesQuery(row, query) : !isMarketList || row.amount !== 0)),
-    [isMarketList, query, rows, searching],
+    () => rows.filter((row) => (searching ? matchesQuery(row, query) : !hideZero || row.amount !== 0)),
+    [hideZero, query, rows, searching],
   );
   // Guruhlar tartibi: avval filiallar, so'ng HQ kuryerlari; har guruh ichida — summa bo'yicha kamayish.
   const ordered = useMemo(
@@ -257,14 +328,23 @@ const SettlementPickerDialog = ({
     [kind, visible],
   );
 
-  const isLoading = isMarketList ? marketsQuery.isLoading : receive.isLoading;
-  const isError = isMarketList ? Boolean(marketsQuery.isError) : receive.isError;
+  const isLoading = isManagerMarketList
+    ? managerMarketsQuery.isLoading
+    : isMarketList
+      ? marketsQuery.isLoading
+      : receive.isLoading;
+  const isError = isManagerMarketList
+    ? managerMarketsQuery.isError
+    : isMarketList
+      ? Boolean(marketsQuery.isError)
+      : receive.isError;
   const retry = () => {
-    if (isMarketList) void marketsQuery.refetch?.();
+    if (isManagerMarketList) void managerMarketsQuery.refetch();
+    else if (isMarketList) void marketsQuery.refetch?.();
     else receive.refetch();
   };
 
-  const selectedRow = ordered.find((row) => row.key === selectedKey) ?? null;
+  const selectedRow = ordered.find((row) => row.key === selectedKey && !row.disabled) ?? null;
   const selectedIndex = selectedRow ? ordered.indexOf(selectedRow) : -1;
   const optionId = (key: string) => `${listId}-option-${encodeURIComponent(key)}`;
 
@@ -276,16 +356,21 @@ const SettlementPickerDialog = ({
   }, [open]);
 
   const choose = (row: PickerRow | null) => {
-    if (!row || chosenRef.current) return;
+    if (!row || row.disabled || chosenRef.current) return;
     chosenRef.current = true;
     onSelect(row.target);
   };
 
-  const moveTo = (index: number) => {
-    if (ordered.length === 0) return;
-    const next = ordered[(index + ordered.length) % ordered.length];
-    setSelectedKey(next.key);
-    document.getElementById(optionId(next.key))?.scrollIntoView?.({ block: "nearest" });
+  /** `index` dan `step` yo'nalishida birinchi tanlanadigan qator (tanlab bo'lmaydiganlari o'tkazib yuboriladi). */
+  const moveTo = (index: number, step: 1 | -1) => {
+    const count = ordered.length;
+    for (let offset = 0; offset < count; offset += 1) {
+      const next = ordered[(((index + offset * step) % count) + count) % count];
+      if (next.disabled) continue;
+      setSelectedKey(next.key);
+      document.getElementById(optionId(next.key))?.scrollIntoView?.({ block: "nearest" });
+      return;
+    }
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -293,17 +378,18 @@ const SettlementPickerDialog = ({
     switch (event.key) {
       case "ArrowDown":
         event.preventDefault();
-        moveTo(selectedIndex < 0 ? 0 : selectedIndex + 1);
+        moveTo(selectedIndex < 0 ? 0 : selectedIndex + 1, 1);
         break;
       case "ArrowUp":
         event.preventDefault();
-        moveTo(selectedIndex < 0 ? ordered.length - 1 : selectedIndex - 1);
+        moveTo(selectedIndex < 0 ? ordered.length - 1 : selectedIndex - 1, -1);
         break;
       case "Home":
       case "End":
         if (ordered.length === 0) return;
         event.preventDefault();
-        moveTo(event.key === "Home" ? 0 : ordered.length - 1);
+        if (event.key === "Home") moveTo(0, 1);
+        else moveTo(ordered.length - 1, -1);
         break;
       case "Enter":
         event.preventDefault();
@@ -338,14 +424,21 @@ const SettlementPickerDialog = ({
     );
   } else if (kind === "give") {
     const positiveCount = rows.filter((row) => row.amount > 0).length;
+    // Menejer: jami — server `total_payable` («To'lash mumkin» yig'indisi), bo'lmasa qatorlardan.
+    const payableTotal = managerMarketsQuery.data?.totalPayable ?? positiveSum;
     description = (
       <>
         <span>{t("v2Picker.give.description")}</span>
-        {hasRows ? (
+        {hasRows && (!isManagerMarketList || rows.length > 0) ? (
           <>
             {" · "}
             <span>
-              {t("v2Picker.give.summary", { count: positiveCount, amount: money(positiveSum) })}
+              {isManagerMarketList
+                ? withNowrapAmount(
+                    t("v2Picker.give.payableSummary", { count: positiveCount, amount: money(payableTotal) }),
+                    money(payableTotal),
+                  )
+                : t("v2Picker.give.summary", { count: positiveCount, amount: money(positiveSum) })}
             </span>
           </>
         ) : null}
@@ -403,8 +496,21 @@ const SettlementPickerDialog = ({
         <SkeletonList rows={5} />
       </div>
     );
+  } else if (isError && isManagerMarketList) {
+    // 503 — filial ulushini tekshirib bo'lmadi: bo'sh ro'yxat EMAS, backend sababi + «Qayta urinish».
+    stateContent = (
+      <ErrorState
+        title={t("v2Picker.loadError")}
+        error={managerMarketsQuery.error}
+        description={shareCheckMessage(managerMarketsQuery.error)}
+        onRetry={retry}
+        retrying={managerMarketsQuery.isFetching}
+      />
+    );
   } else if (isError) {
     stateContent = <ErrorState title={t("v2Picker.loadError")} onRetry={retry} />;
+  } else if (isManagerMarketList && rows.length === 0) {
+    stateContent = <EmptyState icon={Store} title={t("v2Picker.give.managerEmpty")} />;
   } else if (rows.length === 0 || (ordered.length === 0 && !searching)) {
     stateContent = <EmptyState icon={Wallet} title={t("v2Picker.empty")} />;
   } else if (ordered.length === 0) {
@@ -414,7 +520,7 @@ const SettlementPickerDialog = ({
   let listContent: ReactNode = null;
   if (!stateContent) {
     listContent = ordered.map((row, index) => {
-      const isSelected = row.key === selectedKey;
+      const isSelected = row.key === selectedKey && !row.disabled;
       const label = groupLabel(row, index);
       const Icon = row.icon;
       return (
@@ -431,16 +537,23 @@ const SettlementPickerDialog = ({
             id={optionId(row.key)}
             role="option"
             aria-selected={isSelected}
+            aria-disabled={row.disabled || undefined}
             data-key={row.key}
-            onClick={() => setSelectedKey(row.key)}
+            onClick={() => {
+              if (!row.disabled) setSelectedKey(row.key);
+            }}
             onDoubleClick={() => choose(row)}
-            className={cx(ROW, isSelected ? "bg-action-soft" : "hover:bg-sunken")}
+            className={cx(ROW, row.disabled ? DISABLED_ROW : isSelected ? "bg-action-soft" : "hover:bg-sunken")}
           >
             <span
               aria-hidden="true"
               className={cx(
                 "inline-flex size-5 shrink-0 items-center justify-center rounded-full",
-                isSelected ? "bg-action text-on-solid" : "border-2 border-border-strong",
+                isSelected
+                  ? "bg-action text-on-solid"
+                  : row.disabled
+                    ? "border-2 border-border"
+                    : "border-2 border-border-strong",
               )}
             >
               {isSelected ? <Check size={12} strokeWidth={3} /> : null}
@@ -453,7 +566,9 @@ const SettlementPickerDialog = ({
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="min-w-0 font-semibold text-text">{row.name}</span>
+                <span className={cx("min-w-0 font-semibold", row.disabled ? "text-text-subtle" : "text-text")}>
+                  {row.name}
+                </span>
                 {row.inactive ? <InactiveBadge isSelected={isSelected} /> : null}
               </span>
               {row.subtitle ? <span className="text-xs text-text-muted">{row.subtitle}</span> : null}
@@ -461,7 +576,7 @@ const SettlementPickerDialog = ({
             <span
               className={cx(
                 "shrink-0 whitespace-nowrap font-semibold",
-                row.amount < 0 ? "text-danger-fg" : "text-text",
+                row.amount < 0 ? "text-danger-fg" : row.disabled ? "text-text-subtle" : "text-text",
               )}
             >
               {money(row.amount)}

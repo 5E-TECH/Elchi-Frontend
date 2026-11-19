@@ -784,6 +784,8 @@
       "title": "To be given",
       "description": "Select the market to pay",
       "summary": "{{count}} markets, total {{amount}}",
+      "payableSummary": "{{count}} markets, payable: total {{amount}}",
+      "managerEmpty": "No markets hand over orders to this branch",
       "searchPlaceholder": "Search...",
       "searchLabel": "Search markets by name",
       "listLabel": "Markets"
@@ -886,6 +888,7 @@
     },
     "settlement": {
       "title": "Settlement status",
+      "payable": "Payable",
       "counterparty": "Counterparty: {{name}}",
       "receiver": "Receiver: {{name}}",
       "hide": "Hide amounts",
@@ -914,6 +917,8 @@
       "limitHint": "At most {{amount}} — the amount to be received",
       "receivableHint": "To be received: {{amount}}",
       "payableHint": "To be given: {{amount}}",
+      "payableLimitHint": "Payable: {{amount}}",
+      "payableExceeded": "The amount exceeds the payable amount (payable: {{amount}})",
       "paymentType": "Payment type",
       "paymentTypeRequired": "Choose a payment type",
       "market": "Market",
@@ -993,6 +998,7 @@
         "courierBranch": "Receiving money from couriers works once a shift is open in the branch cashbox.",
         "courierMain": "Receiving money from couriers works once a shift is open in the main cashbox.",
         "market": "Market payouts work once a shift is open in the main cashbox.",
+        "marketBranch": "Market payouts work once a shift is open in the branch cashbox.",
         "branchReceive": "Receiving money from branches works once a shift is open in the main cashbox."
       }
     }
