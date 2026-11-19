@@ -311,8 +311,16 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
     : getPaymentActorName(party) || (party?.id != null ? `#${party.id}` : "");
   const partyRole = sourceBranch ? t("v2Common.roles.branch") : (roleLabel(party?.role) ?? roleLabel(display.cashbox_type));
   const partyPhone = sourceBranch ? "" : party?.phone_number?.trim() || party?.phone?.trim() || "";
+  /**
+   * P0 63HO6cBU (ega 2026-11-17): filial kassasi bitta jami — filial kassasi oyog'ida (`branch_leg`, har qanday rol) va
+   * menejer / kuryer / registrator ko'rinishida usulsiz qatorda karta («Qaysi kartadan / kartaga») va o'tkazma manbasi
+   * chizilmaydi (backend ham ularni olib tashlaydi; FE himoyasi). Superadmin/admin'ning asosiy kassa qatori o'zgarmagan.
+   */
+  const isBranchLeg = current.branch_leg === true || detail?.branch_leg === true;
+  const isLimitedViewer = ["manager", "courier", "registrator"].includes(normalizeKey(viewerRole));
+  const hidesCardDetails = isBranchLeg || (isLimitedViewer && !normalizeKey(display.payment_method));
   // O'tkazma manbasi — kartaga kim o'tkazgan (faqat karta to'lovida). «Qayerdan» dagi odamning o'zi bo'lsa — takrorlanmaydi.
-  const transferUser = detail?.transfer_source_user ?? null;
+  const transferUser = hidesCardDetails ? null : (detail?.transfer_source_user ?? null);
   const transferUserName =
     transferUser && (sourceBranch || String(transferUser.id ?? "") !== String(party?.id ?? ""))
       ? getPaymentActorName(transferUser) || (transferUser.id != null ? `#${transferUser.id}` : "")
@@ -320,7 +328,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
   const transferUserRole = roleLabel(transferUser?.role);
   const transferUserPhone = transferUser?.phone_number?.trim() || transferUser?.phone?.trim() || "";
   // Karta to'lovi: pul qaysi kartaga tushdi / qaysi kartadan chiqdi (MAIN / BRANCH kassa, backend `card`).
-  const card = detail?.card ?? null;
+  const card = hidesCardDetails ? null : (detail?.card ?? null);
   const cardName = card ? (card.is_default ? t("mainCard") : card.name?.trim() || `#${card.id ?? ""}`) : "";
   const cardMeta = card
     ? [card.bank_name?.trim(), card.card_network?.trim(), card.last4 ? `•••• ${card.last4}` : null, card.holder_name?.trim()]

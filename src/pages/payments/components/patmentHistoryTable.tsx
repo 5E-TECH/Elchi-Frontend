@@ -76,6 +76,8 @@ export interface PaymentRow {
    * va tafsilotdagi blok. Xom javobdan keladi — har doim `toPaymentCorrection` bilan o'qiladi.
    */
   correction?: PaymentCorrection | null;
+  /** P0 63HO6cBU (BE PR-A): filial kassasi oyog'i — karta va o'tkazma manbasi ko'rsatilmaydi. */
+  branch_leg?: boolean | null;
   createdAt?: string;
   created_at?: string;
   cashbox?: {

@@ -1017,6 +1017,8 @@ const CashDetail = () => {
         transfer_id: toOptionalString(item["transfer_id"]) ?? null,
         reverses_history_id: toOptionalString(item["reverses_history_id"]) ?? null,
         correction: toPaymentCorrection(item["correction"]),
+        // P0 63HO6cBU (BE PR-A): filial kassasi oyog'i — tafsilotda karta va o'tkazma manbasi chiqmaydi.
+        branch_leg: item["branch_leg"] === true ? true : undefined,
         createdAt: toOptionalString(item["createdAt"]),
         created_at: toOptionalString(item["created_at"]),
         cashbox: item["cashbox"] as PaymentRow["cashbox"],

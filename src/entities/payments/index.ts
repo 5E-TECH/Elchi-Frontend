@@ -120,6 +120,11 @@ export interface FinanceHistoryDetail {
   transfer_source_user?: FinanceHistoryActor | null;
   /** Karta to'lovida pul tushgan / chiqqan karta (MAIN / BRANCH kassada; `id: null` — Asosiy karta yozuvsiz). */
   card?: FinanceHistoryCard | null;
+  /**
+   * P0 63HO6cBU (BE PR-A): filial kassasi oyog'i (filial qatori yoki kuryer → filial to'lovining kuryer qatori). Filial
+   * kassasi bitta jami — bunday qatorda karta va o'tkazma manbasi ma'nosiz (ko'rsatilmaydi).
+   */
+  branch_leg?: boolean | null;
 }
 
 /** Tarix tafsilotidagi karta — faqat ko'rsatish maydonlari (oxirgi 4 raqam, to'liq raqam yo'q). */

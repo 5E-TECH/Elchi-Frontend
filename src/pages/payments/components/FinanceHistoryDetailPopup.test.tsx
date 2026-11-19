@@ -811,6 +811,86 @@ describe("FinanceHistoryDetailPopup — «Qayerdan» filial va karta (2026-11-14
     expect(within(dialog).queryByText("Qaysi kartaga", { selector: "dt" })).not.toBeInTheDocument();
   });
 
+  // P0 63HO6cBU (ega 2026-11-17): filial kassasi bitta jami — filial oyog'ida karta va o'tkazma manbasi ma'nosiz. Backend
+  // ularni olib tashlaydi; FE ham himoyalangan (eski / tuzatilmagan javob kelsa ham chizilmaydi).
+  const cardBlock = {
+    id: "3",
+    name: "Asosiy karta",
+    is_default: true,
+    bank_name: "Kapitalbank",
+    card_network: "Humo",
+    last4: "4821",
+    holder_name: "Urgut filiali",
+  };
+  const transferSource = { id: "25", name: "Aziz Menejer", phone_number: "+998901234567", role: "manager" };
+  const branchLegRow: PaymentRow = {
+    ...branchRow,
+    id: "294",
+    operation_type: "expense",
+    cashbox_id: "20",
+    cashbox_type: "branch",
+    payment_method: "click",
+    branch_leg: true,
+  };
+
+  it.each([
+    ["superadmin", "click"],
+    ["admin", "click"],
+    ["manager", undefined],
+  ])("P0 63HO6cBU: %s — branch_leg qatorida (javobda karta bo'lsa ham) karta va «Kim o'tkazdi» yo'q", async (role, method) => {
+    detailState.result = {
+      data: branchDetail({
+        id: "294",
+        cashbox_id: "20",
+        cashbox: { id: "20", cashbox_type: "branch" },
+        branch_leg: true,
+        payment_method: method ?? null,
+        card: cardBlock,
+        transfer_source_user: transferSource,
+      }),
+      isLoading: false,
+      isError: false,
+    };
+    open({ ...branchLegRow, payment_method: method }, role);
+
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(within(dialog).queryByText("Qaysi kartadan", { selector: "dt" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Qaysi kartaga", { selector: "dt" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Kim o'tkazdi", { selector: "dt" })).not.toBeInTheDocument();
+    expect(dialog.querySelector("[data-history-card]")).toBeNull();
+    expect(dialog).not.toHaveTextContent("•••• 4821");
+    expect(dialog).not.toHaveTextContent("Aziz Menejer");
+  });
+
+  it("P0 63HO6cBU: kuryer / registrator — usulsiz qatorda (branch_leg belgisi kelmasa ham) karta va o'tkazma manbasi yo'q", async () => {
+    for (const role of ["courier", "registrator"]) {
+      detailState.result = {
+        data: branchDetail({ payment_method: null, card: cardBlock, transfer_source_user: transferSource }),
+        isLoading: false,
+        isError: false,
+      };
+      const view = open({ ...branchRow, payment_method: undefined }, role);
+      const dialog = await screen.findByRole("dialog");
+      expect(dialog.querySelector("[data-history-card]")).toBeNull();
+      expect(within(dialog).queryByText("Kim o'tkazdi", { selector: "dt" })).not.toBeInTheDocument();
+      view.unmount();
+    }
+  });
+
+  it("P0 63HO6cBU: superadmin — asosiy kassa (MAIN) qatorida karta va «Kim o'tkazdi» avvalgidek", async () => {
+    detailState.result = {
+      data: branchDetail({ payment_method: "click", card: cardBlock, transfer_source_user: transferSource }),
+      isLoading: false,
+      isError: false,
+    };
+    open({ ...branchRow, payment_method: "click" }, "superadmin");
+
+    const dialog = await screen.findByRole("dialog", { name: "Kirim operatsiyasi" });
+    expect(valueOf(dialog, "Qaysi kartaga")).toHaveTextContent("Asosiy karta");
+    expect(valueOf(dialog, "Qaysi kartaga")).toHaveTextContent("Kapitalbank · Humo · •••• 4821 · Urgut filiali");
+    expect(valueOf(dialog, "Kim o'tkazdi")).toHaveTextContent("Aziz Menejer");
+  });
+
   it("eski backend (source_branch yo'q) — «Qayerdan» avvalgidek; filial kassasidagi chiqim oyog'iga filial qo'yilmaydi", async () => {
     detailState.result = {
       data: { data: { ...branchDetail().data, source_branch: undefined } },
