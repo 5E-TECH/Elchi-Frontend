@@ -147,6 +147,21 @@ export const getPaymentMethodLabel = (value: string | null | undefined, translat
   return String(value).trim();
 };
 
+const BRANCH_CASHBOX_TYPES: ReadonlySet<string> = new Set(["branch", "branches", "for_branch"]);
+
+/**
+ * Tarix qatorida to'lov turi ko'rsatiladimi. P0 63HO6cBU (ega 2026-11-17): FILIAL kassasi naqd/kartaga bo'linmaydi —
+ * superadmin/admin bo'lmagan ko'ruvchi (menejer) filial kassasi qatorida usulni ko'rmaydi (backend ham bermaydi);
+ * kassa turi noma'lum qator menejerda — o'z filiali kassasi deb olinadi. Superadmin/admin tarixi o'zgarmagan.
+ */
+export const showsPaymentMethod = (cashboxType: string | null | undefined, viewerRole: string | null | undefined) => {
+  const role = normalize(viewerRole);
+  if (role === "superadmin" || role === "admin") return true;
+  const type = normalize(cashboxType);
+  if (BRANCH_CASHBOX_TYPES.has(type)) return false;
+  return !(type === "" && role === "manager");
+};
+
 /**
  * Kassa turi: main → «Asosiy kassa», couriers|courier → «Kuryer kassasi», markets|market → «Market kassasi»,
  * branch → «Filial kassasi». Menejer uchun o'z filiali kassasi — «Asosiy kassa» (maket `manager-payments-*`:

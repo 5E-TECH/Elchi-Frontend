@@ -8,6 +8,7 @@ import {
   getPaymentSourceTitle,
   getPaymentSourceTypeLabel,
   getViewerOperationType,
+  showsPaymentMethod,
 } from "./paymentSourceType";
 
 describe("getPaymentSourceTypeLabel", () => {
@@ -118,5 +119,30 @@ describe("v2 kassa tarixi yorliqlari (maket matnlari)", () => {
     expect(getViewerOperationType({ operation_type: "income", source_type: "sell" }, "market")).toBe("income");
     expect(getViewerOperationType({ operation_type: "weird" }, "market")).toBeNull();
     expect(getViewerOperationType(null, "market")).toBeNull();
+  });
+});
+
+describe("showsPaymentMethod — P0 63HO6cBU (filial kassasi bitta jami)", () => {
+  it("superadmin/admin: har doim ko'rsatiladi (filial qatorida ham)", () => {
+    for (const role of ["superadmin", "admin", "SUPERADMIN"]) {
+      expect(showsPaymentMethod("branch", role)).toBe(true);
+      expect(showsPaymentMethod("main", role)).toBe(true);
+      expect(showsPaymentMethod(undefined, role)).toBe(true);
+    }
+  });
+
+  it("menejer: filial kassasi qatorida (va kassa turi noma'lum — o'z filiali) yo'q; kuryer / market kassasida bor", () => {
+    expect(showsPaymentMethod("branch", "manager")).toBe(false);
+    expect(showsPaymentMethod("branches", "manager")).toBe(false);
+    expect(showsPaymentMethod(null, "manager")).toBe(false);
+    expect(showsPaymentMethod("couriers", "manager")).toBe(true);
+    expect(showsPaymentMethod("markets", "manager")).toBe(true);
+  });
+
+  it("kuryer / registrator: filial qatorida yo'q, o'z kassasida bor", () => {
+    expect(showsPaymentMethod("branch", "courier")).toBe(false);
+    expect(showsPaymentMethod("couriers", "courier")).toBe(true);
+    expect(showsPaymentMethod(undefined, "courier")).toBe(true);
+    expect(showsPaymentMethod("branch", "registrator")).toBe(false);
   });
 });

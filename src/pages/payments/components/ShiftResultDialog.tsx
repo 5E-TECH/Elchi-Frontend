@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-payments-main-cashbox-shift-result-dialog, admin-payments-main-cashbox-shift-result-dialog, manager-payments-main-cashbox-shift-result-dialog
 import { memo, type ReactNode } from "react";
-import { Banknote, CircleCheck, CreditCard, Download, FileText, Info, type LucideIcon } from "lucide-react";
+import { Banknote, CircleCheck, CreditCard, Download, FileText, Info, Wallet, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CashboxShift } from "../../../entities/payments";
 import { cx } from "../../../shared/lib/cx";
@@ -20,6 +20,10 @@ import ShiftSummaryList, { type ShiftSummaryRow } from "./ShiftSummaryList";
  * yopgan xodim va izoh, «Excel hisobot yuklab olindi» eslatmasi; «Excelga yuklash» (qayta) va «Tayyor».
  *
  * Sahifa qayta yuklangandan keyin natijani ko'rsatish (`last_closed`) — Taklif · backend kerak (CB-3).
+ *
+ * P0 63HO6cBU (ega 2026-11-17, maketdan ataylab farq): FILIAL kassasi naqd/kartaga bo'linmaydi — `singleTotal` (menejer)
+ * da bitta «Jami» ustuni (naqd + karta yig'indisi; farq — naqd farqi, karta sanalgan bo'lsa qo'shiladi), «Karta
+ * sanalmadi» izohi yo'q.
  */
 
 type ShiftResultDialogProps = {
@@ -35,9 +39,19 @@ type ShiftResultDialogProps = {
   onExport: () => void;
   /** kiZgTybn — kartalar tekshirilgan smenada «Smena hisoboti» havolasi (`/payments/shifts/:id`). */
   reportHref?: string | null;
+  /** Filial kassasi (P0 63HO6cBU): naqd/karta o'rnida bitta «Jami» ustuni. */
+  singleTotal?: boolean;
 };
 
-type Column = "cash" | "card";
+type Column = "cash" | "card" | "total";
+type ColumnValues = {
+  income: number;
+  expense: number;
+  diff: number | null;
+  counted: number;
+  expected: number | null | undefined;
+  opening: number;
+};
 type MetricKey = "opening" | "income" | "expense" | "expected" | "counted" | "diff";
 
 const METRICS: readonly MetricKey[] = ["opening", "income", "expense", "expected", "counted", "diff"];
@@ -57,6 +71,7 @@ const ShiftResultDialog = ({
   cardLabel,
   onExport,
   reportHref,
+  singleTotal = false,
 }: ShiftResultDialogProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -76,7 +91,20 @@ const ShiftResultDialog = ({
 
   const notCountedBadge = <Badge>{t("v2MainCashbox.shift.diff.notCounted")}</Badge>;
 
-  const values = (column: Column) => {
+  const values = (column: Column): ColumnValues => {
+    if (column === "total") {
+      const cash = values("cash");
+      const card = values("card");
+      const expectedCard = card.expected ?? 0;
+      return {
+        income: cash.income + card.income,
+        expense: cash.expense + card.expense,
+        diff: cash.diff === null ? null : cash.diff + (card.diff ?? 0),
+        counted: cash.counted + (card.diff === null ? 0 : card.counted),
+        expected: cash.expected === null || cash.expected === undefined ? cash.expected : cash.expected + expectedCard,
+        opening: cash.opening + card.opening,
+      };
+    }
     const income = num(column === "cash" ? shift?.total_income_cash : shift?.total_income_card);
     const expense = num(column === "cash" ? shift?.total_expense_cash : shift?.total_expense_card);
     const diff = column === "cash" ? shift?.discrepancy_cash ?? null : shift?.discrepancy_card ?? null;
@@ -137,12 +165,14 @@ const ShiftResultDialog = ({
   };
 
   const metricLabel = (metric: MetricKey) => t(`v2MainCashbox.shift.result.${metric}`);
-  const columns: Array<{ key: Column; label: string; icon: LucideIcon }> = [
-    { key: "cash", label: t("v2MainCashbox.shift.cash"), icon: Banknote },
-    { key: "card", label: cardLabel, icon: CreditCard },
-  ];
+  const columns: Array<{ key: Column; label: string; icon: LucideIcon }> = singleTotal
+    ? [{ key: "total", label: t("v2MainCashbox.shift.total"), icon: Wallet }]
+    : [
+        { key: "cash", label: t("v2MainCashbox.shift.cash"), icon: Banknote },
+        { key: "card", label: cardLabel, icon: CreditCard },
+      ];
 
-  const cardNotCounted = Boolean(shift) && (shift?.discrepancy_card ?? null) === null;
+  const cardNotCounted = !singleTotal && Boolean(shift) && (shift?.discrepancy_card ?? null) === null;
   const comment = shift?.comment?.trim() ?? "";
 
   return (
@@ -172,7 +202,7 @@ const ShiftResultDialog = ({
       {/* Desktop / planshet — jadval (`.el-table.is-compact`). */}
       <div className="overflow-x-auto rounded-xl border border-border max-md:hidden">
         <table
-          aria-label={t("v2MainCashbox.shift.result.tableLabel")}
+          aria-label={t(singleTotal ? "v2MainCashbox.shift.result.tableLabelTotal" : "v2MainCashbox.shift.result.tableLabel")}
           className="w-full border-collapse text-sm"
         >
           <thead>

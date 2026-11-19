@@ -192,6 +192,16 @@ const findBranchHqDebt = (branches: unknown, branchId: string | undefined): numb
   return row ? Math.max(toNumber(asRecord(row).hq_qarzi), 0) : 0;
 };
 
+/**
+ * GET /branches qatoridan «Kassa qarzga ishlaydi» sozlamasi (`cashbox_debt_enabled`). Qator topilmasa — `undefined`
+ * (noma'lum: filialdan qabulda jami qoldiq tekshiruvi qilinmaydi, backend hal qiladi).
+ */
+const findBranchDebtEnabled = (branches: unknown, branchId: string | undefined): boolean | undefined => {
+  if (!branchId || !Array.isArray(branches)) return undefined;
+  const row = branches.find((branch) => String(asRecord(branch).id ?? "") === String(branchId));
+  return row ? asRecord(row).cashbox_debt_enabled === true : undefined;
+};
+
 /** GET /branches qatoridan filial nomi (state'siz ochilganda sarlavha uchun). */
 const findBranchName = (branches: unknown, branchId: string | undefined): string | undefined => {
   if (!branchId || !Array.isArray(branches)) return undefined;
@@ -389,7 +399,16 @@ const cashDetailSchema: yup.ObjectSchema<CashboxActionFormValues> = yup.object({
     .required(i18n.t("payments:amountRequired"))
     .test("positive-number", i18n.t("payments:amountPositiveValidation"), (value) =>
       parseAmountInput(value) > 0),
-  paymentType: yup.string().required(i18n.t("payments:v2CashDetail.form.paymentTypeRequired")),
+  // P0 63HO6cBU (ega 2026-11-17): filial kassasi bitta jami — menejer kuryerdan qabulda faqat summa kiritadi (usul yo'q,
+  // server naqd yozadi). Boshqa hamma joyda (SA/A qabuli, marketga to'lov) usul majburiy — `useForm` `context`.
+  paymentType: yup
+    .string()
+    .defined()
+    .when("$methodRequired", {
+      is: false,
+      then: (schema) => schema,
+      otherwise: (schema) => schema.required(i18n.t("payments:v2CashDetail.form.paymentTypeRequired")),
+    }),
   marketId: yup.string().defined().when("paymentType", {
     is: "click_to_market",
     then: (schema) => schema.required(i18n.t("payments:marketRequired")),
@@ -400,7 +419,6 @@ const cashDetailSchema: yup.ObjectSchema<CashboxActionFormValues> = yup.object({
   transferSourceId: yup.string().defined(),
   comment: yup.string().defined(),
   cardId: yup.string().defined(),
-  branchCardId: yup.string().defined(),
 });
 
 const CashDetail = () => {
@@ -666,6 +684,16 @@ const CashDetail = () => {
   const isCourierReceiveDetail = type === "courier" && isCurrentManagerRole;
   const isHqBranchView = type === "branch" && !isCurrentManagerRole;
   const hasServerBranchPayable = isHqBranchView && serverBranchPayable !== undefined;
+  /**
+   * P0 63HO6cBU (ega 2026-11-17): filial kassasi naqd/kartaga bo'linmaydi — SA/A filialdan qabul qilganda summa
+   * filial kassasining JAMI qoldig'idan (`cashbox.balance`) oshmasin. «Kassa qarzga ishlaydi» yoqilgan filial jamidan
+   * ortiq bera oladi (kassa manfiyga tushadi) — chegara yo'q; qoldiq yoki sozlama noma'lum bo'lsa ham chegara yo'q.
+   */
+  const branchDebtEnabled = isHqBranchView ? findBranchDebtEnabled(hqBranchesQuery.data?.data, id) : undefined;
+  const branchCashboxTotal =
+    isHqBranchView && cashbox?.cashbox_type === "branch" ? toOptionalNumber(cashbox?.balance) : undefined;
+  const branchTotalLimit =
+    branchDebtEnabled === false && branchCashboxTotal !== undefined ? Math.max(branchCashboxTotal, 0) : null;
   const isHqBranchReceiveDetail = isHqBranchView && (hasStateAmount || hasServerBranchPayable);
   const hasServerCourierReceivable = isCourierReceiveDetail && serverCourierReceivable !== undefined;
   // Ko'rsatilgan summa router state'idan va server uni qayta o'qib bera olmaydi
@@ -727,7 +755,13 @@ const CashDetail = () => {
     setBalanceOverride(null);
   }, [id, settlementBalance]);
 
-  const paymentTypeOptions = [
+  /**
+   * P0 63HO6cBU (ega 2026-11-17): filial kassasi naqd/kartaga bo'linmaydi — menejer kuryerdan qabul qilganda «To'lov
+   * turi» yo'q, faqat summa (`payment_method` / `card_id` yuborilmaydi, server naqd yozadi). SA/A HQ kuryeridan qabuli
+   * va marketga to'lov o'zgarmagan.
+   */
+  const isMethodless = isCourierReceiveDetail;
+  const paymentTypeOptions = isMethodless ? [] : [
     { value: "cash", label: t("v2Common.paymentMethod.cash") },
     { value: "click", label: t("v2Common.paymentMethod.transfer") },
     // «Marketga o'tkazma» — pul to'g'ridan-to'g'ri marketga o'tkazilgan. FAQAT superadmin/admin (ega 2026-11-11):
@@ -747,9 +781,9 @@ const CashDetail = () => {
         transferSourceId: "",
         comment: "",
         cardId: "",
-        branchCardId: "",
       },
       resolver: yupResolver(cashDetailSchema) as Resolver<CashboxActionFormValues>,
+      context: { methodRequired: !isMethodless },
     });
 
   // Smena ochilib, oyna yopilgach (qulf tugmasi DOM dan ketgan — fokus <body> ga tushmasin) — «Summa» maydoni.
@@ -785,19 +819,15 @@ const CashDetail = () => {
   const { reset: resetReceipt } = receipt;
   /**
    * KARTA (cards1111b — BeePost kabi): «O'tkazma» (`click`) da pul qaysi kartaga tushadi / qaysi kartadan chiqadi.
-   * Kuryerdan qabul — qabul qiluvchi kassa kartasi (admin — asosiy kassa, menejer — o'z filiali; JWT doirasi);
-   * marketga to'lov — asosiy kassa kartasi (chiqim); filialdan qabul — HQ kartasi (`card_id`) + filial kartasi
-   * (`branch_card_id`, `?branch_id`). «Marketga o'tkazma» va naqdda karta yo'q. Ro'yxat sahifa ochilganda o'qiladi.
+   * Faqat superadmin/admin — asosiy kassa kartasi: kuryerdan qabul va filialdan qabul — pul tushadigan HQ kartasi
+   * (`card_id`), marketga to'lov — chiqadigan karta. «Marketga o'tkazma» va naqdda karta yo'q. Ro'yxat sahifa
+   * ochilganda o'qiladi.
+   * P0 63HO6cBU (ega 2026-11-17): FILIAL kassasi bitta jami, nomli filial kartalari nofaol — filial kartasi tanlovi
+   * (`branch_card_id`) va uning «kartada yetmaydi» tekshiruvi yo'q; menejerda karta tanlovi umuman yo'q.
    */
   const isClickPayment = selectedPaymentType === "click";
-  // Menejer: kuryerdan qabul va marketga to'lov — o'z filiali kartalari (JWT doirasi); HQ ga o'tkazish ko'rinishi —
-  // faqat ko'rish (formasiz).
-  const canPickHqCard = !isTypeUnknown && !(isCurrentManagerRole && type === "branch");
+  const canPickHqCard = !isTypeUnknown && !isCurrentManagerRole;
   const hqCardPicker = useCashboxCardPicker({ enabled: canPickHqCard });
-  const branchCardPicker = useCashboxCardPicker({
-    enabled: !isTypeUnknown && type === "branch" && !isCurrentManagerRole && Boolean(id),
-    branchId: type === "branch" ? (id ?? null) : null,
-  });
   // C14 / FE-PAY-08: "O'tkazma"da "karta egasi" tanlovi YO'Q — kuryer, market
   // va filial → HQ uchun ham. Kassa yagona (per-person karta yo'q), DTO'larda
   // `source_user_id` yo'q va qiymat hech qachon yuborilmasdi.
@@ -838,7 +868,6 @@ const CashDetail = () => {
       transferSourceId: "",
       comment: "",
       cardId: "",
-      branchCardId: "",
     });
     resetReceipt();
   };
@@ -1194,14 +1223,11 @@ const CashDetail = () => {
       values.paymentType === "transfer" ? "click" : values.paymentType;
     // Chek barmoq iziga kirmaydi: `payment` dan tashqarida, faqat so'rov tanasida.
     const receiptBody = receipt.receiptId ? { receipt_id: receipt.receiptId } : {};
-    // Karta ham (cards1111b): faqat `click` va NOMLI karta — Asosiy karta yuborilmaydi (backend sukuti).
-    const hqCardId = normalizedPaymentMethod === "click" ? hqCardPicker.requestId(values.cardId) : undefined;
-    const branchCardId =
-      normalizedPaymentMethod === "click" && type === "branch" ? branchCardPicker.requestId(values.branchCardId) : undefined;
-    const cardBody = {
-      ...(hqCardId ? { card_id: hqCardId } : {}),
-      ...(branchCardId ? { branch_card_id: branchCardId } : {}),
-    };
+    // Karta ham (cards1111b): faqat superadmin/admin, `click` va NOMLI HQ karta — Asosiy karta yuborilmaydi (backend
+    // sukuti). Filial kartasi (`branch_card_id`) endi yo'q — filial kassasi bitta jami (P0 63HO6cBU).
+    const hqCardId =
+      canPickHqCard && normalizedPaymentMethod === "click" ? hqCardPicker.requestId(values.cardId) : undefined;
+    const cardBody = hqCardId ? { card_id: hqCardId } : {};
 
     if (type === "branch") {
       // Filial ID si — URL'dagi `id` (fix3 dan oldingidek; FE-PAY-01
@@ -1246,12 +1272,17 @@ const CashDetail = () => {
         });
         return;
       }
-      const payment: CourierPaymentIdentity = {
-        courier_id: id,
-        amount,
-        payment_method: normalizedPaymentMethod,
-        market_id: isStoreTransfer ? values.marketId : null,
-      };
+      // Menejer (P0 63HO6cBU, BE PR-A): so'rov — faqat `{ courier_id, amount, payment_date, comment }`; usul, market va
+      // karta (`payment_method` / `market_id` / `card_id` / `branch_card_id`) yuborilmaydi — server naqd yozadi.
+      const payment: CourierPaymentIdentity = isMethodless
+        ? { courier_id: id, amount, market_id: null }
+        : {
+            courier_id: id,
+            amount,
+            payment_method: normalizedPaymentMethod,
+            market_id: isStoreTransfer ? values.marketId : null,
+          };
+      const paymentBody = isMethodless ? { courier_id: id, amount } : payment;
       // Kalit to'lovning barmoq iziga bog'langan (kuryer ID si ham ichida) —
       // javobi kelmagan har bir to'lov o'z kalitini saqlaydi.
       const fingerprint = courierPaymentFingerprint(payment);
@@ -1261,7 +1292,7 @@ const CashDetail = () => {
       let response: Awaited<ReturnType<typeof createPaymentCourier.mutateAsync>>;
       try {
         response = await createPaymentCourier.mutateAsync({
-          data: { ...payment, payment_date: paymentDate, comment, ...receiptBody, ...cardBody },
+          data: { ...paymentBody, payment_date: paymentDate, comment, ...receiptBody, ...cardBody },
           idempotencyKey,
         });
       } catch (error) {
@@ -1516,18 +1547,25 @@ const CashDetail = () => {
     if (type === "branch" && (!id || isCurrentManagerRole)) return;
     // Rasm majburiy, lekin yo'q — maydon xatosi, tasdiq ochilmaydi va so'rov ketmaydi.
     if (receipt.busy || !receipt.validate()) return;
-    // cards1111b: pul chiqadigan NOMLI kartada yetmaydi (market — HQ kartasi, filialdan qabul — filial kartasi) — xato
-    // maydon ostida turibdi, tasdiq ochilmaydi.
-    if (values.paymentType === "click") {
-      const sum = parseAmountInput(values.amount);
-      if (type === "market" && hqCardPicker.shortOf(values.cardId, sum)) {
-        setFocus("cardId");
-        return;
-      }
-      if (type === "branch" && branchCardPicker.shortOf(values.branchCardId, sum)) {
-        setFocus("branchCardId");
-        return;
-      }
+    // cards1111b: marketga to'lovda pul chiqadigan NOMLI HQ kartasida yetmaydi — xato maydon ostida turibdi, tasdiq
+    // ochilmaydi.
+    if (values.paymentType === "click" && type === "market" && hqCardPicker.shortOf(values.cardId, parseAmountInput(values.amount))) {
+      setFocus("cardId");
+      return;
+    }
+    // P0 63HO6cBU: filialdan qabulda (har qanday usulda) summa filial kassasining JAMI qoldig'i bilan solishtiriladi —
+    // naqd/karta bo'lagi bilan emas. «Kassa qarzga ishlaydi» yoqilgan filial (yoki qoldiq / sozlama noma'lum) —
+    // tekshiruv yo'q, backend hal qiladi.
+    if (type === "branch" && branchTotalLimit !== null && parseAmountInput(values.amount) > branchTotalLimit) {
+      setError(
+        "amount",
+        {
+          type: "max",
+          message: t("v2CashDetail.form.branchTotalShort", { amount: formatMoneyLocalized(branchTotalLimit) }),
+        },
+        { shouldFocus: true },
+      );
+      return;
     }
     // Ikki marta bosish: oyna ochiq yoki to'lov ketayotganda ikkinchi tasdiq ochilmaydi.
     if (paymentLockRef.current) return;
@@ -1539,25 +1577,22 @@ const CashDetail = () => {
           ? marketOptions.find((option) => option.value === values.marketId)?.label ?? values.marketId
           : "";
       const isClick = values.paymentType === "click";
-      const hqCard = isClick && hqCardPicker.cards.length > 1 ? hqCardPicker.resolve(values.cardId) : null;
-      const branchCard =
-        isClick && type === "branch" && branchCardPicker.cards.length > 1
-          ? branchCardPicker.resolve(values.branchCardId)
-          : null;
+      const hqCard =
+        canPickHqCard && isClick && hqCardPicker.cards.length > 1 ? hqCardPicker.resolve(values.cardId) : null;
       const ok = await confirm({
         tone: "success",
         title: t("v2CashDetail.confirm.title"),
         description: t("v2CashDetail.confirm.description"),
         amount: {
           value: parseAmountInput(values.amount),
-          badge: <Badge>{paymentMethodLabel(values.paymentType)}</Badge>,
+          // Menejerning kuryerdan qabulida usul yo'q — faqat summa va qayerdan → qayerga (P0 63HO6cBU).
+          ...(isMethodless ? {} : { badge: <Badge>{paymentMethodLabel(values.paymentType)}</Badge> }),
         },
         // Filialdan marketga: market nomi «Qayerga» da — alohida «Market» qatori takrorlanmaydi.
         transfer: getPaymentTransfer(type === "branch" && marketName ? marketName : undefined),
         rows: [
           ...(marketName && type !== "branch" ? [{ label: t("v2CashDetail.confirm.market"), value: marketName }] : []),
           ...(hqCard ? [{ label: t("cashboxCards.picker.confirmRow"), value: hqCard.name }] : []),
-          ...(branchCard ? [{ label: t("cashboxCards.picker.confirmBranchRow"), value: branchCard.name }] : []),
           ...(receipt.receiptId ? [{ label: t("receipt.confirm.label"), value: <ReceiptAttachedValue /> }] : []),
           ...(comment ? [{ label: t("v2CashDetail.confirm.comment"), value: comment, stacked: true }] : []),
         ],
@@ -1779,26 +1814,6 @@ const CashDetail = () => {
                 />
               )}
             />
-            {type === "branch" && !isCurrentManagerRole ? (
-              <Controller
-                control={control}
-                name="branchCardId"
-                render={({ field }) => (
-                  <CashboxCardSelectField
-                    ref={field.ref}
-                    picker={branchCardPicker}
-                    name={field.name}
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    direction="out"
-                    label={t("cashboxCards.picker.branchLabel")}
-                    amount={parseAmountInput(watch("amount"))}
-                    balanceVisible={balanceVisible}
-                  />
-                )}
-              />
-            ) : null}
           </>
         ) : null
       }

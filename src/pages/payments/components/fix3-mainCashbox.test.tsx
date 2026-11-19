@@ -85,9 +85,14 @@ describe("MainCashbox — actions that cannot work yet are hidden", () => {
     expect(screen.queryByRole("button", { name: /Maosh/ })).not.toBeInTheDocument();
     expect(screen.queryByText("Maosh to'lash")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Excel/ })).toBeInTheDocument();
-    // Qolgan amallar joyida.
-    expect(screen.getByRole("button", { name: /Kassadan xarajat/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Kassani to'ldirish/ })).toBeInTheDocument();
+    // Qolgan amallar joyida (P0 63HO6cBU: menejerda xarajat / to'ldirish yo'q — alohida testlar fix3b-mainCashbox'da).
+    if (_label === "superadmin") {
+      expect(screen.getByRole("button", { name: /Kassadan xarajat/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Kassani to'ldirish/ })).toBeInTheDocument();
+    } else {
+      expect(screen.queryByRole("button", { name: /Kassadan xarajat/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Kassani to'ldirish/ })).not.toBeInTheDocument();
+    }
   });
 });
 

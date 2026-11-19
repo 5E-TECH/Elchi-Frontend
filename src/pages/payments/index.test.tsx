@@ -901,8 +901,10 @@ describe("Payments — menejer, smena yopiq (CB-2)", () => {
     await user.click(screen.getByRole("button", { name: "Smenani ochish" }));
     const dialog = await screen.findByRole("dialog", { name: "Smenani ochish" });
     expect(dialog).toHaveTextContent("Filial kassasi · yangi smena boshlanadi");
-    expect(dialog).toHaveTextContent(/2\D000\D000/);
-    expect(dialog).toHaveTextContent(/2\D500\D000/);
+    // P0 63HO6cBU: filial kassasi bitta jami — faqat «Jami» (naqd/karta qatorlari yo'q).
+    expect(dialog).toHaveTextContent(/Jami\s*2\D500\D000/);
+    expect(dialog).not.toHaveTextContent(/2\D000\D000/);
+    expect(dialog).not.toHaveTextContent("Naqd");
     expect(pageState.mainCashboxParams).toEqual([undefined]);
 
     await user.click(within(dialog).getByRole("button", { name: "Smenani ochish" }));

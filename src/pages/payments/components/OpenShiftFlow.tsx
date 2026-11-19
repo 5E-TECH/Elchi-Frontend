@@ -47,14 +47,16 @@ const toFinite = (value: unknown): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-/** `GET finance/cashbox/main` javobidan naqd/karta qoldig'i (asosiy kassa sahifasi bilan bir xil manba). */
-const readCashboxSplit = (payload: unknown): { cash: number | null; card: number | null } => {
+/**
+ * `GET finance/cashbox/main` javobidan naqd/karta qoldig'i va jami (asosiy kassa sahifasi bilan bir xil manba). Jami —
+ * `balance`, bo'lmasa naqd + karta.
+ */
+const readCashboxSplit = (payload: unknown): { cash: number | null; card: number | null; total: number | null } => {
   const data = asRecord(asRecord(payload).data);
   const cashbox = asRecord(data.cashbox);
-  return {
-    cash: toFinite(cashbox.balance_cash ?? data.balance_cash ?? data.balanceCash ?? data.cash) ?? 0,
-    card: toFinite(cashbox.balance_card ?? data.balance_card ?? data.balanceCard ?? data.transfer) ?? 0,
-  };
+  const cash = toFinite(cashbox.balance_cash ?? data.balance_cash ?? data.balanceCash ?? data.cash) ?? 0;
+  const card = toFinite(cashbox.balance_card ?? data.balance_card ?? data.balanceCard ?? data.transfer) ?? 0;
+  return { cash, card, total: toFinite(cashbox.balance ?? data.balance ?? data.total) ?? cash + card };
 };
 
 const OpenShiftFlow = ({ open, onClose, onOpened, shiftOpen, openerName, onRefetchShift }: OpenShiftFlowProps) => {
@@ -68,7 +70,7 @@ const OpenShiftFlow = ({ open, onClose, onOpened, shiftOpen, openerName, onRefet
 
   const { openShift, useGetCashBoxMain } = useCashBox();
   const balanceQuery = useGetCashBoxMain(undefined, open);
-  const split = balanceQuery.isSuccess ? readCashboxSplit(balanceQuery.data) : { cash: null, card: null };
+  const split = balanceQuery.isSuccess ? readCashboxSplit(balanceQuery.data) : { cash: null, card: null, total: null };
 
   const cashboxLabel = isManagerRole
     ? ownBranchName
@@ -109,6 +111,8 @@ const OpenShiftFlow = ({ open, onClose, onOpened, shiftOpen, openerName, onRefet
       cash={split.cash}
       card={split.card}
       cardLabel={cardLabel}
+      // Filial kassasi bitta jami (P0 63HO6cBU, ega 2026-11-17): menejerda «Ochilish qoldig'i» — faqat «Jami».
+      total={isManagerRole ? split.total : undefined}
     />
   );
 };

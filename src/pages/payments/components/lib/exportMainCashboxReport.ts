@@ -34,7 +34,15 @@ export type MainCashboxReportLabels = {
   comment: string;
   summaryIncome: string;
   summaryExpense: string;
+  /** Bitta jami rejimidagi summa ustuni («Summa»); berilmasa — `total`. */
+  amount?: string;
 };
+
+/** Qator summasi ustunlari: naqd · karta · boshqa yoki (filial kassasi, P0 63HO6cBU) bitta «Summa». */
+type AmountColumn = "cash" | "card" | "other" | "sum";
+
+const SPLIT_COLUMNS: readonly AmountColumn[] = ["cash", "card", "other"];
+const SINGLE_COLUMNS: readonly AmountColumn[] = ["sum"];
 
 const formatDateLabel = (date: string | undefined, labels: MainCashboxReportLabels) => {
   if (!date) return labels.defaultReportTitle;
@@ -58,6 +66,7 @@ const buildRows = (rows: PaymentRow[], type: "income" | "expense") => {
       cash: method === "cash" ? amount : 0,
       card: method === "card" ? amount : 0,
       other: method === "other" ? amount : 0,
+      sum: amount,
     };
   });
 };
@@ -65,18 +74,20 @@ const buildRows = (rows: PaymentRow[], type: "income" | "expense") => {
 const sumBy = <T,>(items: T[], getter: (item: T) => number) =>
   items.reduce((total, item) => total + getter(item), 0);
 
-const renderDataRows = (
-  rows: Array<{ no: number; name: string; comment: string; cash: number; card: number; other: number }>,
-) =>
+type ReportRow = ReturnType<typeof buildRows>[number];
+
+/** Qator summa kataklari (bo'sh — 0). */
+const amountCells = (row: ReportRow, columns: readonly AmountColumn[], indent: string) =>
+  columns.map((column) => `<td class="cell num">${row[column] ? fmt(row[column]) : ""}</td>`).join(`\n${indent}`);
+
+const renderDataRows = (rows: ReportRow[], columns: readonly AmountColumn[]) =>
   rows
     .map(
       (row) => `
         <tr>
           <td class="cell center">${row.no}</td>
           <td class="cell">${escapeHtml(row.name)}</td>
-          <td class="cell num">${row.cash ? fmt(row.cash) : ""}</td>
-          <td class="cell num">${row.card ? fmt(row.card) : ""}</td>
-          <td class="cell num">${row.other ? fmt(row.other) : ""}</td>
+          ${amountCells(row, columns, "          ")}
           <td class="cell">${escapeHtml(row.comment)}</td>
         </tr>
       `,
@@ -91,6 +102,7 @@ export const exportMainCashboxReport = ({
   fromDate,
   toDate,
   labels,
+  singleTotal = false,
 }: {
   rows: PaymentRow[];
   totalBalance: number;
@@ -99,17 +111,45 @@ export const exportMainCashboxReport = ({
   fromDate?: string;
   toDate?: string;
   labels: MainCashboxReportLabels;
+  /**
+   * P0 63HO6cBU (ega 2026-11-17): FILIAL kassasi naqd/kartaga bo'linmaydi — menejer hisobotida naqd · karta · boshqa
+   * ustunlari o'rnida bitta «Summa», balans — faqat jami. Asosiy kassa (SA/A) hisoboti o'zgarmagan.
+   */
+  singleTotal?: boolean;
 }) => {
+  const columns = singleTotal ? SINGLE_COLUMNS : SPLIT_COLUMNS;
+  const columnLabel = (column: AmountColumn) =>
+    column === "sum" ? labels.amount ?? labels.total : labels[column];
+  // Chap jadval: № · qayerdan · summalar · izoh; o'ng: balans (+ naqd · karta) · jami / izoh · summalar.
+  const leftSpan = columns.length + 3;
+  const rightSpan = columns.length + 1;
+  const subheads = (indent: string) =>
+    columns.map((column) => `<td class="cell subhead">${escapeHtml(columnLabel(column))}</td>`).join(`\n${indent}`);
+  const balanceHeads = singleTotal
+    ? `<td class="cell subhead">${escapeHtml(labels.balance)}</td>
+            <td class="cell subhead">${escapeHtml(labels.total)}</td>`
+    : `<td class="cell subhead">${escapeHtml(labels.balance)}</td>
+            <td class="cell subhead">${escapeHtml(labels.cash)}</td>
+            <td class="cell subhead">${escapeHtml(labels.card)}</td>
+            <td class="cell subhead">${escapeHtml(labels.total)}</td>`;
+  const balanceValues = singleTotal
+    ? `<td class="cell num">${fmt(totalBalance)}</td>
+            <td class="cell num">${fmt(totalBalance)}</td>`
+    : `<td class="cell num">${fmt(totalBalance)}</td>
+            <td class="cell num">${fmt(cashBalance)}</td>
+            <td class="cell num">${fmt(cardBalance)}</td>
+            <td class="cell num">${fmt(totalBalance)}</td>`;
+  const summaryCells = (items: ReportRow[]) =>
+    singleTotal
+      ? `<td class="cell num summary-blue">${fmt(sumBy(items, (row) => row.sum))}</td>`
+      : `<td class="cell num summary-blue">${fmt(sumBy(items, (row) => row.cash))}</td>
+            <td class="cell num summary-purple">${fmt(sumBy(items, (row) => row.card))}</td>
+            <td class="cell num">${fmt(sumBy(items, (row) => row.other))}</td>`;
   const incomeRows = buildRows(rows, "income");
   const expenseRows = buildRows(rows, "expense");
   const reportLabel = fromDate && toDate
     ? `${formatDateLabel(fromDate, labels)} - ${formatDateLabel(toDate, labels)}`
     : formatDateLabel(fromDate || toDate || new Date().toISOString(), labels);
-
-  const incomeCash = sumBy(incomeRows, (row) => row.cash);
-  const incomeCard = sumBy(incomeRows, (row) => row.card);
-  const expenseCash = sumBy(expenseRows, (row) => row.cash);
-  const expenseCard = sumBy(expenseRows, (row) => row.card);
 
   const html = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
@@ -137,59 +177,45 @@ export const exportMainCashboxReport = ({
       <body>
         <table class="sheet">
           <tr>
-            <td colspan="6" class="cell title">${escapeHtml(reportLabel)}</td>
+            <td colspan="${leftSpan}" class="cell title">${escapeHtml(reportLabel)}</td>
             <td class="spacer"></td>
-            <td colspan="4" class="cell section-title">${escapeHtml(labels.mainCashbox)}</td>
+            <td colspan="${rightSpan}" class="cell section-title">${escapeHtml(labels.mainCashbox)}</td>
           </tr>
           <tr>
-            <td colspan="6" class="cell section-title">${escapeHtml(labels.income)}</td>
+            <td colspan="${leftSpan}" class="cell section-title">${escapeHtml(labels.income)}</td>
             <td class="spacer"></td>
-            <td class="cell subhead">${escapeHtml(labels.balance)}</td>
-            <td class="cell subhead">${escapeHtml(labels.cash)}</td>
-            <td class="cell subhead">${escapeHtml(labels.card)}</td>
-            <td class="cell subhead">${escapeHtml(labels.total)}</td>
+            ${balanceHeads}
           </tr>
           <tr>
             <td class="cell subhead">${escapeHtml(labels.no)}</td>
             <td class="cell subhead">${escapeHtml(labels.fromWhere)}</td>
-            <td class="cell subhead">${escapeHtml(labels.cash)}</td>
-            <td class="cell subhead">${escapeHtml(labels.card)}</td>
-            <td class="cell subhead">${escapeHtml(labels.other)}</td>
+            ${subheads("            ")}
             <td class="cell subhead">${escapeHtml(labels.comment)}</td>
             <td class="spacer"></td>
-            <td class="cell num">${fmt(totalBalance)}</td>
-            <td class="cell num">${fmt(cashBalance)}</td>
-            <td class="cell num">${fmt(cardBalance)}</td>
-            <td class="cell num">${fmt(totalBalance)}</td>
+            ${balanceValues}
           </tr>
-          ${renderDataRows(incomeRows)}
+          ${renderDataRows(incomeRows, columns)}
           <tr>
             <td colspan="2" class="cell summary-green">${escapeHtml(labels.summaryIncome)}</td>
-            <td class="cell num summary-blue">${fmt(incomeCash)}</td>
-            <td class="cell num summary-purple">${fmt(incomeCard)}</td>
-            <td class="cell num">${fmt(sumBy(incomeRows, (row) => row.other))}</td>
+            ${summaryCells(incomeRows)}
             <td class="cell"></td>
             <td class="spacer"></td>
-            <td colspan="4" class="cell"></td>
+            <td colspan="${rightSpan}" class="cell"></td>
           </tr>
-          <tr><td colspan="11" class="spacer"></td></tr>
+          <tr><td colspan="${leftSpan + 1 + rightSpan}" class="spacer"></td></tr>
           <tr>
-            <td colspan="6" class="cell section-danger">${escapeHtml(labels.expense)} / ${escapeHtml(labels.expenseSection)}</td>
+            <td colspan="${leftSpan}" class="cell section-danger">${escapeHtml(labels.expense)} / ${escapeHtml(labels.expenseSection)}</td>
             <td class="spacer"></td>
-            <td colspan="4" class="cell section-danger">${escapeHtml(labels.expenseSection)}</td>
+            <td colspan="${rightSpan}" class="cell section-danger">${escapeHtml(labels.expenseSection)}</td>
           </tr>
           <tr>
             <td class="cell subhead">${escapeHtml(labels.no)}</td>
             <td class="cell subhead">${escapeHtml(labels.toWhere)}</td>
-            <td class="cell subhead">${escapeHtml(labels.cash)}</td>
-            <td class="cell subhead">${escapeHtml(labels.card)}</td>
-            <td class="cell subhead">${escapeHtml(labels.other)}</td>
+            ${subheads("            ")}
             <td class="cell subhead">${escapeHtml(labels.comment)}</td>
             <td class="spacer"></td>
             <td class="cell subhead">${escapeHtml(labels.comment)}</td>
-            <td class="cell subhead">${escapeHtml(labels.cash)}</td>
-            <td class="cell subhead">${escapeHtml(labels.card)}</td>
-            <td class="cell subhead">${escapeHtml(labels.other)}</td>
+            ${subheads("            ")}
           </tr>
           ${expenseRows
             .map(
@@ -197,30 +223,22 @@ export const exportMainCashboxReport = ({
                 <tr>
                   <td class="cell center">${row.no}</td>
                   <td class="cell">${escapeHtml(row.name)}</td>
-                  <td class="cell num">${row.cash ? fmt(row.cash) : ""}</td>
-                  <td class="cell num">${row.card ? fmt(row.card) : ""}</td>
-                  <td class="cell num">${row.other ? fmt(row.other) : ""}</td>
+                  ${amountCells(row, columns, "                  ")}
                   <td class="cell">${escapeHtml(row.comment)}</td>
                   <td class="spacer"></td>
                   <td class="cell">${escapeHtml(row.comment)}</td>
-                  <td class="cell num">${row.cash ? fmt(row.cash) : ""}</td>
-                  <td class="cell num">${row.card ? fmt(row.card) : ""}</td>
-                  <td class="cell num">${row.other ? fmt(row.other) : ""}</td>
+                  ${amountCells(row, columns, "                  ")}
                 </tr>
               `,
             )
             .join("")}
           <tr>
             <td colspan="2" class="cell summary-green">${escapeHtml(labels.summaryExpense)}</td>
-            <td class="cell num summary-blue">${fmt(expenseCash)}</td>
-            <td class="cell num summary-purple">${fmt(expenseCard)}</td>
-            <td class="cell num">${fmt(sumBy(expenseRows, (row) => row.other))}</td>
+            ${summaryCells(expenseRows)}
             <td class="cell"></td>
             <td class="spacer"></td>
             <td class="cell summary-green">${escapeHtml(labels.total)}</td>
-            <td class="cell num summary-blue">${fmt(expenseCash)}</td>
-            <td class="cell num summary-purple">${fmt(expenseCard)}</td>
-            <td class="cell num">${fmt(sumBy(expenseRows, (row) => row.other))}</td>
+            ${summaryCells(expenseRows)}
           </tr>
         </table>
       </body>

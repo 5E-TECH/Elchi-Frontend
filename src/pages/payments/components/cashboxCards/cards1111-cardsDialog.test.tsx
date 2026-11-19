@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import uz from "../../../../locales/uz/payments.json";
@@ -144,7 +144,7 @@ describe("cards1111 — Kartalar oynasi", () => {
     expect(within(transfer).getByRole("combobox", { name: /Qaysi kartaga/ })).toHaveTextContent("Asosiy karta");
   });
 
-  it("manager: the out-of-sync box offers the fix too (o'z filiali kartalari, ega 2026-11-11)", async () => {
+  it("manager: the out-of-sync box has no fix action (P0 63HO6cBU: filial kartalarida pul ko'chirish yo'q)", async () => {
     http.get.mockImplementation(async (url: string) => {
       if (url === "finance/cashbox/cards") {
         return { data: { statusCode: 200, data: { ...CARD_LIST, default_balance: -50_000, in_sync: false } } };
@@ -154,7 +154,7 @@ describe("cards1111 — Kartalar oynasi", () => {
     renderDialog(manager);
     const dialog = await screen.findByRole("dialog", { name: TITLE });
     expect(await within(dialog).findByText("Mos kelmaydi")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Asosiy kartaga o'tkazish" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Asosiy kartaga o'tkazish" })).not.toBeInTheDocument();
   });
 
   it("the default card has no delete: the menu item is disabled with the reason, no «Asosiy qilish»", async () => {
@@ -194,21 +194,20 @@ describe("cards1111 — Kartalar oynasi", () => {
     expect(within(dialog).getAllByRole("button", { name: /amallari$/ })).toHaveLength(3);
   });
 
-  it("⭐ manager (ega 2026-11-11): pul ko'chirish bor — «Kartalararo o'tkazma», «Karta ↔ Naqd»; qo'shish va menyular yo'q", async () => {
+  it("⭐ P0 63HO6cBU (ega 2026-11-17): manager — faqat ko'rish: «Kartalararo o'tkazma», «Karta ↔ Naqd», qo'shish va menyular yo'q", async () => {
     renderDialog(manager);
     const dialog = await screen.findByRole("dialog", { name: TITLE });
     await within(dialog).findByText("Humo virtual");
 
-    expect(within(dialog).getByText(/Kartalarni qo'shish va tahrirlash — superadmin yoki admin/)).toBeInTheDocument();
-    expect(within(dialog).queryByText(/Kartalarni superadmin yoki admin boshqaradi/)).not.toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Kartalararo o'tkazma" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Karta ↔ Naqd" })).toBeInTheDocument();
+    expect(within(dialog).getByText(/Kartalarni superadmin yoki admin boshqaradi/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Kartalarni qo'shish va tahrirlash — superadmin yoki admin/)).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Kartalararo o'tkazma" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Karta ↔ Naqd" })).not.toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: "Karta qo'shish" })).not.toBeInTheDocument();
     expect(within(dialog).queryAllByRole("button", { name: /amallari$/ })).toHaveLength(0);
     expect(within(dialog).getAllByRole("button", { name: /ko'chirmasi$/ })).toHaveLength(3);
-    expect(within(cardItem(dialog, "Humo virtual")).getByText(money(1_850_000))).toBeInTheDocument();
-    // Pul ko'chirish smenaga bog'liq — menejer filialining smenasi o'qiladi.
-    await waitFor(() => expect(http.get.mock.calls.some(([url]) => url === "finance/shift/current")).toBe(true));
+    // Pul ko'chirish yo'q — smena ham o'qilmaydi.
+    expect(http.get.mock.calls.some(([url]) => url === "finance/shift/current")).toBe(false);
   });
 
   it("opens the ledger («Ko'chirma») for a card", async () => {

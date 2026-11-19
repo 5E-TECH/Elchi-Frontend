@@ -145,6 +145,14 @@ export const canSendNotifications: Predicate = hasRole("superadmin", "admin");
  */
 export const canManageExpenseCategories: Predicate = hasRole("superadmin");
 
+/**
+ * Qo'lda kassa operatsiyalari — «Kassadan xarajat» / «Kassani to'ldirish» (`PATCH finance/cashbox/spend|fill`) va ular
+ * bilan bog'liq xarajat kategoriyalari ro'yxati (`GET finance/cashbox/expense-categories`) hamda xarajat cheki
+ * (`POST finance/receipts`, `manual_expense`). P0 63HO6cBU (ega 2026-11-17, BE PR-B #728): faqat superadmin/admin —
+ * har doim ASOSIY kassada; menejerga backend 403 (filial kassasi bitta jami, xarajat / to'ldirish yo'q).
+ */
+export const canUseManualCashboxOperations: Predicate = hasRole("superadmin", "admin");
+
 /** Filiallar (`/branches`, yaratish va tahrirlash) — backend `branches` endpointlari `@Roles(SUPERADMIN, ADMIN)` bilan bir xil (ega 2026-11-02). */
 export const canViewBranches: Predicate = hasRole("superadmin", "admin");
 
@@ -414,10 +422,11 @@ export const canManageShiftSettings: Predicate = hasRole("superadmin");
 export const canManageCashboxCards: Predicate = hasRole("superadmin", "admin");
 /**
  * Kassa kartalari orasida pul ko'chirish — «Kartalararo o'tkazma» va «Karta ↔ Naqd» (`POST finance/cashbox/cards/transfer
- * | convert`). Menejer — o'z filiali kassasi kartalarida (ega 2026-11-11; backend menejerga ochgach ishlaydi). Karta
+ * | convert`) — faqat superadmin/admin (asosiy kassa). P0 63HO6cBU (ega 2026-11-17): FILIAL kassasi naqd/kartaga
+ * bo'linmaydi, nomli filial kartalari nofaol — menejerda (ega 2026-11-11 dagi ruxsat bekor) ko'chirish yo'q. Karta
  * qo'shish, tahrirlash, o'chirish — faqat `canManageCashboxCards`.
  */
-export const canMoveCashboxCardMoney: Predicate = hasRole("superadmin", "admin", "manager");
+export const canMoveCashboxCardMoney: Predicate = hasRole("superadmin", "admin");
 
 /**
  * T6 N2 — kassa tarixidagi to'lovni qaytarish va summasini tuzatish («Qaytarish» / «Summani tahrirlash»). Backend

@@ -49,8 +49,6 @@ export interface CashboxActionFormValues {
   comment: string;
   /** cards1111b — «O'tkazma» (click): qabul qiluvchi / to'lovchi kassa kartasi; `""` — Asosiy karta. */
   cardId: string;
-  /** cards1111b — filialdan qabulda filial kassasining kartasi; `""` — Asosiy karta. */
-  branchCardId: string;
 }
 
 interface CashboxActionFormCardProps {
@@ -204,7 +202,8 @@ const CashboxActionFormCard = ({
         <Controller
           control={control}
           name="paymentType"
-          render={({ field }) => (
+          // P0 63HO6cBU: variant yo'q (menejerning kuryerdan qabuli — filial kassasi bitta jami) — «To'lov turi» chizilmaydi.
+          render={({ field }) => paymentTypeOptions.length === 0 ? <></> : (
             <fieldset
               className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
               aria-describedby={paymentTypeError ? paymentTypeErrorId : undefined}

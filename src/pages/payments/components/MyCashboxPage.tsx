@@ -623,6 +623,11 @@ const MyCashboxPage = () => {
   const orderId = (row: PaymentRow) =>
     isOrderLinkedSource(row.source_type) ? String(row.source_id ?? "").trim() : "";
   const methodText = useCallback((row: PaymentRow) => getPaymentMethodLabel(row.payment_method, t), [t]);
+  /**
+   * P0 63HO6cBU (ega 2026-11-17): menejer kassasi — filial kassasi, u naqd/kartaga bo'linmaydi: «To'lov turi» ustuni va
+   * qator ostidagi usul yo'q (backend ham menejerga `payment_method: null` beradi). Kuryer / market — o'zgarmagan.
+   */
+  const showMethod = role !== "manager";
   /** Kuryer → filial o'tkazmasini qabul qilgan xodim (kuryer kassasi yozuvini yaratgan). */
   const receiverName = (row: PaymentRow) =>
     isCourier && row.source_type === "courier_payment"
@@ -777,7 +782,7 @@ const MyCashboxPage = () => {
     const value = direction(row);
     const category = getExpenseCategoryName(row);
     const title = category ? `${labelTitle(row)} · ${category}` : labelTitle(row);
-    return t("v2MyCashbox.history.cardLabel", {
+    return t(showMethod ? "v2MyCashbox.history.cardLabel" : "v2MyCashbox.history.cardLabelNoMethod", {
       title: sub ? `${title} (${sub})` : title,
       method: methodText(row),
       direction: value ? t(value === "income" ? "v2Common.income" : "v2Common.expense") : "",
@@ -827,22 +832,26 @@ const MyCashboxPage = () => {
             {parts.length ? (
               <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
                 {joinParts(parts)}
-                {isCourier ? null : <span className="hidden max-lg:inline">{` · ${methodText(row)}`}</span>}
+                {isCourier || !showMethod ? null : <span className="hidden max-lg:inline">{` · ${methodText(row)}`}</span>}
               </div>
-            ) : isCourier ? null : (
+            ) : isCourier || !showMethod ? null : (
               <div className="hidden text-[13px] text-text-muted max-lg:block">{methodText(row)}</div>
             )}
           </>
         );
       },
     },
-    {
-      id: "method",
-      header: t("v2MyCashbox.history.columns.paymentType"),
-      hideBelow: "lg",
-      className: "whitespace-nowrap",
-      cell: (row) => methodText(row),
-    },
+    ...(showMethod
+      ? [
+          {
+            id: "method",
+            header: t("v2MyCashbox.history.columns.paymentType"),
+            hideBelow: "lg",
+            className: "whitespace-nowrap",
+            cell: (row) => methodText(row),
+          } satisfies DataTableColumn<PaymentRow>,
+        ]
+      : []),
     {
       id: "operation",
       header: t(isCourier ? "v2MyCashbox.history.columns.type" : "v2MyCashbox.history.columns.operation"),
@@ -952,7 +961,7 @@ const MyCashboxPage = () => {
           {amountNode(row)}
         </span>
         <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
-          {joinParts([...subParts(row), methodText(row)])}
+          {joinParts(showMethod ? [...subParts(row), methodText(row)] : subParts(row))}
         </span>
         <span className="flex w-full min-w-0 items-center justify-between gap-3">
           <span className="whitespace-nowrap text-[13px] text-text-muted">{dateText(row)}</span>

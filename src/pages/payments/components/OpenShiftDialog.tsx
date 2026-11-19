@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-payments-main-cashbox-shift-open-dialog, admin-payments-main-cashbox-shift-open-dialog, manager-payments-main-cashbox-shift-open-dialog
 import { memo, useState } from "react";
-import { Banknote, CreditCard, Timer } from "lucide-react";
+import { Banknote, CreditCard, Timer, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { Button, Dialog, Field, TextInput } from "../../../shared/ui/primitives";
@@ -16,6 +16,9 @@ import ShiftSummaryList from "./ShiftSummaryList";
  *
  * Maketdagi «Oxirgi smena kamomad bilan yopilgan» ogohlantirishi chizilmaydi — `last_closed` hali backendda yo'q
  * (Taklif · backend kerak, CB-3).
+ *
+ * P0 63HO6cBU (ega 2026-11-17, maketdan ataylab farq): FILIAL kassasi naqd/kartaga bo'linmaydi — `total` berilsa
+ * (menejer) «Ochilish qoldig'i» faqat bitta «Jami» qatori.
  */
 
 type OpenShiftDialogProps = {
@@ -32,6 +35,11 @@ type OpenShiftDialogProps = {
   card: number | null;
   /** «Karta (Click)» (asosiy kassa) yoki «Karta» (filial). */
   cardLabel: string;
+  /**
+   * Filial kassasi (P0 63HO6cBU): bitta jami qoldiq — berilsa naqd/karta qatorlari yo'q; noma'lum — `null` («—»).
+   * Berilmasa (asosiy kassa) — naqd · karta · jami.
+   */
+  total?: number | null;
 };
 
 const OpenShiftDialog = ({
@@ -44,6 +52,7 @@ const OpenShiftDialog = ({
   cash,
   card,
   cardLabel,
+  total: singleTotal,
 }: OpenShiftDialogProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -51,7 +60,8 @@ const OpenShiftDialog = ({
 
   const money = (value: number | null) =>
     value === null ? "—" : <span className="whitespace-nowrap">{formatMoneyLocalized(value, { language })}</span>;
-  const total = cash === null || card === null ? null : cash + card;
+  const isSingleTotal = singleTotal !== undefined;
+  const total = isSingleTotal ? singleTotal : cash === null || card === null ? null : cash + card;
 
   const handleClose = () => {
     if (isLoading) return;
@@ -97,11 +107,15 @@ const OpenShiftDialog = ({
         <h3 className="m-0 text-sm font-semibold text-text">{t("v2MainCashbox.shift.open.balanceTitle")}</h3>
         <ShiftSummaryList
           label={t("v2MainCashbox.shift.open.balanceTitle")}
-          rows={[
-            { key: "cash", icon: Banknote, label: t("v2MainCashbox.shift.cash"), value: money(cash) },
-            { key: "card", icon: CreditCard, label: cardLabel, value: money(card) },
-            { key: "total", strong: true, label: t("v2MainCashbox.shift.open.total"), value: money(total) },
-          ]}
+          rows={
+            isSingleTotal
+              ? [{ key: "total", icon: Wallet, strong: true, label: t("v2MainCashbox.shift.open.total"), value: money(total) }]
+              : [
+                  { key: "cash", icon: Banknote, label: t("v2MainCashbox.shift.cash"), value: money(cash) },
+                  { key: "card", icon: CreditCard, label: cardLabel, value: money(card) },
+                  { key: "total", strong: true, label: t("v2MainCashbox.shift.open.total"), value: money(total) },
+                ]
+          }
         />
         <p className="m-0 text-[13px] text-text-muted">{t("v2MainCashbox.shift.open.balanceHint")}</p>
       </div>

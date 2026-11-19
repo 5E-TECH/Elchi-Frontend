@@ -236,12 +236,24 @@ describe("HQ'ga «O'tkazma» qabuli — chek rasmi (QlLf33Ma)", () => {
   });
 
   it("TC7: menejerning kuryer qabulida maydon ham, sozlama so'rovi ham yo'q", async () => {
-    const user = userEvent.setup();
     renderAt("courier", manager);
 
-    await chooseMethod(user, "O'tkazma");
+    // P0 63HO6cBU (ega 2026-11-17): menejerda «To'lov turi» umuman yo'q — faqat summa (filial kassasi bitta jami).
+    expect(screen.queryByRole("radio", { name: "O'tkazma" })).not.toBeInTheDocument();
     expect(screen.queryByText("Chek rasmi")).not.toBeInTheDocument();
     expect(http.get.mock.calls.filter(([url]) => url === "finance/receipt-settings")).toHaveLength(0);
+  });
+
+  it("P0 63HO6cBU (BE PR-B): menejer — kuryer qabuli va filial (HQ) sahifasida receipt-settings ham, expense-categories ham so'ralmaydi", async () => {
+    const forbidden = (url: string) => url === "finance/receipt-settings" || url === "finance/cashbox/expense-categories";
+    const first = renderAt("courier", manager);
+    setAmount("100000");
+    await screen.findByRole("button", { name: SUBMIT });
+    first.unmount();
+    renderAt("branch", manager);
+    expect(await screen.findByText(/Filial pulini HQ o.zi qabul qiladi/)).toBeInTheDocument();
+
+    expect(http.get.mock.calls.filter(([url]) => forbidden(String(url)))).toHaveLength(0);
   });
 
   it("rasmsiz «O'tkazma» yuborilmaydi; naqd — cheksiz o'tadi va `receipt_id` yo'q", async () => {

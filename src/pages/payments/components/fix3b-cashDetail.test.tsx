@@ -261,12 +261,12 @@ describe("Ega qarori #7 (IjqTYQks, 2026-10-25) — menejer HQ'ga pul o'tkazmaydi
 });
 
 describe("'Do'konga o'tkazma' (click_to_market) — faqat superadmin/admin (ega 2026-11-11)", () => {
-  it("manager: the courier receive page offers only «Naqd» and «O'tkazma»", () => {
+  it("manager: the courier receive page has no payment type at all (P0 63HO6cBU — amount only)", () => {
     state.cashbox = branchCourierCashbox;
     renderAt("/payments/cash-detail/209?type=courier", manager);
 
-    expect(screen.getByRole("radio", { name: "Naqd" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "O'tkazma" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Naqd" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "O'tkazma" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: TO_MARKET })).not.toBeInTheDocument();
   });
 
@@ -303,27 +303,23 @@ describe("Courier 'O'tkazma' — no card-owner picker (its value was never sent)
     expect(state.usersEnabled.some(Boolean)).toBe(false);
   });
 
-  it("manager: no picker and the transfer payment still goes through", async () => {
+  it("manager: no picker; the payload is exactly { courier_id, amount, payment_date, comment } (P0 63HO6cBU)", async () => {
     courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
     state.cashbox = branchCourierCashbox;
     renderAt("/payments/cash-detail/209?type=courier", manager);
 
     setAmount("50000");
-    await chooseMethod("O'tkazma");
     expect(screen.queryByLabelText(CARD_PICKER)).not.toBeInTheDocument();
 
     await submit(RECEIVE);
     await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
     const [call] = callsOf(courierPayment);
-    expect(call.data).toEqual(
-      expect.objectContaining({
-        courier_id: "209",
-        amount: 50_000,
-        payment_method: "click",
-        market_id: null,
-      }),
-    );
-    expect(call.data).not.toHaveProperty("source_user_id");
+    expect(call.data).toEqual({
+      courier_id: "209",
+      amount: 50_000,
+      payment_date: expect.any(String),
+      comment: "",
+    });
     expect(call.idempotencyKey).toEqual(expect.any(String));
     expect(state.usersEnabled.some(Boolean)).toBe(false);
   });
@@ -427,8 +423,8 @@ describe("T2VHX1Y7 — manager courier cashbox amount comes from the query, not 
     state.couriers = { data: { items: [{ id: "209", name: "Filial kuryeri", cashbox: { balance: 35_000 } }] } };
     openCourier(36_000);
 
+    // P0 63HO6cBU: menejerda «To'lov turi» yo'q — faqat summa.
     setAmount("1000");
-    await chooseMethod("Naqd");
     await submit(RECEIVE);
     expect(await screen.findByText(RECEIVE_SUCCESS)).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByText(amountText(34_000)).length).toBeGreaterThan(0));

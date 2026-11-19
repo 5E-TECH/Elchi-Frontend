@@ -2,7 +2,8 @@ import { expect, type Page, type Route } from "@playwright/test";
 
 /**
  * Menejer — marketga (ega 2026-11-11, BeePost kabi) e2e uchun soxta backend: Urgut filiali menejeri, ochiq smena,
- * filial kassasi va 2 ta karta, marketlar ro'yxati («Berilishi kerak»), market va kuryer kassalari. Pul POST lari
+ * filial kassasi — P0 63HO6cBU (ega 2026-11-17, BE PR-A): bitta jami (`balance_cash` = `balance`, `balance_card` 0),
+ * kartalar o'chiq (`cards_disabled: true`), marketlar ro'yxati («Berilishi kerak»), market va kuryer kassalari. Pul POST lari
  * (`payment/market`, `payment/courier`, `cards/transfer`, `cards/convert`) yoziladi; `backend: "today"` — hozirgi backend (menejerga 403 «Forbidden
  * resource»), `"future"` — backend menejerga ochgandagi holat. Ruxsatsiz boshqa yozish — `leaked`.
  */
@@ -74,21 +75,19 @@ export const mockManagerMarketPayments = async (
       return reply(route, wrap({ shift: { id: "91", status: "open", opened_by: "42", opened_at: new Date().toISOString() }, required: true }));
     }
     if (path === "finance/cashbox/main") {
-      return reply(route, wrap({ cashbox: { id: "16", balance: 4_250_000, balance_cash: 2_800_000, balance_card: 1_450_000, cashbox_type: "branch" } }));
+      return reply(route, wrap({ cashbox: { id: "16", balance: 4_250_000, balance_cash: 4_250_000, balance_card: 0, cashbox_type: "branch" } }));
     }
     if (path === "finance/cashbox/cards") {
       return reply(
         route,
         wrap({
           cashbox_type: "branch",
-          cards: [
-            { id: "5", name: "Uzcard Kapitalbank", balance: 1_150_000, is_default: true, is_active: true, sort_order: 1 },
-            { id: "6", name: "Humo Agrobank", balance: 300_000, is_default: false, is_active: true, sort_order: 2 },
-          ],
-          balance_card: 1_450_000,
-          total_card: 1_450_000,
-          default_balance: 1_150_000,
+          cards: [],
+          balance_card: 0,
+          total_card: 0,
+          default_balance: 0,
           in_sync: true,
+          cards_disabled: true,
         }),
       );
     }
@@ -129,13 +128,15 @@ export const mockManagerMarketPayments = async (
   return { payments, leaked };
 };
 
-/** Market kassasida «Marketga to'lov»: summa, «O'tkazma», «Qaysi kartadan» → karta, «To'lash» → tasdiq oynasi. */
-export const fillMarketTransfer = async (page: Page, amount: string, card: RegExp) => {
+/**
+ * Market kassasida «Marketga to'lov»: summa, «O'tkazma», «To'lash» → tasdiq oynasi. Menejerda karta tanlovi yo'q
+ * (P0 63HO6cBU: filial kassasi bitta jami, filial kartalari nofaol).
+ */
+export const fillMarketTransfer = async (page: Page, amount: string) => {
   await expect(page.getByRole("heading", { name: "Marketga to'lov" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("textbox", { name: /^Summa/ }).fill(amount);
   await page.getByRole("radio", { name: "O'tkazma", exact: true }).click();
-  await page.getByRole("combobox", { name: /Qaysi kartadan/ }).click();
-  await page.getByRole("option", { name: card }).click();
+  await expect(page.getByRole("combobox", { name: /Qaysi kartadan/ })).toHaveCount(0);
   await page.getByRole("button", { name: "To'lash" }).click();
   const confirm = page.getByRole("alertdialog", { name: "To'lovni tasdiqlang" });
   await expect(confirm).toBeVisible();

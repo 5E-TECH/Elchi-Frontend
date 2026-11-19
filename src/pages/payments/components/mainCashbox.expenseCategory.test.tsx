@@ -507,7 +507,8 @@ describe("Asosiy kassa tarixi — xarajat kategoriyasi", () => {
 describe("«Xarajat kategoriyalari» — kassa sarlavhasida yo'q (sozlama Ops vositalarida)", () => {
   const asRole = (role: string) => ({ role: { id: "1", role, region: null, name: role } }) as never;
 
-  it.each(["superadmin", "admin", "manager"])("%s: sarlavhada tugma ham, boshqaruv oynasi ham yo'q (tanlov esa bor)", async (role) => {
+  // P0 63HO6cBU: menejerda «Kassadan xarajat» umuman yo'q — pastdagi alohida test.
+  it.each(["superadmin", "admin"])("%s: sarlavhada tugma ham, boshqaruv oynasi ham yo'q (tanlov esa bor)", async (role) => {
     const user = userEvent.setup();
     renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState: asRole(role) });
     await screen.findByRole("button", { name: /Kassadan xarajat/ });
@@ -518,5 +519,13 @@ describe("«Xarajat kategoriyalari» — kassa sarlavhasida yo'q (sozlama Ops vo
     const dialog = await openSpend(user);
     expect(categoryField(dialog)).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
+  });
+
+  it("manager (P0 63HO6cBU, ega 2026-11-17): «Kassadan xarajat» ham, «Xarajat kategoriyalari» ham yo'q", async () => {
+    renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState: asRole("manager") });
+    expect(await screen.findByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kassadan xarajat/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Xarajat kategoriyalari" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

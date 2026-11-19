@@ -265,7 +265,7 @@ describe("Shift state — GET finance/shift/current (kfdfYDik)", () => {
     expect(screen.queryByRole("button", { name: OPEN_SHIFT })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: CLOSE_SHIFT })).not.toBeInTheDocument();
     expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
-    expect(actionTile(/Kassadan xarajat/)).toBeEnabled();
+    expect(actionTile(/Kuryerdan qabul qilish/)).toBeEnabled();
     // Xom backend matni chiqmaydi (so'rov jim).
     expect(screen.queryByText("Managerning branch'i topilmadi")).not.toBeInTheDocument();
   });
@@ -320,13 +320,13 @@ describe("Open shift dialog", () => {
     expect(postsTo(SHIFT_OPEN_URL)).toEqual([{}]);
   });
 
-  it("manager: own branch — branch banner text, «Urgut filiali kassasi» and «Karta» in the dialog", async () => {
+  it("manager: own branch — branch banner text, «Urgut filiali kassasi» and one «Jami» opening balance (P0 63HO6cBU)", async () => {
     const user = userEvent.setup();
     open(hqManager);
 
     expect(await screen.findByText("Urgut filiali · smena yopiq")).toBeInTheDocument();
     expect(
-      within(screen.getByTestId("shift-banner")).getByText(/^Kuryerdan qabul qilish, xarajat va kassani to'ldirish/),
+      within(screen.getByTestId("shift-banner")).getByText(/^Kuryerdan qabul qilish va marketga to'lov smena ochilgandan/),
     ).toBeInTheDocument();
     expect(actionTile(/Kuryerdan qabul qilish/)).toBeDisabled();
 
@@ -334,7 +334,11 @@ describe("Open shift dialog", () => {
     const dialog = await screen.findByRole("dialog", { name: OPEN_SHIFT });
     expect(within(dialog).getByText("Urgut filiali kassasi · yangi smena boshlanadi")).toBeInTheDocument();
     expect(within(dialog).getByText("Ravshan Ortiqov")).toBeInTheDocument();
-    expect(within(dialog).getByText("Karta")).toBeInTheDocument();
+    // Filial kassasi bitta jami — naqd/karta qatorlari yo'q.
+    expect(within(dialog).getByText("Jami")).toBeInTheDocument();
+    expect(within(dialog).getByText("24 615 000 so'm")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Karta")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Naqd")).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: OPEN_SHIFT }));
     await waitFor(() => expect(postsTo(SHIFT_OPEN_URL)).toEqual([{}]));
   });
@@ -483,13 +487,14 @@ describe("Close shift dialog — edge cases (CB-1 review)", () => {
 });
 
 describe("Market payout action — superadmin, admin va menejer (ega 2026-11-11; ilgari menejerga backend 403)", () => {
-  it("HQ manager: 'Marketga to'lov' is shown next to the other actions (o'z filiali kassasidan)", async () => {
+  it("HQ manager: 'Marketga to'lov' is shown next to «Kuryerdan qabul qilish» (o'z filiali kassasidan)", async () => {
     open(hqManager);
 
-    expect(await screen.findByRole("button", { name: /Kassadan xarajat/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Kassani to'ldirish/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Kuryerdan qabul qilish/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Kuryerdan qabul qilish/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Marketga to'lov/ })).toBeInTheDocument();
+    // P0 63HO6cBU: menejerda xarajat va to'ldirish yo'q.
+    expect(screen.queryByRole("button", { name: /Kassadan xarajat/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kassani to'ldirish/ })).not.toBeInTheDocument();
   });
 
   it.each([
@@ -544,5 +549,127 @@ describe("D1 — the main cashbox history is main-cashbox only for superadmin/ad
     expect(exportReport.mock.calls[0][0]).toEqual(
       expect.objectContaining({ rows: server.historyItems, fromDate: undefined, toDate: undefined }),
     );
+  });
+});
+
+/**
+ * P0 63HO6cBU (ega qarori 2026-11-17): FILIAL kassasi naqd/kartaga bo'linmaydi. Menejerning «Asosiy kassa» (filial
+ * kassasi) sahifasida — bitta jami, 2 ta amal, smena oynalarida bitta «Sanalgan summa» / «Jami», tarixda «To'lov turi»
+ * yo'q. Superadmin/admin asosiy kassasi o'zgarmagan.
+ */
+describe("P0 63HO6cBU — filial kassasi bitta jami (menejer)", () => {
+  const balanceCard = () => screen.getByRole("heading", { name: "Kassa balansi" }).closest("section") ?? document.body;
+  const quickActions = () => screen.getByRole("heading", { name: "Tezkor amallar" }).closest("section") ?? document.body;
+
+  it("⭐ manager: one total, no Naqd / Karta (Click) split and no «Kartalar» entry; exactly 2 quick actions", async () => {
+    server.openShift = { id: "12", opened_by: "198" };
+    open(hqManager);
+
+    expect(await screen.findByText("24 615 000")).toBeInTheDocument();
+    const card = balanceCard();
+    expect(within(card).getByText("Umumiy balans")).toBeInTheDocument();
+    expect(within(card).queryByText("Naqd")).not.toBeInTheDocument();
+    expect(within(card).queryByText("Karta (Click)")).not.toBeInTheDocument();
+    expect(within(card).queryByText("18 240 000 so'm")).not.toBeInTheDocument();
+    expect(within(card).queryByText("6 375 000 so'm")).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: /^Naqd .* karta / })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Karta \(Click\)/ })).not.toBeInTheDocument();
+    // Kartalar so'ralmaydi.
+    expect(http.get.mock.calls.some(([url]) => url === "finance/cashbox/cards")).toBe(false);
+
+    const tiles = within(quickActions())
+      .getAllByRole("button")
+      .map((button) => button.textContent ?? "");
+    expect(tiles).toHaveLength(2);
+    expect(tiles[0]).toMatch(/^Kuryerdan qabul qilish/);
+    expect(tiles[1]).toMatch(/^Marketga to'lov/);
+  });
+
+  it.each([
+    ["superadmin", superadmin],
+    ["admin", admin],
+  ])("%s (unchanged): Naqd / Karta (Click) split and 4 quick actions", async (_label, preloadedState) => {
+    server.openShift = { id: "12", opened_by: "1" };
+    open(preloadedState as never);
+
+    expect(await screen.findByText("24 615 000")).toBeInTheDocument();
+    const card = balanceCard();
+    expect(within(card).getByText("Naqd")).toBeInTheDocument();
+    expect(within(card).getByText("Karta (Click)")).toBeInTheDocument();
+    expect(within(card).getByText("18 240 000 so'm")).toBeInTheDocument();
+    expect(within(card).getByText("6 375 000 so'm")).toBeInTheDocument();
+    for (const name of [/Pul qabul qilish/, /Marketga to'lov/, /Kassadan xarajat/, /Kassani to'ldirish/]) {
+      expect(actionTile(name)).toBeInTheDocument();
+    }
+  });
+
+  it("⭐ manager closes the shift with one «Sanalgan summa» (no card field / screenshots); POST has closing_balance_cash only; result — one «Jami» column", async () => {
+    server.openShift = { id: "31", opened_by: "198" };
+    const user = userEvent.setup();
+    open(hqManager);
+
+    await user.click(await screen.findByRole("button", { name: CLOSE_SHIFT }));
+    const dialog = await screen.findByRole("dialog", { name: CLOSE_SHIFT });
+    expect(within(dialog).queryByLabelText(/^Sanalgan naqd/)).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText(/^Sanalgan karta/)).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(/Kartalar va hisob raqamlar/)).not.toBeInTheDocument();
+    // Kutilgan — kassaning jami qoldig'i.
+    expect(within(dialog).getByText("24 615 000 so'm")).toBeInTheDocument();
+    // Smena kartalar tekshiruvi sozlamasi o'qilmaydi.
+    expect(http.get.mock.calls.some(([url]) => url === "finance/shift/settings")).toBe(false);
+
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+    expect(await within(dialog).findByText("Sanalgan summani kiriting")).toBeInTheDocument();
+    expect(postsTo(SHIFT_CLOSE_URL)).toHaveLength(0);
+
+    await user.type(within(dialog).getByLabelText(/^Sanalgan summa/), "24615000");
+    expect(within(dialog).getByText("Mos keldi")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Sanalmadi")).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
+
+    await waitFor(() => expect(postsTo(SHIFT_CLOSE_URL)).toHaveLength(1));
+    expect(postsTo(SHIFT_CLOSE_URL)[0]).toEqual({ shift_id: "31", closing_balance_cash: 24_615_000 });
+    const result = await screen.findByRole("dialog", { name: "Smena yopildi" });
+    const table = within(result).getByRole("table", { name: "Smena natijasi: kassa jami" });
+    expect(within(table).getByRole("columnheader", { name: "Jami" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "Naqd" })).not.toBeInTheDocument();
+    expect(within(result).queryByText(/Karta sanalmadi/)).not.toBeInTheDocument();
+    // Excel — menejerda bitta «Summa» ustuni.
+    await waitFor(() => expect(exportReport).toHaveBeenCalledTimes(1));
+    expect(exportReport.mock.calls[0][0]).toEqual(expect.objectContaining({ singleTotal: true }));
+  });
+
+  it("superadmin's Excel keeps the cash/card split", async () => {
+    const user = userEvent.setup();
+    open(superadmin);
+
+    await user.click(await screen.findByRole("button", { name: /Excelga yuklash/ }));
+    expect(exportReport.mock.calls[0][0]).toEqual(expect.objectContaining({ singleTotal: false }));
+  });
+
+  it("history: manager has no «To'lov turi» column and no method on rows; superadmin keeps it", async () => {
+    server.openShift = { id: "12", opened_by: "1" };
+    server.historyItems = [
+      {
+        id: "501",
+        amount: 150_000,
+        operation_type: "income",
+        source_type: "courier_payment",
+        payment_method: "cash",
+        cashbox_type: "branch",
+        createdAt: "2026-10-01T05:00:00.000Z",
+        created_by: "Ravshan Ortiqov",
+      },
+    ];
+    const view = open(hqManager);
+    const history = await screen.findByRole("table", { name: /Operatsiyalar tarixi|operatsiyalar/i });
+    expect(within(history).queryByRole("columnheader", { name: "To'lov turi" })).not.toBeInTheDocument();
+    expect(within(history).queryByText("Naqd")).not.toBeInTheDocument();
+    view.unmount();
+
+    open(superadmin);
+    const saHistory = await screen.findByRole("table", { name: /Operatsiyalar tarixi|operatsiyalar/i });
+    expect(within(saHistory).getByRole("columnheader", { name: "To'lov turi" })).toBeInTheDocument();
+    expect(within(saHistory).getAllByText("Naqd").length).toBeGreaterThan(0);
   });
 });

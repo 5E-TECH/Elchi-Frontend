@@ -53,6 +53,7 @@ import {
   getPaymentMethodLabel,
   getPaymentSourceTitle,
   getViewerOperationType,
+  showsPaymentMethod,
 } from "./paymentSourceType";
 import CorrectionShiftFlow from "./CorrectionShiftFlow";
 import { PaymentAckBadge } from "./PaymentAckBadge";
@@ -468,7 +469,10 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
               </span>,
             )
           : null}
-        {kvRow(t("v2HistoryDetail.paymentType"), getPaymentMethodLabel(display.payment_method, t))}
+        {/* P0 63HO6cBU: menejer filial kassasi qatorida «To'lov turi» ni ko'rmaydi (filial kassasi bitta jami). */}
+        {showsPaymentMethod(display.cashbox_type, viewerRole)
+          ? kvRow(t("v2HistoryDetail.paymentType"), getPaymentMethodLabel(display.payment_method, t))
+          : null}
         {cardName
           ? kvRow(
               t(direction === "expense" ? "v2HistoryDetail.fromCard" : "v2HistoryDetail.toCard"),

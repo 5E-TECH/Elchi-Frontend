@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-payments-main-cashbox-shift-dialog, admin-payments-shift-dialog, manager-payments-close-shift-dialog, superadmin-payments-main-cashbox-shift-dialog-accounts
 import { memo, useId, useState, type ReactNode } from "react";
-import { Banknote, CreditCard, Download, Timer, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Banknote, CreditCard, Download, Timer, TriangleAlert, Wallet, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
@@ -40,6 +40,10 @@ import type { CloseShiftAccount } from "../../../entities/payments";
  * karta qator bo'lib chiqadi). Maket `…-shift-dialog-accounts` o'chiq holatni chizmagan — eng yaqini o'sha oyna va
  * `SellModal` dagi tugmalar ustidagi sabab qatori. Kartalar rejimida oyna maketdagidek 760 px va izohi «Naqdni sanang,
  * har bir karta qoldig'ini kiriting va skrinshot yuklang».
+ *
+ * P0 63HO6cBU (ega 2026-11-17, maketdan ataylab farq): FILIAL kassasi naqd/kartaga bo'linmaydi — `singleTotal` (menejer)
+ * da bitta «Sanalgan summa *» (kutilgan — `expectedCash`, kassaning jami qoldig'i), karta maydoni, kartalar bo'limi va
+ * skrinshot yo'q (sozlama ham o'qilmaydi). Yuborishda `countedCash` = sanalgan summa, `countedCard` — `null`.
  */
 
 export type CloseShiftPayload = {
@@ -72,6 +76,8 @@ interface CloseShiftPopupProps {
   expectedCard: number | null;
   /** Ochiq smena ID si — kartalar qoralamasi (rasm, AI holati) va rasm yuklash uchun. */
   shiftId?: string | null;
+  /** Filial kassasi (P0 63HO6cBU): bitta «Sanalgan summa», `expectedCash` — jami qoldiq, karta va kartalar yo'q. */
+  singleTotal?: boolean;
 }
 
 const LabelWithIcon = ({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) => (
@@ -91,6 +97,7 @@ const CloseShiftPopup = ({
   expectedCash,
   expectedCard,
   shiftId,
+  singleTotal = false,
 }: CloseShiftPopupProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -102,8 +109,9 @@ const CloseShiftPopup = ({
   const cashDiffId = `${idBase}-cash-diff`;
   const cardDiffId = `${idBase}-card-diff`;
   const blockReasonId = `${idBase}-block-reason`;
-  const accountsForm = useShiftAccountsForm({ open: isOpen, shiftId });
-  const accountMode = accountsForm.enabled;
+  // Filial kassasi bitta jami — kartalar tekshiruvi sozlamasi o'qilmaydi va (keshda bo'lsa ham) qo'llanmaydi.
+  const accountsForm = useShiftAccountsForm({ open: isOpen && !singleTotal, shiftId });
+  const accountMode = !singleTotal && accountsForm.enabled;
   // Rasm majburiy kartada skrinshot yo'q — yopib bo'lmaydi (smena ID si yo'q bo'lsa yuklab ham bo'lmaydi — backend hal
   // qiladi, tugma to'silmaydi).
   const missingPhotos = accountMode && accountsForm.canUpload ? accountsForm.missingPhotos : [];
@@ -124,14 +132,17 @@ const CloseShiftPopup = ({
   const countedCash = parseOptionalAmountInput(cashInput);
   const countedCard = parseOptionalAmountInput(cardInput);
   const cashDiff = computeShiftDiff(countedCash, expectedCash);
-  // Kartalar rejimida «Sanalgan karta» maydoni yo'q — farq har karta qatorida (o'z izohi bilan).
-  const cardDiff = accountMode ? null : computeShiftDiff(countedCard, expectedCard);
+  // Kartalar rejimida «Sanalgan karta» maydoni yo'q — farq har karta qatorida (o'z izohi bilan); filial — karta yo'q.
+  const cardDiff = accountMode || singleTotal ? null : computeShiftDiff(countedCard, expectedCard);
   const hasDiff = [cashDiff, cardDiff].some((diff) => {
     const kind = shiftDiffKind(diff);
     return kind === "shortage" || kind === "surplus";
   });
   const commentText = comment.trim();
-  const cashError = submitted && countedCash === null ? t("v2MainCashbox.shift.close.cashRequired") : undefined;
+  const cashError =
+    submitted && countedCash === null
+      ? t(singleTotal ? "v2MainCashbox.shift.close.totalRequired" : "v2MainCashbox.shift.close.cashRequired")
+      : undefined;
   const commentError =
     submitted && hasDiff && !commentText ? t("v2MainCashbox.shift.close.commentRequired") : undefined;
 
@@ -152,6 +163,10 @@ const CloseShiftPopup = ({
     if (isLoading || accountsForm.settingsLoading || accountsForm.isUploading || photoBlocked) return;
     setSubmitted(true);
     if (countedCash === null || (hasDiff && !commentText)) return;
+    if (singleTotal) {
+      void onConfirm({ countedCash, countedCard: null, comment: commentText });
+      return;
+    }
     const accounts = accountsForm.buildPayload();
     if (accounts && accountsForm.hasErrors) return;
     const payload: CloseShiftPayload = accounts
@@ -261,7 +276,13 @@ const CloseShiftPopup = ({
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))]">
         <div className="flex min-w-0 flex-col gap-1.5">
           <Field
-            label={<LabelWithIcon icon={Banknote}>{t("v2MainCashbox.shift.close.countedCash")}</LabelWithIcon>}
+            label={
+              singleTotal ? (
+                <LabelWithIcon icon={Wallet}>{t("v2MainCashbox.shift.close.countedTotal")}</LabelWithIcon>
+              ) : (
+                <LabelWithIcon icon={Banknote}>{t("v2MainCashbox.shift.close.countedCash")}</LabelWithIcon>
+              )
+            }
             required
             hint={expectedHint(expectedCash)}
             error={cashError}
@@ -278,7 +299,7 @@ const CloseShiftPopup = ({
           </Field>
           {diffBox(cashDiff, countedCash, expectedCash, cashDiffId)}
         </div>
-        {accountMode ? null : (
+        {accountMode || singleTotal ? null : (
           <div className="flex min-w-0 flex-col gap-1.5">
             <Field
               label={<LabelWithIcon icon={CreditCard}>{t("v2MainCashbox.shift.close.countedCard")}</LabelWithIcon>}
@@ -331,7 +352,11 @@ const CloseShiftPopup = ({
       <p className="m-0 flex items-start gap-2 text-xs text-text-muted">
         <Download aria-hidden="true" size={16} className="mt-px shrink-0" />
         <span className="min-w-0">
-          {accountMode ? t("shiftCheck.accounts.note") : t("v2MainCashbox.shift.close.note")}
+          {accountMode
+            ? t("shiftCheck.accounts.note")
+            : singleTotal
+              ? t("v2MainCashbox.shift.close.noteTotal")
+              : t("v2MainCashbox.shift.close.note")}
         </span>
       </p>
     </Dialog>

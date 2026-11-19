@@ -14,6 +14,7 @@ import {
   getPaymentSourceTitle,
   getViewerOperationType,
   isOrderLinkedSource,
+  showsPaymentMethod,
 } from "./paymentSourceType";
 import { formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -129,7 +130,11 @@ const HistoryRow = memo(
     const signedAmount = formatSignedMoneyLocalized(getHistoryRowSignedAmount(row, viewerRole));
     const title = getHistoryRowTitle(row, t, viewerRole);
     const actor = resolvePaymentActorName(row);
-    const method = row.payment_method ? getPaymentMethodLabel(row.payment_method, t) : "";
+    // P0 63HO6cBU: menejer filial kassasi qatorida usulni ko'rmaydi (filial kassasi bitta jami).
+    const method =
+      row.payment_method && showsPaymentMethod(row.cashbox_type ?? row.cashbox?.cashbox_type, viewerRole)
+        ? getPaymentMethodLabel(row.payment_method, t)
+        : "";
     const subtitle = [actor !== "-" ? actor : "", method !== "—" ? method : ""].filter(Boolean).join(" · ");
     const sourceUserName =
       showSourceUser && normalize(row.source_type) === "courier_payment"

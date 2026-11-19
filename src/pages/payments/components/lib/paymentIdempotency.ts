@@ -84,13 +84,20 @@ export const settlePaymentKey = (fingerprint: string) => {
 export type CourierPaymentIdentity = {
   courier_id: string;
   amount: number;
-  payment_method: string;
+  /**
+   * Menejerning kuryerdan qabulida YO'Q (P0 63HO6cBU, ega 2026-11-17: filial kassasi bitta jami, server naqd yozadi) —
+   * so'rovga ham ketmaydi.
+   */
+  payment_method?: string;
   market_id: string | null;
 };
 
-/** Kuryer to'lovi: kuryer + summa + usul + market (o'zgarmagan format). */
+/**
+ * Kuryer to'lovi: kuryer + summa + usul + market (o'zgarmagan format). Usulsiz (menejer) to'lov — avvalgi «Naqd» izi
+ * bilan bir xil: server uni naqd yozadi, javobsiz qolgan eski naqd urinishining kaliti ham saqlanadi.
+ */
 export const courierPaymentFingerprint = (payment: CourierPaymentIdentity) =>
-  JSON.stringify([payment.courier_id, payment.amount, payment.payment_method, payment.market_id]);
+  JSON.stringify([payment.courier_id, payment.amount, payment.payment_method ?? "cash", payment.market_id]);
 
 /** Marketga to'lov (HQ → market): market + summa + usul. */
 export const marketPaymentFingerprint = (payment: {

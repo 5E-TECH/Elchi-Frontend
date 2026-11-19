@@ -340,28 +340,19 @@ describe("Main cashbox — fill / spend (v2 form + confirmation)", () => {
     expect(patches(FILL_URL)).toHaveLength(1);
   });
 
-  it("manager: the confirmation names the own branch cashbox; the payload is unchanged", async () => {
-    const user = userEvent.setup();
+  it("manager (P0 63HO6cBU, ega 2026-11-17): filial kassasida «Kassadan xarajat» / «Kassani to'ldirish» yo'q — PATCH ham yo'q", async () => {
     open(manager);
 
-    const dialog = await fillForm(user, {
-      action: /Kassadan xarajat/,
-      title: "Kassadan xarajat",
-      amount: "120000",
-      type: "Naqd",
-      comment: "Kanselyariya tovarlari",
-    });
-    await user.click(within(dialog).getByRole("button", { name: "Xarajatni saqlash" }));
-    const confirm = await screen.findByRole("alertdialog", { name: "Xarajatni tasdiqlang" });
-    expect(within(confirm).getByText("Urgut filiali")).toBeInTheDocument();
-    await user.click(within(confirm).getByRole("button", { name: "Tasdiqlash" }));
-
-    await waitFor(() => expect(patches(SPEND_URL)).toHaveLength(1));
-    expect(patches(SPEND_URL)[0][1]).toEqual({
-      amount: 120_000,
-      type: "cash",
-      comment: "Kanselyariya tovarlari",
-      expense_category_id: "3",
-    });
+    expect(await screen.findByRole("button", { name: /Kuryerdan qabul qilish/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kassadan xarajat/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kassani to'ldirish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(patches(SPEND_URL)).toHaveLength(0);
+    expect(patches(FILL_URL)).toHaveLength(0);
+    // BE PR-B: menejerga xarajat kategoriyalari va xarajat cheki — 403; sahifa ularni umuman so'ramaydi.
+    const gets = http.get.mock.calls.map(([url]) => String(url));
+    expect(gets).not.toContain(CATEGORIES_URL);
+    expect(gets).not.toContain("finance/receipt-settings");
+    expect(http.post.mock.calls.some(([url]) => String(url).startsWith("finance/receipts"))).toBe(false);
   });
 });

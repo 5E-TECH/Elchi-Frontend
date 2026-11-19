@@ -74,7 +74,7 @@ import { paymentCorrectionBadgeKind } from "../../../entities/payments/paymentCo
 import { toReceiptRef } from "../../../entities/payments/receipt";
 import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
-import { canManageExpenseCategories } from "../../../app/lib/access";
+import { canManageExpenseCategories, canUseManualCashboxOperations } from "../../../app/lib/access";
 import { EXPENSE_CATEGORIES_TAB, opsTabPath } from "../../ops/tabs";
 import CashboxFormPopup, { type CashboxFormPayload, type CashboxFormResult } from "./CashboxFormPopup";
 import { CashboxCardsDialog } from "./cashboxCards/CashboxCardsDialog";
@@ -97,7 +97,12 @@ import SettlementPickerDialog, {
 } from "./SettlementPickerDialog";
 import type { PaymentRow } from "./patmentHistoryTable";
 import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
-import { getPaymentMethodLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
+import {
+  getPaymentMethodLabel,
+  getPaymentSourceTitle,
+  getViewerOperationType,
+  showsPaymentMethod,
+} from "./paymentSourceType";
 import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import { useCashboxShift } from "./lib/useCashboxShift";
@@ -136,6 +141,11 @@ import {
  *    yoki HQ kuryeri, menejer — kuryer), «Marketga to'lov» (faqat SA/admin — backend menejerga 403), xarajat,
  *    to'ldirish; smena ochiq — «Smena ochiq · … dan · Ochgan xodim: <ism>» bloki. Menejer (maket): sof oqim o'rnida
  *    «kechaga nisbatan», grafik alohida «Balans dinamikasi» kartasida (`BalanceTrendCard`, qzjTMWPb).
+ *  - P0 63HO6cBU (ega qarori 2026-11-17, maketdan ataylab farq): FILIAL kassasi naqd/kartaga bo'linmaydi — menejerda
+ *    balans faqat bitta jami (naqd/karta chizig'i va «Kartalar» oynasi yo'q), «Tezkor amallar» — faqat «Kuryerdan qabul
+ *    qilish» va «Marketga to'lov» («Kassadan xarajat» / «Kassani to'ldirish» va ularning oynalari yo'q — backend ham
+ *    menejerga 403), smena oynalari — bitta «Sanalgan summa» / «Jami», tarixda «To'lov turi» yo'q, Excel — bitta
+ *    «Summa» ustuni. Superadmin/admin asosiy kassasi o'zgarmagan.
  *  - «Bugun / Bu hafta / Bu oy» (telefonda bitta karta + segment), «Pul qayerdan keldi, qayerga ketdi»
  *    (bu oy, manba turi bo'yicha), «Operatsiyalar tarixi» (sana filtri, jadval → telefonda kartalar, tafsilot).
  *
@@ -178,6 +188,13 @@ const ACTION_ORDER: readonly ActionLabel[] = [
  *    bo'lguncha vaqtincha "Kassadan chiqim" ishlatiladi.
  */
 const UNAVAILABLE_ACTIONS: ReadonlySet<ActionLabel> = new Set<ActionLabel>(["paySalary"]);
+
+/**
+ * P0 63HO6cBU (ega 2026-11-17): qo'lda xarajat va to'ldirish — faqat superadmin/admin (`canUseManualCashboxOperations`;
+ * backend PR-B: `PATCH cashbox/spend|fill` menejerga 403). Menejerning filial kassasida faqat «Kuryerdan qabul qilish» va
+ * «Marketga to'lov»; xarajat oynasi (kategoriyalar ro'yxati, xarajat cheki) ham chizilmaydi — so'rovlar ketmaydi.
+ */
+const MANUAL_ACTIONS: ReadonlySet<ActionLabel> = new Set<ActionLabel>(["spendFromCashbox", "fillCashbox"]);
 
 type ManualOperation = "fill" | "spend";
 
@@ -398,6 +415,7 @@ const MainCashbox = () => {
 
   const role = useSelector((state: RootState) => state.role.role);
   const canManageCategories = useSelector(canManageExpenseCategories);
+  const canManualOps = useSelector(canUseManualCashboxOperations);
   const profile = useSelector((state: RootState) => state.user.user);
   const profileUserId = useSelector((state: RootState) => state.user.user?.id);
   const roleUserId = useSelector((state: RootState) => state.role.id);
@@ -607,7 +625,13 @@ const MainCashbox = () => {
 
   // «Marketga to'lov» (POST finance/cashbox/payment/market) menejerda ham — o'z filiali kassasidan (ega 2026-11-11,
   // BeePost kabi). Ilgari menejerga yashirin edi (backend 403) — backend menejerga ochgach ishlaydi.
-  const visibleActions = useMemo(() => ACTION_ORDER.filter((action) => !UNAVAILABLE_ACTIONS.has(action)), []);
+  const visibleActions = useMemo(
+    () =>
+      ACTION_ORDER.filter(
+        (action) => !UNAVAILABLE_ACTIONS.has(action) && (canManualOps || !MANUAL_ACTIONS.has(action)),
+      ),
+    [canManualOps],
+  );
 
   const handlePickerSelect = useCallback(
     (target: SettlementPickerTarget) => {
@@ -643,9 +667,12 @@ const MainCashbox = () => {
         comment: t("comment"),
         summaryIncome: t("summaryIncome"),
         summaryExpense: t("summaryExpense"),
+        amount: t("amount"),
       },
+      // Filial kassasi bitta jami (P0 63HO6cBU) — menejer hisobotida naqd/karta ustunlari yo'q.
+      singleTotal: isManagerRole,
     });
-  }, [historyRows, totalBalance, cashBalance, transferBalance, draftHistoryFrom, draftHistoryTo, t]);
+  }, [historyRows, totalBalance, cashBalance, transferBalance, draftHistoryFrom, draftHistoryTo, isManagerRole, t]);
 
   const refetchCashboxState = useCallback(async () => {
     await Promise.allSettled([
@@ -833,6 +860,11 @@ const MainCashbox = () => {
     String(value ?? "").trim().toLowerCase() === "click"
       ? t("v2Common.paymentMethod.cardClick")
       : getPaymentMethodLabel(value, t);
+  // P0 63HO6cBU: menejerning filial kassasi tarixida «To'lov turi» yo'q (filial kassasi bitta jami).
+  const rowMethodText = (row: PaymentRow) =>
+    showsPaymentMethod(row.cashbox_type || row.cashbox?.cashbox_type || viewerCashboxType, normalizedRole)
+      ? paymentMethodLabel(row.payment_method)
+      : "";
   const actorName = (row: PaymentRow) => {
     const name = resolvePaymentActorName(row);
     return name === "-" ? "—" : name;
@@ -989,18 +1021,24 @@ const MainCashbox = () => {
                 ) : null}
               </div>
             ) : null}
-            <div className="hidden text-[13px] text-text-muted max-lg:block">{paymentMethodLabel(row.payment_method)}</div>
+            {rowMethodText(row) ? (
+              <div className="hidden text-[13px] text-text-muted max-lg:block">{rowMethodText(row)}</div>
+            ) : null}
           </>
         );
       },
     },
-    {
-      id: "paymentType",
-      header: t("v2MainCashbox.history.columns.paymentType"),
-      hideBelow: "lg",
-      className: "whitespace-nowrap",
-      cell: (row) => paymentMethodLabel(row.payment_method),
-    },
+    ...(isManagerRole
+      ? []
+      : [
+          {
+            id: "paymentType",
+            header: t("v2MainCashbox.history.columns.paymentType"),
+            hideBelow: "lg",
+            className: "whitespace-nowrap",
+            cell: (row) => rowMethodText(row),
+          } satisfies DataTableColumn<PaymentRow>,
+        ]),
     {
       id: "operation",
       header: t("v2MainCashbox.history.columns.operation"),
@@ -1046,7 +1084,7 @@ const MainCashbox = () => {
     const parts: ReactNode[] = [
       line.text || null,
       line.insteadOf ? <span className="whitespace-nowrap">{line.insteadOf}</span> : null,
-      paymentMethodLabel(row.payment_method) || null,
+      rowMethodText(row) || null,
     ].filter(Boolean);
     return (
       <Pressable
@@ -1167,7 +1205,8 @@ const MainCashbox = () => {
           )}
         </div>
       </div>
-      {/* Menejerda grafik yo'q: qiymat va taqsimot ustma-ust (maket), karta teng ikki ustunning birida. */}
+      {/* Menejerda grafik yo'q: qiymat (maket), karta teng ikki ustunning birida. Filial kassasi bitta jami (P0 63HO6cBU) —
+          naqd/karta taqsimoti faqat asosiy kassada. */}
       <div className={cx("flex items-start gap-x-8 gap-y-4", isManagerRole ? "flex-col [&>*]:w-full [&>*]:flex-none" : "flex-wrap")}>
         <div className="flex min-w-0 flex-[1_1_220px] flex-col gap-1">
           <span className="text-[13px] font-semibold text-text-muted">{t("v2MainCashbox.balance.total")}</span>
@@ -1215,73 +1254,75 @@ const MainCashbox = () => {
             </span>
           )}
         </div>
-        <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-1">
-          {balanceLoading ? (
-            <SkeletonLines lines={3} />
-          ) : (
-            <>
-              <div
-                role="img"
-                aria-label={t("v2MainCashbox.balance.split", {
-                  cash: money(cashBalance),
-                  cashShare: percent(cashShare),
-                  card: money(transferBalance),
-                  cardShare: percent(cardShare),
-                })}
-                className="flex h-2.5 gap-0.5 overflow-hidden rounded-[4px] bg-sunken"
-              >
-                {splitTotal > 0
-                  ? splitRows
-                      .filter((row) => row.share > 0)
-                      .map((row) => (
-                        <span
-                          key={row.key}
-                          className={cx("block h-full min-w-1 first:rounded-l-[4px] last:rounded-r-[4px]", row.color)}
-                          style={{ flex: `${row.share} 1 0` }}
-                        />
-                      ))
-                  : null}
-              </div>
-              <ul className="m-0 flex list-none flex-col p-0">
-                {splitRows.map((row) => {
-                  const Icon = row.icon;
-                  const cells = (
-                    <>
-                      <span aria-hidden="true" className={cx("size-3 rounded-[3px]", row.color)} />
-                      <span className="inline-flex min-w-0 items-center gap-2 text-text">
-                        <Icon aria-hidden="true" size={16} className="shrink-0 text-text-muted" />
-                        <span className="truncate">{row.label}</span>
-                        {row.key === "card" ? (
-                          <ChevronRight aria-hidden="true" size={16} className="shrink-0 text-text-muted" />
-                        ) : null}
-                      </span>
-                      <span className="whitespace-nowrap font-semibold text-text">{money(row.value)}</span>
-                      <span className="text-right text-[13px] text-text-muted">{percent(row.share)}</span>
-                    </>
-                  );
-                  const grid = "grid min-h-10 grid-cols-[12px_minmax(0,1fr)_auto_52px] items-center gap-2.5 py-1.5 text-sm";
-                  // cards1111: «Karta (Click)» — kartalar oynasini ochadi; «Naqd» — oddiy qator.
-                  return row.key === "card" ? (
-                    <li key={row.key} className="border-t border-border first:border-t-0">
-                      <Pressable
-                        aria-haspopup="dialog"
-                        onClick={() => setCardsOpen(true)}
-                        className={cx(grid, "-mx-1.5 w-[calc(100%+12px)] rounded-lg px-1.5 text-left hover:bg-row-hover max-md:min-h-11")}
-                      >
+        {isManagerRole ? null : (
+          <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-1">
+            {balanceLoading ? (
+              <SkeletonLines lines={3} />
+            ) : (
+              <>
+                <div
+                  role="img"
+                  aria-label={t("v2MainCashbox.balance.split", {
+                    cash: money(cashBalance),
+                    cashShare: percent(cashShare),
+                    card: money(transferBalance),
+                    cardShare: percent(cardShare),
+                  })}
+                  className="flex h-2.5 gap-0.5 overflow-hidden rounded-[4px] bg-sunken"
+                >
+                  {splitTotal > 0
+                    ? splitRows
+                        .filter((row) => row.share > 0)
+                        .map((row) => (
+                          <span
+                            key={row.key}
+                            className={cx("block h-full min-w-1 first:rounded-l-[4px] last:rounded-r-[4px]", row.color)}
+                            style={{ flex: `${row.share} 1 0` }}
+                          />
+                        ))
+                    : null}
+                </div>
+                <ul className="m-0 flex list-none flex-col p-0">
+                  {splitRows.map((row) => {
+                    const Icon = row.icon;
+                    const cells = (
+                      <>
+                        <span aria-hidden="true" className={cx("size-3 rounded-[3px]", row.color)} />
+                        <span className="inline-flex min-w-0 items-center gap-2 text-text">
+                          <Icon aria-hidden="true" size={16} className="shrink-0 text-text-muted" />
+                          <span className="truncate">{row.label}</span>
+                          {row.key === "card" ? (
+                            <ChevronRight aria-hidden="true" size={16} className="shrink-0 text-text-muted" />
+                          ) : null}
+                        </span>
+                        <span className="whitespace-nowrap font-semibold text-text">{money(row.value)}</span>
+                        <span className="text-right text-[13px] text-text-muted">{percent(row.share)}</span>
+                      </>
+                    );
+                    const grid = "grid min-h-10 grid-cols-[12px_minmax(0,1fr)_auto_52px] items-center gap-2.5 py-1.5 text-sm";
+                    // cards1111: «Karta (Click)» — kartalar oynasini ochadi; «Naqd» — oddiy qator.
+                    return row.key === "card" ? (
+                      <li key={row.key} className="border-t border-border first:border-t-0">
+                        <Pressable
+                          aria-haspopup="dialog"
+                          onClick={() => setCardsOpen(true)}
+                          className={cx(grid, "-mx-1.5 w-[calc(100%+12px)] rounded-lg px-1.5 text-left hover:bg-row-hover max-md:min-h-11")}
+                        >
+                          {cells}
+                          <span className="sr-only">{t("cashboxCards.open")}</span>
+                        </Pressable>
+                      </li>
+                    ) : (
+                      <li key={row.key} className={cx(grid, "border-t border-border first:border-t-0")}>
                         {cells}
-                        <span className="sr-only">{t("cashboxCards.open")}</span>
-                      </Pressable>
-                    </li>
-                  ) : (
-                    <li key={row.key} className={cx(grid, "border-t border-border first:border-t-0")}>
-                      {cells}
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
-        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
       </div>
       {isManagerRole ? null : (
         <MainCashboxBalanceChart
@@ -1738,39 +1779,44 @@ const MainCashbox = () => {
         branchName={ownBranchName}
       />
 
-      <CashboxFormPopup
-        isOpen={isSpendPopupOpen}
-        onClose={() => setIsSpendPopupOpen(false)}
-        variant="spend"
-        title={t("v2MainCashbox.form.spendTitle")}
-        description={t("v2MainCashbox.form.spendSubtitle")}
-        submitLabel={t("v2MainCashbox.form.spendSubmit")}
-        commentPlaceholder={t("v2MainCashbox.form.spendPlaceholder")}
-        confirm={{ title: t("v2MainCashbox.confirm.spendTitle"), cashboxLabel: confirmCashboxLabel }}
-        isLoading={cashboxSpand.isPending}
-        onSubmit={handleSpend}
-        {...manualFormProps}
-        // Xarajat kategoriya orqali (majburiy, oynaning o'zida) — izoh ixtiyoriy (ega 2026-10-22).
-        requireComment={false}
-        categoryRequiredMessage={t("v2MainCashbox.form.categoryRequired")}
-        // Faol kategoriya yo'q — superadminga Ops → «Xarajat kategoriyalari» havolasi (sozlama o'sha yerda).
-        manageCategoriesTo={canManageCategories ? opsTabPath(EXPENSE_CATEGORIES_TAB) : undefined}
-      />
+      {/* P0 63HO6cBU: xarajat va to'ldirish oynalari faqat superadmin/admin'da (menejerning filial kassasida yo'q). */}
+      {canManualOps ? (
+        <>
+          <CashboxFormPopup
+            isOpen={isSpendPopupOpen}
+            onClose={() => setIsSpendPopupOpen(false)}
+            variant="spend"
+            title={t("v2MainCashbox.form.spendTitle")}
+            description={t("v2MainCashbox.form.spendSubtitle")}
+            submitLabel={t("v2MainCashbox.form.spendSubmit")}
+            commentPlaceholder={t("v2MainCashbox.form.spendPlaceholder")}
+            confirm={{ title: t("v2MainCashbox.confirm.spendTitle"), cashboxLabel: confirmCashboxLabel }}
+            isLoading={cashboxSpand.isPending}
+            onSubmit={handleSpend}
+            {...manualFormProps}
+            // Xarajat kategoriya orqali (majburiy, oynaning o'zida) — izoh ixtiyoriy (ega 2026-10-22).
+            requireComment={false}
+            categoryRequiredMessage={t("v2MainCashbox.form.categoryRequired")}
+            // Faol kategoriya yo'q — superadminga Ops → «Xarajat kategoriyalari» havolasi (sozlama o'sha yerda).
+            manageCategoriesTo={canManageCategories ? opsTabPath(EXPENSE_CATEGORIES_TAB) : undefined}
+          />
 
-      <CashboxFormPopup
-        isOpen={isRefillPopupOpen}
-        onClose={() => setIsRefillPopupOpen(false)}
-        variant="fill"
-        title={t("v2MainCashbox.form.fillTitle")}
-        description={t("v2MainCashbox.form.fillSubtitle")}
-        submitLabel={t("v2MainCashbox.form.fillSubmit")}
-        commentPlaceholder={t("v2MainCashbox.form.fillPlaceholder")}
-        commentRequiredMessage={t("v2MainCashbox.form.fillCommentRequired")}
-        confirm={{ title: t("v2MainCashbox.confirm.fillTitle"), cashboxLabel: confirmCashboxLabel }}
-        isLoading={cashboxFill.isPending}
-        onSubmit={handleRefill}
-        {...manualFormProps}
-      />
+          <CashboxFormPopup
+            isOpen={isRefillPopupOpen}
+            onClose={() => setIsRefillPopupOpen(false)}
+            variant="fill"
+            title={t("v2MainCashbox.form.fillTitle")}
+            description={t("v2MainCashbox.form.fillSubtitle")}
+            submitLabel={t("v2MainCashbox.form.fillSubmit")}
+            commentPlaceholder={t("v2MainCashbox.form.fillPlaceholder")}
+            commentRequiredMessage={t("v2MainCashbox.form.fillCommentRequired")}
+            confirm={{ title: t("v2MainCashbox.confirm.fillTitle"), cashboxLabel: confirmCashboxLabel }}
+            isLoading={cashboxFill.isPending}
+            onSubmit={handleRefill}
+            {...manualFormProps}
+          />
+        </>
+      ) : null}
 
       <OpenShiftDialog
         open={isOpenShiftDialogOpen}
@@ -1782,6 +1828,8 @@ const MainCashbox = () => {
         cash={balanceKnown ? cashBalance : null}
         card={balanceKnown ? transferBalance : null}
         cardLabel={shiftCardLabel}
+        // Filial kassasi bitta jami (P0 63HO6cBU): «Ochilish qoldig'i» — faqat «Jami».
+        total={isManagerRole ? (balanceKnown ? totalBalance : null) : undefined}
       />
 
       <CloseShiftPopup
@@ -1791,8 +1839,10 @@ const MainCashbox = () => {
         onConfirm={handleCloseShift}
         openedAt={openShiftOpenedAt}
         openedByName={shiftState.openedByName}
-        expectedCash={balanceKnown ? cashBalance : null}
-        expectedCard={balanceKnown ? transferBalance : null}
+        // Filial kassasi bitta jami (P0 63HO6cBU): menejer bitta «Sanalgan summa» kiritadi, kutilgan — jami qoldiq.
+        singleTotal={isManagerRole}
+        expectedCash={balanceKnown ? (isManagerRole ? totalBalance : cashBalance) : null}
+        expectedCard={balanceKnown && !isManagerRole ? transferBalance : null}
         shiftId={closingShiftId}
       />
 
@@ -1805,12 +1855,16 @@ const MainCashbox = () => {
         closedByName={currentUserName}
         cashboxLabel={shiftCashboxLabel}
         cardLabel={shiftCardLabel}
+        singleTotal={isManagerRole}
         onExport={handleExportExcel}
       />
 
       <FinanceHistoryDetailPopup row={selectedRow} rows={historyRows} onClose={() => setSelectedRow(null)} />
 
-      <CashboxCardsDialog open={cardsOpen} onClose={() => setCardsOpen(false)} cashBalance={cashBalance} />
+      {/* «Kartalar» oynasi — faqat asosiy kassada: filial kartalari nofaol, filial kassasi bitta jami (P0 63HO6cBU). */}
+      {isManagerRole ? null : (
+        <CashboxCardsDialog open={cardsOpen} onClose={() => setCardsOpen(false)} cashBalance={cashBalance} />
+      )}
 
       {/* «Maosh to'lash» yashirin (UNAVAILABLE_ACTIONS) — oqim o'chirilmagan, endpoint paydo bo'lguncha yetib bo'lmaydi. */}
       <PopupSelect

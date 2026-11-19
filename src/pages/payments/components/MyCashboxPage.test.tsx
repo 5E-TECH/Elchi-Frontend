@@ -279,6 +279,9 @@ describe("MyCashboxPage — menejer (maket yo'q, eng yaqini market-cashbox-my)",
     const row = await rowOf("Kuryerdan filialga o'tkazma");
     expect(within(row).getByText("Kirim")).toBeInTheDocument();
     expect(row).toHaveTextContent("+1 500 000 so'm");
+    // P0 63HO6cBU (ega 2026-11-17): filial kassasi bitta jami — «To'lov turi» ustuni va usul yo'q.
+    expect(screen.queryByRole("columnheader", { name: "To'lov turi" })).not.toBeInTheDocument();
+    expect(row).not.toHaveTextContent("Naqd");
   });
 
   it("qo'lda chiqimning xarajat kategoriyasi (Elchi Pochta №1) — manba nomi yonida belgi", async () => {

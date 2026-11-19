@@ -24,7 +24,9 @@ test("menejer «To'lovlar»: smena yo'q → «Smenani ochish» → oyna → smen
   const dialog = page.getByRole("dialog", { name: "Smenani ochish" });
   await expect(dialog).toContainText("Urgut filiali kassasi · yangi smena boshlanadi");
   await expect(dialog).toContainText("Ravshan Ortiqov");
-  await expect(dialog).toContainText(/1\s200\s000/);
+  // P0 63HO6cBU (ega 2026-11-17): filial kassasi bitta jami — «Ochilish qoldig'i» faqat «Jami».
+  await expect(dialog).toContainText(/Jami\s*1\s500\s000/);
+  await expect(dialog).not.toContainText("Naqd");
   await dialog.getByRole("textbox").fill("Ertalabki smena");
   await dialog.getByRole("button", { name: "Smenani ochish" }).click();
 
@@ -54,12 +56,13 @@ test("menejer kuryer kassasi: forma o'rnida qulf, tarix ko'rinadi → smena ochi
   await expect(page.getByText("Smena ochildi", { exact: true })).toBeVisible();
   await expect(page.getByTestId("shift-locked-card")).toHaveCount(0);
 
-  // XsoWhKP5: bo'sh forma — fokus birinchi xato maydonga, «To'lov turi» xatosi darhol aytiladi.
+  // XsoWhKP5: bo'sh forma — fokus birinchi xato maydonga. P0 63HO6cBU: menejerda «To'lov turi» yo'q — uning xatosi ham.
   await page.getByRole("button", { name: /qabul qilish$/i }).click();
   const amount = page.getByPlaceholder("0");
   await expect(amount).toBeFocused();
   await expect(amount).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByRole("alert").filter({ hasText: "To'lov turini tanlang" })).toBeVisible();
+  await expect(page.getByRole("group", { name: /To'lov turi/ })).toHaveCount(0);
+  await expect(page.getByText("To'lov turini tanlang")).toHaveCount(0);
   expect(mock.opens).toEqual([{}]);
   expect(mock.leaked).toEqual([]);
 });
