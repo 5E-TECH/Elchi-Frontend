@@ -5,7 +5,9 @@ import { mockCourierFilters, tashkentToday } from "./support/courierFilters";
  * yKtzKXeM — kuryer buyurtmalari: qidiruv (ism, telefon), sana oralig'i va «Yetkazish» haqiqatan so'rovga ketadi va
  * ro'yxatni toraytiradi; filtr o'zgarsa sahifa 1 ga qaytadi; URL'da saqlanadi. Soxta backend, 1440px.
  */
-test.use({ viewport: { width: 1440, height: 900 } });
+// Brauzer Toshkent mintaqasida (foydalanuvchilar kabi): «Bugun» brauzer kunini yuboradi, kutilgan qiymat esa
+// `tashkentToday()` — yuguruvchi UTC da bo'lsa ham (`TZ` siz muhit, 19:00–24:00 UTC) ikkalasi bir kun.
+test.use({ viewport: { width: 1440, height: 900 }, timezoneId: "Asia/Tashkent" });
 test.describe.configure({ timeout: 120_000 });
 
 const searchBox = (page: Page) => page.getByRole("searchbox", { name: /Buyurtmalarni ism/ });
