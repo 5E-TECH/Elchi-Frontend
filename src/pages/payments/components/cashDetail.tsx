@@ -80,6 +80,7 @@ import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { isGenericForbiddenError } from "../../../shared/lib/forbiddenError";
 import { getExportErrorMessage } from "../../../shared/lib/exportFile";
 import { notify } from "../../../shared/lib/notify";
@@ -221,6 +222,32 @@ const toOptionalNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === "") return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+/**
+ * 63HO6cBU (BE PR-C) — menejerning marketga to'lovi xatolari (backend o'zbekcha matnlari):
+ *  - 400 «Summa to'lash mumkin bo'lgan summadan oshib ketdi (To'lash mumkin: N so'm)» — summa maydoni ostida;
+ *  - 503 «Filial ulushini tekshirib bo'lmadi — birozdan so'ng qayta urinib ko'ring» — ulush tekshirilmadi, pul
+ *    ko'chmagan (javobi yo'qolgan so'rov emas: «natija noma'lum» ogohlantirishi chiqmaydi).
+ */
+const PAYABLE_EXCEEDED_MESSAGE = /to.lash mumkin/i;
+const SHARE_CHECK_FAILED_MESSAGE = /ulushini tekshirib bo.lmadi/i;
+
+const isPayableExceededError = (error: unknown) =>
+  getErrorStatus(error) === 400 && PAYABLE_EXCEEDED_MESSAGE.test(getBackendErrorMessage(error) ?? "");
+
+const isShareCheckFailedError = (error: unknown) =>
+  getErrorStatus(error) === 503 && SHARE_CHECK_FAILED_MESSAGE.test(getBackendErrorMessage(error) ?? "");
+
+/**
+ * Menejer market kassasini ocholmadi: 403 (filialga aloqasi yo'q market) — backendning aniq sababi (umumiy inglizcha
+ * «Forbidden resource» emas), 503 — ulushni tekshirib bo'lmadi. Boshqa holatda — `ErrorState` ning o'z matni.
+ */
+const managerMarketPageErrorText = (error: unknown): string | undefined => {
+  const status = getErrorStatus(error);
+  if (status === 403) return isGenericForbiddenError(error) ? undefined : getBackendErrorMessage(error);
+  if (status === 503) return getBackendErrorMessage(error);
+  return undefined;
 };
 
 const getArrayFromResponse = (value: unknown): Record<string, unknown>[] => {
@@ -492,6 +519,12 @@ const CashDetail = () => {
 
   const isBranchDetailRequest = requestedType === "branch";
   const isMarketDetailRequest = requestedType === "market";
+  /**
+   * 63HO6cBU (BE PR-C): menejer o'z filiali marketi kassasini ochadi — `GET cashbox/user/:marketId` 200
+   * `{ cashbox: { balance: <filial ulushi> }, branch_share, payable, user, history: [] }`; filialga aloqasi yo'q market —
+   * 403, ulushni tekshirib bo'lmasa — 503 (sahifa o'zi `ErrorState` bilan ko'rsatadi, global xabar takrorlanmaydi).
+   */
+  const isManagerMarketRequest = isMarketDetailRequest && isCurrentManagerRole;
   const isHqBranchReceiveRequest = isBranchDetailRequest && !isCurrentManagerRole;
   // Kuryer kassasi HAR QANDAY rol uchun `cashbox_type=couriers` bilan so'raladi.
   // Busiz superadmin/admin so'rovida gateway kuryer ID si bilan filial
@@ -553,6 +586,7 @@ const CashDetail = () => {
     id || "",
     Boolean(id) && (!isBranchDetailRequest || isHqBranchReceiveRequest),
     detailParams,
+    { silentError: isManagerMarketRequest },
   );
   const managerPayableQuery = useGetManagerPayableToHq(
     isBranchDetailRequest && isCurrentManagerRole,
@@ -683,6 +717,13 @@ const CashDetail = () => {
   const hasStateAmount =
     state?.entity?.amount !== undefined && state?.entity?.amount !== null;
   const isCourierReceiveDetail = type === "courier" && isCurrentManagerRole;
+  /**
+   * 63HO6cBU (BE PR-C): menejerning market kassasi — ko'rsatiladigan summa va to'lov chegarasi FAQAT «To'lash mumkin»
+   * (`payable` = min(filial ulushi, marketga qarz)). `cashbox.balance` (= filial ulushi) va marketning umumiy qarzi
+   * ishlatilmaydi. `payable` kelmasa — 0 (to'lov yo'li yopiq, server baribir tekshiradi).
+   */
+  const isManagerMarketView = type === "market" && isCurrentManagerRole;
+  const managerMarketPayable = isManagerMarketView ? (toOptionalNumber(detailEntry?.payable) ?? 0) : 0;
   const isHqBranchView = type === "branch" && !isCurrentManagerRole;
   const hasServerBranchPayable = isHqBranchView && serverBranchPayable !== undefined;
   /**
@@ -714,8 +755,9 @@ const CashDetail = () => {
       : (isCourierReceiveDetail || isHqBranchReceiveDetail) && hasStateAmount
         ? stateAmount
         : apiBalance;
-  const settlementBalance =
-    hasServerBranchPayable && serverBranchPayable !== undefined
+  const settlementBalance = isManagerMarketView
+    ? managerMarketPayable
+    : hasServerBranchPayable && serverBranchPayable !== undefined
       ? serverBranchPayable
       : (type === "market" || type === "branch") && detailEntry?.berilishi_kerak !== undefined
         ? settlementDetails.amountToGive
@@ -755,7 +797,11 @@ const CashDetail = () => {
       : detailEntry?.olinishi_kerak !== undefined
         ? "toBeReceived"
         : "totalBalanceLabel";
-  const balanceLabel = t(balanceLabelKey);
+  // Menejer market kassasida — «To'lash mumkin» (BE PR-C shartnomasi; maketda bu yorliq yo'q — eng yaqini
+  // `superadmin-payments-cash-detail-market` dagi «Berilishi kerak»).
+  const balanceLabel = isManagerMarketView ? t("v2CashDetail.settlement.payable") : t(balanceLabelKey);
+  /** Menejer marketga to'lov chegarasi — ekrandagi «To'lash mumkin» (to'lovdan keyin mahalliy kamaygani bilan). */
+  const managerMarketLimit = Math.max(balanceOverride ?? settlementBalance, 0);
 
   useEffect(() => {
     setBalanceOverride(null);
@@ -764,8 +810,9 @@ const CashDetail = () => {
   /**
    * P0 63HO6cBU (ega 2026-11-17): filial kassasi naqd/kartaga bo'linmaydi — menejerda «To'lov turi» yo'q, faqat summa:
    *  - kuryerdan qabul — `payment_method` / `card_id` yuborilmaydi (server naqd yozadi);
-   *  - marketga to'lov (ega Q1, Trello 63HO6cBU: «Menejerning Marketga to'lov ham faqat summa») — karta yo'q, PR-C
-   *    gacha backend `payment_method` ni talab qiladi — `"cash"` yuboriladi.
+   *  - marketga to'lov (ega Q1, Trello 63HO6cBU: «Menejerning Marketga to'lov ham faqat summa») — BE PR-C: so'rov
+   *    `{ market_id, amount, comment?, payment_date? }`, `payment_method` / `card_id` / `source_user_id` yuborilmaydi
+   *    (server naqd yozadi); summa chegarasi — «To'lash mumkin» (`payable`).
    * SA/A (HQ kuryeridan qabul, filialdan qabul, marketga to'lov) o'zgarmagan.
    */
   const isMethodless = isCurrentManagerRole && (type === "courier" || type === "market");
@@ -920,8 +967,10 @@ const CashDetail = () => {
 
     const refreshedData = refreshed.data?.data;
     const refreshedEntry = Array.isArray(refreshedData) ? refreshedData[0] : refreshedData;
-    const refreshedBalance =
-      (type === "market" || type === "branch") && refreshedEntry?.berilishi_kerak !== undefined
+    // Menejer market kassasi: faqat `payable` (`cashbox.balance` — filial ulushi, chegara emas).
+    const refreshedBalance = isManagerMarketView
+      ? refreshedEntry?.payable
+      : (type === "market" || type === "branch") && refreshedEntry?.berilishi_kerak !== undefined
         ? refreshedEntry.berilishi_kerak
         : refreshedEntry?.olinishi_kerak ??
           refreshedEntry?.cashbox?.balance ??
@@ -1167,6 +1216,28 @@ const CashDetail = () => {
     isGenericForbiddenError(error) ? t("paymentForbidden") : (getBackendErrorMessage(error) ?? fallback);
 
   /**
+   * 63HO6cBU (BE PR-C) — menejerning marketga to'lovi:
+   *  - 400 «Summa to'lash mumkin bo'lgan summadan oshib ketdi (To'lash mumkin: N so'm)» — backend matni summa maydoni
+   *    ostida (umumiy xabarsiz), «To'lash mumkin» serverdan qayta o'qiladi;
+   *  - 503 «Filial ulushini tekshirib bo'lmadi …» — backend matni xabarda; pul ko'chmagan, shuning uchun «natija
+   *    noma'lum» ogohlantirishi yo'q.
+   * Qolgan xatolar (403 «… to'lov HQ orqali», smena va boshqalar) — umumiy yo'l (backend matni xabarda).
+   */
+  const handleManagerMarketPaymentError = (error: unknown): boolean => {
+    const message = getBackendErrorMessage(error);
+    if (message && isPayableExceededError(error)) {
+      setError("amount", { type: "server", message }, { shouldFocus: true });
+      void refetchPaymentState();
+      return true;
+    }
+    if (message && isShareCheckFailedError(error)) {
+      notify.error(t("common:error"), { description: message });
+      return true;
+    }
+    return false;
+  };
+
+  /**
    * C1 / FE-PAY-03: market to'lovi va filial → HQ — kuryer to'lovi kabi
    * `Idempotency-Key` bilan. Kalit to'lovning barmoq iziga bog'langan va javob
    * kelgunicha saqlanadi: 504 (gateway timeout — pul o'tgan bo'lishi mumkin)
@@ -1179,12 +1250,15 @@ const CashDetail = () => {
     amount,
     successMessage,
     errorMessage,
+    handleError,
   }: {
     fingerprint: string;
     send: (idempotencyKey: string) => Promise<{ data?: CashboxPaymentResponse }>;
     amount: number;
     successMessage: string;
     errorMessage: string;
+    /** Xatoni o'zi ko'rsatdi (`true`) — umumiy xabar va «natija noma'lum» yo'li o'tkazib yuboriladi. */
+    handleError?: (error: unknown) => boolean;
   }) => {
     const idempotencyKey = takePaymentKey(fingerprint);
     let response: { data?: CashboxPaymentResponse };
@@ -1193,6 +1267,10 @@ const CashDetail = () => {
     } catch (error) {
       // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
       // faqat bir marta o'tkazadi. Chek xatosi — «Chek rasmi» maydoni ostida.
+      if (handleError?.(error)) {
+        refetchShiftAfterPaymentError();
+        return;
+      }
       if (!receipt.applyServerError(error)) {
         notify.error(t("common:error"), { description: paymentErrorText(error, errorMessage) });
       }
@@ -1356,8 +1434,11 @@ const CashDetail = () => {
       notify.error(t("marketPaymentError"), { description: t("cashDetailNotMarketCashbox") });
       return;
     }
-    // Menejer (P0 63HO6cBU, ega Q1): usul tanlanmaydi — PR-C gacha backend talab qiladi, filial kassasi bitta jami: "cash".
-    const payment = { market_id: id, amount, payment_method: isMethodless ? "cash" : normalizedPaymentMethod };
+    // Menejer (63HO6cBU, BE PR-C): `{ market_id, amount, comment?, payment_date? }` — usul, karta va manba
+    // yuborilmaydi (server naqd yozadi). Barmoq izi — avvalgi «cash» izi bilan bir xil (`marketPaymentFingerprint`).
+    const payment: { market_id: string; amount: number; payment_method?: string } = isMethodless
+      ? { market_id: id, amount }
+      : { market_id: id, amount, payment_method: normalizedPaymentMethod };
     // C14: `source_user_id` yuborilmaydi (DTO'da yo'q → 400).
     await submitIdempotentPayment({
       fingerprint: marketPaymentFingerprint(payment),
@@ -1369,6 +1450,7 @@ const CashDetail = () => {
       amount,
       successMessage: t("marketPaymentSuccess"),
       errorMessage: t("marketPaymentError"),
+      handleError: isManagerMarketView ? handleManagerMarketPaymentError : undefined,
     });
   };
 
@@ -1442,9 +1524,11 @@ const CashDetail = () => {
           : t("v2CashDetail.settlement.counterparty", { name: cashboxLabel("main") });
   // Superadmin/admin filial kassasida faqat «Qabul qilinishi kerak» (Dilshod, 2026-11-14): filialning o'z kassasidagi
   // pul («Kassadagi summa», naqd / o'tkazma bo'linmasi) HQ'ga kerak emas — HQ menejerdan qancha olishini ko'radi.
+  // Menejer market kassasida yo'q (BE PR-C): `cashbox.balance` — filial ulushi, marketning kassasi emas.
   const hasCashboxAmount =
     !isManagerBranchView &&
     !isHqBranchView &&
+    !isManagerMarketView &&
     (detailEntry?.kassadagi_summa !== undefined || cashbox?.balance !== undefined);
   const cashboxSplit = {
     cash: toOptionalNumber(cashbox?.balance_cash),
@@ -1453,7 +1537,7 @@ const CashDetail = () => {
   // Qarama-qarshi qator (maket: «Berilishi kerak 0 so'm» / «Qabul qilinishi kerak …»). Superadmin/admin filial
   // sahifasida asosiy son allaqachon filialning `berilishi_kerak` i — u qatorda takrorlanmaydi; menejer → HQ
   // sahifasida «Qabul qilinishi kerak» settlement'dan (`HqCoverage`), payable-to-hq uni bermaydi.
-  const counterRow = !hasSettlementDetails || isHqBranchView || isManagerBranchView
+  const counterRow = !hasSettlementDetails || isHqBranchView || isManagerBranchView || isManagerMarketView
     ? null
     : balanceLabelKey === "toBeReceived"
       ? { label: t("toBeGiven"), value: displayAmountToGive }
@@ -1494,9 +1578,11 @@ const CashDetail = () => {
   const amountHint =
     type === "courier" && courierReceiveLimit !== null
       ? t("v2CashDetail.form.limitHint", { amount: money(courierReceiveLimit) })
-      : type === "market"
-        ? t("v2CashDetail.form.payableHint", { amount: money(displayBalance) })
-        : t("v2CashDetail.form.receivableHint", { amount: money(displayBalance) });
+      : isManagerMarketView
+        ? t("v2CashDetail.form.payableLimitHint", { amount: money(displayBalance) })
+        : type === "market"
+          ? t("v2CashDetail.form.payableHint", { amount: money(displayBalance) })
+          : t("v2CashDetail.form.receivableHint", { amount: money(displayBalance) });
   const submitLabel =
     type === "market"
       ? t("v2CashDetail.form.pay")
@@ -1577,6 +1663,16 @@ const CashDetail = () => {
     }
     if (type === "market" && (cashbox?.cashbox_type !== "markets" || !id)) {
       notify.error(t("marketPaymentError"), { description: t("cashDetailNotMarketCashbox") });
+      return;
+    }
+    // 63HO6cBU (BE PR-C): menejer «To'lash mumkin» dan ortiq to'lay olmaydi — xato maydon ostida, tasdiq ochilmaydi
+    // (matn — backendning 400 matni bilan bir xil; chegara aniq, yaxlitlanmagan).
+    if (isManagerMarketView && parseAmountInput(values.amount) > managerMarketLimit) {
+      setError(
+        "amount",
+        { type: "max", message: t("v2CashDetail.form.payableExceeded", { amount: exactMoneyText(managerMarketLimit) }) },
+        { shouldFocus: true },
+      );
       return;
     }
     if (type === "branch" && (!id || isCurrentManagerRole)) return;
@@ -1679,7 +1775,13 @@ const CashDetail = () => {
       <div className="flex flex-col gap-6 max-md:gap-4">
         <PageHeader back={goBack} backLabel={backLabel} title={pageTitle} meta={pageBadge} />
         <Card>
-          <ErrorState size="card" error={cashboxError} onRetry={() => void refetchCashbox()} />
+          <ErrorState
+            size="card"
+            error={cashboxError}
+            // Menejer market kassasi (BE PR-C): 403 — backendning aniq sababi, 503 — «Filial ulushini tekshirib bo'lmadi …».
+            description={isManagerMarketRequest ? managerMarketPageErrorText(cashboxError) : undefined}
+            onRetry={() => void refetchCashbox()}
+          />
         </Card>
       </div>
     );
@@ -1784,7 +1886,10 @@ const CashDetail = () => {
         ? t("cashDetail.shift.banner.courierBranch")
         : t("cashDetail.shift.banner.courierMain")
       : type === "market"
-        ? t("cashDetail.shift.banner.market")
+        ? isCurrentManagerRole
+          ? // Menejer marketga o'z filiali kassasidan to'laydi — smena filial kassasida.
+            t("cashDetail.shift.banner.marketBranch")
+          : t("cashDetail.shift.banner.market")
         : t("cashDetail.shift.banner.branchReceive");
 
   const actionCard = isTypeUnknown ? (
@@ -1955,11 +2060,18 @@ const CashDetail = () => {
     <div className="flex flex-col gap-6 max-md:gap-4">
       <PageHeader back={goBack} backLabel={backLabel} title={pageTitle} meta={pageBadge} description={pageSubtitle} />
       <div className="flex flex-wrap items-start gap-6 max-md:gap-4">
-        <div className="flex min-w-0 flex-[1_1_340px] flex-col gap-6 max-md:gap-4">
+        {/* Menejer market kassasida tarix yo'q (BE PR-C: marketning tarixi va umumiy qarzi menejerga berilmaydi —
+            `history: []`) — doim bo'sh «Operatsiyalar tarixi» chizilmaydi; ustun maketdagi kengligida qoladi. */}
+        <div
+          className={cx(
+            "flex min-w-0 flex-[1_1_340px] flex-col gap-6 max-md:gap-4",
+            isManagerMarketView && "max-w-[560px]",
+          )}
+        >
           {settlementCard}
           {actionCard}
         </div>
-        {historyCard}
+        {isManagerMarketView ? null : historyCard}
       </div>
       <OpenShiftFlow
         open={isOpenShiftOpen}

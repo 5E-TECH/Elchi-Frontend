@@ -5,13 +5,15 @@ import { vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import CashDetail, { normalizeType } from "./cashDetail";
 
-type CashboxCall = { id: unknown; enabled: unknown; params: Record<string, unknown> };
+type CashboxCall = { id: unknown; enabled: unknown; params: Record<string, unknown>; options?: unknown };
 
 const cashboxState = vi.hoisted(() => ({
   response: undefined as unknown,
   calls: [] as CashboxCall[],
   /** Shu paramlar bilan so'rov yiqiladi (masalan tab/sana almashgach). */
   failWhen: undefined as ((params: Record<string, unknown>) => boolean) | undefined,
+  /** Kassa so'rovi shu xato bilan yiqiladi (63HO6cBU: menejer market kassasi — 403 / 503). */
+  error: undefined as unknown,
 }));
 /** Kassani qayta o'qish — sukut bo'yicha serverdagi (joriy) javobni qaytaradi. */
 const cashboxRefetch = vi.hoisted(() => vi.fn(async () => ({ data: cashboxState.response })));
@@ -144,8 +146,11 @@ vi.mock("../../../entities/payments", async (importOriginal) => {
           ? { isSuccess: true, data: { data: { cashbox: { balance_cash: 1200000, balance_card: 300000 } } } }
           : { isSuccess: false, data: undefined };
       },
-      useGetCashBoxById: (id: unknown, enabled: unknown, params: Record<string, unknown>) => {
-        cashboxState.calls.push({ id, enabled, params });
+      useGetCashBoxById: (id: unknown, enabled: unknown, params: Record<string, unknown>, options?: unknown) => {
+        cashboxState.calls.push({ id, enabled, params, options });
+        if (cashboxState.error) {
+          return { data: undefined, isLoading: false, isError: true, error: cashboxState.error, refetch: cashboxRefetch };
+        }
         if (cashboxState.failWhen?.(params)) {
           return { data: undefined, isLoading: false, isError: true, error: new Error("boom"), refetch: cashboxRefetch };
         }
@@ -1591,6 +1596,24 @@ describe("CashDetail — smena qulfi (CB-2)", () => {
     );
   });
 
+  it("menejer, market kassasi, filial smenasi yo'q: qulf matni — filial kassasi (asosiy emas)", () => {
+    shiftState.shift = null;
+    cashboxState.response = {
+      data: {
+        cashbox: { id: null, cashbox_type: "markets", user_id: "3", balance: 100 },
+        branch_share: 100,
+        payable: 100,
+        user: { id: "3", name: "Market" },
+        history: [],
+      },
+    };
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+
+    expect(screen.getByTestId("shift-locked-card")).toHaveTextContent(
+      "Filial kassasida smena ochilgandan keyin marketga to'lov ishlaydi.",
+    );
+  });
+
   it("superadmin, filialdan qabul, asosiy kassa smenasi yo'q: «filialdan pul qabul qilish» qulfi", () => {
     shiftState.shift = null;
     cashboxState.response = { data: { cashbox: { id: "30", cashbox_type: "branch", user_id: "13", balance: 0 } } };
@@ -1880,12 +1903,38 @@ describe("Menejer — «Marketga o'tkazma» va «Marketga to'lov» (ega 2026-11-
   afterEach(() => {
     cardPickerState.cards = [];
     cashboxState.response = undefined;
+    cashboxState.error = undefined;
     marketsState.data = undefined;
   });
 
-  const marketCashbox = () => ({
-    data: { cashbox: { id: "40", cashbox_type: "markets", user_id: "3", balance: -820_000 }, user: { name: "Yandex" } },
+  /**
+   * 63HO6cBU (BE PR-C): menejer o'z filiali marketini ochsa — `cashbox.balance` = filial ulushi (4,82 mln), «To'lash
+   * mumkin» (`payable`) — 2,5 mln (marketga qarz kamroq). Tarix va marketning umumiy qarzi menejerga berilmaydi.
+   */
+  const marketCashbox = (payable: unknown = 2_500_000) => ({
+    statusCode: 200,
+    data: {
+      cashbox: {
+        id: null,
+        user_id: "3",
+        cashbox_type: "markets",
+        balance: 4_820_000,
+        balance_cash: 4_820_000,
+        balance_card: 0,
+      },
+      branch_id: "16",
+      branch_share: 4_820_000,
+      payable,
+      user: { id: "3", name: "Yandex", status: "active" },
+      history: [],
+      cashboxHistory: [],
+    },
   });
+  const httpError = (status: number, message: string) =>
+    Object.assign(new Error(message), { isAxiosError: true, response: { status, data: { statusCode: status, message } } });
+  const PAYABLE_EXCEEDED_400 = "Summa to'lash mumkin bo'lgan summadan oshib ketdi (To'lash mumkin: 1 000 000 so'm)";
+  const SHARE_CHECK_503 = "Filial ulushini tekshirib bo'lmadi — birozdan so'ng qayta urinib ko'ring";
+  const NOT_BRANCH_MARKET_403 = "Bu market sizning filialingizga buyurtma topshirmaydi — to'lov HQ orqali";
 
   it("⭐ kuryerdan qabul (P0 63HO6cBU, ega 2026-11-17): «To'lov turi» umuman yo'q — faqat summa; tasdiqda summa, kuryer va filial kassasi", async () => {
     courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
@@ -1920,7 +1969,7 @@ describe("Menejer — «Marketga o'tkazma» va «Marketga to'lov» (ega 2026-11-
     expect(data).toEqual(expect.objectContaining({ courier_id: "209", amount: 300_000 }));
   });
 
-  it("⭐ marketga to'lov (P0 63HO6cBU, ega Q1): «Pul filial kassasidan …»; faqat summa — «To'lov turi» va karta yo'q; PR-C gacha payment_method: \"cash\"; tasdiq «Filial kassasi → Market kassasi»", async () => {
+  it("⭐ marketga to'lov (63HO6cBU, BE PR-C): «Pul filial kassasidan …»; faqat summa — «To'lov turi» va karta yo'q; so'rovda payment_method YO'Q; tasdiq «Filial kassasi → Market kassasi»", async () => {
     marketPayment.mutateAsync.mockResolvedValue(paymentAccepted);
     cashboxState.response = marketCashbox();
     openWithoutState("/payments/cash-detail/3?type=market", manager);
@@ -1946,15 +1995,122 @@ describe("Menejer — «Marketga o'tkazma» va «Marketga to'lov» (ega 2026-11-
     await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
 
     await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
-    const call = marketPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown> };
-    expect(call.data).toEqual(expect.objectContaining({ market_id: "3", amount: 2_000_000, payment_method: "cash" }));
-    expect(call.data).not.toHaveProperty("card_id");
+    const call = marketPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown>; idempotencyKey: string };
+    // BE PR-C shartnomasi: `{ market_id, amount, comment?, payment_date? }` — usul, karta, manba yo'q.
+    expect(Object.keys(call.data).sort()).toEqual(["amount", "comment", "market_id", "payment_date"]);
+    expect(call.data).toEqual(expect.objectContaining({ market_id: "3", amount: 2_000_000 }));
+    expect(call.idempotencyKey).toEqual(expect.any(String));
+  });
+
+  it("⭐ «To'lash mumkin» = payable (filial ulushi / cashbox.balance emas); «Kassadagi summa» va market tarixi yo'q", () => {
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+
+    expect(screen.getByRole("heading", { name: "Yandex" })).toBeInTheDocument();
+    expect(screen.getByText("To'lash mumkin")).toBeInTheDocument();
+    expect(screen.getByText(moneyText(2_500_000))).toBeInTheDocument();
+    expect(screen.getByText("To'lash mumkin: 2 500 000 so'm")).toBeInTheDocument();
+    expect(screen.queryByText(/4\D820\D000/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Berilishi kerak")).not.toBeInTheDocument();
+    expect(screen.queryByText("Kassadagi summa")).not.toBeInTheDocument();
+    expect(screen.queryByText("Operatsiyalar tarixi")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Excel/ })).not.toBeInTheDocument();
+    // Ko'rinish xatosini sahifa o'zi chizadi — global xabar takrorlanmaydi.
+    expect(cashboxState.calls.at(-1)?.options).toEqual({ silentError: true });
+  });
+
+  it("⭐ summa «To'lash mumkin» dan oshsa — maydon xatosi, tasdiq ochilmaydi, so'rov ketmaydi", async () => {
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    setAmount("2600000");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    expect(
+      await screen.findByText("Summa to'lash mumkin bo'lgan summadan oshib ketdi (To'lash mumkin: 2 500 000 so'm)"),
+    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("0")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(marketPayment.mutateAsync).not.toHaveBeenCalled();
+
+    // Aynan chegara — o'tadi.
+    setAmount("2500000");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    expect(await findConfirm()).toBeInTheDocument();
+  });
+
+  it("«To'lash mumkin» 0 (yoki javobda yo'q) — har qanday summa rad etiladi, ulush ishlatilmaydi", async () => {
+    cashboxState.response = marketCashbox(null);
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    expect(screen.getByText("To'lash mumkin: 0 so'm")).toBeInTheDocument();
+    setAmount("1000");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    expect(
+      await screen.findByText("Summa to'lash mumkin bo'lgan summadan oshib ketdi (To'lash mumkin: 0 so'm)"),
+    ).toBeInTheDocument();
+    expect(marketPayment.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("⭐ 400 «Summa to'lash mumkin … oshib ketdi» — backend matni summa maydoni ostida, «To'lash mumkin» qayta o'qiladi", async () => {
+    marketPayment.mutateAsync.mockRejectedValue(httpError(400, PAYABLE_EXCEEDED_400));
+    cashboxState.response = marketCashbox();
+    cashboxRefetch.mockClear();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    setAmount("2000000");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    await user.click(within(await findConfirm()).getByRole("button", { name: "Tasdiqlash" }));
+
+    expect(await screen.findByText(PAYABLE_EXCEEDED_400)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("0")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getAllByText(PAYABLE_EXCEEDED_400)).toHaveLength(1);
+    await waitFor(() => expect(cashboxRefetch).toHaveBeenCalled());
+  });
+
+  it("⭐ 503 «Filial ulushini tekshirib bo'lmadi» — backend matni xabarda; pul ko'chmagan — «natija noma'lum» yo'q", async () => {
+    marketPayment.mutateAsync.mockRejectedValue(httpError(503, SHARE_CHECK_503));
+    cashboxState.response = marketCashbox();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+    const user = userEvent.setup();
+
+    setAmount("2000000");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    await user.click(within(await findConfirm()).getByRole("button", { name: "Tasdiqlash" }));
+
+    expect(await screen.findByText(SHARE_CHECK_503)).toBeInTheDocument();
+    expect(screen.queryByText(/to'lov o'tgan bo'lishi mumkin/)).not.toBeInTheDocument();
+    // Forma tozalanmaydi — qayta urinish o'sha summa (va o'sha Idempotency-Key) bilan.
+    expect(screen.getByPlaceholderText("0")).toHaveValue("2 000 000");
+  });
+
+  it("⭐ kassa ochilmadi: 403 (filialga aloqasi yo'q market) — ruxsat holati backend sababi bilan, forma yo'q", () => {
+    cashboxState.error = httpError(403, NOT_BRANCH_MARKET_403);
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+
+    expect(screen.getByText("Bu ma'lumotni ko'rishga ruxsatingiz yo'q")).toBeInTheDocument();
+    expect(screen.getByText(NOT_BRANCH_MARKET_403)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Marketga to'lov" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+  });
+
+  it("⭐ kassa ochilmadi: 503 — «Filial ulushini tekshirib bo'lmadi …» + «Qayta urinish»", async () => {
+    cashboxState.error = httpError(503, SHARE_CHECK_503);
+    cashboxRefetch.mockClear();
+    openWithoutState("/payments/cash-detail/3?type=market", manager);
+
+    expect(screen.getByText(SHARE_CHECK_503)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Marketga to'lov" })).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(cashboxRefetch).toHaveBeenCalled();
   });
 
   it.each([
     ["umumiy inglizcha «Forbidden resource»", "Forbidden resource", "Bu to'lovga ruxsatingiz yo'q."],
-    ["backendning o'zbekcha sababi", "Bu market sizning filialingizga tegishli emas", "Bu market sizning filialingizga tegishli emas"],
-  ])("403 (%s) — xabarda tushunarli matn", async (_label, backendMessage, shown) => {
+    ["backendning o'zbekcha sababi", NOT_BRANCH_MARKET_403, NOT_BRANCH_MARKET_403],
+  ])("to'lov 403 (%s) — xabarda tushunarli matn", async (_label, backendMessage, shown) => {
     marketPayment.mutateAsync.mockRejectedValue(
       Object.assign(new Error("Forbidden"), { response: { status: 403, data: { statusCode: 403, message: backendMessage } } }),
     );
@@ -1986,8 +2142,10 @@ describe("Menejer — «Marketga o'tkazma» va «Marketga to'lov» (ega 2026-11-
 
     await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
     const call = marketPayment.mutateAsync.mock.calls[0][0] as { data: Record<string, unknown> };
-    expect(call.data).toEqual(expect.objectContaining({ market_id: "3", amount: 50_000, payment_method: "cash" }));
+    expect(call.data).toEqual(expect.objectContaining({ market_id: "3", amount: 50_000 }));
+    expect(call.data).not.toHaveProperty("payment_method");
     expect(call.data).not.toHaveProperty("card_id");
+    expect(call.data).not.toHaveProperty("source_user_id");
   });
 });
 

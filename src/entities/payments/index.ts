@@ -441,14 +441,17 @@ export const useCashBox = () => {
     onSuccess: refreshCashbox,
   });
 
+  /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
   const useGetCashBoxById = (
     id: string | undefined,
     bool: boolean = true,
     params?: unknown,
+    options?: { silentError?: boolean },
   ) =>
     useQuery({
       ...cashboxByUserQuery(id, params),
       enabled: bool && Boolean(id),
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   const useGetCashBoxHistoryById = (id: string | null, bool: boolean = true) =>

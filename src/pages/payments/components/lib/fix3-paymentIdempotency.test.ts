@@ -37,6 +37,12 @@ describe("payment idempotency keys (C1 / FE-PAY-03)", () => {
     expect(takePaymentKey(a)).toBe(keyA);
   });
 
+  it("63HO6cBU (BE PR-C): menejerning usulsiz marketga to'lovi — izi avvalgi «cash» izi bilan bir xil (javobsiz kalit qayta ishlatiladi)", () => {
+    const legacyCash = marketPaymentFingerprint({ market_id: "201", amount: 5_000_000, payment_method: "cash" });
+    expect(marketPaymentFingerprint({ market_id: "201", amount: 5_000_000 })).toBe(legacyCash);
+    expect(marketPaymentFingerprint({ market_id: "201", amount: 5_000_000, payment_method: "click" })).not.toBe(legacyCash);
+  });
+
   it("persists pending keys in sessionStorage (survives a reload) under the existing storage name", () => {
     const fingerprint = marketPaymentFingerprint({ market_id: "201", amount: 1000, payment_method: "click" });
     const key = takePaymentKey(fingerprint);

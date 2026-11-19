@@ -99,12 +99,15 @@ export type CourierPaymentIdentity = {
 export const courierPaymentFingerprint = (payment: CourierPaymentIdentity) =>
   JSON.stringify([payment.courier_id, payment.amount, payment.payment_method ?? "cash", payment.market_id]);
 
-/** Marketga to'lov (HQ → market): market + summa + usul. */
+/**
+ * Marketga to'lov (HQ → market): market + summa + usul. Menejer (63HO6cBU, BE PR-C) usul yubormaydi — server naqd
+ * yozadi: izi avvalgi `"cash"` izi bilan bir xil (javobsiz qolgan eski urinishning kaliti ham saqlanadi).
+ */
 export const marketPaymentFingerprint = (payment: {
   market_id: string;
   amount: number;
-  payment_method: string;
-}) => JSON.stringify(["market", payment.market_id, payment.amount, payment.payment_method]);
+  payment_method?: string;
+}) => JSON.stringify(["market", payment.market_id, payment.amount, payment.payment_method ?? "cash"]);
 
 /**
  * Filial → HQ topshirish: filial + summa + usul (o'zgarmagan format). «Marketga o'tkazma» (2026-11-11) — market ham
