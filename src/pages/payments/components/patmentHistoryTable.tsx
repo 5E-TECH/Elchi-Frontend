@@ -189,6 +189,7 @@ const PaymentHistoryTable = ({
         role: viewerRole,
         cashboxType: rowCashboxType(row),
         paymentMethod: row.payment_method,
+        branchLeg: row.branch_leg,
       }),
     [t, viewerRole],
   );

@@ -523,17 +523,18 @@ const MainCashbox = () => {
   const cashboxInfoData = asRecord(cashboxInfoQuery.data?.data);
   const mainCashboxData = useMemo(() => asRecord(mainCashboxQuery.data?.data), [mainCashboxQuery.data?.data]);
   const mainCashbox = useMemo(() => asRecord(mainCashboxData.cashbox), [mainCashboxData]);
+  const rawCashBalance =
+    mainCashbox.balance_cash ?? mainCashboxData.balance_cash ?? mainCashboxData.balanceCash ?? mainCashboxData.cash;
+  const rawTransferBalance =
+    mainCashbox.balance_card ?? mainCashboxData.balance_card ?? mainCashboxData.balanceCard ?? mainCashboxData.transfer;
+  const cashBalance = toNumber(rawCashBalance);
+  const transferBalance = toNumber(rawTransferBalance);
+  // Jami — `balance`; u kelmasa naqd + karta (OpenShiftFlow dagidek), keyin all-info. P0 63HO6cBU: menejer smena
+  // oynalarida kutilgan qiymat shu jami — `balance` siz javobda 0 bo'lib, soxta «Ortiqcha» chiqmasin.
+  const splitSum =
+    rawCashBalance == null && rawTransferBalance == null ? undefined : cashBalance + transferBalance;
   const totalBalance = toNumber(
-    mainCashbox.balance ?? mainCashboxData.balance ?? cashboxInfoData.mainCashboxTotal ?? mainCashboxData.total,
-  );
-  const cashBalance = toNumber(
-    mainCashbox.balance_cash ?? mainCashboxData.balance_cash ?? mainCashboxData.balanceCash ?? mainCashboxData.cash,
-  );
-  const transferBalance = toNumber(
-    mainCashbox.balance_card ??
-      mainCashboxData.balance_card ??
-      mainCashboxData.balanceCard ??
-      mainCashboxData.transfer,
+    mainCashbox.balance ?? mainCashboxData.balance ?? splitSum ?? cashboxInfoData.mainCashboxTotal ?? mainCashboxData.total,
   );
   const balanceLoading = Boolean(mainCashboxQuery.isLoading || cashboxInfoQuery.isLoading);
   // Smena oynalaridagi «Ochilish qoldig'i» / «Tizim bo'yicha kutilgan» — kassa javobi kelgandagina (aks holda «—»).
@@ -652,7 +653,12 @@ const MainCashbox = () => {
       toDate: draftHistoryTo || undefined,
       labels: {
         defaultReportTitle: t("report"),
-        mainCashbox: t("mainCashbox"),
+        // Menejer — filial kassasi hisoboti (P0 63HO6cBU): sarlavha «Asosiy kassa» emas.
+        mainCashbox: isManagerRole
+          ? ownBranchName
+            ? t("v2MainCashbox.shift.branchCashbox", { branch: ownBranchName })
+            : t("v2MainCashbox.shift.branchCashboxFallback")
+          : t("mainCashbox"),
         income: t("income"),
         expense: t("expense"),
         expenseSection: t("expenseSection"),
@@ -672,7 +678,17 @@ const MainCashbox = () => {
       // Filial kassasi bitta jami (P0 63HO6cBU) — menejer hisobotida naqd/karta ustunlari yo'q.
       singleTotal: isManagerRole,
     });
-  }, [historyRows, totalBalance, cashBalance, transferBalance, draftHistoryFrom, draftHistoryTo, isManagerRole, t]);
+  }, [
+    historyRows,
+    totalBalance,
+    cashBalance,
+    transferBalance,
+    draftHistoryFrom,
+    draftHistoryTo,
+    isManagerRole,
+    ownBranchName,
+    t,
+  ]);
 
   const refetchCashboxState = useCallback(async () => {
     await Promise.allSettled([
@@ -854,6 +870,7 @@ const MainCashbox = () => {
       role: normalizedRole,
       cashboxType: row.cashbox_type || row.cashbox?.cashbox_type || viewerCashboxType,
       paymentMethod: row.payment_method,
+      branchLeg: row.branch_leg,
     });
   // Asosiy kassa sahifasida `click` — «Karta (Click)» (maket), qolganlari umumiy yorliq.
   const paymentMethodLabel = (value?: string | null) =>

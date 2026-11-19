@@ -59,6 +59,11 @@ export type PaymentViewer = {
    * HQ'ga bermay, marketga o'tkazgan; 2026-11-11). Berilmasa — avvalgi yorliq.
    */
   paymentMethod?: string | null;
+  /**
+   * P0 63HO6cBU (BE PR-A): qator filial kassasi oyog'i (`branch_leg`). SA/admin bo'lmagan ko'ruvchiga backend bunday
+   * qatorda `payment_method` ni `null` qiladi — `branch_to_main` ning manzili (HQ yoki market) noma'lum.
+   */
+  branchLeg?: boolean | null;
 };
 
 const isStaffViewer = (role?: string | null) => {
@@ -116,6 +121,17 @@ export const getPaymentSourceTitle = (
 
   if (normalized === "branch_to_main" && normalize(viewer.paymentMethod) === "click_to_market") {
     return translate("v2Common.sourceType.branchToMarket");
+  }
+  // P0 63HO6cBU: filial oyog'ida usul yashirilgan (menejer / kuryer / registrator) — «Marketga o'tkazma» ni «HQ'ga
+  // o'tkazma» dan ajratadigan usulga bog'liq bo'lmagan maydon backendda yo'q. Manzil noto'g'ri aytilmasin — umumiy
+  // «Filialdan o'tkazma».
+  if (
+    normalized === "branch_to_main" &&
+    viewer.branchLeg === true &&
+    !normalize(viewer.paymentMethod) &&
+    !isStaffViewer(viewer.role)
+  ) {
+    return translate("v2Common.sourceType.branchTransfer");
   }
 
   const key = V2_SOURCE_KEYS[normalized];

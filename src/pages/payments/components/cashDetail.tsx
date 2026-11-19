@@ -91,6 +91,7 @@ import {
   CURRENCY_LABEL,
   formatCompactMoneyLocalized,
   formatMoneyLocalized,
+  formatNumberLocalized,
   formatPercentLocalized,
   formatSignedMoneyLocalized,
   resolveMoneyLanguage,
@@ -694,6 +695,11 @@ const CashDetail = () => {
     isHqBranchView && cashbox?.cashbox_type === "branch" ? toOptionalNumber(cashbox?.balance) : undefined;
   const branchTotalLimit =
     branchDebtEnabled === false && branchCashboxTotal !== undefined ? Math.max(branchCashboxTotal, 0) : null;
+  /** Chegara matni — aniq jami (tiyin bilan, yaxlitlanmaydi: «faqat X bor» bloklangan summa bilan to'qnashmasin). */
+  const exactMoneyText = (value: number) => {
+    const language = resolveMoneyLanguage(i18n.resolvedLanguage ?? i18n.language);
+    return `${formatNumberLocalized(value, { language, fractionDigits: 2 })} ${CURRENCY_LABEL[language]}`;
+  };
   const isHqBranchReceiveDetail = isHqBranchView && (hasStateAmount || hasServerBranchPayable);
   const hasServerCourierReceivable = isCourierReceiveDetail && serverCourierReceivable !== undefined;
   // Ko'rsatilgan summa router state'idan va server uni qayta o'qib bera olmaydi
@@ -756,11 +762,13 @@ const CashDetail = () => {
   }, [id, settlementBalance]);
 
   /**
-   * P0 63HO6cBU (ega 2026-11-17): filial kassasi naqd/kartaga bo'linmaydi — menejer kuryerdan qabul qilganda «To'lov
-   * turi» yo'q, faqat summa (`payment_method` / `card_id` yuborilmaydi, server naqd yozadi). SA/A HQ kuryeridan qabuli
-   * va marketga to'lov o'zgarmagan.
+   * P0 63HO6cBU (ega 2026-11-17): filial kassasi naqd/kartaga bo'linmaydi — menejerda «To'lov turi» yo'q, faqat summa:
+   *  - kuryerdan qabul — `payment_method` / `card_id` yuborilmaydi (server naqd yozadi);
+   *  - marketga to'lov (ega Q1, Trello 63HO6cBU: «Menejerning Marketga to'lov ham faqat summa») — karta yo'q, PR-C
+   *    gacha backend `payment_method` ni talab qiladi — `"cash"` yuboriladi.
+   * SA/A (HQ kuryeridan qabul, filialdan qabul, marketga to'lov) o'zgarmagan.
    */
-  const isMethodless = isCourierReceiveDetail;
+  const isMethodless = isCurrentManagerRole && (type === "courier" || type === "market");
   const paymentTypeOptions = isMethodless ? [] : [
     { value: "cash", label: t("v2Common.paymentMethod.cash") },
     { value: "click", label: t("v2Common.paymentMethod.transfer") },
@@ -1194,6 +1202,10 @@ const CashDetail = () => {
         // bilan qolib, ko'r-ko'rona qayta bosilmasin.
         notify.warning(t("common:warning"), { description: t("paymentOutcomeUnknown"), duration: 10000 });
         await refetchPaymentState();
+      } else if (type === "branch") {
+        // P0 63HO6cBU: filial jamisi o'zgargan bo'lishi mumkin (backend 400 «Filial kassasida yetarli mablag' yo'q») —
+        // chegara va summa qayta o'qiladi.
+        void refetchPaymentState();
       }
       return;
     }
@@ -1344,7 +1356,8 @@ const CashDetail = () => {
       notify.error(t("marketPaymentError"), { description: t("cashDetailNotMarketCashbox") });
       return;
     }
-    const payment = { market_id: id, amount, payment_method: normalizedPaymentMethod };
+    // Menejer (P0 63HO6cBU, ega Q1): usul tanlanmaydi — PR-C gacha backend talab qiladi, filial kassasi bitta jami: "cash".
+    const payment = { market_id: id, amount, payment_method: isMethodless ? "cash" : normalizedPaymentMethod };
     // C14: `source_user_id` yuborilmaydi (DTO'da yo'q → 400).
     await submitIdempotentPayment({
       fingerprint: marketPaymentFingerprint(payment),
@@ -1522,6 +1535,26 @@ const CashDetail = () => {
   };
 
   /**
+   * P0 63HO6cBU: filial kassasi jamisi va «Kassa qarzga ishlaydi» sozlamasini serverdan QAYTA o'qib, chegarani
+   * qaytaradi. Chegara yo'q (qarz yoqiq / noma'lum) yoki o'qib bo'lmadi — `null` (to'smaydi, backend hal qiladi).
+   */
+  const readFreshBranchTotalLimit = async (): Promise<number | null> => {
+    try {
+      const [cashboxResult, branchesResult] = await Promise.all([refetchCashbox(), hqBranchesQuery.refetch()]);
+      if (cashboxResult?.isError || branchesResult?.isError) return null;
+      if (findBranchDebtEnabled(branchesResult?.data?.data, id) !== false) return null;
+      const freshData = asRecord(cashboxResult?.data).data;
+      const freshEntry = asRecord(Array.isArray(freshData) ? freshData[0] : freshData);
+      const freshCashbox = asRecord(freshEntry.cashbox ?? freshEntry);
+      if (freshCashbox.cashbox_type !== "branch") return null;
+      const total = toOptionalNumber(freshCashbox.balance);
+      return total === undefined ? null : Math.max(total, 0);
+    } catch {
+      return null;
+    }
+  };
+
+  /**
    * Tasdiq oynasidan OLDIN — ochiq bo'lmasligi kerak bo'lgan holatlar: forma
    * xatosi tasdiqdan keyin emas, darhol, maydon ostida ko'rinsin.
    * Keyin `useConfirm` (summa, to'lov turi, qayerdan → qayerga, izoh); faqat «Tasdiqlash»
@@ -1547,26 +1580,27 @@ const CashDetail = () => {
       return;
     }
     if (type === "branch" && (!id || isCurrentManagerRole)) return;
+    // P0 63HO6cBU: filialdan qabulda (har qanday usulda) summa filial kassasining JAMI qoldig'i bilan solishtiriladi —
+    // naqd/karta bo'lagi bilan emas. «Kassa qarzga ishlaydi» yoqilgan filial (yoki qoldiq / sozlama noma'lum) —
+    // tekshiruv yo'q, backend hal qiladi. Keshdagi jami eskirgan bo'lishi mumkin — oshsa, avval qayta o'qiladi va
+    // yangi qiymat bilan solishtiriladi (o'qib bo'lmasa — to'smaydi). Chek rasmidan OLDIN: yetmasa rasm so'ralmaydi.
+    if (type === "branch" && branchTotalLimit !== null && parseAmountInput(values.amount) > branchTotalLimit) {
+      const freshLimit = await readFreshBranchTotalLimit();
+      if (freshLimit !== null && parseAmountInput(values.amount) > freshLimit) {
+        setError(
+          "amount",
+          { type: "max", message: t("v2CashDetail.form.branchTotalShort", { amount: exactMoneyText(freshLimit) }) },
+          { shouldFocus: true },
+        );
+        return;
+      }
+    }
     // Rasm majburiy, lekin yo'q — maydon xatosi, tasdiq ochilmaydi va so'rov ketmaydi.
     if (receipt.busy || !receipt.validate()) return;
     // cards1111b: marketga to'lovda pul chiqadigan NOMLI HQ kartasida yetmaydi — xato maydon ostida turibdi, tasdiq
     // ochilmaydi.
     if (values.paymentType === "click" && type === "market" && hqCardPicker.shortOf(values.cardId, parseAmountInput(values.amount))) {
       setFocus("cardId");
-      return;
-    }
-    // P0 63HO6cBU: filialdan qabulda (har qanday usulda) summa filial kassasining JAMI qoldig'i bilan solishtiriladi —
-    // naqd/karta bo'lagi bilan emas. «Kassa qarzga ishlaydi» yoqilgan filial (yoki qoldiq / sozlama noma'lum) —
-    // tekshiruv yo'q, backend hal qiladi.
-    if (type === "branch" && branchTotalLimit !== null && parseAmountInput(values.amount) > branchTotalLimit) {
-      setError(
-        "amount",
-        {
-          type: "max",
-          message: t("v2CashDetail.form.branchTotalShort", { amount: formatMoneyLocalized(branchTotalLimit) }),
-        },
-        { shouldFocus: true },
-      );
       return;
     }
     // Ikki marta bosish: oyna ochiq yoki to'lov ketayotganda ikkinchi tasdiq ochilmaydi.
@@ -1722,12 +1756,16 @@ const CashDetail = () => {
             <span>{t("amountInCashbox")}</span>
             <span className="whitespace-nowrap">{money(settlementDetails.cashboxAmount)}</span>
           </div>
-          <CashSplit
-            cash={cashboxSplit.cash}
-            card={cashboxSplit.card}
-            total={settlementDetails.cashboxAmount}
-            hidden={!balanceVisible}
-          />
+          {/* P0 63HO6cBU: menejer kuryerdan faqat summa qabul qiladi (server naqd yozadi) — kuryer kassasi uning uchun
+              bitta jami, naqd / o'tkazma bo'linmasi chizilmaydi. SA/A (HQ kuryeri) — avvalgidek. */}
+          {isCourierReceiveDetail ? null : (
+            <CashSplit
+              cash={cashboxSplit.cash}
+              card={cashboxSplit.card}
+              total={settlementDetails.cashboxAmount}
+              hidden={!balanceVisible}
+            />
+          )}
         </div>
       ) : null}
 

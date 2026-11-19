@@ -75,7 +75,9 @@ describe("exportMainCashboxReport — P0 63HO6cBU: filial kassasi (menejer) bitt
     // Chiqim jami 220 000 (usulsiz qator ham kiradi), kirim 90 000.
     expect(html).toMatch(/summary-blue">220\D000</);
     expect(html).toMatch(/summary-blue">90\D000</);
-    expect(html).toMatch(/3\D785\D000/);
+    // Balans bir marta (C4): «Balans» va «jami» da bir xil son takrorlanmaydi.
+    expect(html.match(/3\D785\D000/g)).toHaveLength(1);
+    expect(html).toContain('<td colspan="2" class="cell subhead">balance</td>');
     expect(html).not.toContain('class="cell num summary-purple"');
   });
 

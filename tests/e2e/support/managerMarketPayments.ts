@@ -129,13 +129,14 @@ export const mockManagerMarketPayments = async (
 };
 
 /**
- * Market kassasida «Marketga to'lov»: summa, «O'tkazma», «To'lash» → tasdiq oynasi. Menejerda karta tanlovi yo'q
- * (P0 63HO6cBU: filial kassasi bitta jami, filial kartalari nofaol).
+ * Market kassasida «Marketga to'lov»: summa, «To'lash» → tasdiq oynasi. P0 63HO6cBU (ega 2026-11-17, Q1): menejerda
+ * faqat summa — «To'lov turi» va karta tanlovi yo'q (filial kassasi bitta jami).
  */
 export const fillMarketTransfer = async (page: Page, amount: string) => {
   await expect(page.getByRole("heading", { name: "Marketga to'lov" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("textbox", { name: /^Summa/ }).fill(amount);
-  await page.getByRole("radio", { name: "O'tkazma", exact: true }).click();
+  await expect(page.getByRole("radio", { name: "O'tkazma", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "Naqd", exact: true })).toHaveCount(0);
   await expect(page.getByRole("combobox", { name: /Qaysi kartadan/ })).toHaveCount(0);
   await page.getByRole("button", { name: "To'lash" }).click();
   const confirm = page.getByRole("alertdialog", { name: "To'lovni tasdiqlang" });

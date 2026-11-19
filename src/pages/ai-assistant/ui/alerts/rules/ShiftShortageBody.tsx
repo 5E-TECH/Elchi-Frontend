@@ -40,12 +40,17 @@ export const ShiftShortageBody = ({ alert }: RuleBodyProps<"R1">) => {
   const at = (row: AiAdvisorShiftRow) => formatDateTimeLocalized(row.closed_at, { language });
   const closers = facts.closed_by.map(advisorUserName).filter(Boolean).join(", ");
 
+  // P0 63HO6cBU (ega 2026-11-17, BE PR-A): filial kassasi bitta jami — filial smenasida karta sanalmaydi (counted_card
+  // doim null); «karta sanalmagan» izohi faqat asosiy kassada.
+  const isBranchCashbox = facts.cashbox.type === "branch";
   const notCounted = (row: AiAdvisorShiftRow) =>
-    row.counted_card === null && row.counted_cash !== null
-      ? t("alerts.evidence.shifts.cardNotCounted")
-      : row.counted_cash === null && row.counted_card !== null
-        ? t("alerts.evidence.shifts.cashNotCounted")
-        : null;
+    isBranchCashbox
+      ? null
+      : row.counted_card === null && row.counted_cash !== null
+        ? t("alerts.evidence.shifts.cardNotCounted")
+        : row.counted_cash === null && row.counted_card !== null
+          ? t("alerts.evidence.shifts.cashNotCounted")
+          : null;
   const counted = (row: AiAdvisorShiftRow, withCurrency = true) =>
     row.counted_cash === null && row.counted_card === null ? "—" : money(row.counted, withCurrency);
 

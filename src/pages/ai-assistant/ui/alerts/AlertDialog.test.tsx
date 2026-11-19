@@ -97,6 +97,27 @@ const usePhoneViewport = () => {
 };
 
 describe("R1 «Smena kamomadi» (maket `superadmin-ai-assistant-alert-dialog`)", () => {
+  it("P0 63HO6cBU: filial smenasida (karta sanalmaydi — counted_card null) «karta sanalmagan» izohi yo'q; asosiy kassada bor", async () => {
+    const base = fx.detail.r1;
+    const evidence = base.evidence as Extract<NonNullable<typeof base.evidence>, { kind: "shifts" }>;
+    const rows = evidence.rows.map((row) => ({ ...row, counted_card: null, expected_card: 0 }));
+    const branchShifts = { ...base, evidence: { ...evidence, rows } } as typeof base;
+    replyDetail(branchShifts);
+    const view = open();
+    const panel = await findDialog(R1_TITLE);
+    expect(within(panel).getByRole("table", { name: "Dalillar · 3 ta yozuv" })).toBeInTheDocument();
+    expect(within(panel).queryByText("karta sanalmagan")).not.toBeInTheDocument();
+    view.unmount();
+
+    replyDetail({
+      ...branchShifts,
+      facts: { ...branchShifts.facts, cashbox: { type: "main", owner_id: "0", name: null } },
+    } as typeof base);
+    open();
+    const mainPanel = await findDialog(R1_TITLE);
+    expect(within(mainPanel).getAllByText("karta sanalmagan").length).toBeGreaterThan(0);
+  });
+
   it("sarlavha, belgilar, faktlar, dalillar jadvali, AI izohi, izoh maydoni va pastki qator; GET bir marta — nishon va ro'yxat eskiradi", async () => {
     const { queryClient } = open();
     const panel = await findDialog(R1_TITLE);

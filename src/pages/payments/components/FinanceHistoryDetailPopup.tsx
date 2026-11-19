@@ -348,6 +348,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
     role: viewerRole,
     cashboxType: display.cashbox_type,
     paymentMethod: display.payment_method,
+    branchLeg: isBranchLeg,
   });
 
   // T6 N2: pastki qism — faqat superadmin va tafsilot kelgach (yuklanishda, xatoda, boshqa rolda — faqat «Yopish»).

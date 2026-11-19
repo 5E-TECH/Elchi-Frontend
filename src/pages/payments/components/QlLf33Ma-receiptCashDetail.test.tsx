@@ -244,6 +244,27 @@ describe("HQ'ga «O'tkazma» qabuli — chek rasmi (QlLf33Ma)", () => {
     expect(http.get.mock.calls.filter(([url]) => url === "finance/receipt-settings")).toHaveLength(0);
   });
 
+  it("P0 63HO6cBU (C3): filial jamisi yetmasa — xato «Summa» ostida, chek rasmi talab qilinmaydi va yuklanmaydi", async () => {
+    state.hqBranches = {
+      data: [{ id: "15", name: "Urgut filiali", berilishi_kerak: 4_250_000, hq_qarzi: 0, cashbox_debt_enabled: false }],
+    };
+    try {
+      const user = userEvent.setup();
+      renderAt("branch");
+      setAmount("5000000");
+      await chooseMethod(user, "O'tkazma");
+      await screen.findByRole("button", { name: /Chek rasmini yuklash/ });
+      await user.click(screen.getByRole("button", { name: SUBMIT }));
+
+      expect(await screen.findByText(/Filial kassasida faqat 4\s250\s000\sso'm bor/)).toBeInTheDocument();
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(http.post).not.toHaveBeenCalled();
+      expect(branchPayment.mutateAsync).not.toHaveBeenCalled();
+    } finally {
+      state.hqBranches = undefined;
+    }
+  });
+
   it("P0 63HO6cBU (BE PR-B): menejer — kuryer qabuli va filial (HQ) sahifasida receipt-settings ham, expense-categories ham so'ralmaydi", async () => {
     const forbidden = (url: string) => url === "finance/receipt-settings" || url === "finance/cashbox/expense-categories";
     const first = renderAt("courier", manager);

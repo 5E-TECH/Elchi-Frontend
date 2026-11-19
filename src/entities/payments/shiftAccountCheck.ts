@@ -289,7 +289,11 @@ export type ShiftReport = {
   };
   cashbox_type: "main" | "branch" | null;
   cash: ShiftReportMoney;
-  card: ShiftReportMoney;
+  /**
+   * P0 63HO6cBU (BE PR-A m5): filial smenasida `null` — filial kassasi bitta jami, karta bloki yo'q (`cash` — jami).
+   * Kalit kelmagan eski javob — avvalgidek bo'sh blok.
+   */
+  card: ShiftReportMoney | null;
   accounts: ShiftAccountCheck[];
   accounts_summary: Record<string, number> | null;
   operations: ShiftReportOperation[];
@@ -586,7 +590,7 @@ export const normalizeShiftReport = (value: unknown): ShiftReport | null => {
     },
     cashbox_type: cashboxType,
     cash: normalizeMoneyBlock(data.cash),
-    card: normalizeMoneyBlock(data.card),
+    card: data.card === null ? null : normalizeMoneyBlock(data.card),
     accounts: accounts
       .map(normalizeShiftAccountCheck)
       .filter((row): row is ShiftAccountCheck => row !== null),

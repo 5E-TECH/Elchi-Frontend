@@ -247,6 +247,8 @@ const toPaymentRows = (response: CashboxResponse | undefined, role: CashboxRole)
         transfer_id: toOptionalString(item["transfer_id"]) ?? null,
         reverses_history_id: toOptionalString(item["reverses_history_id"]) ?? null,
         correction: toPaymentCorrection(item["correction"]),
+        // P0 63HO6cBU (BE PR-A): filial kassasi oyog'i — sarlavha va tafsilot uchun.
+        branch_leg: item["branch_leg"] === true ? true : undefined,
         // Menejer (filial kassasi) qo'lda chiqimining xarajat kategoriyasi — Elchi Pochta №1.
         expense_category_id: toOptionalString(item["expense_category_id"]) ?? null,
         expense_category_name: toOptionalString(item["expense_category_name"]) ?? null,
@@ -617,6 +619,7 @@ const MyCashboxPage = () => {
         role,
         cashboxType: row.cashbox_type,
         paymentMethod: row.payment_method,
+        branchLeg: row.branch_leg,
       }),
     [role, t],
   );

@@ -81,6 +81,10 @@ const SHIFT_SETTINGS_PATH = opsTabPath(SHIFT_SETTINGS_TAB);
  * bo'lsa — «Rasm yuklash» (ikkinchi darajali tugma) → `LatePhotoDialog`. Menejer / registrator — faqat holat va muddat.
  * Eski backend (`photo_status` yo'q) — ustun avvalgidek. Maket yo'q — eng yaqini shu sahifa va
  * `superadmin-payments-main-cashbox-shift-dialog-accounts`.
+ *
+ * P0 63HO6cBU (ega 2026-11-17, BE PR-A m5): FILIAL smenasi (`cashbox_type: "branch"`, `card: null`, `accounts: []`,
+ * operatsiyalar usulsiz) — bitta jami: KPI izohlarida naqd / kartalar bo'linmasi yo'q, blok sarlavhasi «Jami»,
+ * «Kartalar va hisob raqamlar» kartasi yo'q, usulsiz operatsiya ostida «boshqa» yozilmaydi. Asosiy kassa o'zgarmagan.
  */
 
 const sum = (...values: Array<number | null | undefined>) =>
@@ -136,17 +140,19 @@ const ReportBody = ({
   const signed = (value: number | null) => (value === null ? "—" : formatSignedMoneyLocalized(value, { language }));
 
   const { cash, card, accounts, operations } = report;
+  // P0 63HO6cBU: filial smenasi — bitta jami (naqd/karta bo'linmasi va karta tekshiruvi yo'q).
+  const isBranch = report.cashbox_type === "branch";
   // AI `pending` 3 daqiqadan oshgan kartalar — so'rov to'xtagan, «AI natijasi kelmadi».
   const aiTimedOut = useShiftAiTimedOut(report.shift.id, accounts);
   const statusBadge = (row: ShiftAccountCheck) =>
     aiTimedOut.has(row.card_id) ? <AiTimedOutBadge /> : <AiStatusBadge status={row.ai_status} />;
   const cashCounted = cash.closing_balance !== null && report.shift.status === "closed" && cash.discrepancy !== null;
-  const income = sum(cash.total_income, card.total_income);
-  const expense = sum(cash.total_expense, card.total_expense);
-  const opening = sum(cash.opening_balance, card.opening_balance);
-  const closing = sum(cash.closing_balance, card.closing_balance);
-  const anyDiff = cash.discrepancy !== null || card.discrepancy !== null;
-  const diffTotal = sum(cash.discrepancy, card.discrepancy);
+  const income = sum(cash.total_income, card?.total_income);
+  const expense = sum(cash.total_expense, card?.total_expense);
+  const opening = sum(cash.opening_balance, card?.opening_balance);
+  const closing = sum(cash.closing_balance, card?.closing_balance);
+  const anyDiff = cash.discrepancy !== null || (card?.discrepancy ?? null) !== null;
+  const diffTotal = sum(cash.discrepancy, card?.discrepancy);
   const checkedByAi = accounts.filter((row) => row.ai_status === "match" || row.ai_status === "mismatch").length;
   const opCount = operations.reduce((total, op) => total + op.count, 0);
 
@@ -331,8 +337,10 @@ const ReportBody = ({
     const type = op.operation_type.toLowerCase();
     const kind = type === "income" ? "income" : type === "expense" ? "expense" : "other";
     const method = op.payment_method?.toLowerCase();
-    const methodText =
-      method === "cash"
+    // Filial smenasida operatsiyalar usulsiz (bitta jami) — ostida usul yozilmaydi («boshqa» emas).
+    const methodText = isBranch && !method
+      ? ""
+      : method === "cash"
         ? t("shiftCheck.report.ops.method.cash")
         : method === "click" || method === "card"
           ? t("shiftCheck.report.ops.method.click")
@@ -362,7 +370,11 @@ const ReportBody = ({
           icon={Wallet}
           value={plain(opening)}
           unit={currency}
-          hint={t("shiftCheck.report.kpi.openingHint", { cash: plain(cash.opening_balance), card: plain(card.opening_balance) })}
+          hint={
+            isBranch
+              ? undefined
+              : t("shiftCheck.report.kpi.openingHint", { cash: plain(cash.opening_balance), card: plain(card?.opening_balance ?? null) })
+          }
         />
         <StatCard
           label={t("shiftCheck.report.kpi.income")}
@@ -391,15 +403,23 @@ const ReportBody = ({
           value={anyDiff ? formatSignedMoneyLocalized(diffTotal, { language, withCurrency: false }) : "—"}
           unit={anyDiff ? currency : undefined}
           valueTone={anyDiff && diffTotal < 0 ? "danger" : undefined}
-          hint={t("shiftCheck.report.kpi.diffHint", { cash: signed(cash.discrepancy), card: signed(card.discrepancy) })}
+          hint={
+            isBranch
+              ? undefined
+              : t("shiftCheck.report.kpi.diffHint", { cash: signed(cash.discrepancy), card: signed(card?.discrepancy ?? null) })
+          }
         />
       </div>
 
       <Card
         title={
           <span className="inline-flex items-center gap-2">
-            <Banknote aria-hidden="true" size={18} className="text-text-muted" />
-            {t("shiftCheck.report.cash.title")}
+            {isBranch ? (
+              <Wallet aria-hidden="true" size={18} className="text-text-muted" />
+            ) : (
+              <Banknote aria-hidden="true" size={18} className="text-text-muted" />
+            )}
+            {isBranch ? t("v2MainCashbox.shift.total") : t("shiftCheck.report.cash.title")}
           </span>
         }
         actions={
@@ -433,58 +453,61 @@ const ReportBody = ({
         </div>
       </Card>
 
-      <Card
-        padding="none"
-        title={
-          <span className="inline-flex items-center gap-2">
-            <CreditCard aria-hidden="true" size={18} className="text-text-muted" />
-            {t("shiftCheck.report.accounts.title")}
-          </span>
-        }
-        description={t("shiftCheck.report.accounts.subtitle", { count: accounts.length, checked: checkedByAi })}
-        divided
-        footer={
-          accounts.length ? (
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 text-sm">
-              <span className="font-semibold text-text">{t("shiftCheck.report.accounts.total")}</span>
-              <span className="flex flex-wrap items-center gap-x-6 gap-y-1">
-                <span className="whitespace-nowrap text-text-muted">
-                  {t("shiftCheck.report.accounts.system")}:{" "}
-                  <strong className="font-semibold text-text">{money(accountsTotals.expected)}</strong>
+      {/* Filial smenasida karta yo'q (bitta jami) — «Kartalar va hisob raqamlar» chizilmaydi. */}
+      {isBranch ? null : (
+        <Card
+          padding="none"
+          title={
+            <span className="inline-flex items-center gap-2">
+              <CreditCard aria-hidden="true" size={18} className="text-text-muted" />
+              {t("shiftCheck.report.accounts.title")}
+            </span>
+          }
+          description={t("shiftCheck.report.accounts.subtitle", { count: accounts.length, checked: checkedByAi })}
+          divided
+          footer={
+            accounts.length ? (
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 text-sm">
+                <span className="font-semibold text-text">{t("shiftCheck.report.accounts.total")}</span>
+                <span className="flex flex-wrap items-center gap-x-6 gap-y-1">
+                  <span className="whitespace-nowrap text-text-muted">
+                    {t("shiftCheck.report.accounts.system")}:{" "}
+                    <strong className="font-semibold text-text">{money(accountsTotals.expected)}</strong>
+                  </span>
+                  <span className="whitespace-nowrap text-text-muted">
+                    {t("shiftCheck.report.accounts.entered")}:{" "}
+                    <strong className="font-semibold text-text">{money(accountsTotals.entered)}</strong> ·{" "}
+                    {t("shiftCheck.report.accounts.totalCount", { count: accountsTotals.enteredCount })}
+                  </span>
+                  <span className={cx("whitespace-nowrap font-semibold", diffTone(accountsTotals.diff))}>
+                    {signed(accountsTotals.diff)}
+                  </span>
                 </span>
-                <span className="whitespace-nowrap text-text-muted">
-                  {t("shiftCheck.report.accounts.entered")}:{" "}
-                  <strong className="font-semibold text-text">{money(accountsTotals.entered)}</strong> ·{" "}
-                  {t("shiftCheck.report.accounts.totalCount", { count: accountsTotals.enteredCount })}
-                </span>
-                <span className={cx("whitespace-nowrap font-semibold", diffTone(accountsTotals.diff))}>
-                  {signed(accountsTotals.diff)}
-                </span>
-              </span>
-            </div>
-          ) : undefined
-        }
-      >
-        {accounts.length ? (
-          <DataTable
-            rows={accounts}
-            columns={columns}
-            getRowKey={(row) => row.card_id}
-            // BE-B: «Rasm» ustunida belgi + muddat + «Rasm yuklash» — ustun kengayadi; amallar ustunli jadval kabi zich
-            // (ichki katak 8 px), aks holda planshet va sidebar'li 1024 da «Farq» skroll ortiga o'tib ketardi.
-            density={accounts.some((row) => row.photo_status) ? "tight" : "default"}
-            label={t("shiftCheck.report.accounts.label")}
-            renderCard={renderAccountCard}
-            cardsLabel={t("shiftCheck.report.accounts.label")}
-          />
-        ) : (
-          <EmptyState
-            icon={CreditCard}
-            title={t("shiftCheck.report.accounts.emptyTitle")}
-            description={t("shiftCheck.report.accounts.emptyText")}
-          />
-        )}
-      </Card>
+              </div>
+            ) : undefined
+          }
+        >
+          {accounts.length ? (
+            <DataTable
+              rows={accounts}
+              columns={columns}
+              getRowKey={(row) => row.card_id}
+              // BE-B: «Rasm» ustunida belgi + muddat + «Rasm yuklash» — ustun kengayadi; amallar ustunli jadval kabi zich
+              // (ichki katak 8 px), aks holda planshet va sidebar'li 1024 da «Farq» skroll ortiga o'tib ketardi.
+              density={accounts.some((row) => row.photo_status) ? "tight" : "default"}
+              label={t("shiftCheck.report.accounts.label")}
+              renderCard={renderAccountCard}
+              cardsLabel={t("shiftCheck.report.accounts.label")}
+            />
+          ) : (
+            <EmptyState
+              icon={CreditCard}
+              title={t("shiftCheck.report.accounts.emptyTitle")}
+              description={t("shiftCheck.report.accounts.emptyText")}
+            />
+          )}
+        </Card>
+      )}
 
       <div className="flex flex-wrap items-start gap-4">
         <Card
@@ -520,7 +543,7 @@ const ReportBody = ({
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="text-sm font-semibold text-text">{label.title}</span>
-                      <span className="text-[13px] text-text-muted">{label.methodText}</span>
+                      {label.methodText ? <span className="text-[13px] text-text-muted">{label.methodText}</span> : null}
                     </span>
                     <span className="flex flex-col items-end">
                       <span

@@ -39,9 +39,10 @@ import { SwitchRow } from "../../settings/ui/settingsUi";
  * kassa») o'rniga Ops'da alohida tab — eski yo'l shu tabga yo'naltiradi. Hub sarlavhasi «Ops vositalari» bo'lgani uchun
  * maketdagi `PageHeader` (nom, izoh, «Saqlash») o'rnida kirish kartasi (`OpsIntro`, «Kun tartibi» naqshi): nom, izoh va
  * «Saqlash» o'ngda. «Kartalar qoldig'ini tasdiqlash» kartasi: kalitlar va «Har karta bo'yicha» jadvali (asosiy kassa kartalari).
- * BE-A (2026-11-10): tasdiqlash ikki kalit — «Asosiy kassa — qoldiq tasdiqlash» (`account_check_enabled`, sukut yoqiq) va
- * «Filiallar — qoldiq tasdiqlash» (`branch_account_check_enabled`, sukut o'chiq; eski backend bermasa chizilmaydi, asosiy
- * kalit esa avvalgi nomi bilan — u yerda u barcha kassalarga amal qiladi); rasm / AI — global master kalitlar
+ * BE-A (2026-11-10): tasdiqlash ikki kalit edi — «Asosiy kassa — qoldiq tasdiqlash» (`account_check_enabled`, sukut
+ * yoqiq) va «Filiallar — qoldiq tasdiqlash» (`branch_account_check_enabled`). P0 63HO6cBU (ega 2026-11-17): filial
+ * kassasi bitta jami, kartalari yo'q — filial kaliti chizilmaydi (backend e'tiborsiz qoldiradi); eski backend (filial
+ * kaliti yo'q) — asosiy kalit avvalgi nomi bilan, u yerda barcha kassalarga amal qiladi; rasm / AI — global master kalitlar
  * (`photo_required`, `ai_check_enabled`). Filial kalitining maketi yo'q — eng yaqini shu sahifaning kalit qatori
  * (`superadmin-payments-shift-settings`). Backend 400 matni (masalan «AI tekshiruvi faqat … yoqiladi») — xabarda aynan.
  * Jadval (`require_photo_on_shift_close`, `ai_check_enabled`; AI faqat
@@ -97,7 +98,10 @@ const SettingsForm = ({
     setBase(settings);
     setDraft((current) => rebaseDraft(base, settings, current));
   }
-  // BE-A: filiallar kaliti — backend bersagina (eski backendda bitta kalit barcha kassalarga amal qiladi).
+  // BE-A: yangi backend (filiallar kaliti bor) — asosiy kalit faqat ASOSIY kassaga amal qiladi (eski backendda bitta
+  // kalit barcha kassalarga). P0 63HO6cBU (ega 2026-11-17, BE PR-A): filial kassasi bitta jami, kartalari yo'q —
+  // backend `branch_account_check_enabled` ni e'tiborsiz qoldiradi, shuning uchun «Filiallar — qoldiq tasdiqlash»
+  // kaliti chizilmaydi (va so'rovga kirmaydi).
   const branchSupported = settings.branch_account_check_enabled !== null;
 
   const body = useMemo(() => diffShiftSettings(settings, draft), [draft, settings]);
@@ -240,14 +244,6 @@ const SettingsForm = ({
             checked={draft.account_check_enabled}
             onToggle={(next) => setDraft((current) => ({ ...current, account_check_enabled: next }))}
           />
-          {branchSupported ? (
-            <SwitchRow
-              title={t("shiftCheck.settings.branchAccountCheck")}
-              hint={t("shiftCheck.settings.branchAccountCheckHint")}
-              checked={Boolean(draft.branch_account_check_enabled)}
-              onToggle={(next) => setDraft((current) => ({ ...current, branch_account_check_enabled: next }))}
-            />
-          ) : null}
           <SwitchRow
             title={t("shiftCheck.settings.photo")}
             hint={t("shiftCheck.settings.photoHint")}

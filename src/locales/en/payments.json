@@ -703,6 +703,7 @@
       "hqToMarket": "HQ to market transfer",
       "branchToMain": "Branch to HQ transfer",
       "branchToMarket": "Branch to market transfer",
+      "branchTransfer": "Transfer from the branch",
       "manualIncome": "Manual income",
       "manualExpense": "Manual expense",
       "correction": "Correction",
@@ -986,7 +987,7 @@
   ,"cashDetail": {
     "shift": {
       "overviewSubtitle": "Manage cashboxes and payments · shift closed",
-      "overviewBanner": "Receiving from couriers, expenses and cashbox top-ups work once a shift is open in the branch cashbox. The balance and operations history stay visible.",
+      "overviewBanner": "Receiving from couriers and paying markets work once a shift is open in the branch cashbox. The balance and operations history stay visible.",
       "formLocked": "Works once the shift is open",
       "visibleHint": "The balance and operations history stay visible.",
       "banner": {
@@ -1220,8 +1221,6 @@
       "accountCheckHint": "The shift does not close until the cashier enters each card balance from the bank app",
       "mainAccountCheck": "Main cashbox — balance confirmation",
       "mainAccountCheckHint": "When closing a main cashbox shift, the cashier enters each card balance from the bank app — the shift does not close without it",
-      "branchAccountCheck": "Branches — balance confirmation",
-      "branchAccountCheckHint": "Every card balance is also required in branch cashboxes. When off, a branch shift closes as before",
       "photo": "Require an image",
       "photoHint": "A bank app screenshot is requested for each card",
       "ai": "AI check",
@@ -1953,14 +1952,12 @@
       "labelIn": "To which card",
       "labelOut": "From which card",
       "hqLabel": "HQ card (where the money goes)",
-      "branchLabel": "Branch card (where the money comes from)",
       "defaultName": "{{name}} (main)",
       "loading": "Loading cards…",
       "loadError": "Cards did not load — the money is recorded on the main card",
       "retry": "Retry",
       "notEnough": "Card “{{name}}” has only {{amount}}",
-      "confirmRow": "Card",
-      "confirmBranchRow": "Branch card"
+      "confirmRow": "Card"
     },
     "money": {
       "amount": "Amount",

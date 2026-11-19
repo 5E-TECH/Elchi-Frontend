@@ -117,8 +117,8 @@ describe("Shift settings (kiZgTybn)", () => {
 });
 
 /**
- * BE-A (2026-11-10) — ikki kalit: «Asosiy kassa — qoldiq tasdiqlash» (`account_check_enabled`) va «Filiallar — qoldiq
- * tasdiqlash» (`branch_account_check_enabled`); MAIN kartalarida rasm + AI sukut yoqiq; PATCH faqat o'zgargan kalit;
+ * BE-A (2026-11-10) — «Asosiy kassa — qoldiq tasdiqlash» (`account_check_enabled`); «Filiallar — qoldiq tasdiqlash»
+ * P0 63HO6cBU dan beri chizilmaydi (filial kassasi bitta jami); MAIN kartalarida rasm + AI sukut yoqiq; PATCH faqat o'zgargan kalit;
  * backend 400 matni aynan.
  */
 describe("Shift settings — main and branch balance confirmation (BE-A)", () => {
@@ -142,15 +142,12 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
     http.get.mockImplementation(async () => ({ data: { statusCode: 200, data: BE_A } }));
   });
 
-  it("draws both switches with their server values; the subtitle no longer claims «all cashboxes»", async () => {
+  it("draws the main switch with its server value; the branch switch is gone (P0 63HO6cBU — branch has no cards)", async () => {
     renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
     const main = await screen.findByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" });
-    const branch = screen.getByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" });
     expect(main).toHaveAttribute("aria-checked", "true");
-    expect(branch).toHaveAttribute("aria-checked", "false");
-    expect(branch).toHaveAccessibleDescription(
-      "Filial kassalarida ham har karta qoldig'i majburiy. O'chiq bo'lsa, filial smenasi avvalgidek yopiladi",
-    );
+    // Ega 2026-11-17 (BE PR-A): filial kassasi bitta jami — backend `branch_account_check_enabled` ni e'tiborsiz qoldiradi.
+    expect(screen.queryByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" })).not.toBeInTheDocument();
     expect(screen.queryByRole("switch", { name: "Smena yopishda har karta qoldig'i majburiy" })).not.toBeInTheDocument();
     expect(screen.getByText("Asosiy kassa va filiallar · faqat superadmin o'zgartiradi")).toBeInTheDocument();
     expect(screen.queryByText(/Barcha kassalar uchun/)).not.toBeInTheDocument();
@@ -159,15 +156,6 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
     expect(within(table).getAllByText("Rasm majburiy, AI tekshiradi")).toHaveLength(2);
     expect(within(table).getByRole("switch", { name: "Hisob raqam: rasm talab qilish" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("button", { name: /Saqlash/ })).toBeDisabled();
-  });
-
-  it("PATCH carries only the changed switch: branch on → `branch_account_check_enabled`, main off → `account_check_enabled`", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
-    await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
-    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
-    await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
-    expect(http.patch).toHaveBeenLastCalledWith("finance/shift/settings", { branch_account_check_enabled: true });
   });
 
   it("main off — only `account_check_enabled: false`; card rows say confirmation is off", async () => {
@@ -187,8 +175,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
       route: "/ops?tab=shift-settings",
       preloadedState: superadmin,
     });
-    await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
-    const table = screen.getByRole("table", { name: "Kartalar bo'yicha smena kalitlari" });
+    const table = await screen.findByRole("table", { name: "Kartalar bo'yicha smena kalitlari" });
     await user.click(within(table).getByRole("switch", { name: "Asosiy karta: AI tekshiruvi" }));
 
     // Boshqa admin shu orada karta qo'shdi (`card_changed`) va superadmin global AI kalitini o'chirdi.
@@ -215,8 +202,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
       "aria-checked",
       "true",
     );
-    // Saqlanmagan o'zgarishlar joyida; foydalanuvchi tegmagan kalit — serverdagi yangi qiymat.
-    expect(screen.getByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" })).toHaveAttribute("aria-checked", "true");
+    // Saqlanmagan o'zgarish joyida; foydalanuvchi tegmagan kalit — serverdagi yangi qiymat.
     expect(within(fresh).getByRole("switch", { name: "Asosiy karta: AI tekshiruvi" })).toHaveAttribute(
       "aria-checked",
       "false",
@@ -226,7 +212,6 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
     await waitFor(() => expect(http.patch).toHaveBeenCalledTimes(1));
     expect(http.patch).toHaveBeenLastCalledWith("finance/shift/settings", {
-      branch_account_check_enabled: true,
       cards: [{ card_id: "1", ai_check_enabled: false }],
     });
   });
@@ -235,17 +220,17 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
     let saved = BE_A;
     http.get.mockImplementation(async () => ({ data: { statusCode: 200, data: saved } }));
     http.patch.mockImplementation(async () => {
-      saved = { ...BE_A, branch_account_check_enabled: true };
+      saved = { ...BE_A, account_check_enabled: false, main_account_check_enabled: false };
       return { data: { statusCode: 200, data: {} } };
     });
     const user = userEvent.setup();
     renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
-    await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
+    await user.click(await screen.findByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" }));
     const save = screen.getByRole("button", { name: /Saqlash/ });
     await user.click(save);
     expect(await screen.findByText("Sozlamalar saqlandi")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("button", { name: /Saqlash/ })).toBeDisabled());
-    expect(screen.getByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" })).toHaveAttribute("aria-checked", "false");
   });
 
   it("a backend 400 is shown verbatim (AI without a photo)", async () => {
@@ -259,7 +244,7 @@ describe("Shift settings — main and branch balance confirmation (BE-A)", () =>
     );
     const user = userEvent.setup();
     renderWithProviders(<ShiftSettingsPage />, { route: "/ops?tab=shift-settings", preloadedState: superadmin });
-    await user.click(await screen.findByRole("switch", { name: "Filiallar — qoldiq tasdiqlash" }));
+    await user.click(await screen.findByRole("switch", { name: "Asosiy kassa — qoldiq tasdiqlash" }));
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
     expect(
       await screen.findByText("AI tekshiruvi faqat smena yopishda qoldiq rasmi talab qilinganda yoqiladi"),

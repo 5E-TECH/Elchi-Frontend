@@ -637,6 +637,28 @@ describe("P0 63HO6cBU — filial kassasi bitta jami (menejer)", () => {
     // Excel — menejerda bitta «Summa» ustuni.
     await waitFor(() => expect(exportReport).toHaveBeenCalledTimes(1));
     expect(exportReport.mock.calls[0][0]).toEqual(expect.objectContaining({ singleTotal: true }));
+    // Hisobot sarlavhasi — filial kassasi, «Asosiy kassa» emas (C4).
+    expect(exportReport.mock.calls[0][0].labels.mainCashbox).toBe("Urgut filiali kassasi");
+  });
+
+  it("C10: cashbox/main javobida `balance` yo'q — jami naqd + karta (0 emas), smena oynasida soxta «Ortiqcha» yo'q", async () => {
+    server.openShift = { id: "41", opened_by: "198" };
+    const original = http.get.getMockImplementation()!;
+    http.get.mockImplementation(async (url: string, config?: unknown) =>
+      url === MAIN_URL
+        ? { data: { statusCode: 200, data: { cashbox: { balance_cash: 3_000_000, balance_card: 0 }, cashboxHistory: [] } } }
+        : original(url, config),
+    );
+    const user = userEvent.setup();
+    open(hqManager);
+
+    expect(await screen.findByText("3 000 000")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: CLOSE_SHIFT }));
+    const dialog = await screen.findByRole("dialog", { name: CLOSE_SHIFT });
+    expect(within(dialog).getByText("3 000 000 so'm")).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText(/^Sanalgan summa/), "3000000");
+    expect(within(dialog).getByText("Mos keldi")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Ortiqcha")).not.toBeInTheDocument();
   });
 
   it("superadmin's Excel keeps the cash/card split", async () => {

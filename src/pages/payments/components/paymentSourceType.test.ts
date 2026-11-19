@@ -146,3 +146,31 @@ describe("showsPaymentMethod — P0 63HO6cBU (filial kassasi bitta jami)", () =>
     expect(showsPaymentMethod("branch", "registrator")).toBe(false);
   });
 });
+
+describe("getPaymentSourceTitle — P0 63HO6cBU: filial oyog'ida usul yashirilgan (A-2)", () => {
+  const t = (key: string) => i18n.t(key, { ns: "payments", lng: "uz" });
+
+  it("menejer / kuryer / registrator: branch_leg + usul null — umumiy «Filialdan o'tkazma» (HQ'ga deb aytilmaydi)", () => {
+    for (const role of ["manager", "courier", "registrator"]) {
+      expect(
+        getPaymentSourceTitle("branch_to_main", t, { role, cashboxType: "branch", paymentMethod: null, branchLeg: true }),
+      ).toBe("Filialdan o'tkazma");
+    }
+  });
+
+  it("usul kelgan (eski backend yoki SA/A) — manzil aniq: «Filialdan marketga» / «Filialdan HQ'ga»", () => {
+    expect(
+      getPaymentSourceTitle("branch_to_main", t, { role: "manager", paymentMethod: "click_to_market", branchLeg: true }),
+    ).toBe("Filialdan marketga o'tkazma");
+    expect(getPaymentSourceTitle("branch_to_main", t, { role: "manager", paymentMethod: "cash", branchLeg: true })).toBe(
+      "Filialdan HQ'ga o'tkazma",
+    );
+    expect(getPaymentSourceTitle("branch_to_main", t, { role: "superadmin", paymentMethod: null, branchLeg: true })).toBe(
+      "Filialdan HQ'ga o'tkazma",
+    );
+    // branch_leg belgisi yo'q (eski backend) — avvalgidek.
+    expect(getPaymentSourceTitle("branch_to_main", t, { role: "manager", paymentMethod: null })).toBe(
+      "Filialdan HQ'ga o'tkazma",
+    );
+  });
+});

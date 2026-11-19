@@ -703,6 +703,7 @@
       "hqToMarket": "HQ'dan marketga o'tkazma",
       "branchToMain": "Filialdan HQ'ga o'tkazma",
       "branchToMarket": "Filialdan marketga o'tkazma",
+      "branchTransfer": "Filialdan o'tkazma",
       "manualIncome": "Qo'lda kirim",
       "manualExpense": "Qo'lda chiqim",
       "correction": "Tuzatish",
@@ -986,7 +987,7 @@
   ,"cashDetail": {
     "shift": {
       "overviewSubtitle": "Kassa va to'lovlarni boshqarish · smena yopiq",
-      "overviewBanner": "Kuryerdan qabul qilish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+      "overviewBanner": "Kuryerdan qabul qilish va marketga to'lov filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
       "formLocked": "Smena ochilgach ishlaydi",
       "visibleHint": "Balans va operatsiyalar tarixi ko'rinib turadi.",
       "banner": {
@@ -1219,8 +1220,6 @@
       "accountCheckHint": "Kassir har karta uchun bank ilovasidagi qoldiqni kiritmaguncha smena yopilmaydi",
       "mainAccountCheck": "Asosiy kassa — qoldiq tasdiqlash",
       "mainAccountCheckHint": "Asosiy kassa smenasini yopishda kassir har karta uchun bank ilovasidagi qoldiqni kiritadi — kiritmaguncha smena yopilmaydi",
-      "branchAccountCheck": "Filiallar — qoldiq tasdiqlash",
-      "branchAccountCheckHint": "Filial kassalarida ham har karta qoldig'i majburiy. O'chiq bo'lsa, filial smenasi avvalgidek yopiladi",
       "photo": "Rasm talab qilish",
       "photoHint": "Har karta uchun bank ilovasidan skrinshot yuklash so'raladi",
       "ai": "AI tekshiruvi",
@@ -1946,14 +1945,12 @@
       "labelIn": "Qaysi kartaga",
       "labelOut": "Qaysi kartadan",
       "hqLabel": "HQ kartasi (pul qaysi kartaga tushadi)",
-      "branchLabel": "Filial kartasi (pul qaysi kartadan chiqadi)",
       "defaultName": "{{name}} (asosiy)",
       "loading": "Kartalar yuklanmoqda…",
       "loadError": "Kartalar yuklanmadi — pul asosiy kartaga yoziladi",
       "retry": "Qayta urinish",
       "notEnough": "«{{name}}» kartasida faqat {{amount}} bor",
-      "confirmRow": "Karta",
-      "confirmBranchRow": "Filial kartasi"
+      "confirmRow": "Karta"
     },
     "money": {
       "amount": "Summa",

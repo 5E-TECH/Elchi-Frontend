@@ -883,7 +883,7 @@ describe("Payments — menejer, smena yopiq (CB-2)", () => {
     const banner = screen.getByTestId("shift-banner");
     expect(banner).toHaveTextContent("Smena boshlanmagan");
     expect(banner).toHaveTextContent(
-      "Kuryerdan qabul qilish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+      "Kuryerdan qabul qilish va marketga to'lov filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
     );
     expect(screen.getByRole("link", { name: /Kassadagi summa/ })).toBeInTheDocument();
     expect(screen.getByTestId("payment-history-table")).toBeInTheDocument();

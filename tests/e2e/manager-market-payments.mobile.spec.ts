@@ -3,7 +3,8 @@ import { fillMarketTransfer, mockManagerMarketPayments, noHorizontalScroll } fro
 
 /**
  * Menejer — marketga (ega 2026-11-11), 390px: market kassasidagi «Marketga to'lov» — toshishsiz, bosiladigan narsalar
- * ≥ 44 px, tasdiq oynasi pastki varaqa; so'rov — kartasiz (P0 63HO6cBU: filial kassasi bitta jami).
+ * ≥ 44 px, tasdiq oynasi pastki varaqa; P0 63HO6cBU (ega Q1): faqat summa — usul va karta yo'q, so'rovda
+ * payment_method "cash" (PR-C gacha).
  */
 const shot = async (page: Page, name: string) => {
   if (process.env.E2E_SHOTS_DIR) await page.screenshot({ path: `${process.env.E2E_SHOTS_DIR}/${name}.png`, fullPage: true });
@@ -13,15 +14,12 @@ test.describe("Menejer — marketga to'lov, 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 
   for (const theme of ["light", "dark"] as const) {
-    test(`⭐ ${theme}: O'tkazma (kartasiz) — toshishsiz, ≥ 44 px, so'rov ketadi`, async ({ page }) => {
+    test(`⭐ ${theme}: faqat summa — toshishsiz, ≥ 44 px, so'rov ketadi`, async ({ page }) => {
       const { payments, leaked } = await mockManagerMarketPayments(page, { theme });
       await page.goto("/payments/cash-detail/2?type=market");
       await expect(page.getByRole("heading", { name: "Marketga to'lov" })).toBeVisible({ timeout: 60_000 });
-      await page.getByRole("radio", { name: "O'tkazma", exact: true }).click();
-      for (const target of [
-        page.getByRole("radio", { name: "Naqd" }),
-        page.getByRole("button", { name: "To'lash" }),
-      ]) {
+      await expect(page.getByRole("radio", { name: "O'tkazma", exact: true })).toHaveCount(0);
+      for (const target of [page.getByRole("textbox", { name: /^Summa/ }), page.getByRole("button", { name: "To'lash" })]) {
         const box = (await target.boundingBox())!;
         expect(box.height).toBeGreaterThanOrEqual(44);
         expect(box.x + box.width).toBeLessThanOrEqual(390);
@@ -33,7 +31,7 @@ test.describe("Menejer — marketga to'lov, 390px", () => {
       await expect(confirm).toContainText("Filial kassasi");
       await confirm.getByRole("button", { name: "Tasdiqlash" }).click();
       await expect.poll(() => payments.length).toBe(1);
-      expect(payments[0].body).toEqual(expect.objectContaining({ market_id: "2", payment_method: "click" }));
+      expect(payments[0].body).toEqual(expect.objectContaining({ market_id: "2", payment_method: "cash" }));
       expect(payments[0].body).not.toHaveProperty("card_id");
       expect(await noHorizontalScroll(page)).toBe(true);
       expect(leaked).toEqual([]);

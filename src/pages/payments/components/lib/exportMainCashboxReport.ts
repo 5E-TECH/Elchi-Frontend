@@ -113,7 +113,8 @@ export const exportMainCashboxReport = ({
   labels: MainCashboxReportLabels;
   /**
    * P0 63HO6cBU (ega 2026-11-17): FILIAL kassasi naqd/kartaga bo'linmaydi — menejer hisobotida naqd · karta · boshqa
-   * ustunlari o'rnida bitta «Summa», balans — faqat jami. Asosiy kassa (SA/A) hisoboti o'zgarmagan.
+   * ustunlari o'rnida bitta «Summa», balans — bitta jami (sarlavha — `labels.mainCashbox` o'rniga chaqiruvchi filial
+   * kassasi nomini beradi). Asosiy kassa (SA/A) hisoboti o'zgarmagan.
    */
   singleTotal?: boolean;
 }) => {
@@ -125,16 +126,15 @@ export const exportMainCashboxReport = ({
   const rightSpan = columns.length + 1;
   const subheads = (indent: string) =>
     columns.map((column) => `<td class="cell subhead">${escapeHtml(columnLabel(column))}</td>`).join(`\n${indent}`);
+  // Bitta jami — balans bir marta (ikki ustunni egallaydi; «Balans» va «jami» da bir xil son takrorlanmaydi).
   const balanceHeads = singleTotal
-    ? `<td class="cell subhead">${escapeHtml(labels.balance)}</td>
-            <td class="cell subhead">${escapeHtml(labels.total)}</td>`
+    ? `<td colspan="${rightSpan}" class="cell subhead">${escapeHtml(labels.balance)}</td>`
     : `<td class="cell subhead">${escapeHtml(labels.balance)}</td>
             <td class="cell subhead">${escapeHtml(labels.cash)}</td>
             <td class="cell subhead">${escapeHtml(labels.card)}</td>
             <td class="cell subhead">${escapeHtml(labels.total)}</td>`;
   const balanceValues = singleTotal
-    ? `<td class="cell num">${fmt(totalBalance)}</td>
-            <td class="cell num">${fmt(totalBalance)}</td>`
+    ? `<td colspan="${rightSpan}" class="cell num">${fmt(totalBalance)}</td>`
     : `<td class="cell num">${fmt(totalBalance)}</td>
             <td class="cell num">${fmt(cashBalance)}</td>
             <td class="cell num">${fmt(cardBalance)}</td>

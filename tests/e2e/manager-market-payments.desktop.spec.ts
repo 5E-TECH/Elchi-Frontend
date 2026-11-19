@@ -4,8 +4,8 @@ import { fillMarketTransfer, mockManagerMarketPayments, noHorizontalScroll } fro
 /**
  * Menejer — marketga (ega Bahodir 2026-11-11, BeePost kabi), 1440px: «To'lovlar» → «Marketga to'lov» → «Berilishi
  * kerak» → market kassasi — o'z filiali kassasidan. P0 63HO6cBU (ega 2026-11-17): filial kassasi naqd/kartaga
- * bo'linmaydi — karta tanlovi yo'q; kuryerdan qabulda «To'lov turi» umuman yo'q (faqat summa, so'rovda usul va karta
- * yo'q); filial kassasida bitta jami, 2 ta amal, «Kartalar» oynasi yo'q. Hozirgi backend menejerga 403 — tushunarli
+ * bo'linmaydi — menejerda kuryerdan qabul ham, marketga to'lov ham faqat summa (usul va karta yo'q; marketga — PR-C
+ * gacha payment_method "cash"); filial kassasida bitta jami, 2 ta amal, «Kartalar» oynasi yo'q. Hozirgi backend menejerga 403 — tushunarli
  * o'zbekcha xabar.
  * Maket yo'q — eng yaqini `superadmin-payments-cash-detail-market`, `superadmin-payments-to-give-dialog`.
  */
@@ -19,7 +19,7 @@ test.describe("Menejer — marketga to'lov, 1440px", () => {
   test.describe.configure({ timeout: 90_000 });
 
   for (const theme of ["light", "dark"] as const) {
-    test(`⭐ ${theme}: «Marketga to'lov» → «Berilishi kerak» → market; O'tkazma (kartasiz) → so'rov`, async ({ page }) => {
+    test(`⭐ ${theme}: «Marketga to'lov» → «Berilishi kerak» → market; faqat summa → so'rov (payment_method cash)`, async ({ page }) => {
       const { payments, leaked } = await mockManagerMarketPayments(page, { theme });
       await page.goto("/payments");
       await page.getByRole("button", { name: "Marketga to'lov" }).click({ timeout: 60_000 });
@@ -34,6 +34,7 @@ test.describe("Menejer — marketga to'lov, 1440px", () => {
       await expect(confirm).toContainText("Urgut filiali");
       await expect(confirm).toContainText("Market kassasi");
       await expect(confirm).not.toContainText("Humo Agrobank");
+      await expect(confirm).not.toContainText("O'tkazma");
       await expect(confirm).not.toContainText("Asosiy kassa");
       expect(await noHorizontalScroll(page)).toBe(true);
       await shot(page, `manager-market-pay-1440-${theme}`);
@@ -41,7 +42,7 @@ test.describe("Menejer — marketga to'lov, 1440px", () => {
 
       await expect.poll(() => payments.length).toBe(1);
       expect(payments[0].path).toBe("finance/cashbox/payment/market");
-      expect(payments[0].body).toEqual(expect.objectContaining({ market_id: "2", amount: 200_000, payment_method: "click" }));
+      expect(payments[0].body).toEqual(expect.objectContaining({ market_id: "2", amount: 200_000, payment_method: "cash" }));
       expect(payments[0].body).not.toHaveProperty("card_id");
       expect(leaked).toEqual([]);
     });

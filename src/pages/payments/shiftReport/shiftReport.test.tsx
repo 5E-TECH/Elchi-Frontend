@@ -154,6 +154,56 @@ describe("ShiftReportPage (kiZgTybn)", () => {
   });
 });
 
+/**
+ * P0 63HO6cBU (ega 2026-11-17, BE PR-A m5): filial smenasi — `cashbox_type: "branch"`, `card: null`, `accounts: []`,
+ * operatsiyalar usulsiz. Sahifa bitta jami ko'rsatadi; asosiy kassa hisoboti o'zgarmagan.
+ */
+describe("ShiftReportPage — filial smenasi bitta jami (P0 63HO6cBU)", () => {
+  const BRANCH_REPORT = {
+    shift: { ...REPORT.shift, id: "31" },
+    cashbox_type: "branch",
+    cash: {
+      opening_balance: 4_000_000,
+      total_income: 1_250_000,
+      total_expense: 300_000,
+      expected_balance: 4_950_000,
+      closing_balance: 4_950_000,
+      discrepancy: 0,
+    },
+    card: null,
+    accounts: [],
+    accounts_summary: null,
+    operations: [
+      { operation_type: "income", payment_method: null, count: 5, total: 1_250_000 },
+      { operation_type: "expense", payment_method: null, count: 1, total: 300_000 },
+    ],
+  };
+
+  it.each([
+    ["manager", manager],
+    ["superadmin", superadmin],
+  ])("%s: «Jami» bloki; naqd / kartalar izohi, «Kartalar va hisob raqamlar» va «boshqa» yo'q", async (_role, state) => {
+    render(state, BRANCH_REPORT);
+    expect(await screen.findByText("Operatsiyalar xulosasi")).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/naqd .*kartalar/);
+    expect(screen.queryByText("Kartalar va hisob raqamlar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Kartalar tekshirilmagan")).not.toBeInTheDocument();
+    expect(screen.queryByText("boshqa")).not.toBeInTheDocument();
+    expect(screen.queryByText("Naqd")).not.toBeInTheDocument();
+    expect(screen.getByText("Jami")).toBeInTheDocument();
+    // Summalar to'g'ri: yopilish 4 950 000, sof oqim +950 000.
+    expect(screen.getAllByText("4 950 000").length).toBeGreaterThan(0);
+    expect(screen.getByText("+950 000 so'm")).toBeInTheDocument();
+  });
+
+  it("asosiy kassa hisobotida avvalgidek: naqd / kartalar izohi, «Naqd» bloki va kartalar kartasi", async () => {
+    render(superadmin);
+    expect(await screen.findByText("Kartalar va hisob raqamlar")).toBeInTheDocument();
+    expect(screen.getByText("Naqd")).toBeInTheDocument();
+    expect(screen.getAllByText(/naqd .*kartalar/).length).toBeGreaterThan(0);
+  });
+});
+
 /** y8Tqm9Ap + gWI4gYkw — avtomatik yopilgan smena banneri, «Hisobot kimlarga yuborildi», fayl va qayta yuborish. */
 describe("ShiftReportPage — auto close and report deliveries (y8Tqm9Ap, gWI4gYkw)", () => {
   const delivery = (over: Record<string, unknown>) => ({
