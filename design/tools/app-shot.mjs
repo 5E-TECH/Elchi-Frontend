@@ -763,8 +763,60 @@ const operatorAccountMock = (path) => {
   return { statusCode: 200, message: 'operator earnings', data: { rows, total: id === '41' ? 82 : rows.length, limit: 10, offset: 0 } };
 };
 
+/**
+ * 63HO6cBU (BE PR-C) — menejer «Marketga to'lov»: `GET finance/cashbox/manager/markets` (o'z filiali marketlari, ulush
+ * bo'yicha kamayib; Baraka Shop — ulush 4,82 mln, «To'lash mumkin» 1,25 mln; Oila Market — «To'lash mumkin» 0, xira) va
+ * `GET finance/cashbox/user/:marketId?cashbox_type=markets` (filial ulushi + `payable`, tarix yo'q). `--tag market-*` —
+ * filial smenasi ochiq (`GET finance/shift/current`; aks holda «Marketga to'lov» o'rnida «Smenani ochish»). Oynani ochish:
+ *   npm run app:shot -- /payments --role manager --tag market-picker --click 'role=button[name="Marketga to\'lov"]'
+ *   npm run app:shot -- "/payments/cash-detail/2?type=market" --role manager --tag market-pay
+ */
+const MARKET_PAY_SHOT = role === 'manager' && Boolean(tagArg?.startsWith('market'));
+const MANAGER_BRANCH_MARKETS = [
+  { market_id: '2', name: 'Baraka Shop', status: 'active', branch_share: 4_820_000, payable: 1_250_000 },
+  { market_id: '3', name: "Ipak Yo'li Savdo", status: 'active', branch_share: 900_000, payable: 900_000 },
+  { market_id: '5', name: 'Grand Moda', status: 'blocked', branch_share: 512_000, payable: 512_000 },
+  { market_id: '7', name: 'Oila Market', status: 'active', branch_share: 300_000, payable: 0 },
+];
+const managerMarketsMock = (path, query) => {
+  if (role !== 'manager') return null;
+  if (MARKET_PAY_SHOT && path === 'finance/shift/current') {
+    return { statusCode: 200, data: { shift: { id: '91', status: 'open', opened_by: '1', opened_at: '2026-11-19T04:00:00.000Z' }, required: true } };
+  }
+  if (path === 'finance/cashbox/manager/markets') {
+    const items = MANAGER_BRANCH_MARKETS;
+    return {
+      statusCode: 200,
+      data: {
+        branch_id: '1',
+        items,
+        total_share: items.reduce((sum, item) => sum + item.branch_share, 0),
+        total_payable: items.reduce((sum, item) => sum + item.payable, 0),
+        pagination: { total: items.length, page: 1, limit: 100, totalPages: 1 },
+      },
+    };
+  }
+  const cash = /^finance\/cashbox\/user\/(\d+)$/.exec(path);
+  const market = cash && query?.get('cashbox_type') === 'markets' && MANAGER_BRANCH_MARKETS.find((m) => m.market_id === cash[1]);
+  if (!market) return null;
+  return {
+    statusCode: 200,
+    data: {
+      cashbox: { id: null, user_id: market.market_id, cashbox_type: 'markets', balance: market.branch_share, balance_cash: market.branch_share, balance_card: 0 },
+      branch_id: '1',
+      branch_share: market.branch_share,
+      payable: market.payable,
+      user: { id: market.market_id, name: market.name, status: market.status },
+      history: [],
+      cashboxHistory: [],
+    },
+  };
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
+  const managerMarkets = managerMarketsMock(path, query);
+  if (managerMarkets) return managerMarkets;
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
