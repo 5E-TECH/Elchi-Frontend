@@ -12,7 +12,15 @@ export type OperatorPaymentStatus = "active" | "cancelled";
 export type OperatorBalance = {
   operatorId: string;
   operatorName: string;
-  status: "active" | "inactive";
+  /** `deleted` — o'chirilgan operator (2026-11-20): faqat daromadi / to'lovi bo'lsa chiqadi; unga to'lov yozilmaydi. */
+  status: "active" | "inactive" | "deleted";
+  /**
+   * Shu marketdagi operator buyurtmalari (`orders.operator_id`, butun davr): jami, sotilgan (komissiya shulardan),
+   * yo'lda (sotilsa komissiya yoziladi). `null` — backend sanamadi (eski javob yoki order-service javob bermadi).
+   */
+  ordersTotal: number | null;
+  ordersSold: number | null;
+  ordersPending: number | null;
   earned: number;
   paid: number;
   balance: number;

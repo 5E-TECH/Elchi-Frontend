@@ -310,7 +310,6 @@ const OperatorsListView = ({ marketName }: { marketName: string | null }) => {
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         marketName={marketName}
-        onSetCommission={openCommission}
       />
       <CommissionDialog operator={commissionOperator} onClose={() => setCommissionOperator(null)} />
       <MissingEarningsDialog operator={missingOperator} onClose={() => setMissingOperator(null)} />

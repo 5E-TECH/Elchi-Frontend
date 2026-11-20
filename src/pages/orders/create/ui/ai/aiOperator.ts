@@ -10,39 +10,9 @@ import type { AiDraftOrder } from "./evalPreview";
  * ko'rinmasdi. Endi kartada ro'yxatdan tanlanadi (`orders[].operator_id`).
  *
  * ⚠️ AI matnidan operator AVTOMATIK tanlanmaydi (backend shartnomasi: `operator_id` — pulga ta'sir qiladi, faqat
- * odam tanlaydi). Matn ro'yxatdagi BITTA operatorga mos kelsa — faqat TAKLIF («Tanlash» tugmasi).
+ * odam tanlaydi). Matn ro'yxatdagi BITTA operatorga mos kelsa — faqat TAKLIF («Tanlash» tugmasi;
+ * `suggestOperator` — `entities/market-operator`, qo'lda forma ham shuni ishlatadi).
  */
-
-/** Taqqoslash uchun: katta-kichik harf, `#` boshi, tutuq belgisi turlari (ʻ ʼ ’ ‘ `) va bo'shliqlar farq qilmaydi. */
-export const normalizeOperatorName = (value: string | null | undefined): string =>
-  (value ?? "")
-    .normalize("NFC")
-    .toLocaleLowerCase("uz")
-    .replace(/[ʻʼ’‘`']/g, "'")
-    .replace(/^\s*#+/, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-/**
- * AI o'qigan ism (`operator` matni) ro'yxatdagi qaysi operatorga mos keladi:
- *  - to'liq ism bir xil — o'sha operator («Sevinch Karimova» = «sevinch karimova»);
- *  - matn bitta so'z — ismi shu so'z bilan boshlanadigan YAGONA operator («#sevinch» → «Sevinch Karimova»);
- *  - bir nechta mos (ikki «Sevinch») yoki hech biri — `null` (taklif yo'q, odam o'zi tanlaydi).
- */
-export const suggestOperator = (
-  text: string | null | undefined,
-  operators: readonly SelectableMarketOperator[] | undefined,
-): SelectableMarketOperator | null => {
-  const needle = normalizeOperatorName(text);
-  if (!needle || !operators?.length) return null;
-
-  const exact = operators.filter((operator) => normalizeOperatorName(operator.name) === needle);
-  if (exact.length > 0) return exact.length === 1 ? exact[0] : null;
-  if (needle.includes(" ")) return null;
-
-  const byFirstName = operators.filter((operator) => normalizeOperatorName(operator.name).split(" ")[0] === needle);
-  return byFirstName.length === 1 ? byFirstName[0] : null;
-};
 
 /**
  * Kartadagi tanlov hozir ham yaroqlimi. Ro'yxat yuklangan va unda yo'q (admin marketni almashtirgan, operator

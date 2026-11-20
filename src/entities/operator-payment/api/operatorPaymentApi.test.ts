@@ -23,11 +23,45 @@ describe("operator-payment normalizatorlari", () => {
         ],
       },
     });
+    // Buyurtmalar soni yo'q (eski backend) — `null`.
+    const noCounts = { ordersTotal: null, ordersSold: null, ordersPending: null };
     expect(res.items).toEqual([
-      { operatorId: "41", operatorName: "Madina", status: "active", earned: 1000.5, paid: 400, balance: 600.5, paymentsCount: 2, lastPaidAt: "2026-11-15" },
-      { operatorId: "42", operatorName: "Sevara", status: "inactive", earned: 100, paid: 150, balance: -50, paymentsCount: 0, lastPaidAt: null },
+      { operatorId: "41", operatorName: "Madina", status: "active", earned: 1000.5, paid: 400, balance: 600.5, paymentsCount: 2, lastPaidAt: "2026-11-15", ...noCounts },
+      { operatorId: "42", operatorName: "Sevara", status: "inactive", earned: 100, paid: 150, balance: -50, paymentsCount: 0, lastPaidAt: null, ...noCounts },
     ]);
     expect(res.totals).toEqual({ earned: 1100.5, paid: 550, balance: 550.5 });
+  });
+
+  it("2026-11-20: buyurtmalar soni (jami / sotilgan / yo'lda) va o'chirilgan operator holati", () => {
+    const res = normalizeOperatorBalances({
+      statusCode: 200,
+      data: {
+        items: [
+          { operator_id: "41", status: "active", earned: 10, paid: 0, orders_total: 57, orders_sold: "41", orders_pending: 9 },
+          { operator_id: "47", status: "deleted", earned: 60, paid: 10, orders_total: null, orders_sold: -1, orders_pending: "x" },
+        ],
+        totals: { earned: 70, paid: 10, balance: 60 },
+      },
+    });
+    expect(res.items[0]).toMatchObject({ status: "active", ordersTotal: 57, ordersSold: 41, ordersPending: 9 });
+    // Yaroqsiz son — `null` (noma'lum), «0» emas.
+    expect(res.items[1]).toMatchObject({ status: "deleted", ordersTotal: null, ordersSold: null, ordersPending: null });
+  });
+
+  it("2026-11-20: market daromad qatorlari — `{ items, pagination: { total } }` shakli", () => {
+    const list = normalizeOperatorEarnings({
+      statusCode: 200,
+      data: {
+        items: [
+          { id: "901", order_id: "55120", amount: 12500, order_total_price: 250000, commission_type: "percent", commission_value: 5, created_at: "2026-11-18T09:12:00.000Z" },
+        ],
+        pagination: { total: 21, page: 2, limit: 10, totalPages: 3 },
+      },
+    });
+    expect(list.total).toBe(21);
+    expect(list.items).toEqual([
+      { id: "901", orderId: "55120", amount: 12500, commissionType: "percent", commissionValue: 5, orderTotal: 250000, createdAt: "2026-11-18T09:12:00.000Z" },
+    ]);
   });
 
   it("market ko'rinishi: holat, manba, bekor qilish; `can_cancel` faqat faol qatorda", () => {

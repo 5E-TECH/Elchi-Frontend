@@ -73,7 +73,11 @@ export const RecordOperatorPaymentDialog = ({ open, onClose, operator }: Props) 
   const [errors, setErrors] = useState<PaymentFormErrors>({});
   const busy = record.isPending;
 
-  const items = useMemo(() => balances.data?.items ?? [], [balances.data?.items]);
+  // O'chirilgan operator hisobda ko'rinadi (2026-11-20), lekin unga to'lov yozilmaydi (backend ham 404 beradi).
+  const items = useMemo(
+    () => (balances.data?.items ?? []).filter((item) => item.status !== "deleted"),
+    [balances.data?.items],
+  );
   const selected = items.find((item) => item.operatorId === operatorId) ?? null;
   const operatorName = selected?.operatorName || (operator?.id === operatorId ? operator.name : "") || "";
   const amount = parseAmountDigits(amountInput);

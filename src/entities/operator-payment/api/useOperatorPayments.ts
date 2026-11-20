@@ -8,6 +8,7 @@ import {
   getOperatorAccountBalance,
   getOperatorAccountEarnings,
   getOperatorAccountPayments,
+  getMarketOperatorEarnings,
   getMissingEarnings,
   getOperatorBalances,
   getOperatorPayments,
@@ -35,6 +36,9 @@ export const operatorPaymentKeys = {
     ["operator-payments", "operator", operatorId, "payments", params] as const,
   accountEarnings: (operatorId: string, params: OperatorAccountPageParams) =>
     ["operator-payments", "operator", operatorId, "earnings", params] as const,
+  /** 2026-11-20 — market: o'z operatori daromad qatorlari. */
+  marketEarnings: (operatorId: string, params: { page: number; limit: number }) =>
+    ["operator-payments", "market-earnings", operatorId, params] as const,
   /** 2026-11-20 — market: komissiyasiz qolgan o'tgan sotuvlar (oldindan ko'rish). */
   missingEarnings: (operatorId: string) => ["operator-payments", "missing-earnings", operatorId] as const,
 };
@@ -61,6 +65,20 @@ export const useOperatorBalances = (options: { enabled?: boolean } = {}) =>
     queryKey: operatorPaymentKeys.balances,
     queryFn: getOperatorBalances,
     enabled: options.enabled ?? true,
+    meta: { silentError: true },
+  });
+
+/** `GET finance/operator-payments/earnings` (market) — operator tanlanmaguncha so'rov ketmaydi. */
+export const useMarketOperatorEarnings = (
+  operatorId: string | null,
+  params: { page: number; limit: number },
+  options: { enabled?: boolean } = {},
+) =>
+  useQuery({
+    queryKey: operatorPaymentKeys.marketEarnings(operatorId ?? "", params),
+    queryFn: () => getMarketOperatorEarnings(operatorId ?? "", params),
+    enabled: (options.enabled ?? true) && Boolean(operatorId),
+    placeholderData: keepPreviousData,
     meta: { silentError: true },
   });
 
