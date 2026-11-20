@@ -11,6 +11,7 @@ import {
   type AiPreviewOrder,
 } from "../../../../../entities/ai-order";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
+import { marketOperatorKeys, useSelectableMarketOperators } from "../../../../../entities/market-operator";
 import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../../../entities/product";
 import type { MarketOption } from "../../model/orderCreateForm";
 import { CreateAlert } from "../CreateAlert";
@@ -21,10 +22,11 @@ import AiInputPanel from "./AiInputPanel";
 import AiPreviewCard, { type AiAreaItem, type AiProductOption } from "./AiPreviewCard";
 import { confirmFailureText, confirmHttpErrorText } from "./aiErrorText";
 import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "./aiDraft";
+import { chosenOperatorId, isOperatorRejectedResult, suggestOperator } from "./aiOperator";
 import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
 import { useKeepFocusedFieldVisible } from "./useKeepFocusedFieldVisible";
-import { Card, useConfirm } from "../../../../../shared/ui/primitives";
+import { Button, Card, useConfirm } from "../../../../../shared/ui/primitives";
 
 /** Katalog to'liq — qo'lda formadagi `Step2Combined` bilan bir xil parametr (bitta so'rov kaliti). */
 const AI_CATALOG_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
@@ -106,6 +108,19 @@ const AiCreatePanel = ({
   const regionsQuery = useGetRegions(areaLists);
   const regions = toList<AiAreaItem>(regionsQuery.data);
 
+  /**
+   * «Operator» tanlovi (2026-11-20): AI xabardagi ismni faqat matn qilib yozardi — buyurtma operatorsiz qolib,
+   * sotuvda komissiya yozilmasdi. Ro'yxat — qo'lda formadagi bilan AYNI so'rov (market — o'zi, xodim — tanlangan
+   * market), kartalar paydo bo'lgach bir marta. Market operatorida yo'q: operator — o'zi (`selfOperator`).
+   */
+  const pickOperators = !selfOperator;
+  const operatorsQuery = useSelectableMarketOperators(marketId ?? null, {
+    ownMarket: isMarketRole,
+    enabled: pickOperators && hasMarket && drafts.length > 0,
+  });
+  const operators = pickOperators ? operatorsQuery.data : undefined;
+  const operatorsFailed = pickOperators && operatorsQuery.isError && !operatorsQuery.data;
+
   const navigate = useNavigate();
   const confirmLeave = useConfirm();
 
@@ -114,6 +129,29 @@ const AiCreatePanel = ({
   const previewRules = { regionRequired: areaLists };
   const readyDrafts = pendingDrafts.filter((draft) => evalPreview(draft.order, previewRules).ready);
   const hasUnconfirmedReady = readyDrafts.length > 0;
+
+  /** Operator tanlanmagan, lekin AI o'qigan ism ro'yxatdagi BITTA operatorga mos kartalar — bitta tugma bilan. */
+  const operatorSuggestions = pendingDrafts.flatMap((draft) => {
+    if (chosenOperatorId(draft.order, operators)) return [];
+    const operator = suggestOperator(draft.order.operator, operators);
+    return operator ? [{ key: draft.key, operator }] : [];
+  });
+  const applyOperatorSuggestions = () => {
+    const byKey = new Map(operatorSuggestions.map((suggestion) => [suggestion.key, suggestion.operator]));
+    setDrafts((prev) =>
+      prev.map((draft) => {
+        const operator = byKey.get(draft.key);
+        return operator
+          ? {
+              ...draft,
+              order: { ...draft.order, operator_id: operator.id, operator: operator.name },
+              createError: undefined,
+              existingOrderId: undefined,
+            }
+          : draft;
+      }),
+    );
+  };
 
   useKeepFocusedFieldVisible(cardsRef, barRef, active && drafts.length > 0);
 
@@ -206,7 +244,12 @@ const AiCreatePanel = ({
 
     const payload = {
       ...buildAiConfirmPayload(
-        readyTargets.map((draft) => (selfOperator ? { ...draft.order, operator: "" } : draft.order)),
+        readyTargets.map((draft) =>
+          selfOperator
+            ? { ...draft.order, operator: "", operator_id: null }
+            : // Eskirgan tanlov (market almashgan / operator o'chirilgan) yuborilmaydi — `chosenOperatorId`.
+              { ...draft.order, operator_id: chosenOperatorId(draft.order, operators) || null },
+        ),
         { marketId, includeMarketId: !isMarketRole },
       ),
       request_id: crypto.randomUUID(),
@@ -223,6 +266,10 @@ const AiCreatePanel = ({
           if (result.ok) createdIds.set(draft.key, result.order_id);
           else failed.set(draft.key, confirmFailureText(result, t));
           if (!result.ok && result.code === "duplicate_recent" && result.order_id) existing.set(draft.key, result.order_id);
+        }
+        // Operator shu orada o'chirilgan / bloklangan — ro'yxat yangilanadi, eskirgan tanlov kartada tushadi.
+        if (response?.results?.some(isOperatorRejectedResult)) {
+          void queryClient.invalidateQueries({ queryKey: marketOperatorKeys.all });
         }
 
         const createdDrafts = readyTargets.filter((draft) => createdIds.has(draft.key));
@@ -297,6 +344,20 @@ const AiCreatePanel = ({
 
       <AiCreatedList rows={created} />
 
+      {operatorSuggestions.length > 1 ? (
+        <CreateAlert
+          tone="info"
+          title={t("aiOperatorSuggestAll", { count: operatorSuggestions.length })}
+          action={
+            <Button variant="secondary" size="sm" onClick={applyOperatorSuggestions}>
+              {t("aiOperatorSuggestAllPick")}
+            </Button>
+          }
+        >
+          {t("aiOperatorSuggestAllText")}
+        </CreateAlert>
+      ) : null}
+
       {drafts.length > 0 ? (
         <div ref={cardsRef} className="flex min-w-0 flex-col gap-4">
           {drafts.map((draft, index) => (
@@ -310,6 +371,8 @@ const AiCreatePanel = ({
               regionsLoading={areaLists && regionsQuery.isLoading}
               areaLists={areaLists}
               selfOperator={selfOperator}
+              operators={operators}
+              operatorsFailed={operatorsFailed}
               creating={confirm.isPending}
               createBlocked={blocked}
               onChange={(order) => updateDraft(draft.key, order)}

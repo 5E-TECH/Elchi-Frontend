@@ -88,6 +88,12 @@ export type AiPreviewOrder = {
   total_price: number | null;
   comment?: string | null;
   operator?: string | null;
+  /**
+   * Kartada ODAM ro'yxatdan tanlagan market operatori (`GET /market-operators/selectable`). Backend emas — FRONTEND
+   * yozadi: ai-parse uni hech qachon bermaydi (`toDraft` AI qiymatini e'tiborsiz qoldiradi), AI matnidagi ism ham
+   * avtomatik bog'lanmaydi. Tasdiqlashda `orders[].operator_id` — buyurtma va sotuvdagi komissiya shu operatorga.
+   */
+  operator_id?: string | null;
   where_deliver: DeliveryType;
   /**
    * Tahlil javobidagi `draft_id` — backend emas, FRONTEND har buyurtmaga
@@ -170,6 +176,12 @@ export type AiConfirmOrder = {
   address?: string;
   comment?: string;
   operator?: string;
+  /**
+   * Ro'yxatdan tanlangan operator (`POST /orders` `operator_id` bilan AYNI qoida): backend uni buyurtma marketining
+   * faol operatorlari ichida tekshiradi (aks holda shu buyurtma `create_failed`) va `operator` ni uning ismi bilan
+   * yozadi. Tanlanmasa yuborilmaydi — buyurtma operatorsiz, `operator` faqat matn (komissiya yozilmaydi).
+   */
+  operator_id?: string;
   /** Tahlil javobidagi `draft_id` (bo'lsa) — xarajatni buyurtmaga bog'lash uchun. */
   draft_id?: string;
   /**
@@ -215,6 +227,11 @@ export type AiConfirmResult = {
   order_id?: string;
   code?: AiConfirmFailureCode;
   reason?: string;
+  /**
+   * Aniq sabab kodi (backend UPPER_CASE, #658) — masalan `CHOSEN_OPERATOR_NOT_SELECTABLE`: tanlangan operator
+   * marketning faol operatori emas (`code` bunda `create_failed`). Eski javobda yo'q — `reason` matni zaxira.
+   */
+  reason_code?: string;
 };
 
 export type AiConfirmResponse = {

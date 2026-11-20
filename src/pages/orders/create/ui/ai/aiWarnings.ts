@@ -46,6 +46,9 @@ const fieldValue = (order: AiDraftOrder, field: AiWarningField): string => {
       return scalar(order.district_id);
     case "items":
       return itemsSignature(order.items);
+    case "operator":
+      // Ro'yxatdan tanlash ham tekshirish (tanlangan ism AI matni bilan bir xil bo'lsa ham).
+      return `${scalar(order.operator_id)}|${scalar(order.operator)}`;
     case "is_replacement":
       // Kartada maydon yo'q — operator uni tahrirlay olmaydi, ogohlantirish qoladi.
       return "";
