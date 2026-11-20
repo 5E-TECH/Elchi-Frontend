@@ -1295,8 +1295,8 @@
         "groupHints": {
           "superadmin": "Full report and attachment",
           "couriers": "Only their own operations",
-          "markets": "Only payments to them · Telegram — to the owner's private chat",
-          "branches": "To the branch group or managers"
+          "markets": "Only payments to them · Telegram — to the owner's private chat, message + Excel",
+          "branches": "To the branch group or managers · message + Excel"
         },
         "channels": {
           "telegram": "Telegram",
@@ -1307,7 +1307,7 @@
           "in_app": "{{group}}: in-app notification"
         },
         "format": "Attachment format",
-        "formatHint": "Sent to the superadmin together with the Telegram message",
+        "formatHint": "Sent to the superadmin together with the Telegram message. The branch group and markets always get Excel",
         "note": "Only couriers and markets with operations in the shift get the report: a courier sees only their own transfers, a market only the amounts paid to it. Users without Telegram get only the in-app notification."
       }
     },
