@@ -78,7 +78,8 @@ export type RollbackAvailability = {
 export const resolveRollbackAvailability = (order: unknown, fallback: () => boolean): RollbackAvailability => {
   const eligibility = readRollbackEligibility(order);
   if (eligibility) {
-    return { allowed: eligibility.allowed, reason: getRollbackBlockReason(eligibility), source: "server" };
+    const reason = hasRollbackReasonStatus(order) ? getRollbackBlockReason(eligibility) : null;
+    return { allowed: eligibility.allowed, reason, source: "server" };
   }
   return { allowed: fallback(), reason: null, source: "fallback" };
 };
@@ -87,6 +88,17 @@ const normalizeText = (value: unknown) =>
   typeof value === "string" || typeof value === "number"
     ? String(value).trim().toLowerCase().replaceAll("_", " ").replace("canceled", "cancelled")
     : "";
+
+/**
+ * Sabab faqat qaytarish savoli tug'iladigan holatlarda ko'rsatiladi: sotilgan, bekor qilingan (jo'natilgani ham),
+ * to'langan va qisman to'langan. Yopilgan, marketga qaytarilgan va boshqa holatlarda «Qaytarish yopiq» izohi shovqin.
+ */
+const ROLLBACK_REASON_STATUSES = new Set(["sold", "cancelled", "cancelled (sent)", "paid", "partly paid"]);
+
+const hasRollbackReasonStatus = (order: unknown): boolean => {
+  if (!order || typeof order !== "object") return false;
+  return ROLLBACK_REASON_STATUSES.has(normalizeText((order as { status?: unknown }).status));
+};
 
 /**
  * Bekor posilka jo'natilgan: `cancelled (sent)` holati yoki gateway ko'rinishi — `status: cancelled` +

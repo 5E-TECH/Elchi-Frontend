@@ -53,7 +53,10 @@ describe("resolveRollbackAvailability — ko'rinish qoidasi", () => {
     });
     expect(
       resolveRollbackAvailability(
-        { rollback: { allowed: false, code: "PARCEL_NOT_IN_BRANCH", message: "Posilka filialdan jo'natilgan" } },
+        {
+          status: "cancelled",
+          rollback: { allowed: false, code: "PARCEL_NOT_IN_BRANCH", message: "Posilka filialdan jo'natilgan" },
+        },
         fallback,
       ),
     ).toEqual({ allowed: false, reason: "Posilka filialdan jo'natilgan", source: "server" });
@@ -90,6 +93,22 @@ describe("resolveRollbackAvailability — ko'rinish qoidasi", () => {
     }
     expect(getRollbackBlockReason({ allowed: true, code: null, message: null })).toBeNull();
     expect(getRollbackBlockReason(null)).toBeNull();
+  });
+
+  it("sabab faqat sotilgan / bekor / to'langan holatda; yopilgan va marketga qaytarilganda — yo'q", () => {
+    const denied = { allowed: false, code: "PARCEL_NOT_IN_BRANCH", message: "Posilka filialda emas" };
+    for (const status of ["sold", "cancelled", "canceled", "cancelled (sent)", "paid", "partly_paid"]) {
+      expect(resolveRollbackAvailability({ status, rollback: denied }, () => true).reason, status).toBe(
+        "Posilka filialda emas",
+      );
+    }
+    for (const status of ["closed", "returned to market", "waiting", undefined]) {
+      expect(resolveRollbackAvailability({ status, rollback: denied }, () => true), String(status)).toEqual({
+        allowed: false,
+        reason: null,
+        source: "server",
+      });
+    }
   });
 });
 
