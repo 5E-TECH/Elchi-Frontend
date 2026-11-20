@@ -29,6 +29,14 @@ describe("getErrorKind", () => {
     expect(getErrorKind(new AxiosError("Request aborted", AxiosError.ECONNABORTED, config, request))).toBe("generic");
   });
 
+  it("javob kelmadi, lekin ilova sayti ochildi (`networkCause: server`) — «Internet yo'q» emas, timeout matni", () => {
+    const error = Object.assign(new AxiosError("Network Error", AxiosError.ERR_NETWORK, config, request), {
+      networkCause: "server",
+    });
+    expect(getErrorKind(error)).toBe("timeout");
+    expect(getErrorKind(Object.assign(error, { networkCause: "internet" }))).toBe("offline");
+  });
+
   it("javob umuman kelmadi — offline; brauzer oflayn bo'lsa har doim offline", () => {
     expect(getErrorKind(new AxiosError("Network Error", AxiosError.ERR_NETWORK, config, request))).toBe("offline");
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);

@@ -545,8 +545,9 @@ const Orders = () => {
   const exactOrderQuery = useQuery({
     queryKey: ["orders", "exact-number", exactOrderId],
     queryFn: () =>
+      // Yordamchi qidiruv: xatosi yutiladi (`.catch`) — javobsiz bo'lsa global xabar ham yo'q (2026-11-20).
       api
-        .get(API_ENDPOINTS.ORDERS.BY_ID(exactOrderId))
+        .get(API_ENDPOINTS.ORDERS.BY_ID(exactOrderId), { silentNetworkError: true })
         .then((res) => {
           const body = res.data as { data?: OrderListItem } | OrderListItem | undefined;
           const order = (body && "data" in body ? body.data : body) as OrderListItem | undefined;

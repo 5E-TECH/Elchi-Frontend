@@ -861,6 +861,20 @@ describe("OrderCreate — Idempotency-Key (gpCIsGjH): takroriy so'rov ikkinchi b
     expect(keyOf(orderPosts()[2])).not.toBe(first);
   });
 
+  it("javob umuman kelmasa (ERR_NETWORK) — inglizcha «Network Error» va ikkinchi qizil xabar yo'q, formada sabab", async () => {
+    mocks.post.mockRejectedValueOnce(Object.assign(new Error("Network Error"), { code: "ERR_NETWORK" }));
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await fillOrder(user);
+    await user.click(submitButton());
+    const alert = await within(manualPanel()).findByRole("alert");
+    expect(alert).toHaveTextContent("Internetga ulanishni tekshiring");
+    expect(alert).not.toHaveTextContent("Network Error");
+    // Faqat formadagi sarlavha — sahifaning ikkinchi qizil xabari (toast) yo'q.
+    expect(screen.getAllByText("Buyurtma yaratilmadi")).toHaveLength(1);
+  });
+
   it("xatodan keyin forma o'zgarsa — yangi kalit (eski kalit boshqa tarkibga ishlatilmaydi)", async () => {
     mocks.post.mockRejectedValue({ response: { status: 504, data: { message: "Gateway Timeout" } } });
     const user = userEvent.setup();

@@ -44,7 +44,7 @@ describe("Bugungi qabul vaqti — sarlavha", () => {
     renderHeader("superadmin");
 
     expect(await screen.findByRole("link", { name: /Buyurtma yaratish/ })).toBeInTheDocument();
-    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("orders/intake-settings"));
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("orders/intake-settings", { silentNetworkError: true }));
     expect(screen.queryByTestId("order-intake-control")).toBeNull();
     expect(screen.queryByText(/Bugungi qabul/)).toBeNull();
   });
