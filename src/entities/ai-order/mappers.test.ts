@@ -181,6 +181,23 @@ describe("buildAiConfirmPayload", () => {
     expect(withoutDraft).not.toHaveProperty("draft_id");
   });
 
+  it("ro'yxatdan tanlangan operator — `operator_id` (+ ismi); tanlanmagan / bo'sh — kalit umuman yo'q", () => {
+    const [picked, notPicked, blank] = buildAiConfirmPayload(
+      [
+        preview({ operator: "Sevinch Karimova", operator_id: "31" }),
+        preview({ operator: "sevinch", operator_id: null }),
+        preview({ operator: "", operator_id: "  " }),
+      ],
+      { includeMarketId: false },
+    ).orders;
+
+    expect(picked).toMatchObject({ operator: "Sevinch Karimova", operator_id: "31" });
+    expect(notPicked).toMatchObject({ operator: "Sevinch" });
+    expect(notPicked).not.toHaveProperty("operator_id");
+    expect(blank).not.toHaveProperty("operator_id");
+    expect(blank).not.toHaveProperty("operator");
+  });
+
   it("`status` va `region_id` payloadda umuman yo'q", () => {
     const payload = buildAiConfirmPayload([preview()], { marketId: "7", includeMarketId: true });
 

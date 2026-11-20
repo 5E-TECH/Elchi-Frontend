@@ -52,6 +52,8 @@ export const toDraft = (source: AiPreviewOrder, key: string, draftId?: string, p
     address: source.address ?? "",
     comment: source.comment ?? "",
     operator: source.operator ?? "",
+    // Operator faqat ODAM ro'yxatdan tanlaganda bog'lanadi — AI chiqishida bo'lsa ham e'tiborsiz.
+    operator_id: null,
     where_deliver: source.where_deliver === "address" ? "address" : "center",
     items: (source.items ?? []).map((item) => ({
       ...item,

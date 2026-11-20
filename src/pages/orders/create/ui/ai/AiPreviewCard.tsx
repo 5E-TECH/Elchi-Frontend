@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
 import { toLocalPhone, type AiPreviewItem, type AiWarningField } from "../../../../../entities/ai-order";
+import type { SelectableMarketOperator } from "../../../../../entities/market-operator";
 import type { DeliveryType } from "../../../../../entities/order/types/order";
 import { cx } from "../../../../../shared/lib/cx";
 import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
@@ -24,6 +25,7 @@ import {
 } from "../../../../../shared/ui/primitives";
 import { CreateAlert } from "../CreateAlert";
 import { toDraft, toList, type AiDraft } from "./aiDraft";
+import { chosenOperatorId, suggestOperator } from "./aiOperator";
 import { activeAiWarnings, sourceAiWarnings } from "./aiWarnings";
 import { evalPreview, isItemResolved, needsPriceConfirm, type AiDraftOrder, type AiIssue } from "./evalPreview";
 
@@ -110,6 +112,13 @@ type AiPreviewCardProps = {
   areaLists?: boolean;
   /** Operator — so'rovchining o'zi (market operatori): maydon faqat o'qish uchun, «Siz — avtomatik yoziladi». */
   selfOperator?: { name: string | null };
+  /**
+   * Buyurtma marketining faol operatorlari (`GET /market-operators/selectable`, panel bir marta so'raydi). Bo'sh
+   * bo'lmasa «Operator» — ro'yxatdan tanlov (`operator_id`); yuklanmaguncha, bo'sh yoki xato — avvalgi erkin matn.
+   */
+  operators?: readonly SelectableMarketOperator[];
+  /** Ro'yxat yuklanmadi — erkin matn ostida izoh. */
+  operatorsFailed?: boolean;
   creating: boolean;
   /** Bugungi qabul yopiq — «Bu kartani yaratish» o'chiq (sabab sahifa ogohlantirishida). */
   createBlocked?: boolean;
@@ -133,6 +142,8 @@ const AiPreviewCard = ({
   regionsLoading,
   areaLists = true,
   selfOperator,
+  operators,
+  operatorsFailed = false,
   creating,
   createBlocked = false,
   onChange,
@@ -192,6 +203,36 @@ const AiPreviewCard = ({
     update({ items: order.items.map((item, i) => (i === itemIndex ? { ...item, ...patch } : item)) });
 
   const regionOptions: SelectOption[] = regions.map((region) => ({ value: String(region.id), label: areaLabel(region) }));
+
+  /**
+   * «Operator» (qo'lda formadagi `OperatorField` kabi): ro'yxat bo'lsa — tanlov, «Tanlanmagan» da ostida erkin matn
+   * («Ro'yxatda yo'q operator»), AI o'qigan ism ro'yxatdagi operatorga mos kelsa — «Tanlash» taklifi (avtomatik
+   * EMAS). Tanlansa `operator` — uning ismi; «Tanlanmagan» ga qaytsa — AI o'qigan matn.
+   */
+  const operatorList = operators ?? [];
+  const hasOperatorList = operatorList.length > 0;
+  const pickedOperatorId = chosenOperatorId(order, operators);
+  const operatorSuggestion = hasOperatorList && !pickedOperatorId ? suggestOperator(order.operator, operatorList) : null;
+  const operatorOptions: SelectOption[] = [
+    { value: "", label: t("operatorSelect.none") },
+    ...operatorList.map((operator) => ({ value: operator.id, label: operator.name })),
+  ];
+  const pickOperator = (id: string) => {
+    const picked = operatorList.find((operator) => operator.id === id);
+    update(
+      picked
+        ? { operator_id: picked.id, operator: picked.name }
+        : { operator_id: null, operator: source.operator ?? "" },
+    );
+  };
+  const operatorTextInput = (
+    <TextInput
+      personName
+      value={order.operator ?? ""}
+      onValueChange={(value) => update({ operator: value })}
+      placeholder={t("operatorPlaceholder")}
+    />
+  );
 
   /**
    * Tuman ro'yxati: AI takliflari ENG TEPADA alohida guruhda, qolganlari «Barcha tumanlar» guruhida.
@@ -659,14 +700,62 @@ const AiPreviewCard = ({
             <Field label={t("operator")} id={`${idPrefix}-operator`} hint={t("operatorCreate.operatorAuto")}>
               <TextInput value={selfOperator.name?.trim() || t("operatorCreate.operatorYou")} readOnly />
             </Field>
+          ) : hasOperatorList ? (
+            <>
+              <Field
+                label={t("operator")}
+                labelAs="span"
+                id={`${idPrefix}-operator-id`}
+                hint={pickedOperatorId ? t("operatorSelect.pickedHint") : undefined}
+              >
+                <Select
+                  name={`${idPrefix}-operator-id`}
+                  options={operatorOptions}
+                  value={pickedOperatorId}
+                  onChange={(next) => pickOperator(next ?? "")}
+                />
+              </Field>
+              {pickedOperatorId ? null : (
+                <Field
+                  label={t("operatorSelect.otherLabel")}
+                  id={`${idPrefix}-operator`}
+                  hint={hints(
+                    // Ism yozilgan, lekin ro'yxatdan tanlanmagan — buyurtma operatorsiz, komissiya yozilmaydi.
+                    order.operator?.trim() && !operatorSuggestion ? (
+                      <WarningHint key="text-only">{t("aiOperatorTextOnly")}</WarningHint>
+                    ) : null,
+                    warningFor("operator"),
+                  )}
+                >
+                  {operatorTextInput}
+                  {operatorSuggestion ? (
+                    <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-action-soft px-2.5 py-2 text-[13px] font-semibold text-text">
+                      <span className="min-w-0 flex-[1_1_160px]">
+                        {t("aiOperatorSuggest", { name: operatorSuggestion.name })}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        aria-label={t("aiOperatorSuggestPickAria", { name: operatorSuggestion.name })}
+                        onClick={() => pickOperator(operatorSuggestion.id)}
+                      >
+                        {t("aiOperatorSuggestPick")}
+                      </Button>
+                    </div>
+                  ) : null}
+                </Field>
+              )}
+            </>
           ) : (
-            <Field label={t("operator")} id={`${idPrefix}-operator`} hint={hints(warningFor("operator"))}>
-              <TextInput
-                personName
-                value={order.operator ?? ""}
-                onValueChange={(value) => update({ operator: value })}
-                placeholder={t("operatorPlaceholder")}
-              />
+            <Field
+              label={t("operator")}
+              id={`${idPrefix}-operator`}
+              hint={hints(
+                operatorsFailed ? <span key="failed">{t("operatorSelect.loadFailed")}</span> : null,
+                warningFor("operator"),
+              )}
+            >
+              {operatorTextInput}
             </Field>
           )}
 
