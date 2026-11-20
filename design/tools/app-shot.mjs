@@ -126,6 +126,8 @@ const profile = (themeName) => ({
     ...(branchType
       ? { branch_id: '1', branch_type: branchType, branch: { id: '1', name: 'Namuna filiali', type: branchType, branch_type: branchType } }
       : {}),
+    // BE #738 `--tag rollback`: menejerning sotish / bekor (va zaxira qaytarish) huquqi.
+    ...(ROLLBACK_SHOT && role === 'manager' ? { can_sell_cancel: true } : {}),
     // MO-2: market operatori — marketi va komissiyasi («Daromadim» → «Stavkam», maket `market_operator-earnings`).
     ...(role === 'market_operator' ? { market_id: '1', commission_type: 'percent', commission_value: '5.00' } : {}),
   },
@@ -813,10 +815,61 @@ const managerMarketsMock = (path, query) => {
   };
 };
 
+/**
+ * BE #738 (ega qarorlari D1–D4) — «Qaytarish» faqat server `rollback.allowed` dan. `--tag rollback`: menejer ro'yxatida
+ * ruxsat bor (№10302), ruxsat yo'q — `SUPERADMIN_ONLY` (№10301), «Bekor — jo'natilgan» — `PARCEL_NOT_IN_BRANCH`
+ * (№10300) va noma'lum — `rollback: null`, zaxira qoida (№10298) qatorlari; `GET orders/:id` — o'sha buyurtma.
+ *   npm run app:shot -- /orders /orders/edit/10301 /orders/edit/10302 --role manager --tag rollback
+ */
+const ROLLBACK_SHOT = Boolean(tagArg?.startsWith('rollback'));
+const rollbackShotOrder = (id, name, over = {}) => ({
+  id, order_number: `EL-${id}`, qr_code_token: `tok-${id}`, createdAt: '2026-11-19T08:00:00.000Z',
+  created_at: '2026-11-19T08:00:00.000Z', status: 'sold', sold_at: '1784557174975', total_price: 96000, to_be_paid: 0,
+  paid_amount: 96000, where_deliver: 'address', product_quantity: 1, post_id: '35', holder_type: 'COURIER',
+  holder_branch_id: '1', holder_courier_id: '93', courier_id: '93', branch_id: '1', comment: null,
+  address: 'Termiz, Mustaqillik 5', market: { id: '37', name: 'Chilonzor Market' },
+  customer: { id: `c-${id}`, name, phone_number: '+998998124011' },
+  district: { id: '5', name: 'Termiz tumani', region: { name: 'Surxondaryo' } }, region: { name: 'Surxondaryo' },
+  items: [], ...over,
+});
+const ROLLBACK_SHOT_ORDERS = [
+  rollbackShotOrder('10302', 'Malika Yusupova', { rollback: { allowed: true, code: null, message: null } }),
+  rollbackShotOrder('10301', 'Bekzod Aliyev', {
+    rollback: { allowed: false, code: 'SUPERADMIN_ONLY', message: "Buyurtma puli bosh ofisga o'tgan — faqat superadmin qaytara oladi" },
+  }),
+  rollbackShotOrder('10300', 'Shahnoza Ergasheva', {
+    status: 'cancelled', transport_status: 'cancelled (sent)', holder_type: 'HQ',
+    rollback: {
+      allowed: false, code: 'PARCEL_NOT_IN_BRANCH',
+      message: "Posilka filialdan jo'natilgan (bekorlar paketi, pochta, HQ yoki market) — qaytarib bo'lmaydi",
+    },
+  }),
+  rollbackShotOrder('10298', 'Nodira Saidova', { rollback: null }),
+  rollbackShotOrder('10297', 'Farrux Yo\'ldoshev', {
+    status: 'waiting', sold_at: null, paid_amount: 0, to_be_paid: 96000, holder_type: 'BRANCH', holder_courier_id: null,
+    courier_id: null, rollback: { allowed: false, code: 'STATUS_NOT_ROLLBACKABLE', message: 'Rollback mumkin emas (status: waiting)' },
+  }),
+];
+const rollbackShotMock = (path) => {
+  if (!ROLLBACK_SHOT) return null;
+  if (path === 'orders') {
+    const total = ROLLBACK_SHOT_ORDERS.length;
+    return { statusCode: 200, data: ROLLBACK_SHOT_ORDERS, meta: { page: 1, limit: 10, total, totalPages: 1 }, total };
+  }
+  if (path === 'orders/status-counts') {
+    return { statusCode: 200, data: { all: 5, waiting: 1, sold: 3, cancelled: 1, by_status: {} } };
+  }
+  const detail = /^orders\/(\d+)$/.exec(path);
+  const order = detail && ROLLBACK_SHOT_ORDERS.find((item) => item.id === detail[1]);
+  return order ? { statusCode: 200, data: order } : null;
+};
+
 const mockBody = (path, themeName, query) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
   const managerMarkets = managerMarketsMock(path, query);
   if (managerMarkets) return managerMarkets;
+  const rollbackShot = rollbackShotMock(path);
+  if (rollbackShot) return rollbackShot;
   if (path === 'auth/sessions') return sessionsMock();
   if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path, query) ?? { statusCode: 200, data: {} };
   if (path === 'finance/cashbox/expense-categories') return expenseCategoriesMock();
