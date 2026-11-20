@@ -24,7 +24,7 @@ describe("shift automation contract (y8Tqm9Ap, gWI4gYkw)", () => {
         account_check_enabled: true,
         cards: [],
         auto_close: { enabled: true, times: ["23:00", "14:00", "14:00", "25:00", 9], scope: "main+branches", warn_before_min: 0 },
-        report: { recipients: { superadmin: { telegram: true, in_app: false }, couriers: {} }, format: "xlsx" },
+        report: { recipients: { superadmin: { telegram: true, in_app: false }, couriers: {}, branches: { telegram: true } }, format: "xlsx" },
       },
     });
     expect(settings.auto_close).toEqual({ enabled: true, times: ["14:00", "23:00"], scope: "main+branches", warn_before_min: 0 });
@@ -33,6 +33,7 @@ describe("shift automation contract (y8Tqm9Ap, gWI4gYkw)", () => {
         superadmin: { telegram: true, in_app: false },
         couriers: { telegram: false, in_app: false },
         markets: { telegram: false, in_app: false },
+        branches: { telegram: true, in_app: false },
       },
       format: "xlsx",
     });
