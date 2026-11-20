@@ -46,11 +46,17 @@ export type SelectableMarketOperator = {
   name: string;
 };
 
-/** `POST /market-operators` tanasi — faqat 3 maydon (`forbidNonWhitelisted`: komissiya alohida PATCH bilan). */
+/**
+ * `POST /market-operators` tanasi (`forbidNonWhitelisted`). Komissiya — ixtiyoriy, AYNI so'rovda (backend B3ZtzCCx:
+ * operator va komissiya bitta yozuvda, atomik; ikkalasi BIRGA yoki hech biri). Ilgari ikkinchi `PATCH :id/commission`
+ * bilan yozilardi — u yiqilsa operator komissiyasiz qolib, sotuvlarida komissiya yozilmasdi.
+ */
 export type CreateMarketOperatorRequest = {
   name: string;
   phone_number: string;
   password: string;
+  commission_type?: CommissionType;
+  commission_value?: number;
 };
 
 /** `PATCH /market-operators/:id/commission`; ikkalasi `null` — komissiyani olib tashlash. */

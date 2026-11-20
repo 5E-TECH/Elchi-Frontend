@@ -115,10 +115,7 @@
     "failedText": "Ma'lumotlarni tekshirib, qaytadan urinib ko'ring.",
     "blocked": "Market bloklangan — operator qo'shib bo'lmaydi",
     "created": "Operator qo'shildi",
-    "createdText": "{{name}} endi shu telefon va parol bilan tizimga kira oladi.",
-    "commissionFailed": "Operator qo'shildi, komissiya saqlanmadi",
-    "commissionFailedText": "{{name}} uchun komissiyani qaytadan belgilang — ungacha daromad yozilmaydi.",
-    "setCommission": "Belgilash"
+    "createdText": "{{name}} endi shu telefon va parol bilan tizimga kira oladi."
   },
   "commissionDialog": {
     "title": "Komissiya",
