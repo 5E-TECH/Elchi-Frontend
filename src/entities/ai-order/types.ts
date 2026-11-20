@@ -49,6 +49,40 @@ export type AiPreviewItem = {
    * qo'lda yig'iladi (`toConfirmItem`), bayroq serverga ketmaydi; qatorda «AI o'qidi» o'rniga «Qo'lda qo'shildi».
    */
   added_manually?: boolean;
+  /**
+   * AI javobidagi o'rni (`items[]` indeksi). Backend emas — FRONTEND `toDraft` da yozadi: operator qator o'chirsa
+   * yoki qo'shsa ham `qty_check.item_index` / `duplicate_items.item_indexes` to'g'ri qatorga bog'lanadi.
+   */
+  source_index?: number;
+};
+
+/**
+ * P1-7 (backend `order-service/src/ai/ai-preview.types.ts` → `AiCheck`): ai-parse `orders[].checks`.
+ * ⚠️ Ro'yxat kengayadi — noma'lum `code` e'tiborsiz qoldiriladi (`normalizeAiChecks`).
+ */
+export type AiCheck =
+  | { code: "district_low_confidence" }
+  | { code: "price_check"; kind: "mismatch" | "too_high"; mentions: number[] }
+  | { code: "qty_check"; item_index: number }
+  | { code: "duplicate_items"; item_indexes: number[] }
+  | { code: "phone_is_market" }
+  | { code: "same_phone_multi"; other_index: number };
+
+/**
+ * Faqat shu ikkitasi BLOKLAYDI (ega qarori 2026-11-14, backend `AI_BLOCKING_CHECK_CODES`): ai-confirm ularni
+ * `orders[].ack_checks` da kutadi, aks holda 409 `CHECKS_NOT_ACKNOWLEDGED`. Qolganlari — yumshoq eslatma.
+ */
+export const AI_BLOCKING_CHECK_CODES = ["district_low_confidence", "price_check"] as const;
+export type AiBlockingCheckCode = (typeof AI_BLOCKING_CHECK_CODES)[number];
+
+/** Tuman qanday aniqlangani (faqat tuman avto-tanlanganda; aks holda `null`). */
+export type AiDistrictMatch = {
+  /** `exact` | `alias` | `address` | `fuzzy` | `llm` (kengayishi mumkin). */
+  method: string;
+  /** AI o'qigan tuman matni (≤ 80 belgi). */
+  ai_text: string | null;
+  /** 0..1 — faqat `fuzzy`/`address`. */
+  score: number | null;
 };
 
 /**
@@ -113,6 +147,22 @@ export type AiPreviewOrder = {
   index?: number;
   /** Noaniq maydonlar (bo'sh massiv / yo'q — ogohlantirish yo'q). */
   warnings?: AiPreviewWarning[];
+  /** P1-7: tuman qanday aniqlangani («AI o'qigan: «Urgut» → Urgut tumani»). Eski backend'da yo'q. */
+  district_match?: AiDistrictMatch | null;
+  /** P1-7: viloyat matnda aytilmagan, AI uni tumandan chiqargan. Ishora: `region_inferred || !region_given`. */
+  region_inferred?: boolean;
+  /** P1-7: AI tekshiruvlari (bloklovchi va yumshoq). Eski backend'da yo'q — tekshiruvsiz. */
+  checks?: AiCheck[];
+  /**
+   * Operator KO'RIB tasdiqlagan bloklovchi kodlar («Tuman to'g'ri, tasdiqlayman»). Backend emas — FRONTEND yozadi;
+   * tasdiqlashda faqat hozir talab qilinadiganlari `orders[].ack_checks` bo'lib ketadi (`ackChecksToSend`).
+   */
+  acked_checks?: AiBlockingCheckCode[];
+  /**
+   * Server 409 `CHECKS_NOT_ACKNOWLEDGED` da shu buyurtma uchun talab qilgan kodlar — frontend ularni kartada
+   * MAJBURAN so'raydi (tahrir istisnosidan qat'i nazar). FRONTEND yozadi, serverga ketmaydi.
+   */
+  server_required_acks?: AiBlockingCheckCode[];
 };
 
 export type AiParseResponse = {
@@ -194,6 +244,11 @@ export type AiConfirmOrder = {
    * va server tomonidagi audit (`edited_fields`: operator nimani o'zgartirdi). Qayta yuborishda O'ZGARMAYDI.
    */
   ai_item_index?: number;
+  /**
+   * Operator ko'rib tasdiqlagan bloklovchi kodlar (`district_low_confidence`, `price_check`). Qaysi kod kerakligini
+   * server O'ZI biladi (preview snapshot'i); kerakli kod yo'q bo'lsa — butun so'rov 409 `CHECKS_NOT_ACKNOWLEDGED`.
+   */
+  ack_checks?: AiBlockingCheckCode[];
 };
 
 export type AiConfirmRequest = {

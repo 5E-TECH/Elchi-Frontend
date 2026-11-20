@@ -1,4 +1,10 @@
-import { toLocalPhone, toQuantity, type AiPreviewOrder } from "../../../../../entities/ai-order";
+import {
+  normalizeAiChecks,
+  normalizeDistrictMatch,
+  toLocalPhone,
+  toQuantity,
+  type AiPreviewOrder,
+} from "../../../../../entities/ai-order";
 import { normalizePersonName } from "../../../../../shared/lib/personName";
 import type { AiDraftOrder } from "./evalPreview";
 
@@ -55,12 +61,20 @@ export const toDraft = (source: AiPreviewOrder, key: string, draftId?: string, p
     // Operator faqat ODAM ro'yxatdan tanlaganda bog'lanadi — AI chiqishida bo'lsa ham e'tiborsiz.
     operator_id: null,
     where_deliver: source.where_deliver === "address" ? "address" : "center",
-    items: (source.items ?? []).map((item) => ({
+    items: (source.items ?? []).map((item, itemIndex) => ({
       ...item,
       product_id: idOrNull(item.product_id),
       quantity: toQuantity(item.quantity),
       candidates: item.candidates ?? [],
+      // `qty_check` / `duplicate_items` AI javobidagi o'ringa ishora qiladi — qator o'chsa ham bog'lanish saqlanadi.
+      source_index: itemIndex,
     })),
+    // P1-7: tekshiruvlar himoyalangan holda (noma'lum kod — tashlanadi); eski backend'da — tekshiruvsiz.
+    checks: normalizeAiChecks(source.checks),
+    district_match: normalizeDistrictMatch(source.district_match),
+    region_inferred: source.region_inferred === true,
+    acked_checks: [],
+    server_required_acks: [],
     price_confirmed: false,
     // Xarajat jurnalini yaratilgan buyurtmaga bog'lash uchun tasdiqlashda qaytadi.
     draft_id: draftId ?? null,

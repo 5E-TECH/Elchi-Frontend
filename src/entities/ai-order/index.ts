@@ -16,6 +16,7 @@ export {
   toQuantity,
   type AiOrderFormValues,
 } from "./mappers";
+export { isBlockingCheckCode, normalizeAiChecks, normalizeDistrictMatch } from "./checks";
 export {
   AI_IMAGE_MAX_BYTES,
   AI_IMAGES_TOTAL_MAX_BYTES,

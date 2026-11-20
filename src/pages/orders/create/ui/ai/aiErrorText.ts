@@ -1,9 +1,11 @@
 import { isCancel, type AxiosError } from "axios";
 import type { TFunction } from "i18next";
-import type {
-  AiConfirmFailureCode,
-  AiConfirmResult,
-  AiParseFailureReason,
+import {
+  isBlockingCheckCode,
+  type AiBlockingCheckCode,
+  type AiConfirmFailureCode,
+  type AiConfirmResult,
+  type AiParseFailureReason,
 } from "../../../../../entities/ai-order";
 import { getBackendErrorMessage } from "../../../../../shared/lib/backendError";
 
@@ -227,4 +229,54 @@ export const confirmHttpErrorText = (error: unknown, t: Translate): string => {
   if (status === 429) return t("aiThrottled");
   const detail = serverDetail(error);
   return detail ? t("aiCreateFailedWith", { detail }) : t("aiCreateFailed");
+};
+
+// ───────────────────────── ai-confirm: darvoza xatolari (AI ack, backend #658) ─────────────────
+
+/**
+ * Butun so'rov rad etilgan, HECH QAYSI buyurtma yaratilmagan holatlar (gateway xato konverti `{ statusCode, message,
+ * code, … }`, maydonlar `public-error-fields.ts` ro'yxatidan):
+ * - 409 `CHECKS_NOT_ACKNOWLEDGED` — `orders[{ index, missing }]` (`index` — so'rovdagi `orders[]` o'rni);
+ * - 503 `AI_CHECKS_UNAVAILABLE` — `retry_after_seconds` (+ `Retry-After`), qayta yuborish xavfsiz;
+ * - 400 `AI_DRAFT_REQUIRED` / `AI_DRAFT_NOT_FOUND` / `AI_DRAFT_ITEM_NOT_FOUND` — `indexes`.
+ * Boshqa xato — `null` (avvalgi umumiy ishlov, `confirmHttpErrorText`).
+ */
+export type AiConfirmGate =
+  | { kind: "ack"; orders: { index: number; missing: AiBlockingCheckCode[] }[] }
+  | { kind: "unavailable"; retryAfterSeconds: number }
+  | { kind: "draft"; indexes: number[] };
+
+const AI_DRAFT_GATE_CODES = new Set(["AI_DRAFT_REQUIRED", "AI_DRAFT_NOT_FOUND", "AI_DRAFT_ITEM_NOT_FOUND"]);
+const DEFAULT_RETRY_AFTER_SECONDS = 5;
+
+const toIndexes = (value: unknown): number[] =>
+  Array.isArray(value) ? value.filter((item): item is number => Number.isInteger(item) && item >= 0) : [];
+
+export const confirmGateError = (error: unknown): AiConfirmGate | null => {
+  const response = (error as AxiosError | undefined)?.response;
+  const body = response?.data;
+  if (!body || typeof body !== "object") return null;
+  const { code, orders, indexes, retry_after_seconds: retryAfter } = body as Record<string, unknown>;
+
+  if (code === "CHECKS_NOT_ACKNOWLEDGED") {
+    const list = Array.isArray(orders) ? orders : [];
+    return {
+      kind: "ack",
+      orders: list.flatMap((entry) => {
+        const { index, missing } = (entry ?? {}) as { index?: unknown; missing?: unknown };
+        const codes = Array.isArray(missing) ? missing.filter(isBlockingCheckCode) : [];
+        return Number.isInteger(index) && (index as number) >= 0 && codes.length > 0
+          ? [{ index: index as number, missing: codes }]
+          : [];
+      }),
+    };
+  }
+  if (code === "AI_CHECKS_UNAVAILABLE") {
+    const fromBody = Number(retryAfter);
+    const fromHeader = Number(response?.headers?.["retry-after"]);
+    const seconds = [fromBody, fromHeader].find((value) => Number.isFinite(value) && value > 0);
+    return { kind: "unavailable", retryAfterSeconds: Math.ceil(seconds ?? DEFAULT_RETRY_AFTER_SECONDS) };
+  }
+  if (typeof code === "string" && AI_DRAFT_GATE_CODES.has(code)) return { kind: "draft", indexes: toIndexes(indexes) };
+  return null;
 };

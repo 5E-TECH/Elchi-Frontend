@@ -15,6 +15,11 @@ const CONFIRM_DIALOG_THRESHOLD = 5;
 type AiConfirmBarProps = {
   readyOrders: AiDraftOrder[];
   notReadyCount: number;
+  /**
+   * `notReadyCount` ichidan: hamma maydon to'ldirilgan, faqat AI ogohlantirishi (tuman / summa) tasdiq kutmoqda
+   * (maket `*-create-ai-preview-checks`: «N ta karta tasdiq kutmoqda», «Tasdiq kutmoqda (N)»).
+   */
+  awaitingAckCount?: number;
   pending: boolean;
   /** Bugungi qabul yopiq — «Tayyorlarini yaratish» o'chiq (sabab sahifa ogohlantirishida). */
   blocked?: boolean;
@@ -38,6 +43,7 @@ type AiConfirmBarProps = {
 const AiConfirmBar = ({
   readyOrders,
   notReadyCount,
+  awaitingAckCount = 0,
   pending,
   blocked = false,
   onConfirm,
@@ -49,6 +55,8 @@ const AiConfirmBar = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const readyCount = readyOrders.length;
   const disabled = readyCount === 0 || blocked;
+  const ackCount = Math.min(awaitingAckCount, notReadyCount);
+  const unfilledCount = notReadyCount - ackCount;
 
   const handleClick = () => {
     if (disabled || pending) return;
@@ -73,10 +81,16 @@ const AiConfirmBar = ({
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
           <p role="status" className="min-w-0 text-sm font-semibold">
             <span className="text-success-fg">{t("aiReadyCount", { count: readyCount })}</span>
-            {notReadyCount > 0 ? (
+            {unfilledCount > 0 ? (
               <>
                 <span className="text-text-muted"> · </span>
-                <span className="text-warning-fg">{t("aiNotReadyCount", { count: notReadyCount })}</span>
+                <span className="text-warning-fg">{t("aiNotReadyCount", { count: unfilledCount })}</span>
+              </>
+            ) : null}
+            {ackCount > 0 ? (
+              <>
+                <span className="text-text-muted"> · </span>
+                <span className="text-warning-fg">{t("aiAwaitingAckCount", { count: ackCount })}</span>
               </>
             ) : null}
           </p>
@@ -86,10 +100,12 @@ const AiConfirmBar = ({
                 variant="secondary"
                 leftIcon={TriangleAlert}
                 onClick={onJumpToUnready}
-                title={t("aiJumpToUnreadyHint")}
+                title={t(unfilledCount > 0 ? "aiJumpToUnreadyHint" : "aiJumpToAckHint")}
                 className="flex-[1_0_auto]"
               >
-                {t("aiJumpToUnready", { count: notReadyCount })}
+                {unfilledCount > 0
+                  ? t("aiJumpToUnready", { count: unfilledCount })
+                  : t("aiJumpToAck", { count: ackCount })}
               </Button>
             ) : null}
             <Button

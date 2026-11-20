@@ -20,7 +20,8 @@ import AiConfirmBar from "./AiConfirmBar";
 import AiCreatedList from "./AiCreatedList";
 import AiInputPanel from "./AiInputPanel";
 import AiPreviewCard, { type AiAreaItem, type AiProductOption } from "./AiPreviewCard";
-import { confirmFailureText, confirmHttpErrorText } from "./aiErrorText";
+import { ackChecksToSend } from "./aiChecks";
+import { confirmFailureText, confirmGateError, confirmHttpErrorText, type AiConfirmGate } from "./aiErrorText";
 import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "./aiDraft";
 import { chosenOperatorId, isOperatorRejectedResult } from "./aiOperator";
 import { evalPreview } from "./evalPreview";
@@ -127,8 +128,27 @@ const AiCreatePanel = ({
   // «Mavjud (#N)» kartasi (`duplicate_recent`) na tayyorlar, na to'ldirilmaganlar qatorida — u yuborilmaydi.
   const pendingDrafts = drafts.filter((draft) => !draft.existingOrderId);
   const previewRules = { regionRequired: areaLists };
-  const readyDrafts = pendingDrafts.filter((draft) => evalPreview(draft.order, previewRules).ready);
+  // AI tekshiruvlari (`source` — asl chiqish) bilan: bloklovchi ogohlantirish tasdiqlanmagan karta tayyor emas.
+  const evalDraft = (draft: AiDraft) => evalPreview(draft.order, { ...previewRules, source: draft.source });
+  const evaluated = pendingDrafts.map((draft) => ({ draft, ...evalDraft(draft) }));
+  const readyDrafts = evaluated.filter((entry) => entry.ready).map((entry) => entry.draft);
+  /** Hamma maydon to'ldirilgan, faqat AI ogohlantirishi tasdiq kutmoqda (maket «Tasdiq kutmoqda (N)»). */
+  const awaitingAckCount = evaluated.filter((entry) => entry.issues.length === 0 && entry.pendingAcks.length > 0).length;
   const hasUnconfirmedReady = readyDrafts.length > 0;
+
+  /**
+   * `same_phone_multi`: shu telefon yana qaysi kartada (tartib raqami). Faqat o'sha buyurtma hali kartalar
+   * orasida bo'lsa va ikkala telefon hamon bir xil bo'lsa — aks holda eslatma ko'rinmaydi.
+   */
+  const samePhoneCardOf = (draft: AiDraft): number | null => {
+    const check = draft.order.checks?.find((item) => item.code === "same_phone_multi");
+    const phone = draft.order.phone_number;
+    if (check?.code !== "same_phone_multi" || !phone) return null;
+    const position = drafts.findIndex(
+      (other) => other.key !== draft.key && other.order.index === check.other_index && other.order.phone_number === phone,
+    );
+    return position >= 0 ? position + 1 : null;
+  };
 
   /** Operator tanlanmagan, lekin AI o'qigan ism ro'yxatdagi BITTA operatorga mos kartalar — bitta tugma bilan. */
   const operatorSuggestions = pendingDrafts.flatMap((draft) => {
@@ -236,7 +256,7 @@ const AiCreatePanel = ({
    * ko'r-ko'rona qayta yuborish dublikat buyurtma demakdir.
    */
   const submit = (targets: AiDraft[]) => {
-    const readyTargets = targets.filter((draft) => !draft.existingOrderId && evalPreview(draft.order, previewRules).ready);
+    const readyTargets = targets.filter((draft) => !draft.existingOrderId && evalDraft(draft).ready);
     if (blocked || submittingRef.current || confirm.isPending || readyTargets.length === 0) return;
     submittingRef.current = true;
     setConfirmError("");
@@ -244,12 +264,14 @@ const AiCreatePanel = ({
 
     const payload = {
       ...buildAiConfirmPayload(
-        readyTargets.map((draft) =>
-          selfOperator
-            ? { ...draft.order, operator: "", operator_id: null }
+        readyTargets.map((draft) => {
+          // AI ack: faqat hozir talab qilinadigan va operator KO'RIB belgilagan kodlar.
+          const order = { ...draft.order, acked_checks: ackChecksToSend(draft.order, draft.source) };
+          return selfOperator
+            ? { ...order, operator: "", operator_id: null }
             : // Eskirgan tanlov (market almashgan / operator o'chirilgan) yuborilmaydi — `chosenOperatorId`.
-              { ...draft.order, operator_id: chosenOperatorId(draft.order, operators) || null },
-        ),
+              { ...order, operator_id: chosenOperatorId(draft.order, operators) || null };
+        }),
         { marketId, includeMarketId: !isMarketRole },
       ),
       request_id: crypto.randomUUID(),
@@ -287,6 +309,12 @@ const AiCreatePanel = ({
         setResultSummary({ created: createdDrafts.length, failed: failed.size });
       },
       onError: (error) => {
+        // AI ack darvozasi (409/503/400): butun so'rov rad etilgan, HECH NARSA yaratilmagan — kartalar belgilanadi.
+        const gate = confirmGateError(error);
+        if (gate) {
+          applyConfirmGate(gate, readyTargets);
+          return;
+        }
         const status = (error as AxiosError).response?.status;
         // Natija noma'lum — ro'yxat yangilanadi, operator o'sha yerdan tekshiradi.
         if (!status || status >= 500) void queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -299,6 +327,46 @@ const AiCreatePanel = ({
   };
 
   /**
+   * AI ack darvozasi javobi → kartalar. `index` — yuborilgan ro'yxat (`readyTargets`) o'rni.
+   * - 409: server talab qilgan kodlar kartada MAJBURAN so'raladi (`server_required_acks`), eski belgi olinadi;
+   * - 503: hech narsa yaratilmagan, qayta yuborish xavfsiz — necha soniyadan keyin;
+   * - 400 (draft): AI natijasi topilmadi — qayta tahlil yoki qo'lda.
+   */
+  const applyConfirmGate = (gate: AiConfirmGate, sent: AiDraft[]) => {
+    if (gate.kind === "unavailable") {
+      setConfirmError(t("aiChecksUnavailable", { seconds: gate.retryAfterSeconds }));
+      return;
+    }
+    if (gate.kind === "draft") {
+      const keys = new Set(gate.indexes.map((index) => sent[index]?.key).filter(Boolean));
+      setDrafts((prev) =>
+        prev.map((draft) => (keys.has(draft.key) ? { ...draft, createError: t("aiDraftNotFound") } : draft)),
+      );
+      setConfirmError(t("aiDraftNotFound"));
+      return;
+    }
+    const missingByKey = new Map(
+      gate.orders.flatMap(({ index, missing }) => (sent[index] ? [[sent[index].key, missing] as const] : [])),
+    );
+    setDrafts((prev) =>
+      prev.map((draft) => {
+        const missing = missingByKey.get(draft.key);
+        if (!missing) return draft;
+        return {
+          ...draft,
+          createError: t("aiAckMissingCard"),
+          order: {
+            ...draft.order,
+            server_required_acks: [...new Set([...(draft.order.server_required_acks ?? []), ...missing])],
+            acked_checks: (draft.order.acked_checks ?? []).filter((code) => !missing.includes(code)),
+          },
+        };
+      }),
+    );
+    setConfirmError(t("aiAckMissingSummary", { count: Math.max(missingByKey.size, 1) }));
+  };
+
+  /**
    * "To'ldirilmagan (N)": ekran markazidan PASTDAGI birinchi tayyor bo'lmagan
    * kartaga o'tadi; pastda qolmagan bo'lsa birinchisiga qaytadi (aylana).
    * Skroll `<main>` da — `scrollIntoView` shunga ham ishlaydi.
@@ -306,9 +374,12 @@ const AiCreatePanel = ({
    * markazlashda uning boshi (holat va kamchiliklar ro'yxati) ekrandan chiqib ketadi.
    */
   const jumpToUnready = () => {
-    const cards = Array.from(
+    const notReady = Array.from(
       cardsRef.current?.querySelectorAll<HTMLElement>('[data-testid="ai-preview-card"][data-ready="false"]') ?? [],
     );
+    // Avval to'ldirilmaganlar («To'ldirilmagan (N)»), ular qolmasa — tasdiq kutayotganlar («Tasdiq kutmoqda (N)»).
+    const unfilled = notReady.filter((card) => !card.hasAttribute("data-awaiting"));
+    const cards = unfilled.length > 0 ? unfilled : notReady;
     if (cards.length === 0) return;
     const middle = window.innerHeight / 2;
     const next = cards.find((card) => card.getBoundingClientRect().top > middle) ?? cards[0];
@@ -373,6 +444,7 @@ const AiCreatePanel = ({
               selfOperator={selfOperator}
               operators={operators}
               operatorsFailed={operatorsFailed}
+              samePhoneCard={samePhoneCardOf(draft)}
               creating={confirm.isPending}
               createBlocked={blocked}
               onChange={(order) => updateDraft(draft.key, order)}
@@ -387,6 +459,7 @@ const AiCreatePanel = ({
         <AiConfirmBar
           readyOrders={readyDrafts.map((draft) => draft.order)}
           notReadyCount={pendingDrafts.length - readyDrafts.length}
+          awaitingAckCount={awaitingAckCount}
           pending={confirm.isPending}
           blocked={blocked}
           onConfirm={() => submit(readyDrafts)}

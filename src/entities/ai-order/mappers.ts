@@ -1,4 +1,5 @@
 import { normalizePersonName } from "../../shared/lib/personName";
+import { isBlockingCheckCode } from "./checks";
 import { getUzbekistanPhoneDigits } from "../../shared/lib/phone";
 import {
   formatExtraNumber,
@@ -109,6 +110,8 @@ const toConfirmOrder = (preview: AiPreviewOrder): AiConfirmOrder => {
   // Mijoz va operator — shaxs ismi: har so'z bosh harfi katta (AI kichik harf bilan o'qigan bo'lsa ham).
   const operator = normalizePersonName(preview.operator);
   const operatorId = text(preview.operator_id);
+  // Faqat bloklovchi kodlar, takrorsiz (backend ≤10 ta, ortiqcha/yumshoq kodni e'tiborsiz qoldiradi).
+  const ackChecks = [...new Set((preview.acked_checks ?? []).filter(isBlockingCheckCode))];
 
   return {
     customer: {
@@ -131,6 +134,9 @@ const toConfirmOrder = (preview: AiPreviewOrder): AiConfirmOrder => {
     ...(preview.draft_id && { draft_id: preview.draft_id }),
     // vncdmXOy: preview o'rni — faqat `draft_id` bilan ma'noli (backend audit'i va barqaror kaliti).
     ...(preview.draft_id && isAiItemIndex(preview.index) && { ai_item_index: preview.index }),
+    // AI ack: operator kartada ko'rib tasdiqlagan tuman / summa ogohlantirishlari (chaqiruvchi faqat hozir
+    // talab qilinadiganini qoldiradi — `ackChecksToSend`).
+    ...(ackChecks.length > 0 && { ack_checks: ackChecks }),
   };
 };
 
