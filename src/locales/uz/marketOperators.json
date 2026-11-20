@@ -34,7 +34,8 @@
   "status": {
     "active": "Faol",
     "inactive": "Nofaol",
-    "inactiveHint": "Tizimga kira olmaydi"
+    "inactiveHint": "Tizimga kira olmaydi",
+    "deleted": "O'chirilgan"
   },
   "commission": {
     "percentHint": "Foiz · buyurtma narxidan",
@@ -61,7 +62,8 @@
     "setCommission": "Komissiya belgilash",
     "changeCommission": "Komissiyani o'zgartirish",
     "delete": "O'chirish",
-    "recordPayment": "To'lov yozish"
+    "recordPayment": "To'lov yozish",
+    "missingEarnings": "O'tgan sotuvlarga hisoblash"
   },
   "commissionForm": {
     "type": "Komissiya turi",
@@ -115,10 +117,7 @@
     "failedText": "Ma'lumotlarni tekshirib, qaytadan urinib ko'ring.",
     "blocked": "Market bloklangan — operator qo'shib bo'lmaydi",
     "created": "Operator qo'shildi",
-    "createdText": "{{name}} endi shu telefon va parol bilan tizimga kira oladi.",
-    "commissionFailed": "Operator qo'shildi, komissiya saqlanmadi",
-    "commissionFailedText": "{{name}} uchun komissiyani qaytadan belgilang — ungacha daromad yozilmaydi.",
-    "setCommission": "Belgilash"
+    "createdText": "{{name}} endi shu telefon va parol bilan tizimga kira oladi."
   },
   "commissionDialog": {
     "title": "Komissiya",
@@ -211,7 +210,12 @@
       "recordFor": "{{name}} uchun to'lov yozish",
       "emptyTitle": "Hali operator yo'q",
       "emptyDescription": "Operator qo'shing — uning daromadi va to'lovlari shu yerda ko'rinadi.",
-      "toOperators": "Operatorlarga o'tish"
+      "toOperators": "Operatorlarga o'tish",
+      "orders": "Buyurtmalar",
+      "ordersValue": "{{sold}} sotilgan · {{pending}} yo'lda",
+      "ordersShort": "Buyurtmalar: {{value}}",
+      "earnings": "Daromadlar",
+      "earningsFor": "{{name}} daromadlari"
     },
     "history": {
       "title": "To'lovlar tarixi",
@@ -306,7 +310,47 @@
       "notFound": "To'lov topilmadi — ro'yxat yangilandi.",
       "legacy": "Bu to'lov Elchi kassasidan qilingan — uni bekor qilib bo'lmaydi.",
       "failed": "Bekor qilib bo'lmadi. Qaytadan urinib ko'ring."
+    },
+    "earnings": {
+      "title": "{{name}} — daromadlar",
+      "description": "Komissiya buyurtma sotilganda, sotuv paytidagi stavka bilan yoziladi.",
+      "label": "{{name}} daromadlari",
+      "summary": "Ishlab topdi: {{amount}}.",
+      "pending": "Yo'lda yana {{value}} ta buyurtma bor — sotilsa komissiya yoziladi.",
+      "loading": "Daromadlar yuklanmoqda",
+      "order": "Buyurtma",
+      "orderId": "#{{id}}",
+      "orderTotal": "Buyurtma summasi",
+      "rate": "Stavka",
+      "amount": "Ulush",
+      "date": "Sana",
+      "rateLine": "{{total}} × {{rate}}",
+      "emptyTitle": "Hali daromad yo'q",
+      "emptyDescription": "Operator tanlangan buyurtmalar sotilganda komissiya shu yerda chiqadi.",
+      "pagination": "{{from}}–{{to}} / {{total}}"
     }
+  },
+  "missingEarnings": {
+    "title": "{{name}} — o'tgan sotuvlar",
+    "description": "Sotuv paytida stavka belgilanmagan bo'lsa, o'sha buyurtmalarga komissiya yozilmagan. Ularni hozirgi stavka bo'yicha hisoblash mumkin — Elchi kassasiga ta'sir qilmaydi.",
+    "loading": "Hisob yuklanmoqda",
+    "loadFailed": "Hisobni yuklab bo'lmadi. Oynani yopib, qaytadan oching.",
+    "soldOrders": "Sotilgan buyurtmalar",
+    "alreadyRecorded": "Komissiya yozilgan",
+    "missing": "Komissiya yozilmagan",
+    "rate": "Hozirgi stavka",
+    "noRate": "Belgilanmagan",
+    "amount": "Hisoblanadigan summa",
+    "willRecord": "«Hisoblash» bosilsa {{value}} ta buyurtmaga jami {{amount}} yoziladi. Avval yozilgan komissiyalar o'zgarmaydi.",
+    "nothing": "Hisoblanadigan buyurtma yo'q — barcha sotuvlarga komissiya yozilgan.",
+    "setRateFirst": "Avval operatorga komissiya belgilang — keyin o'tgan sotuvlarni hisoblash mumkin.",
+    "truncated": "Juda ko'p sotuv: bu safar oxirgi 5000 tasi hisoblanadi, qolgani — keyingi bosishda.",
+    "record": "Hisoblash",
+    "cancel": "Yopish",
+    "done": "{{name}}: {{value}} ta buyurtmaga komissiya yozildi",
+    "doneText": "Jami {{amount}} — «Ishlab topdi» ga qo'shildi.",
+    "failed": "Hisoblab bo'lmadi",
+    "failedText": "Qaytadan urinib ko'ring — yozilganlari takrorlanmaydi."
   },
   "unlinked": {
     "title": "Operatorga bog'lanmagan buyurtmalar: {{value}} ta",

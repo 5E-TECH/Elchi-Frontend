@@ -1,4 +1,5 @@
 export type {
+  MissingEarnings,
   MyOperatorBalance,
   MyOperatorPaymentList,
   OperatorAccountPageParams,
@@ -17,16 +18,19 @@ export type {
 } from "./model/types";
 export {
   cancelOperatorPayment,
+  getMissingEarnings,
   getMyOperatorBalance,
   getMyOperatorEarningsTotal,
   getMyOperatorPayments,
   getOperatorAccountBalance,
   getOperatorAccountEarnings,
   getOperatorAccountPayments,
+  getMarketOperatorEarnings,
   getOperatorBalances,
   getOperatorPayments,
   newOperatorPaymentKey,
   normalizeEarningsTotal,
+  normalizeMissingEarnings,
   normalizeMyOperatorBalance,
   normalizeMyOperatorPayments,
   normalizeOperatorBalance,
@@ -36,18 +40,22 @@ export {
   normalizeOperatorPayment,
   normalizeOperatorPaymentList,
   normalizeOperatorPaymentResult,
+  recordMissingEarnings,
   recordOperatorPayment,
 } from "./api/operatorPaymentApi";
 export {
   operatorPaymentKeys,
   useCancelOperatorPayment,
+  useMissingEarnings,
   useMyOperatorBalance,
   useMyOperatorEarningsTotal,
   useMyOperatorPayments,
   useOperatorAccountBalance,
   useOperatorAccountEarnings,
   useOperatorAccountPayments,
+  useMarketOperatorEarnings,
   useOperatorBalances,
   useOperatorPayments,
+  useRecordMissingEarnings,
   useRecordOperatorPayment,
 } from "./api/useOperatorPayments";

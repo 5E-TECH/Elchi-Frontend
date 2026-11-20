@@ -34,7 +34,8 @@
   "status": {
     "active": "Active",
     "inactive": "Inactive",
-    "inactiveHint": "Can't sign in"
+    "inactiveHint": "Can't sign in",
+    "deleted": "Deleted"
   },
   "commission": {
     "percentHint": "Percent · of the order price",
@@ -61,7 +62,8 @@
     "setCommission": "Set commission",
     "changeCommission": "Change commission",
     "delete": "Delete",
-    "recordPayment": "Record payment"
+    "recordPayment": "Record payment",
+    "missingEarnings": "Calculate for past sales"
   },
   "commissionForm": {
     "type": "Commission type",
@@ -115,10 +117,7 @@
     "failedText": "Check the details and try again.",
     "blocked": "The store is blocked — operators can't be added",
     "created": "Operator added",
-    "createdText": "{{name}} can now sign in with this phone and password.",
-    "commissionFailed": "Operator added, commission not saved",
-    "commissionFailedText": "Set the commission for {{name}} again — until then no earnings are recorded.",
-    "setCommission": "Set"
+    "createdText": "{{name}} can now sign in with this phone and password."
   },
   "commissionDialog": {
     "title": "Commission",
@@ -211,7 +210,12 @@
       "recordFor": "Record payment for {{name}}",
       "emptyTitle": "No operators yet",
       "emptyDescription": "Add an operator — their earnings and payments will appear here.",
-      "toOperators": "Go to operators"
+      "toOperators": "Go to operators",
+      "orders": "Orders",
+      "ordersValue": "{{sold}} sold · {{pending}} in progress",
+      "ordersShort": "Orders: {{value}}",
+      "earnings": "Earnings",
+      "earningsFor": "{{name}} earnings"
     },
     "history": {
       "title": "Payment history",
@@ -306,7 +310,47 @@
       "notFound": "Payment not found — the list was refreshed.",
       "legacy": "This payment was made from the Elchi cashbox — it cannot be cancelled.",
       "failed": "Could not cancel. Please try again."
+    },
+    "earnings": {
+      "title": "{{name}} — earnings",
+      "description": "Commission is recorded when an order is sold, at the rate in effect at the time of sale.",
+      "label": "{{name}} earnings",
+      "summary": "Earned: {{amount}}.",
+      "pending": "Orders still in progress: {{value}} — commission is recorded once they are sold.",
+      "loading": "Loading earnings",
+      "order": "Order",
+      "orderId": "#{{id}}",
+      "orderTotal": "Order total",
+      "rate": "Rate",
+      "amount": "Share",
+      "date": "Date",
+      "rateLine": "{{total}} × {{rate}}",
+      "emptyTitle": "No earnings yet",
+      "emptyDescription": "Commission appears here once orders with this operator are sold.",
+      "pagination": "{{from}}–{{to}} of {{total}}"
     }
+  },
+  "missingEarnings": {
+    "title": "{{name}} — past sales",
+    "description": "If no rate was set at the time of sale, no commission was recorded for those orders. You can calculate it at the current rate — Elchi's cashbox is not affected.",
+    "loading": "Loading the calculation",
+    "loadFailed": "Couldn't load the calculation. Close the window and open it again.",
+    "soldOrders": "Sold orders",
+    "alreadyRecorded": "Commission recorded",
+    "missing": "Commission missing",
+    "rate": "Current rate",
+    "noRate": "Not set",
+    "amount": "Amount to record",
+    "willRecord": "Pressing “Calculate” records {{amount}} in total for {{value}} orders. Commissions recorded earlier don't change.",
+    "nothing": "Nothing to calculate — every sale already has its commission.",
+    "setRateFirst": "Set a commission for the operator first — then past sales can be calculated.",
+    "truncated": "Too many sales: the latest 5000 are calculated now, the rest on the next click.",
+    "record": "Calculate",
+    "cancel": "Close",
+    "done": "{{name}}: commission recorded for {{value}} orders",
+    "doneText": "{{amount}} in total — added to “Earned”.",
+    "failed": "Couldn't calculate",
+    "failedText": "Try again — what's already recorded won't repeat."
   },
   "unlinked": {
     "title": "Orders not linked to an operator: {{value}}",

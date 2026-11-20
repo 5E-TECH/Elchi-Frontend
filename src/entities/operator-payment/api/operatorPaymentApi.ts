@@ -1,6 +1,7 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type {
+  MissingEarnings,
   MyOperatorBalance,
   MyOperatorPaymentList,
   OperatorAccountPageParams,
@@ -50,6 +51,13 @@ const toDay = (value: unknown): string | null => {
   return match ? match[1] : null;
 };
 
+/** Buyurtmalar soni: butun manfiy bo'lmagan son yoki `null` (maydon yo'q / noma'lum). */
+const toNullableCount = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(number) && number >= 0 ? number : null;
+};
+
 export const normalizeOperatorBalance = (value: unknown): OperatorBalance => {
   const item = asRecord(value) ?? {};
   const earned = toNumber(item.earned);
@@ -57,7 +65,10 @@ export const normalizeOperatorBalance = (value: unknown): OperatorBalance => {
   return {
     operatorId: toText(item.operator_id),
     operatorName: toText(item.operator_name),
-    status: item.status === "inactive" ? "inactive" : "active",
+    status: item.status === "deleted" ? "deleted" : item.status === "inactive" ? "inactive" : "active",
+    ordersTotal: toNullableCount(item.orders_total),
+    ordersSold: toNullableCount(item.orders_sold),
+    ordersPending: toNullableCount(item.orders_pending),
     earned,
     paid,
     balance: "balance" in item ? toNumber(item.balance) : earned - paid,
@@ -165,14 +176,20 @@ export const normalizeOperatorEarning = (value: unknown): OperatorEarning => {
   };
 };
 
-/** `{ rows, total, limit, offset }` (yoki `items`). */
+/** `{ rows, total, limit, offset }` (yoki `items`; market yo'li — `{ items, pagination: { total } }`). */
 export const normalizeOperatorEarnings = (value: unknown): OperatorEarningList => {
   const data = unwrap(value);
   const record = asRecord(data) ?? {};
+  const pagination = asRecord(record.pagination);
   const rows = Array.isArray(data) ? data : Array.isArray(record.rows) ? record.rows : Array.isArray(record.items) ? record.items : [];
   return {
     items: rows.map(normalizeOperatorEarning).filter((item) => item.id),
-    total: "total" in record ? toNumber(record.total) : rows.length,
+    total:
+      "total" in record
+        ? toNumber(record.total)
+        : pagination && "total" in pagination
+          ? toNumber(pagination.total)
+          : rows.length,
   };
 };
 
@@ -245,6 +262,51 @@ export const getOperatorAccountEarnings = async (
 ): Promise<OperatorEarningList> => {
   const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_EARNINGS(operatorId), { params });
   return normalizeOperatorEarnings(response.data);
+};
+
+/**
+ * 2026-11-20 — market: o'z operatori «Ishlab topdi» qatorlari (`GET finance/operator-payments/earnings`, o'chirilgan
+ * operatorniki ham; begona — 404).
+ */
+export const getMarketOperatorEarnings = async (
+  operatorId: string,
+  params: { page: number; limit: number },
+): Promise<OperatorEarningList> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENT_EARNINGS, {
+    params: { operator_id: operatorId, page: params.page, limit: params.limit },
+  });
+  return normalizeOperatorEarnings(response.data);
+};
+
+export const normalizeMissingEarnings = (value: unknown): MissingEarnings => {
+  const data = asRecord(unwrap(value)) ?? {};
+  const type = data.commission_type;
+  return {
+    soldOrders: toNumber(data.sold_orders),
+    alreadyRecorded: toNumber(data.already_recorded),
+    missing: toNumber(data.missing),
+    toRecord: toNumber(data.to_record),
+    amount: toNumber(data.amount),
+    commissionType: type === "percent" || type === "fixed" ? type : null,
+    commissionValue: toNumber(data.commission_value),
+    truncated: data.truncated === true,
+    created: toNumber(data.created),
+    createdAmount: toNumber(data.created_amount),
+  };
+};
+
+/** 2026-11-20 — oldindan ko'rish (hech narsa yozilmaydi). */
+export const getMissingEarnings = async (operatorId: string): Promise<MissingEarnings> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_MISSING_EARNINGS, {
+    params: { operator_id: operatorId },
+  });
+  return normalizeMissingEarnings(response.data);
+};
+
+/** 2026-11-20 — joriy stavka bilan yozish (takror bosish ikkinchi qator ochmaydi). */
+export const recordMissingEarnings = async (operatorId: string): Promise<MissingEarnings> => {
+  const response = await api.post(API_ENDPOINTS.FINANCE.OPERATOR_MISSING_EARNINGS, { operator_id: operatorId });
+  return normalizeMissingEarnings(response.data);
 };
 
 /** Har mantiqiy to'lov uchun yangi kalit. */

@@ -1,6 +1,6 @@
 // dizayn-v2: market-operators-list
 import { memo, useCallback, useMemo } from "react";
-import { HandCoins, Percent, Trash2 } from "lucide-react";
+import { Calculator, HandCoins, Percent, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { hasCommission, type MarketOperator } from "../../../entities/market-operator";
 import { cx } from "../../../shared/lib/cx";
@@ -31,6 +31,8 @@ type OperatorsTableProps = {
   onCommission: (operator: MarketOperator) => void;
   /** F2qp6FtE: «To'lov yozish» — operator tanlangan oyna (Elchi kassasiga ta'sir qilmaydi). */
   onRecordPayment?: (operator: MarketOperator) => void;
+  /** 2026-11-20 — «O'tgan sotuvlarga hisoblash» (faqat komissiyasi bor operatorda). */
+  onMissingEarnings?: (operator: MarketOperator) => void;
   onDelete: (operator: MarketOperator) => void;
 };
 
@@ -41,7 +43,8 @@ type OperatorsTableProps = {
  * (< 1024 yashirin) · kebab. Telefonda (< 768) kartalar: avatar 40, ism, telefon, komissiya va holat belgilari,
  * ostida «Ombordagi qoldiqni ko'radi» qatori, kebab 44 px. Nofaol operator ismi kulrang.
  */
-export const OperatorsTable = memo(({ rows, busy, onCommission, onRecordPayment, onDelete }: OperatorsTableProps) => {
+export const OperatorsTable = memo(
+  ({ rows, busy, onCommission, onRecordPayment, onMissingEarnings, onDelete }: OperatorsTableProps) => {
   const { t, i18n } = useTranslation("marketOperators");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const commission = useCommissionText();
@@ -72,11 +75,22 @@ export const OperatorsTable = memo(({ rows, busy, onCommission, onRecordPayment,
         ...(onRecordPayment
           ? [{ key: "payment", label: t("rowMenu.recordPayment"), icon: HandCoins, onSelect: () => onRecordPayment(row) }]
           : []),
+        // Stavka yo'q operatorga hisoblanadigan narsa yo'q — band faqat komissiyasi bor operatorda.
+        ...(onMissingEarnings && hasCommission(row)
+          ? [
+              {
+                key: "missing-earnings",
+                label: t("rowMenu.missingEarnings"),
+                icon: Calculator,
+                onSelect: () => onMissingEarnings(row),
+              },
+            ]
+          : []),
         { key: "delete", label: t("rowMenu.delete"), icon: Trash2, danger: true, onSelect: () => onDelete(row) },
       ];
       return <OperatorRowMenu label={t("rowMenu.label", { name: row.name })} items={items} />;
     },
-    [onCommission, onDelete, onRecordPayment, t],
+    [onCommission, onDelete, onMissingEarnings, onRecordPayment, t],
   );
 
   const nameClass = (row: MarketOperator) =>

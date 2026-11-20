@@ -12,7 +12,15 @@ export type OperatorPaymentStatus = "active" | "cancelled";
 export type OperatorBalance = {
   operatorId: string;
   operatorName: string;
-  status: "active" | "inactive";
+  /** `deleted` — o'chirilgan operator (2026-11-20): faqat daromadi / to'lovi bo'lsa chiqadi; unga to'lov yozilmaydi. */
+  status: "active" | "inactive" | "deleted";
+  /**
+   * Shu marketdagi operator buyurtmalari (`orders.operator_id`, butun davr): jami, sotilgan (komissiya shulardan),
+   * yo'lda (sotilsa komissiya yoziladi). `null` — backend sanamadi (eski javob yoki order-service javob bermadi).
+   */
+  ordersTotal: number | null;
+  ordersSold: number | null;
+  ordersPending: number | null;
   earned: number;
   paid: number;
   balance: number;
@@ -22,6 +30,25 @@ export type OperatorBalance = {
 };
 
 export type OperatorBalanceTotals = { earned: number; paid: number; balance: number };
+
+/**
+ * 2026-11-20 — komissiyasiz qolgan o'tgan sotuvlar: sotuv paytida operator stavkasi belgilanmagan bo'lsa ulush
+ * yozilmagan. `toRecord` / `amount` — JORIY stavka bilan yoziladigan buyurtmalar va summa.
+ */
+export type MissingEarnings = {
+  soldOrders: number;
+  alreadyRecorded: number;
+  missing: number;
+  toRecord: number;
+  amount: number;
+  commissionType: "percent" | "fixed" | null;
+  commissionValue: number;
+  /** 5000 dan ko'p sotuv — qolgani keyingi bosishda. */
+  truncated: boolean;
+  /** Faqat yozishdan keyin. */
+  created: number;
+  createdAmount: number;
+};
 
 export type OperatorBalances = { items: OperatorBalance[]; totals: OperatorBalanceTotals };
 

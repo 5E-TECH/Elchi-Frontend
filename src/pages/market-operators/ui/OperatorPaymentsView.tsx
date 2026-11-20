@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import {
   useOperatorBalances,
   useOperatorPayments,
+  type OperatorBalance,
   type OperatorBalanceTotals,
 } from "../../../entities/operator-payment";
 import { cx } from "../../../shared/lib/cx";
@@ -25,6 +26,7 @@ import {
 } from "../../../shared/ui/primitives";
 import { MarketOperatorsTabs } from "./MarketOperatorsTabs";
 import { OperatorBalancesSkeleton, OperatorBalancesTable } from "./OperatorBalancesTable";
+import { OperatorEarningsDialog } from "./OperatorEarningsDialog";
 import { OperatorPaymentsSkeleton, OperatorPaymentsTable } from "./OperatorPaymentsTable";
 import { usePaymentDialogs } from "./usePaymentDialogs";
 
@@ -99,6 +101,8 @@ export const OperatorPaymentsView = memo(({ description }: { description: string
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { openRecord, openCancel, dialogs } = usePaymentDialogs();
   const balances = useOperatorBalances();
+  // 2026-11-20: «Daromadlar» oynasi — operator ishlab topgan summaning tarkibi.
+  const [earningsOperator, setEarningsOperator] = useState<OperatorBalance | null>(null);
   const [operatorFilter, setOperatorFilter] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(PAGE_SIZES[0]);
@@ -116,6 +120,7 @@ export const OperatorPaymentsView = memo(({ description }: { description: string
       ...(balances.data?.items ?? []).map((item) => ({
         value: item.operatorId,
         label: item.operatorName || item.operatorId,
+        ...(item.status === "deleted" ? { description: t("status.deleted") } : {}),
       })),
     ],
     [balances.data?.items, t],
@@ -194,7 +199,7 @@ export const OperatorPaymentsView = memo(({ description }: { description: string
             />
           }
         >
-          {(rows) => <OperatorBalancesTable rows={rows} onRecord={openRecord} />}
+          {(rows) => <OperatorBalancesTable rows={rows} onRecord={openRecord} onEarnings={setEarningsOperator} />}
         </QueryBoundary>
       </Card>
 
@@ -281,6 +286,7 @@ export const OperatorPaymentsView = memo(({ description }: { description: string
       </Card>
 
       {dialogs}
+      <OperatorEarningsDialog operator={earningsOperator} onClose={() => setEarningsOperator(null)} />
     </div>
   );
 });
