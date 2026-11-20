@@ -6,7 +6,6 @@ import {
   parseCommissionInput,
   useCreateMarketOperator,
   useRefreshMarketOperators,
-  useUpdateMarketOperatorCommission,
   type CommissionInputError,
   type CommissionType,
   type MarketOperator,
@@ -32,23 +31,20 @@ type CreateOperatorDialogProps = {
   onClose: () => void;
   /** Market nomi (sarlavha ostidagi «<market> uchun yangi xodim»); yo'q bo'lsa — umumiy matn. */
   marketName: string | null;
-  /** Komissiya PATCH'i yiqilganda xabardagi «Belgilash» — shu operatorning Komissiya oynasi. */
-  onSetCommission: (operator: MarketOperator) => void;
 };
 
 /**
  * «OPERATOR QO'SHISH» (maket `market-operators-create-dialog`; telefonda pastki varaqa — `Dialog` o'zi).
  *
  * Ism familiya · Telefon (+998) · Parol (ko'rsatish/yashirish, kamida 6 belgi, katta va kichik harf, raqam) · ixtiyoriy «Komissiya» (ega MO-S5:
- * Foiz | Qat'iy summa + qiymat; bo'sh — belgilanmagan). Backend bilan ikki so'rov: avval `POST /market-operators`
- * (faqat 3 maydon — `forbidNonWhitelisted`), so'ng qiymat bo'lsa `PATCH :id/commission`. PATCH yiqilsa operator
- * baribir qo'shilgan: oyna yopiladi, «Operator qo'shildi, komissiya saqlanmadi» + «Belgilash» (Komissiya oynasi).
+ * Foiz | Qat'iy summa + qiymat; bo'sh — belgilanmagan). BITTA so'rov: `POST /market-operators` — komissiya bo'lsa
+ * ayni tanada (backend B3ZtzCCx, atomik). 2026-11-20 gacha ikki so'rov edi (POST, so'ng `PATCH :id/commission`):
+ * PATCH yiqilsa operator komissiyasiz qolib, uning sotuvlarida komissiya yozilmasdi.
  * 409 — telefon maydonida «Bu telefon raqam band», 403 — «Market bloklangan». Xom backend matni ko'rsatilmaydi.
  */
-export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommission }: CreateOperatorDialogProps) => {
+export const CreateOperatorDialog = ({ open, onClose, marketName }: CreateOperatorDialogProps) => {
   const { t } = useTranslation("marketOperators");
   const createOperator = useCreateMarketOperator();
-  const updateCommission = useUpdateMarketOperatorCommission();
   const refresh = useRefreshMarketOperators();
   const commissionError = useCommissionErrorText();
   const { maxFixed } = useCommissionText();
@@ -103,7 +99,12 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
     setBusy(true);
     let created: MarketOperator;
     try {
-      created = await createOperator.mutateAsync(buildCreateMarketOperatorPayload(values));
+      created = await createOperator.mutateAsync(
+        buildCreateMarketOperatorPayload(
+          values,
+          commission.value === null ? null : { type: commissionType, value: commission.value },
+        ),
+      );
     } catch (error) {
       const status = httpStatusOf(error);
       const passwordMessage = getPasswordPolicyServerMessage(error);
@@ -118,35 +119,11 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
     }
 
     const name = created.name || buildCreateMarketOperatorPayload(values).name;
-    // Javobda `id` bo'lmasa (kutilmagan shakl) PATCH yuborib bo'lmaydi — komissiya saqlanmagan deb aytiladi.
-    let commissionSaved = commission.value === null || Boolean(created.id);
-    if (commission.value !== null && created.id) {
-      try {
-        await updateCommission.mutateAsync({
-          id: created.id,
-          commission: { commission_type: commissionType, commission_value: commission.value },
-        });
-      } catch {
-        commissionSaved = false;
-      }
-    }
     void refresh();
     submittingRef.current = false;
     setBusy(false);
     onClose();
-
-    if (commissionSaved) {
-      notify.success(t("create.created"), { description: t("create.createdText", { name }) });
-    } else {
-      const operator: MarketOperator = { ...created, name, commission_type: null, commission_value: null };
-      notify.error(t("create.commissionFailed"), {
-        description: t("create.commissionFailedText", { name }),
-        // `id` siz operatorga Komissiya oynasi ochilmaydi (PATCH manzili yo'q) — ro'yxatdagi qator menyusidan.
-        ...(created.id
-          ? { action: { label: t("create.setCommission"), onClick: () => onSetCommission(operator) } }
-          : {}),
-      });
-    }
+    notify.success(t("create.created"), { description: t("create.createdText", { name }) });
   };
 
   const errorText = (field: keyof MarketOperatorCreateFormValues) => {
