@@ -9,7 +9,12 @@ import {
   INLINE_SCRIPT_HASHES_PLACEHOLDER,
   inlineScriptHashes,
 } from "../../scripts/csp-headers.mjs";
-import { PRODUCTION_API_HOST, stagingApiHost, stagingHeaders } from "../../scripts/staging-build.mjs";
+import {
+  PRODUCTION_API_HOST,
+  STAGING_SITE_HOST,
+  stagingApiTarget,
+  stagingHeaders,
+} from "../../scripts/staging-build.mjs";
 
 /**
  * XAVFSIZLIK SARLAVHALARI (KwodkKWY): `public/_headers` (Cloudflare Workers assets) — CSP, frame-ancestors,
@@ -153,21 +158,29 @@ describe("scripts/csp-headers.mjs — ichki skript xeshlari", () => {
 /**
  * IKKI MUHIT (production / staging): `dist/_headers` = shablon + xeshlar (`vite.config.ts` → `cspInlineScriptHashes`);
  * staging'da (`npm run build:staging`, `.env.staging`) qo'shimcha `stagingHeaders` — API hosti test API'ga,
- * `X-Robots-Tag: noindex`. Production chiqishi o'zgarmaganining build darajasidagi isboti — CI'dagi
- * `npm run check:target` va ikki build'ning `dist` solishtiruvi.
+ * `X-Robots-Tag: noindex`, bir domenli API'da (`VITE_BASE_URL=/api/`) connect-src ga kabinetning `wss://` hosti.
+ * Production chiqishi o'zgarmaganining build darajasidagi isboti — CI'dagi `npm run check:target` va ikki build'ning
+ * `dist` solishtiruvi.
  */
 describe("_headers — production va staging build'lari", () => {
-  const envStaging = readFileSync(resolve(process.cwd(), ".env.staging"), "utf8");
-  const stagingHost = stagingApiHost(/VITE_BASE_URL=(\S+)/.exec(envStaging)?.[1]);
+  const envStaging = Object.fromEntries(
+    [...readFileSync(resolve(process.cwd(), ".env.staging"), "utf8").matchAll(/^(VITE_\w+)=(\S*)$/gm)].map(
+      ([, key, value]) => [key, value],
+    ),
+  );
+  const target = stagingApiTarget(envStaging);
+  const stagingHost = target.apiHost;
+  const siteWss = `wss://${STAGING_SITE_HOST}`;
   const HASHES = ["'sha256-AAAA'", "'sha256-BBBB'"];
   const production = fillInlineScriptHashes(headersFile, HASHES);
-  const staging = stagingHeaders(production, stagingHost);
+  const staging = stagingHeaders(production, stagingHost, { sameOrigin: target.sameOrigin });
   const stagingAll = parseHeaders(staging).find((item) => item.path === "/*")!;
   const stagingReportOnly = directives(stagingAll.set.get("content-security-policy-report-only") ?? "");
 
-  it("staging API hosti — test API (https), production hostidan farqli", () => {
+  it("staging API hosti — test API (https), production hostidan farqli; staging — bir domenli API", () => {
     expect(PRODUCTION_API_HOST).toBe(apiHost);
     expect(stagingHost).toBe("test-api.elchipochta.uz");
+    expect(target.sameOrigin).toBe(true);
   });
 
   it("production: shablon faqat xeshlar bilan to'ldiriladi — host, noindex qo'shilmaydi", () => {
@@ -176,11 +189,14 @@ describe("_headers — production va staging build'lari", () => {
     expect(production).not.toContain(stagingHost);
   });
 
-  it("staging CSP: connect-src (https + wss), img-src, media-src, report-uri — test API; production hosti yo'q", () => {
+  it("staging CSP: connect-src (+ kabinet wss — socket.io), img-src, media-src, report-uri — test API; production hosti yo'q", () => {
     const swap = (sources: string[] | undefined) => (sources ?? []).map((source) => source.replace(apiHost, stagingHost));
-    for (const name of ["connect-src", "img-src", "media-src", "report-uri"]) {
+    for (const name of ["img-src", "media-src", "report-uri"]) {
       expect(stagingReportOnly.get(name), name).toEqual(swap(reportOnly.get(name)));
     }
+    const [self, ...rest] = swap(reportOnly.get("connect-src"));
+    expect(self).toBe("'self'");
+    expect(stagingReportOnly.get("connect-src")).toEqual([self, siteWss, ...rest]);
     expect(stagingReportOnly.get("connect-src")).toEqual(
       expect.arrayContaining([`https://${stagingHost}`, `wss://${stagingHost}`]),
     );
@@ -190,6 +206,17 @@ describe("_headers — production va staging build'lari", () => {
 
   it("staging: X-Robots-Tag noindex; qolgan sarlavhalar va qoidalar production bilan bir xil", () => {
     expect(stagingAll.set.get("x-robots-tag")).toBe("noindex, nofollow");
-    expect(staging.replace("  X-Robots-Tag: noindex, nofollow\n", "").replaceAll(stagingHost, apiHost)).toBe(production);
+    expect(
+      staging
+        .replace("  X-Robots-Tag: noindex, nofollow\n", "")
+        .replace(` ${siteWss}`, "")
+        .replaceAll(stagingHost, apiHost),
+    ).toBe(production);
+  });
+
+  it("orqaga qaytish (to'g'ridan-to'g'ri API, sameOrigin yo'q): kabinet wss qo'shilmaydi", () => {
+    const direct = stagingHeaders(production, stagingHost);
+    expect(direct).not.toContain(siteWss);
+    expect(direct.replace("  X-Robots-Tag: noindex, nofollow\n", "").replaceAll(stagingHost, apiHost)).toBe(production);
   });
 });

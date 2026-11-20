@@ -93,6 +93,15 @@ Flow: `dev` → merge into `test` → https://test-admin.elchipochta.uz (API htt
 - Before every deploy CI runs `npm run check:target`, so a staging `dist` can never be deployed to production
   (or the other way round). A production-mode build on the `test` branch inside Cloudflare Workers Builds fails on
   purpose (`WORKERS_CI_BRANCH`).
+- **Same-origin API (staging only).** The staging app calls the API through its own origin:
+  `https://test-admin.elchipochta.uz/api/*` (`.env.staging` → `VITE_BASE_URL=/api/`), so the browser sends no CORS
+  preflight and Cloudflare/tunnel error pages reach the app as real HTTP statuses. `wrangler.jsonc` →
+  `env.staging` runs a small Worker (`worker/index.ts` → `worker/proxy.ts`) **only** for `/api/*` and
+  `/socket.io/*` (`assets.run_worker_first`) and proxies them to `vars.API_ORIGIN` (test API, same Cloudflare
+  zone); every other path is still served straight from static assets. The Worker pins the client IP
+  (`x-real-ip` ← `CF-Connecting-IP`), rewrites the refresh cookie path `/auth` → `/api/auth` and turns non-JSON
+  5xx pages into JSON. Production (`wrangler deploy` without `--env`) is untouched. Deploy checks and rollback:
+  `../Elchi-Backend/docs/ops/same-origin-api.md`.
 
 Owner checklist before enabling (`STAGING_ENABLED=true`):
 

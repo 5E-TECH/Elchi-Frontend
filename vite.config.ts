@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import { fillInlineScriptHashes, inlineScriptHashes } from "./scripts/csp-headers.mjs";
 import {
   STAGING_ROBOTS_TXT,
-  stagingApiHost,
+  stagingApiTarget,
   stagingHeaders,
   stagingIndexHtml,
   stagingManifest,
@@ -68,11 +68,12 @@ const firstPaintPreload = (): Plugin => {
 
 /**
  * TEST muhit (staging) build'i — faqat `npm run build:staging` (`vite build --mode staging`, `.env.staging` →
- * `VITE_APP_ENV=staging`): test API hosti (https, production emas — aks holda build yiqiladi). Boshqa rejimlarda
- * (production, development, test, visual) — `null`, quyidagi pluginlar production chiqishiga tegmaydi.
+ * `VITE_APP_ENV=staging`): test API hosti (https, production emas — aks holda build yiqiladi) va bir domenli API
+ * belgisi (`VITE_BASE_URL=/api/` → `sameOrigin`, Worker proksi — `worker/index.ts`). Boshqa rejimlarda (production,
+ * development, test, visual) — `null`, quyidagi pluginlar production chiqishiga tegmaydi.
  */
 const stagingTarget = (env: Record<string, string>) =>
-  env.VITE_APP_ENV === "staging" ? { apiHost: stagingApiHost(env.VITE_BASE_URL) } : null;
+  env.VITE_APP_ENV === "staging" ? stagingApiTarget(env) : null;
 
 /**
  * CSP xeshlari (KwodkKWY): `public/_headers` → `dist/_headers` nusxasidagi `{{INLINE_SCRIPT_HASHES}}` o'rniga
@@ -99,7 +100,10 @@ const cspInlineScriptHashes = (): Plugin => {
       }
       const hashes = inlineScriptHashes(readFileSync(htmlPath, "utf8"));
       const headers = fillInlineScriptHashes(readFileSync(headersPath, "utf8"), hashes);
-      writeFileSync(headersPath, staging ? stagingHeaders(headers, staging.apiHost) : headers);
+      writeFileSync(
+        headersPath,
+        staging ? stagingHeaders(headers, staging.apiHost, { sameOrigin: staging.sameOrigin }) : headers,
+      );
     },
   };
 };

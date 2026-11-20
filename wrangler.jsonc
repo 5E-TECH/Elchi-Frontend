@@ -26,9 +26,15 @@
   // belgisi, noindex); deploy oldidan `npm run check:target -- staging` tekshiradi.
   // Hamma kalit ataylab shu yerda qayta yozilgan (meros qoidalariga tayanmaslik uchun). workers.dev / preview
   // manzillari o'chiq — TEST sayt bitta manzilda, backend CORS'i ham faqat shu domen uchun.
+  // Bir domenli API (same-origin, `.env.staging` → VITE_BASE_URL=/api/): FAQAT `/api/*` va `/socket.io/*` Worker
+  // skriptiga (`worker/index.ts`) tushadi va `vars.API_ORIGIN` ga proksi qilinadi (CORS preflight yo'q); qolgan hamma
+  // yo'l avvalgidek statik fayllardan, Worker chaqirilmaydi. API_ORIGIN — kabinet bilan BIR zonada (elchipochta.uz):
+  // boshqa zonada Cloudflare mijoz IP'si o'rniga Worker manzilini yozadi (backend rate-limit hamma uchun bitta).
+  // Production (yuqori daraja) bunga tegilmagan. Deploy / orqaga qaytish: Elchi-Backend docs/ops/same-origin-api.md.
   "env": {
     "staging": {
       "name": "elchi-frontend-test",
+      "main": "worker/index.ts",
       "compatibility_date": "2026-05-19",
       "compatibility_flags": [
         "nodejs_compat"
@@ -38,7 +44,15 @@
       },
       "assets": {
         "directory": "./dist",
-        "not_found_handling": "single-page-application"
+        "not_found_handling": "single-page-application",
+        "binding": "ASSETS",
+        "run_worker_first": [
+          "/api/*",
+          "/socket.io/*"
+        ]
+      },
+      "vars": {
+        "API_ORIGIN": "https://test-api.elchipochta.uz"
       },
       "routes": [
         {
