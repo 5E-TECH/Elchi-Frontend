@@ -44,6 +44,11 @@ export type AiPreviewItem = {
    * `product_id` siz item `product_name` bilan yuboriladi.
    */
   allow_free_text?: boolean;
+  /**
+   * Operator kartaga katalogdan O'ZI qo'shgan qator (AI matnda o'qimagan). Backend emas — FRONTEND yozadi: payload
+   * qo'lda yig'iladi (`toConfirmItem`), bayroq serverga ketmaydi; qatorda «AI o'qidi» o'rniga «Qo'lda qo'shildi».
+   */
+  added_manually?: boolean;
 };
 
 /**
