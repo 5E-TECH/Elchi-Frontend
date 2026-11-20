@@ -825,10 +825,6 @@
   "aiHttpForbiddenTitle": "Ruxsat yo'q",
   "aiHttpForbiddenDescription": "Sizda AI bilan buyurtma yaratishga ruxsat yo'q. Buyurtmani qo'lda kiriting.",
   "aiCreateFailedWith": "Buyurtma yaratilmadi: {{detail}}",
-  "aiOperatorTextOnly": "Ro'yxatdan tanlanmagan — bu operatorga komissiya yozilmaydi",
-  "aiOperatorSuggest": "Ro'yxatda «{{name}}» bor — komissiya yozilishi uchun tanlang",
-  "aiOperatorSuggestPick": "Tanlash",
-  "aiOperatorSuggestPickAria": "«{{name}}» ni operator qilib tanlash",
   "aiOperatorSuggestAll": "{{count}} ta buyurtmada operator ismi ro'yxatdagi operatorga mos keladi",
   "aiOperatorSuggestAllText": "Tanlansa, buyurtma va sotuvdagi komissiya shu operatorga yoziladi. Har kartada alohida ham o'zgartirish mumkin.",
   "aiOperatorSuggestAllPick": "Hammasini tanlash",
@@ -1091,7 +1087,11 @@
     "none": "Tanlanmagan",
     "pickedHint": "Buyurtma va komissiya shu operatorga yoziladi",
     "otherLabel": "Ro'yxatda yo'q operator",
-    "loadFailed": "Operatorlar ro'yxati yuklanmadi — ismini qo'lda yozing"
+    "loadFailed": "Operatorlar ro'yxati yuklanmadi — ismini qo'lda yozing",
+    "textOnly": "Ro'yxatdan tanlanmagan — bu operatorga komissiya yozilmaydi",
+    "suggest": "Ro'yxatda «{{name}}» bor — komissiya yozilishi uchun tanlang",
+    "suggestPick": "Tanlash",
+    "suggestPickAria": "«{{name}}» ni operator qilib tanlash"
   },
   "operatorAssign": {
     "open": "Biriktirish",

@@ -40,3 +40,4 @@ export {
   percentEarning,
 } from "./lib/commission";
 export type { CommissionInputError, CommissionInputResult } from "./lib/commission";
+export { normalizeOperatorName, suggestOperator } from "./lib/operatorMatch";
