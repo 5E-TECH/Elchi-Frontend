@@ -102,5 +102,6 @@
     "cancel": "Cancel",
     "submit": "Save",
     "saving": "Saving…"
-  }
+  },
+  "branchFallback": "Branch"
 }

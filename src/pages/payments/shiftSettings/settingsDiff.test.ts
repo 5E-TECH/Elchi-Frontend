@@ -21,6 +21,7 @@ const report = (format: "pdf" | "xlsx", superadminTelegram: boolean) => ({
     superadmin: { telegram: superadminTelegram, in_app: true },
     couriers: { telegram: false, in_app: true },
     markets: { telegram: false, in_app: false },
+    branches: { telegram: true, in_app: false },
   },
 });
 

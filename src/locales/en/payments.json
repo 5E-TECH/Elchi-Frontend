@@ -1189,12 +1189,16 @@
         "kind": {
           "superadmin": "Superadmin",
           "courier": "Couriers · {{value}}",
-          "market": "Markets · {{value}}"
+          "market": "Markets · {{value}}",
+          "branch": "Branch group · {{value}}",
+          "branch_manager": "Branch managers · {{value}}"
         },
         "hint": {
           "superadmin": "full report and {{format}}",
           "courier": "Only their own operations",
-          "market": "Only payments to them"
+          "market": "Only payments to them",
+          "branch": "Cash summary — to the group",
+          "branch_manager": "Cash summary — to private chats"
         },
         "channel": {
           "telegram": "Telegram",
@@ -1285,12 +1289,14 @@
         "groups": {
           "superadmin": "Superadmin",
           "couriers": "Couriers",
-          "markets": "Markets"
+          "markets": "Markets",
+          "branches": "Branch cash desk"
         },
         "groupHints": {
           "superadmin": "Full report and attachment",
           "couriers": "Only their own operations",
-          "markets": "Only payments to them · Telegram — to the owner's private chat"
+          "markets": "Only payments to them · Telegram — to the owner's private chat",
+          "branches": "To the branch group or managers"
         },
         "channels": {
           "telegram": "Telegram",

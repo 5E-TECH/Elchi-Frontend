@@ -2,10 +2,15 @@
 import { memo, useState } from "react";
 import { Pencil, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
+import { readProfileBranchName } from "../../../entities/dashboard/lib/profile";
 import { useUser } from "../../../entities/user/api/userApi";
 import { unwrapUserResponse } from "../../../entities/user/lib/normalizeUser";
+import { BranchTelegramCard } from "../../../features/branch-telegram";
 import { TelegramLinkCard, canLinkTelegram } from "../../../features/telegram-link";
 import { MarketTelegramGroupsCard } from "../../../widgets/user-detail/ui/MarketTelegramGroupsCard";
+import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import {
   Button,
   Card,
@@ -32,6 +37,8 @@ import { ProfileSessionsCard } from "./ProfileSessionsCard";
  * (`MarketTelegramGroupsCard mode="self"`, TG-C — maket `market-profile-telegram-status`: har tur holati
  * `GET /notifications/me/telegram-groups` dan, ulanmagan turda «Ulash», oyna ulanishni kuzatib o'zi yopiladi;
  * «Guruhda mijoz ismi va telefoni» kaliti shu kartada). Sarlavhadagi kontakt shaxs ismi uchun backend maydoni yo'q.
+ * Menejer: Telegram kartasi ostida o'z filiali «Kassa hisoboti · Telegram» (`BranchTelegramCard`) — kassa yopilganda
+ * hisobot filial guruhiga yoki menejerlarning shaxsiy chatiga.
  * Eng pastda «Sessiyalar» (`ProfileSessionsCard`, barcha rollar; maket yo'q — eng yaqini `market-profile` «Telegram guruhi»
  * kartasi): shu hisobning faol sessiyalari soni, qurilmalar, kirgan va oxirgi faollik vaqti (`GET /auth/sessions`);
  * yangi qurilmada (48 soat) boshqa sessiyalarni chiqarish cheklovi ogohlantirishi shu kartada.
@@ -65,6 +72,10 @@ const ProfilePage = () => {
   const user = unwrapUserResponse(profileQuery.data);
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  // Menejer — o'z filiali kassasi hisobotining Telegram guruhi (`BranchTelegramCard`).
+  const managerBranchId = useSelector(getCurrentBranchId);
+  const managerBranchName =
+    useSelector((state: RootState) => readProfileBranchName(state.user.user)) ?? t("profile:branchFallback");
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
@@ -133,6 +144,9 @@ const ProfilePage = () => {
                       />
                     </div>
                   </div>
+                ) : null}
+                {profile.role === "manager" && managerBranchId ? (
+                  <BranchTelegramCard branchId={managerBranchId} branchName={managerBranchName} />
                 ) : null}
               </>
             )}

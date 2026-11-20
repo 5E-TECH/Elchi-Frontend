@@ -102,5 +102,6 @@
     "cancel": "Bekor qilish",
     "submit": "Saqlash",
     "saving": "Saqlanmoqda…"
-  }
+  },
+  "branchFallback": "Filial"
 }
