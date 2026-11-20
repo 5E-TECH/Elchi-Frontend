@@ -445,6 +445,9 @@ const AiCreatePanel = ({
               operators={operators}
               operatorsFailed={operatorsFailed}
               samePhoneCard={samePhoneCardOf(draft)}
+              // Mavjud mijoz taklifi: market rolida — o'z mijozlari, xodimda — tanlangan market (qo'lda forma bilan bir xil).
+              customerSuggest={isMarketRole || Boolean(marketId)}
+              customerMarketId={marketId ?? null}
               creating={confirm.isPending}
               createBlocked={blocked}
               onChange={(order) => updateDraft(draft.key, order)}
