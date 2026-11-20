@@ -29,14 +29,18 @@ export const useOrders = () => {
      * `POST /orders` + `Idempotency-Key` (gpCIsGjH): kalit bitta tarkibga bitta — javobi kelmagan urinish (20 s
      * timeout, tarmoq) qayta yuborilsa AYNI kalit ketadi va backend ikkinchi buyurtma yaratmaydi
      * (`useCreateOrderIdempotencyKeys`). `retry` yo'q (mutatsiya sukuti) — qayta urinish faqat qo'lda.
+     *
+     * Yangilash KUTILMAYDI (2026-11-20): buyurtma serverda yaratilgan — forma darhol tozalanadi va «Yaratildi»
+     * chiqadi. Ilgari tugma barcha ochiq buyurtma ro'yxatlari, sonlar, bosh sahifa va ombor qayta yuklanguncha (20 s
+     * gacha) aylanardi — sekin internetda har buyurtmaga bir necha soniya qo'shilardi. Ro'yxatlar fonda yangilanadi.
      */
     const createOrder = useMutation({
         mutationFn: ({ data, idempotencyKey }: CreateOrderMutationInput) =>
             api
                 .post(API_ENDPOINTS.ORDERS.BASE, data, { headers: { "Idempotency-Key": idempotencyKey } })
                 .then((res) => res.data),
-        onSuccess: async () => {
-            await Promise.all([
+        onSuccess: () => {
+            void Promise.all([
                 client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
                 client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
                 // Shu mijozga keyingi buyurtmada «yangi buyurtma bor» ogohlantirishi (`entities/customer`) va ombor
@@ -64,7 +68,13 @@ export const useOrders = () => {
             (Boolean(options?.silentErrorWhenCached) && client.getQueryData(queryKey) !== undefined);
         return useQuery<OrderListResponse>({
             queryKey,
-            queryFn: () => api.get(API_ENDPOINTS.ORDERS.BASE, { params }).then((res) => res.data),
+            // Xato sahifaning o'zida (yoki umuman) ko'rsatiladigan bo'lsa — javobsizlikda ham global tarmoq xabari
+            // ochilmaydi (`silentNetworkError`, 2026-11-20): keshdagi ro'yxatning har daqiqalik yangilanishi
+            // «Internet aloqasi yo'q» chiqarmaydi, sahifa «Ro'yxat yangilanmadi» ni o'zi chizadi.
+            queryFn: () =>
+                api
+                    .get(API_ENDPOINTS.ORDERS.BASE, { params, ...(silentError ? { silentNetworkError: true } : {}) })
+                    .then((res) => res.data),
             enabled,
             placeholderData: (prev) => prev,
             refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,

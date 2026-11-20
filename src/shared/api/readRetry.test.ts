@@ -1,7 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 import axios, { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { READ_TIMEOUT_MS, READ_TIMEOUT_RETRY_DELAYS_MS, withReadTimeoutRetry } from "./readRetry";
+import { READ_NETWORK_RETRY_DELAYS_MS, READ_TIMEOUT_MS, READ_TIMEOUT_RETRY_DELAYS_MS, withReadTimeoutRetry } from "./readRetry";
+import { isNetworkRetriedByAdapter } from "../lib/errorKind";
 import { shouldRetryQuery } from "../lib/queryRetry";
 
 const DEFAULT = 20_000;
@@ -81,11 +82,63 @@ describe("withReadTimeoutRetry", () => {
     expect(seen.map((c) => c.timeout)).toEqual([120_000, DEFAULT]);
   });
 
-  it("tarmoq xatosi va 5xx — adapter qayta urinmaydi (ularni React Query bir marta urinadi)", async () => {
-    const { api, base } = setup(["network", "500"]);
-    await expect(api.get("a")).rejects.toMatchObject({ code: "ERR_NETWORK" });
+  it("5xx — adapter qayta urinmaydi (uni React Query bir marta urinadi)", async () => {
+    const { api, base } = setup(["500"]);
     await expect(api.get("b")).rejects.toMatchObject({ response: { status: 500 } });
+    expect(base).toHaveBeenCalledTimes(1);
+  });
+
+  it("javobsiz GET (ERR_NETWORK) — 1 s va 3 s dan keyin jim qayta so'raladi; javob kelsa xato ko'rinmaydi", async () => {
+    const { api, base } = setup(["network", "network", "ok"]);
+    const promise = api.get("orders");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(base).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(READ_NETWORK_RETRY_DELAYS_MS[0]);
     expect(base).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(READ_NETWORK_RETRY_DELAYS_MS[1] - 1);
+    expect(base).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(promise).resolves.toMatchObject({ data: "ok" });
+    expect(base).toHaveBeenCalledTimes(3);
+  });
+
+  it("javobsizlik davom etsa — 3 urinishdan keyin asl xato, React Query uchun belgi bilan", async () => {
+    const { api, base } = setup(["network", "network", "network", "ok"]);
+    const promise = api.get("orders").catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(10_000);
+    const error = (await promise) as AxiosError;
+    expect(error.code).toBe("ERR_NETWORK");
+    expect(isNetworkRetriedByAdapter(error)).toBe(true);
+    expect(base).toHaveBeenCalledTimes(3);
+  });
+
+  it("brauzer oflayn — kutilmaydi, xato darhol (xabar ham darhol)", async () => {
+    const onLine = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    try {
+      const { api, base } = setup(["network", "ok"]);
+      const error = (await api.get("orders").catch((e: unknown) => e)) as AxiosError;
+      expect(error.code).toBe("ERR_NETWORK");
+      expect(isNetworkRetriedByAdapter(error)).toBe(false);
+      expect(base).toHaveBeenCalledTimes(1);
+    } finally {
+      onLine.mockRestore();
+    }
+  });
+
+  it.each(["post", "patch", "put", "delete"] as const)("%s — javobsiz bo'lsa ham qayta yuborilmaydi", async (method) => {
+    const { api, base } = setup(["network", "ok"]);
+    const promise = api.request({ url: "orders", method }).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(((await promise) as AxiosError).code).toBe("ERR_NETWORK");
+    expect(base).toHaveBeenCalledTimes(1);
+  });
+
+  it("javobsizlik va vaqt tugashi aralash — har biri o'z chegarasi bilan", async () => {
+    const { api, base } = setup(["network", "timeout", "network", "ok"]);
+    const promise = api.get("orders");
+    await vi.advanceTimersByTimeAsync(10_000);
+    await expect(promise).resolves.toMatchObject({ data: "ok" });
+    expect(base).toHaveBeenCalledTimes(4);
   });
 
   it("kutish paytida bekor qilinsa — qayta yuborilmaydi (CanceledError)", async () => {
@@ -149,7 +202,7 @@ describe("adapter + React Query — bitta qavat qayta urinish", () => {
     expect(await run(["timeout", "timeout", "timeout", "timeout"])).toBe(2);
   });
 
-  it("tarmoq xatosi — 2 so'rov (React Query 1 qayta, adapter 0)", async () => {
-    expect(await run(["network", "network", "network"])).toBe(2);
+  it("tarmoq xatosi — 3 so'rov (adapter 2 qayta, React Query 0)", async () => {
+    expect(await run(["network", "network", "network", "network"])).toBe(3);
   });
 });

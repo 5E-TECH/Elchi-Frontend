@@ -472,7 +472,7 @@ describe("Orders list search by exact order number", () => {
     open("/orders?orderSearch=1");
 
     await waitFor(() => expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "1"));
-    expect(getSpy).toHaveBeenCalledWith("orders/1");
+    expect(getSpy).toHaveBeenCalledWith("orders/1", { silentNetworkError: true });
     expect(screen.getByTestId("orders-table")).toHaveAttribute("data-ids", `1,${pageIds}`);
   });
 
@@ -480,7 +480,7 @@ describe("Orders list search by exact order number", () => {
     open("/orders?orderSearch=%E2%84%96EL-100001");
 
     await waitFor(() => expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "1"));
-    expect(getSpy).toHaveBeenCalledWith("orders/1");
+    expect(getSpy).toHaveBeenCalledWith("orders/1", { silentNetworkError: true });
     expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ search: "EL-100001" }));
   });
 
@@ -565,7 +565,7 @@ describe("Orders list — URL sanitizatsiyasi va sahifa almashishi (QA D-03, D-0
 
     open("/orders?orderSearch=%E2%84%9653");
     expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ search: "53" }));
-    expect(getSpy).toHaveBeenCalledWith("orders/53");
+    expect(getSpy).toHaveBeenCalledWith("orders/53", { silentNetworkError: true });
     getSpy.mockRestore();
   });
 

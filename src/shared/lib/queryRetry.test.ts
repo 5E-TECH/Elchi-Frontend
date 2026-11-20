@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { AxiosError, AxiosHeaders, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 import { describe, expect, it, vi } from "vitest";
+import { NETWORK_RETRIED_FLAG } from "./errorKind";
 import { QUERY_RETRY_LIMIT, shouldRetryQuery } from "./queryRetry";
 
 /**
@@ -33,6 +34,11 @@ describe("shouldRetryQuery", () => {
     expect(shouldRetryQuery(0, new AxiosError("Network Error", AxiosError.ERR_NETWORK, config, request))).toBe(true);
     expect(shouldRetryQuery(0, new Error("boom"))).toBe(true);
     expect(shouldRetryQuery(1, new Error("boom"))).toBe(false);
+  });
+
+  it("javobsiz GET ni adapter o'zi qayta urinib bo'lgan (`readRetry.ts`) — qayta so'ralmaydi", () => {
+    const retried = { headers: new AxiosHeaders(), [NETWORK_RETRIED_FLAG]: true } as InternalAxiosRequestConfig;
+    expect(shouldRetryQuery(0, new AxiosError("Network Error", AxiosError.ERR_NETWORK, retried, request))).toBe(false);
   });
 
   it("vaqt chegarasi (ECONNABORTED / ETIMEDOUT) — qayta so'ralmaydi", () => {

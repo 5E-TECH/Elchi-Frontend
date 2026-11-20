@@ -1,7 +1,13 @@
 import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import tokenStorage from "./tokenStorage";
 import { logoutAndRedirect, refreshAccessToken } from "./authService";
-import { emitNetworkError, emitNetworkRestored, isNetworkFailure, isTransientAuthFailure } from "./networkError";
+import {
+  classifyNetworkFailure,
+  emitNetworkError,
+  emitNetworkRestored,
+  isNetworkFailure,
+  isTransientAuthFailure,
+} from "./networkError";
 import { PASSWORD_CHANGE_REQUIRED_CODE, requirePasswordChange, responseErrorCode } from "./passwordChange";
 import { notify } from "../shared/lib/notify";
 import { API_ENDPOINTS } from "../shared/api/endpoints";
@@ -105,6 +111,7 @@ const handleRefreshFailure = async (refreshError: unknown, revoked = false) => {
     await logoutSessionExpired(revoked);
   } else if (isNetworkFailure(refreshError)) {
     // `authClient` tarmoq xatosini bildirmaydi (faqat «aloqa tiklandi» ni) — "Tarmoq xatosi" shu yerdan chiqadi.
+    await classifyNetworkFailure(refreshError);
     emitNetworkError(refreshError);
   }
   return Promise.reject(refreshError);
@@ -205,6 +212,8 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
     async (error: AxiosError) => {
       // Javob kelgan xato (4xx/5xx) ham aloqa borligini bildiradi.
       if (error.response) emitNetworkRestored();
+      // Javobsiz xato: internetmi yoki servermi — xatoning o'ziga yoziladi (xabar, sahifa holati, `onError` uchun).
+      await classifyNetworkFailure(error);
       // Fon so'rovi (`silentNetworkError`, masalan har daqiqadagi o'qilmaganlar soni) — holat belgilanadi, lekin
       // foydalanuvchi yopgan tarmoq xabari qayta ochilmaydi (9-band).
       emitNetworkError(error, { silent: error.config?.silentNetworkError === true });

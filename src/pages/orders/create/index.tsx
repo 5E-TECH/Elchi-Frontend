@@ -27,6 +27,7 @@ import AiCreatePanel from "./ui/ai/AiCreatePanel";
 import { isAiTabHidden, useAiAvailability } from "../../../entities/ai-order";
 import { marketOperatorKeys } from "../../../entities/market-operator";
 import { ORDER_KEY, useOrders } from "../../../entities/order/api/orderApi";
+import { getErrorKind } from "../../../shared/lib/errorKind";
 import { useCreateOrderIdempotencyKeys } from "../../../entities/order/model/createIdempotency";
 import { todayOrdersByMarketKey } from "../../../entities/orders/queryKeys";
 import type { RootState } from "../../../app/config/store";
@@ -80,6 +81,12 @@ const normalizeBackendMessage = (value: unknown): string | undefined => {
 
 const getBackendPayload = (error: unknown): BackendErrorPayload | undefined =>
   (error as { response?: { data?: BackendErrorPayload } })?.response?.data;
+
+/** Javob umuman kelmagan xato (`ERR_NETWORK`); vaqt tugashi — o'z matni bilan («So'rov vaqti tugadi»). */
+const isNoResponseError = (error: unknown) => {
+  const e = error as { code?: unknown; response?: unknown } | null;
+  return e?.code === "ERR_NETWORK" && !e.response;
+};
 
 const getOrderCreateErrorMessage = (
   error: unknown,
@@ -433,9 +440,17 @@ const OrderCreateFormContent = () => {
         // Qabul shu orada yopildi (boshqa admin yoki vaqt) — tushunarli matn, holat yangilanadi (ogohlantirish chiqadi).
         const intakeClosed = isOrderIntakeClosedError(error);
         if (intakeClosed) void queryClient.invalidateQueries({ queryKey: ORDER_INTAKE_KEY });
+        // Javob umuman kelmadi (`ERR_NETWORK`, 2026-11-20): axios'ning inglizcha «Network Error» matni o'rniga sabab
+        // (internet yo'q / server javob bermadi — `getErrorKind`); global tarmoq xabari sababni aytgan — ikkinchi qizil
+        // xabar chiqmaydi, formada matn qoladi.
+        const noResponse = !intakeClosed && isNoResponseError(error);
         const message = intakeClosed
           ? t("intake.create.closedTitle", { ns: "newOrders" })
-          : getOrderCreateErrorMessage(error, t("orderCreateErrorFallback"));
+          : noResponse
+            ? getErrorKind(error) === "offline"
+              ? t("states.error.offline.description", { ns: "ui" })
+              : t("states.error.timeout.description", { ns: "ui" })
+            : getOrderCreateErrorMessage(error, t("orderCreateErrorFallback"));
 
         applyOrderCreateFieldErrors(error, setError, t);
         // Tanlangan operator o'chirilgan / bloklangan — ro'yxat yangilanadi (eskirgan tanlov o'zi tozalanadi).
@@ -445,7 +460,7 @@ const OrderCreateFormContent = () => {
           void queryClient.invalidateQueries({ queryKey: [ORDER_KEY, "replaceable"] });
         }
         setServerError(message);
-        notify.error(t("orderCreateErrorTitle"), { description: message });
+        if (!noResponse) notify.error(t("orderCreateErrorTitle"), { description: message });
       },
     });
   };

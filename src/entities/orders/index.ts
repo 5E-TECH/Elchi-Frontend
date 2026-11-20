@@ -234,8 +234,9 @@ export const useOrders = () => {
     useQuery<ExtraCostApprovalsResponse>({
       queryKey: [...EXTRA_COST_APPROVALS_QUERY_KEY, status],
       queryFn: () =>
+        // Karta xatoni o'zi chizadi (`meta.silentError`) — javobsizlikda ham global xabar yo'q (2026-11-20).
         api
-          .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status } })
+          .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status }, silentNetworkError: true })
           .then((res) => res.data),
       enabled,
       // Kutilayotgan so'rov Telegram'da ham (✅/❌) hal qilinishi mumkin — oynaga qaytilganda va
@@ -361,8 +362,12 @@ export const useOrders = () => {
     const silentError = Boolean(options?.silentErrorWhenCached) && client.getQueryData(queryKey) !== undefined;
     return useQuery({
       queryKey,
+      // `entities/order` `useGetOrders` dagidek (2026-11-20): keshdagi ro'yxatning har daqiqalik yangilanishi
+      // javobsizlikda global tarmoq xabarini ochmaydi — sahifa eskirgan ro'yxatni o'zi ko'rsatadi.
       queryFn: () =>
-        api.get(API_ENDPOINTS.ORDERS.COURIER_ORDERS, { params }).then((res) => res.data),
+        api
+          .get(API_ENDPOINTS.ORDERS.COURIER_ORDERS, { params, ...(silentError ? { silentNetworkError: true } : {}) })
+          .then((res) => res.data),
       refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
       // Berilgan bo'lsa aniq (to'xtatilganda `false`) — global sukutga tayanmaydi.
       ...(options?.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
@@ -385,7 +390,9 @@ export const useOrders = () => {
     useQuery({
       queryKey: COURIER_ORDER_COUNTS_QUERY_KEY,
       queryFn: () =>
-        api.get(API_ENDPOINTS.ORDERS.COURIER_ORDER_COUNTS).then((res) => parseCourierOrderCounts(res.data)),
+        api
+          .get(API_ENDPOINTS.ORDERS.COURIER_ORDER_COUNTS, { silentNetworkError: true })
+          .then((res) => parseCourierOrderCounts(res.data)),
       enabled: options?.enabled ?? true,
       refetchInterval: options?.refetchInterval ?? false,
       // Berilgan bo'lsa aniq (to'xtatilganda `false`) — global sukutga tayanmaydi.

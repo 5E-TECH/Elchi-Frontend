@@ -98,9 +98,11 @@ export const toStatusCountsParams = (params: OrderListParams): OrderListParams =
 export const orderStatusCountsQueryKey = (params: OrderListParams) =>
   [...ORDER_STATUS_COUNTS_QUERY_KEY, toStatusCountsParams(params)] as const;
 
+// Yordamchi, har daqiqada o'zi so'raladigan so'rov: javobsizlikda ham global «Internet aloqasi yo'q» ochilmaydi
+// (`silentNetworkError`, 2026-11-20) — holat belgilanadi, xabarni ro'yxatning o'z so'rovi beradi.
 const fetchOrderStatusCounts = (params: OrderListParams) =>
   api
-    .get(API_ENDPOINTS.ORDERS.STATUS_COUNTS, { params: toStatusCountsParams(params) })
+    .get(API_ENDPOINTS.ORDERS.STATUS_COUNTS, { params: toStatusCountsParams(params), silentNetworkError: true })
     .then((res) => parseOrderStatusCounts(res.data));
 
 /**
