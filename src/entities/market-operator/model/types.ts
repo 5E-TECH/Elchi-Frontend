@@ -46,6 +46,26 @@ export type SelectableMarketOperator = {
   name: string;
 };
 
+/**
+ * 2026-11-20 — operator ismi faqat MATN bo'lib qolgan (operator_id siz) eski buyurtmalar guruhi (bir xil ism).
+ * Ularga sotuvda komissiya yozilmagan; market operatorni tanlab ommaviy biriktiradi.
+ */
+export type UnlinkedOperatorGroup = {
+  /** Buyurtmadagi yozuv (eng yangisi). */
+  name: string;
+  key: string;
+  totalOrders: number;
+  /** Sotilgan — biriktirilsa ulush darhol yoziladi. */
+  soldOrders: number;
+  /** Eng yangisi birinchi, ko'pi bilan 500 (ko'prog'i biriktirilgach qayta so'raladi). */
+  orderIds: string[];
+};
+
+export type UnlinkedOperatorOrders = { groups: UnlinkedOperatorGroup[]; totalOrders: number };
+
+/** Ommaviy biriktirish natijasi (barcha bo'laklar yig'indisi). */
+export type UnlinkedAssignResult = { assigned: number; failed: number; earningsRecorded: number };
+
 /** `POST /market-operators` tanasi — faqat 3 maydon (`forbidNonWhitelisted`: komissiya alohida PATCH bilan). */
 export type CreateMarketOperatorRequest = {
   name: string;

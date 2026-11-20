@@ -8,6 +8,8 @@ import type {
   MarketOperatorList,
   MarketOperatorListParams,
   SelectableMarketOperator,
+  UnlinkedAssignResult,
+  UnlinkedOperatorOrders,
 } from "../model/types";
 
 type Raw = Record<string, unknown>;
@@ -105,6 +107,70 @@ export const normalizeSelectableMarketOperators = (value: unknown): SelectableMa
  * `GET /market-operators/selectable` — buyurtmaga biriktiriladigan operatorlar. `marketId` — xodim tanlagan market;
  * market va market operatori uchun berilmaydi (server o'z marketini tokendan oladi).
  */
+type RawRecord = Record<string, unknown>;
+const recordOf = (value: unknown): RawRecord | null =>
+  typeof value === "object" && value !== null && !Array.isArray(value) ? (value as RawRecord) : null;
+const countOf = (value: unknown): number => {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.trunc(number) : 0;
+};
+const idTextOf = (value: unknown): string =>
+  typeof value === "string" || typeof value === "number" ? String(value).trim() : "";
+
+/** `{ statusCode, data: { groups, total_orders } }` (konvertsiz ham). */
+export const normalizeUnlinkedOperatorOrders = (value: unknown): UnlinkedOperatorOrders => {
+  const outer = recordOf(value);
+  const data = recordOf(outer && "data" in outer && ("statusCode" in outer || "message" in outer) ? outer.data : value) ?? {};
+  const groups = (Array.isArray(data.groups) ? data.groups : [])
+    .map((item) => {
+      const group = recordOf(item) ?? {};
+      return {
+        name: typeof group.name === "string" ? group.name.trim() : "",
+        key: typeof group.key === "string" ? group.key : "",
+        totalOrders: countOf(group.total_orders),
+        soldOrders: countOf(group.sold_orders),
+        orderIds: (Array.isArray(group.order_ids) ? group.order_ids : []).map(idTextOf).filter((id) => /^\d+$/.test(id)),
+      };
+    })
+    .filter((group) => group.key && group.orderIds.length > 0);
+  return { groups, totalOrders: groups.reduce((sum, group) => sum + group.totalOrders, 0) };
+};
+
+/** `GET market-operators/unlinked-orders` (market). */
+export const getUnlinkedOperatorOrders = async (): Promise<UnlinkedOperatorOrders> => {
+  const response = await api.get(API_ENDPOINTS.MARKET_OPERATORS.UNLINKED_ORDERS);
+  return normalizeUnlinkedOperatorOrders(response.data);
+};
+
+/** Backend bir so'rovda ko'pi bilan shuncha buyurtma qabul qiladi — katta guruh bo'laklab yuboriladi. */
+export const UNLINKED_ASSIGN_CHUNK = 100;
+
+/**
+ * `POST market-operators/unlinked-orders/assign` — bo'laklab (ketma-ket), natijalar yig'iladi. Bo'lak yiqilsa
+ * (tarmoq, 400 — operator endi faol emas) — xato yuqoriga, avvalgi bo'laklar allaqachon yozilgan.
+ */
+export const assignUnlinkedOrders = async ({
+  operatorId,
+  orderIds,
+}: {
+  operatorId: string;
+  orderIds: readonly string[];
+}): Promise<UnlinkedAssignResult> => {
+  const total: UnlinkedAssignResult = { assigned: 0, failed: 0, earningsRecorded: 0 };
+  for (let start = 0; start < orderIds.length; start += UNLINKED_ASSIGN_CHUNK) {
+    const response = await api.post(API_ENDPOINTS.MARKET_OPERATORS.UNLINKED_ORDERS_ASSIGN, {
+      operator_id: operatorId,
+      order_ids: orderIds.slice(start, start + UNLINKED_ASSIGN_CHUNK),
+    });
+    const outer = recordOf(response.data);
+    const data = recordOf(outer && "data" in outer ? outer.data : response.data) ?? {};
+    total.assigned += countOf(data.assigned);
+    total.failed += countOf(data.failed);
+    total.earningsRecorded += countOf(data.earnings_recorded);
+  }
+  return total;
+};
+
 export const getSelectableMarketOperators = async (marketId?: string): Promise<SelectableMarketOperator[]> => {
   const params = marketId ? { market_id: marketId } : undefined;
   const response = await api.get(API_ENDPOINTS.MARKET_OPERATORS.SELECTABLE, { params });

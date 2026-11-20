@@ -307,5 +307,28 @@
       "legacy": "Bu to'lov Elchi kassasidan qilingan — uni bekor qilib bo'lmaydi.",
       "failed": "Bekor qilib bo'lmadi. Qaytadan urinib ko'ring."
     }
+  },
+  "unlinked": {
+    "title": "Operatorga bog'lanmagan buyurtmalar: {{value}} ta",
+    "description": "Bu buyurtmalarda operator ismi faqat matn bo'lib yozilgan — operatorga bog'lanmagani uchun sotuvda komissiya yozilmagan. Har ism uchun operatorni tanlab biriktiring: sotilganlariga komissiya darhol hisoblanadi.",
+    "label": "Operatorga bog'lanmagan buyurtmalar",
+    "groupName": "«{{name}}»",
+    "counts": "{{total}} ta buyurtma, {{sold}} tasi sotilgan",
+    "operator": "«{{name}}» uchun operator",
+    "pickOperator": "Operatorni tanlang",
+    "assign": "Biriktirish",
+    "assignFor": "«{{name}}» buyurtmalarini biriktirish",
+    "cancel": "Bekor qilish",
+    "confirmTitle": "«{{operator}}» ga biriktirilsinmi?",
+    "confirmText": "«{{name}}» ismi yozilgan {{value}} ta buyurtma shu operatorga bog'lanadi. Sotilgan {{sold}} tasiga komissiya hozir, operatorning joriy stavkasi bo'yicha hisoblanadi. Biriktirilgan operatorni keyin almashtirib bo'lmaydi.",
+    "done": "{{value}} ta buyurtma «{{operator}}» ga biriktirildi",
+    "doneEarnings": "{{value}} ta sotilgan buyurtma uchun komissiya operator stavkasi bo'yicha hisoblanadi.",
+    "doneNoEarnings": "Komissiya buyurtmalar sotilganda yoziladi.",
+    "partial": "{{assigned}} ta biriktirildi, {{failed}} tasi biriktirilmadi",
+    "partialText": "Ba'zilariga operator allaqachon biriktirilgan yoki ular o'zgargan — ro'yxat yangilandi.",
+    "failed": "Biriktirib bo'lmadi",
+    "failedText": "Qaytadan urinib ko'ring — biriktirilganlari takrorlanmaydi.",
+    "showAll": "Hammasini ko'rsatish ({{value}})",
+    "showLess": "Kamroq ko'rsatish"
   }
 }

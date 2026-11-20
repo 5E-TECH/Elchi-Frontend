@@ -1,10 +1,12 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MarketOperatorCommission, MarketOperatorList, MarketOperatorListParams } from "../model/types";
 import {
+  assignUnlinkedOrders,
   createMarketOperator,
   deleteMarketOperator,
   getMarketOperators,
   getSelectableMarketOperators,
+  getUnlinkedOperatorOrders,
   updateMarketOperatorCommission,
   updateMarketOperatorWarehouseAccess,
 } from "./marketOperatorApi";
@@ -17,6 +19,32 @@ export const marketOperatorKeys = {
   list: (params: MarketOperatorListParams) => ["market-operators", "list", params] as const,
   /** Tanlov ro'yxati: `marketId` — xodim tanlagan market, `null` — o'z marketi (market roli). */
   selectable: (marketId: string | null) => ["market-operators", "selectable", marketId ?? "own"] as const,
+  /** 2026-11-20 — operatorga bog'lanmagan (ismi faqat matn) eski buyurtmalar guruhlari (market). */
+  unlinkedOrders: ["market-operators", "unlinked-orders"] as const,
+};
+
+/**
+ * `GET market-operators/unlinked-orders` (market). Qo'shimcha blok — xato bo'lsa sahifa uni ko'rsatmaydi
+ * (`silentError`), asosiy ro'yxatga ta'sir qilmaydi.
+ */
+export const useUnlinkedOperatorOrders = (options: { enabled?: boolean } = {}) =>
+  useQuery({
+    queryKey: marketOperatorKeys.unlinkedOrders,
+    queryFn: getUnlinkedOperatorOrders,
+    enabled: options.enabled ?? true,
+    meta: { silentError: true },
+  });
+
+/**
+ * Ommaviy biriktirish. Natija noma'lum bo'lsa ham (tarmoq, bo'lak yiqildi) guruhlar qayta o'qiladi — qolgani
+ * ko'rinadi, biriktirilgani qayta yuborilmaydi (backend operatori bor buyurtmani 409 bilan o'tkazib yuboradi).
+ */
+export const useAssignUnlinkedOrders = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: assignUnlinkedOrders,
+    onSettled: () => queryClient.invalidateQueries({ queryKey: marketOperatorKeys.unlinkedOrders }),
+  });
 };
 
 /**
