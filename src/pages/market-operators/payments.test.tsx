@@ -297,6 +297,94 @@ describe("«Operatorlar → To'lovlar» (F2qp6FtE)", () => {
   });
 });
 
+/**
+ * 2026-11-20 — ega: «operator nomidan yaratilgan buyurtmalarga xizmat haqqi ko'rsatilmayapti». Hisobda endi
+ * buyurtmalar soni (komissiya faqat sotilganidan), o'chirilgan operator va «Daromadlar» (qaysi buyurtmadan qancha).
+ */
+describe("«To'lovlar» — buyurtmalar soni, o'chirilgan operator, daromadlar", () => {
+  const WITH_COUNTS = {
+    items: [
+      { ...BALANCES.items[0], orders_total: 57, orders_sold: 41, orders_pending: 9 },
+      { ...BALANCES.items[1], orders_total: 0, orders_sold: 0, orders_pending: 0 },
+      {
+        operator_id: "47",
+        operator_name: "Nodira Aliyeva",
+        status: "deleted",
+        earned: 60000,
+        paid: 10000,
+        balance: 50000,
+        payments_count: 1,
+        last_paid_at: "2026-10-01",
+        orders_total: 3,
+        orders_sold: 3,
+        orders_pending: 0,
+      },
+    ],
+    totals: { earned: 1766500, paid: 1560000, balance: 206500 },
+  };
+  const EARNINGS = {
+    items: [
+      { id: "901", order_id: "55120", amount: 12500, order_total_price: 250000, commission_type: "percent", commission_value: 5, created_at: "2026-11-18T09:12:00.000Z" },
+      { id: "902", order_id: "55121", amount: 3000, order_total_price: 180000, commission_type: "fixed", commission_value: 3000, created_at: "2026-11-17T09:12:00.000Z" },
+    ],
+    pagination: { total: 2, page: 1, limit: 10, totalPages: 1 },
+  };
+
+  beforeEach(() => {
+    api.get.mockImplementation((url: string) => {
+      if (url === "finance/operator-payments/balances") return ok(WITH_COUNTS);
+      if (url === "finance/operator-payments/earnings") return ok(EARNINGS);
+      if (url === "finance/operator-payments") return ok({ items: HISTORY, pagination: { total: 3, page: 1, limit: 20, totalPages: 1 } });
+      return ok({});
+    });
+  });
+
+  it("qatorda «41 sotilgan · 9 yo'lda»; o'chirilgan operator — «O'chirilgan», unga «To'lov yozish» yo'q", async () => {
+    renderAt("/market-operators?view=payments");
+    const table = await screen.findByRole("table", { name: "Operatorlar hisobi" });
+    const madina = (await within(table).findByText("Madina Xoliqova")).closest("tr") as HTMLElement;
+    expect(madina).toHaveTextContent("41 sotilgan · 9 yo'lda");
+
+    const deleted = within(table).getByText("Nodira Aliyeva").closest("tr") as HTMLElement;
+    expect(deleted).toHaveTextContent("O'chirilgan");
+    expect(within(deleted).queryByRole("button", { name: "Nodira Aliyeva uchun to'lov yozish" })).toBeNull();
+    expect(within(deleted).getByRole("button", { name: "Nodira Aliyeva daromadlari" })).toBeInTheDocument();
+  });
+
+  it("«Daromadlar» — oynada qaysi buyurtmadan qancha; komissiya sotuvda yozilishi va yo'ldagi buyurtmalar aytiladi", async () => {
+    const user = userEvent.setup();
+    renderAt("/market-operators?view=payments");
+    await user.click(await screen.findByRole("button", { name: "Madina Xoliqova daromadlari" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Madina Xoliqova — daromadlar" });
+    expect(dialog).toHaveTextContent("Komissiya buyurtma sotilganda, sotuv paytidagi stavka bilan yoziladi.");
+    expect(dialog).toHaveTextContent("Yo'lda yana 9 ta buyurtma bor — sotilsa komissiya yoziladi.");
+    const rows = await within(dialog).findByRole("table", { name: "Madina Xoliqova daromadlari" });
+    expect(within(rows).getByRole("link", { name: "#55120" })).toHaveAttribute("href", "/orders/edit/55120");
+    expect(rows).toHaveTextContent("12 500");
+    expect(rows).toHaveTextContent("3 000");
+    expect(api.get).toHaveBeenCalledWith("finance/operator-payments/earnings", {
+      params: { operator_id: "41", page: 1, limit: 10 },
+    });
+
+    await user.click(within(dialog).getByRole("button", { name: "Yopish" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Madina Xoliqova — daromadlar" })).toBeNull());
+  });
+
+  it("«To'lov yozish» oynasida o'chirilgan operator tanlovda yo'q", async () => {
+    const user = userEvent.setup();
+    renderAt("/market-operators?view=payments");
+    await screen.findByRole("table", { name: "Operatorlar hisobi" });
+    const header = screen.getAllByRole("button", { name: "To'lov yozish" })[0];
+    await user.click(header);
+    const dialog = await screen.findByRole("dialog", { name: "To'lov yozish" });
+    await user.click(within(dialog).getByRole("combobox", { name: "Operator" }));
+    const listbox = await screen.findByRole("listbox");
+    expect(within(listbox).queryByText("Nodira Aliyeva")).toBeNull();
+    expect(within(listbox).getByText("Madina Xoliqova")).toBeInTheDocument();
+  });
+});
+
 describe("forma tekshiruvi", () => {
   it("operator, summa > 0, sana — bugundan keyin emas", () => {
     expect(validatePaymentForm({ operatorId: "", amount: 0, paidAt: "" }, "2026-11-18")).toEqual({

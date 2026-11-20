@@ -365,6 +365,11 @@ export const API_ENDPOINTS = {
     OPERATOR_PAYMENTS: "finance/operator-payments",
     // GET → { items: [{ operator_id, operator_name, status, earned, paid, balance, payments_count, last_paid_at }], totals }
     OPERATOR_PAYMENT_BALANCES: "finance/operator-payments/balances",
+    //   2026-11-20: + `orders_total`, `orders_sold`, `orders_pending` (null — order-service javob bermadi); o'chirilgan
+    //   operator — `status: "deleted"` (faqat daromadi / to'lovi / yo'ldagi buyurtmasi bo'lsa).
+    // GET ?operator_id&page&limit → { items: [{ id, order_id, amount, order_total_price, commission_type,
+    //   commission_value, created_at }], pagination } — «Ishlab topdi» qatorlari (o'z operatori, o'chirilgani ham).
+    OPERATOR_PAYMENT_EARNINGS: "finance/operator-payments/earnings",
     // POST { reason } — yozuvni bekor qilish (qator qoladi; 200; eski Elchi yozuvi — 409).
     OPERATOR_PAYMENT_CANCEL: (id: string | number) => `finance/operator-payments/${id}/cancel`,
     // E6iEOAVs — market operatori O'Z hisobi (operator_id — token): { operator_id, earned, paid, balance }

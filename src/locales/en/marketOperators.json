@@ -34,7 +34,8 @@
   "status": {
     "active": "Active",
     "inactive": "Inactive",
-    "inactiveHint": "Can't sign in"
+    "inactiveHint": "Can't sign in",
+    "deleted": "Deleted"
   },
   "commission": {
     "percentHint": "Percent · of the order price",
@@ -211,7 +212,12 @@
       "recordFor": "Record payment for {{name}}",
       "emptyTitle": "No operators yet",
       "emptyDescription": "Add an operator — their earnings and payments will appear here.",
-      "toOperators": "Go to operators"
+      "toOperators": "Go to operators",
+      "orders": "Orders",
+      "ordersValue": "{{sold}} sold · {{pending}} in progress",
+      "ordersShort": "Orders: {{value}}",
+      "earnings": "Earnings",
+      "earningsFor": "{{name}} earnings"
     },
     "history": {
       "title": "Payment history",
@@ -306,6 +312,24 @@
       "notFound": "Payment not found — the list was refreshed.",
       "legacy": "This payment was made from the Elchi cashbox — it cannot be cancelled.",
       "failed": "Could not cancel. Please try again."
+    },
+    "earnings": {
+      "title": "{{name}} — earnings",
+      "description": "Commission is recorded when an order is sold, at the rate in effect at the time of sale.",
+      "label": "{{name}} earnings",
+      "summary": "Earned: {{amount}}.",
+      "pending": "Orders still in progress: {{value}} — commission is recorded once they are sold.",
+      "loading": "Loading earnings",
+      "order": "Order",
+      "orderId": "#{{id}}",
+      "orderTotal": "Order total",
+      "rate": "Rate",
+      "amount": "Share",
+      "date": "Date",
+      "rateLine": "{{total}} × {{rate}}",
+      "emptyTitle": "No earnings yet",
+      "emptyDescription": "Commission appears here once orders with this operator are sold.",
+      "pagination": "{{from}}–{{to}} of {{total}}"
     }
   }
 }

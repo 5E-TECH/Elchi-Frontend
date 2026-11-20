@@ -1,11 +1,11 @@
 // dizayn-v2: (maket yo'q) market_operator-earnings, market-operators-list
 import { memo, useCallback, useMemo } from "react";
-import { HandCoins } from "lucide-react";
+import { HandCoins, ReceiptText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { OperatorBalance } from "../../../entities/operator-payment";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
-import { formatMoneyLocalized, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatNumberLocalized, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
 import { Button, DataTable, Skeleton, type DataTableColumn } from "../../../shared/ui/primitives";
 import type { PaymentDialogOperator } from "./RecordOperatorPaymentDialog";
 import { OperatorAvatar } from "./OperatorsTable";
@@ -13,15 +13,18 @@ import { OperatorAvatar } from "./OperatorsTable";
 type Props = {
   rows: readonly OperatorBalance[];
   onRecord: (operator: PaymentDialogOperator) => void;
+  /** «Daromadlar» — operator ishlab topgan summaning tarkibi (qaysi buyurtmadan qancha). */
+  onEarnings: (operator: OperatorBalance) => void;
 };
 
 /**
- * HAR OPERATOR HISOBI (F2qp6FtE): Operator · Ishlab topdi · To'landi · Qoldiq (qalin; manfiy — «Ortiqcha to'langan»)
+ * HAR OPERATOR HISOBI (F2qp6FtE): Operator · Buyurtmalar («41 sotilgan · 9 yo'lda», < 1024 yashirin; 2026-11-20) ·
+ * Ishlab topdi · To'landi · Qoldiq (qalin; manfiy — «Ortiqcha to'langan»)
  * · Oxirgi to'lov (< 1024 yashirin) · «To'lov yozish» (ikkinchi darajali, sarlavhadagi asosiy tugma bilan bir xil
  * oyna, operator tanlangan). Telefonda kartalar: ism, uch katakli qator (maket `market_operator-earnings` telefon
  * «Hisob» qatori kabi) va to'liq enli tugma. Maket yo'q — eng yaqini `market_operator-earnings`, `market-operators-list`.
  */
-export const OperatorBalancesTable = memo(({ rows, onRecord }: Props) => {
+export const OperatorBalancesTable = memo(({ rows, onRecord, onEarnings }: Props) => {
   const { t, i18n } = useTranslation("marketOperators");
   const language = resolveMoneyLanguage(i18n.resolvedLanguage ?? i18n.language);
   const money = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
@@ -29,6 +32,26 @@ export const OperatorBalancesTable = memo(({ rows, onRecord }: Props) => {
   const nameOf = useCallback((row: OperatorBalance) => row.operatorName || row.operatorId, []);
   const nameClass = (row: OperatorBalance) =>
     cx("font-semibold [overflow-wrap:anywhere]", row.status === "active" ? "text-text" : "text-text-muted");
+  /** Holat izohi: nofaol / o'chirilgan (faolda — yo'q). */
+  const statusNote = useCallback(
+    (row: OperatorBalance) =>
+      row.status === "deleted" ? t("status.deleted") : row.status === "inactive" ? t("status.inactive") : null,
+    [t],
+  );
+  /**
+   * 2026-11-20: «41 sotilgan · 9 yo'lda» — komissiya faqat sotilganidan yoziladi; yo'ldagisi sotilsa yoziladi.
+   * Backend sanamagan bo'lsa — «—».
+   */
+  const ordersText = useCallback(
+    (row: OperatorBalance) =>
+      row.ordersSold === null || row.ordersPending === null
+        ? "—"
+        : t("payments.balances.ordersValue", {
+            sold: formatNumberLocalized(row.ordersSold, { language }),
+            pending: formatNumberLocalized(row.ordersPending, { language }),
+          }),
+    [language, t],
+  );
 
   const balanceCell = useCallback(
     (row: OperatorBalance) => (
@@ -58,6 +81,27 @@ export const OperatorBalancesTable = memo(({ rows, onRecord }: Props) => {
     [nameOf, onRecord, t],
   );
 
+  /** «Daromadlar» va (o'chirilmagan operatorga) «To'lov yozish». */
+  const actions = useCallback(
+    (row: OperatorBalance, className?: string) => (
+      <span className={cx("inline-flex flex-wrap justify-end gap-2", className)}>
+        <Button
+          size="sm"
+          variant="ghost"
+          leftIcon={ReceiptText}
+          aria-haspopup="dialog"
+          aria-label={t("payments.balances.earningsFor", { name: nameOf(row) })}
+          onClick={() => onEarnings(row)}
+          className={className ? "flex-1" : undefined}
+        >
+          {t("payments.balances.earnings")}
+        </Button>
+        {row.status === "deleted" ? null : recordButton(row, className ? "flex-1" : undefined)}
+      </span>
+    ),
+    [nameOf, onEarnings, recordButton, t],
+  );
+
   const columns = useMemo<DataTableColumn<OperatorBalance>[]>(
     () => [
       {
@@ -68,12 +112,17 @@ export const OperatorBalancesTable = memo(({ rows, onRecord }: Props) => {
             <OperatorAvatar name={nameOf(row)} />
             <span className="flex min-w-0 flex-col gap-0.5">
               <span className={nameClass(row)}>{nameOf(row)}</span>
-              {row.status === "inactive" ? (
-                <span className="text-[13px] text-text-muted">{t("status.inactive")}</span>
-              ) : null}
+              {statusNote(row) ? <span className="text-[13px] text-text-muted">{statusNote(row)}</span> : null}
             </span>
           </div>
         ),
+      },
+      {
+        id: "orders",
+        header: t("payments.balances.orders"),
+        hideBelow: "lg",
+        cellClassName: "whitespace-nowrap text-text-muted tabular-nums",
+        cell: ordersText,
       },
       {
         id: "earned",
@@ -101,10 +150,10 @@ export const OperatorBalancesTable = memo(({ rows, onRecord }: Props) => {
         id: "actions",
         header: <span className="sr-only">{t("payments.balances.actions")}</span>,
         cellClassName: "text-right",
-        cell: (row) => recordButton(row),
+        cell: (row) => actions(row),
       },
     ],
-    [balanceCell, language, money, nameOf, recordButton, t],
+    [actions, balanceCell, language, money, nameOf, ordersText, statusNote, t],
   );
 
   const renderCard = useCallback(
@@ -118,8 +167,13 @@ export const OperatorBalancesTable = memo(({ rows, onRecord }: Props) => {
               {row.lastPaidAt
                 ? t("payments.balances.lastPaidShort", { date: formatDateLocalized(row.lastPaidAt, { language }) })
                 : t("payments.balances.never")}
-              {row.status === "inactive" ? ` · ${t("status.inactive")}` : ""}
+              {statusNote(row) ? ` · ${statusNote(row)}` : ""}
             </span>
+            {ordersText(row) === "—" ? null : (
+              <span className="text-[13px] text-text-muted tabular-nums">
+                {t("payments.balances.ordersShort", { value: ordersText(row) })}
+              </span>
+            )}
           </span>
         </div>
         <dl className="m-0 grid grid-cols-3 overflow-hidden rounded-xl border border-border">
@@ -143,10 +197,10 @@ export const OperatorBalancesTable = memo(({ rows, onRecord }: Props) => {
             {t("payments.balances.overpaidBy", { amount: money(-row.balance) })}
           </span>
         ) : null}
-        {recordButton(row, "w-full")}
+        {actions(row, "w-full")}
       </div>
     ),
-    [language, money, nameOf, recordButton, t],
+    [actions, language, money, nameOf, ordersText, statusNote, t],
   );
 
   return (
@@ -180,6 +234,12 @@ export const OperatorBalancesSkeleton = memo(() => {
             <Skeleton tone="border" width={140} />
           </div>
         ),
+      },
+      {
+        id: "orders",
+        header: t("payments.balances.orders"),
+        hideBelow: "lg" as const,
+        cell: () => <Skeleton tone="border" width={120} />,
       },
       ...(["earned", "paid", "balance"] as const).map((key) => ({
         id: key,
