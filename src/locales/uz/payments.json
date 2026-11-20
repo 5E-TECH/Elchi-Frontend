@@ -1293,8 +1293,8 @@
         "groupHints": {
           "superadmin": "To'liq hisobot va ilova",
           "couriers": "Faqat o'z operatsiyalari",
-          "markets": "Faqat o'ziga to'lovlar · Telegram — egasining shaxsiy chatiga",
-          "branches": "Filial guruhiga yoki menejerlarga"
+          "markets": "Faqat o'ziga to'lovlar · Telegram — egasining shaxsiy chatiga, xabar + Excel",
+          "branches": "Filial guruhiga yoki menejerlarga · xabar + Excel"
         },
         "channels": {
           "telegram": "Telegram",
@@ -1305,7 +1305,7 @@
           "in_app": "{{group}}: tizim bildirishnomasi"
         },
         "format": "Ilova formati",
-        "formatHint": "Superadminga Telegram xabari bilan birga yuboriladi",
+        "formatHint": "Superadminga Telegram xabari bilan birga yuboriladi. Filial guruhi va marketlar har doim Excel oladi",
         "note": "Hisobot faqat smenada operatsiyasi bo'lgan kuryer va marketlarga boradi: kuryer faqat o'z o'tkazmalarini, market faqat o'ziga to'langan summalarni ko'radi. Telegram ulanmagan foydalanuvchiga faqat tizim bildirishnomasi yuboriladi."
       }
     },
