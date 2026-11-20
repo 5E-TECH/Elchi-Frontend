@@ -586,7 +586,7 @@ Backend kartasi: Trello `xVvf9BHI` (BE-2, 2026-11-15 izohida qarorlar).
   - bosqichlar: `lzNVFmSH`, `1QR2FboE`, `klNZb5uJ`, `rejXa4X6` — 0–3, In Test;
   - `tzvOkdpI` — 4-bosqich (kod tayyor; checklist'ni lead yangilaydi);
   - `suniwdoQ` — 5-bosqich (5 ta checkbox — baseline'lar commit qilinib, «Visual» yashil bo'lgach).
-- Trello kalitlari `~/Desktop/Elchi-Marketplace/.env.trello` da. Hech qachon chiqarilmaydi, kodga yoki commit'ga
+- Trello kalitlari lokalda `~/Desktop/Projects/elchi-lid-sotuv/.env.trello` da, bulut sessiyasida — muhit o'zgaruvchilari `TRELLO_KEY` / `TRELLO_TOKEN` (`CLAUDE.md` → «Trello»). Hech qachon chiqarilmaydi, kodga yoki commit'ga
   yozilmaydi.
 - Karta sikli: In Progress → In Test → Done faqat BARCHA checkbox belgilansa.
 - Faqat egasi (shodiyorergashev) kartalari bajariladi.
