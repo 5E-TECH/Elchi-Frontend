@@ -9,8 +9,10 @@ import {
   getOperatorAccountEarnings,
   getOperatorAccountPayments,
   getMarketOperatorEarnings,
+  getMissingEarnings,
   getOperatorBalances,
   getOperatorPayments,
+  recordMissingEarnings,
   recordOperatorPayment,
 } from "./operatorPaymentApi";
 
@@ -37,6 +39,24 @@ export const operatorPaymentKeys = {
   /** 2026-11-20 — market: o'z operatori daromad qatorlari. */
   marketEarnings: (operatorId: string, params: { page: number; limit: number }) =>
     ["operator-payments", "market-earnings", operatorId, params] as const,
+  /** 2026-11-20 — market: komissiyasiz qolgan o'tgan sotuvlar (oldindan ko'rish). */
+  missingEarnings: (operatorId: string) => ["operator-payments", "missing-earnings", operatorId] as const,
+};
+
+/** `GET finance/operator-payments/missing-earnings` — oyna ochiq bo'lganda (`operatorId` bor). */
+export const useMissingEarnings = (operatorId: string | null) =>
+  useQuery({
+    queryKey: operatorPaymentKeys.missingEarnings(operatorId ?? ""),
+    queryFn: () => getMissingEarnings(operatorId ?? ""),
+    enabled: Boolean(operatorId),
+    staleTime: 0,
+    meta: { silentError: true },
+  });
+
+/** Yozish — hisob (balanslar, daromadlar) va oldindan ko'rish qayta o'qiladi. */
+export const useRecordMissingEarnings = () => {
+  const invalidate = useInvalidateOperatorPayments();
+  return useMutation({ mutationFn: recordMissingEarnings, onSettled: invalidate });
 };
 
 /** `GET finance/operator-payments/balances` (market). Xatoni sahifa o'zi chizadi (`silentError`). */

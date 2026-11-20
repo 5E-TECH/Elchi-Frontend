@@ -62,7 +62,8 @@
     "setCommission": "Komissiya belgilash",
     "changeCommission": "Komissiyani o'zgartirish",
     "delete": "O'chirish",
-    "recordPayment": "To'lov yozish"
+    "recordPayment": "To'lov yozish",
+    "missingEarnings": "O'tgan sotuvlarga hisoblash"
   },
   "commissionForm": {
     "type": "Komissiya turi",
@@ -328,5 +329,27 @@
       "emptyDescription": "Operator tanlangan buyurtmalar sotilganda komissiya shu yerda chiqadi.",
       "pagination": "{{from}}–{{to}} / {{total}}"
     }
+  },
+  "missingEarnings": {
+    "title": "{{name}} — o'tgan sotuvlar",
+    "description": "Sotuv paytida stavka belgilanmagan bo'lsa, o'sha buyurtmalarga komissiya yozilmagan. Ularni hozirgi stavka bo'yicha hisoblash mumkin — Elchi kassasiga ta'sir qilmaydi.",
+    "loading": "Hisob yuklanmoqda",
+    "loadFailed": "Hisobni yuklab bo'lmadi. Oynani yopib, qaytadan oching.",
+    "soldOrders": "Sotilgan buyurtmalar",
+    "alreadyRecorded": "Komissiya yozilgan",
+    "missing": "Komissiya yozilmagan",
+    "rate": "Hozirgi stavka",
+    "noRate": "Belgilanmagan",
+    "amount": "Hisoblanadigan summa",
+    "willRecord": "«Hisoblash» bosilsa {{value}} ta buyurtmaga jami {{amount}} yoziladi. Avval yozilgan komissiyalar o'zgarmaydi.",
+    "nothing": "Hisoblanadigan buyurtma yo'q — barcha sotuvlarga komissiya yozilgan.",
+    "setRateFirst": "Avval operatorga komissiya belgilang — keyin o'tgan sotuvlarni hisoblash mumkin.",
+    "truncated": "Juda ko'p sotuv: bu safar oxirgi 5000 tasi hisoblanadi, qolgani — keyingi bosishda.",
+    "record": "Hisoblash",
+    "cancel": "Yopish",
+    "done": "{{name}}: {{value}} ta buyurtmaga komissiya yozildi",
+    "doneText": "Jami {{amount}} — «Ishlab topdi» ga qo'shildi.",
+    "failed": "Hisoblab bo'lmadi",
+    "failedText": "Qaytadan urinib ko'ring — yozilganlari takrorlanmaydi."
   }
 }
