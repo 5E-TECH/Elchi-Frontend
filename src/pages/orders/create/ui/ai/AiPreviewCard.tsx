@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
 import { toLocalPhone, type AiPreviewItem, type AiWarningField } from "../../../../../entities/ai-order";
-import type { SelectableMarketOperator } from "../../../../../entities/market-operator";
+import { suggestOperator, type SelectableMarketOperator } from "../../../../../entities/market-operator";
 import type { DeliveryType } from "../../../../../entities/order/types/order";
 import { cx } from "../../../../../shared/lib/cx";
 import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
@@ -25,7 +25,7 @@ import {
 } from "../../../../../shared/ui/primitives";
 import { CreateAlert } from "../CreateAlert";
 import { toDraft, toList, type AiDraft } from "./aiDraft";
-import { chosenOperatorId, suggestOperator } from "./aiOperator";
+import { chosenOperatorId } from "./aiOperator";
 import { activeAiWarnings, sourceAiWarnings } from "./aiWarnings";
 import { evalPreview, isItemResolved, needsPriceConfirm, type AiDraftOrder, type AiIssue } from "./evalPreview";
 
@@ -722,7 +722,7 @@ const AiPreviewCard = ({
                   hint={hints(
                     // Ism yozilgan, lekin ro'yxatdan tanlanmagan — buyurtma operatorsiz, komissiya yozilmaydi.
                     order.operator?.trim() && !operatorSuggestion ? (
-                      <WarningHint key="text-only">{t("aiOperatorTextOnly")}</WarningHint>
+                      <WarningHint key="text-only">{t("operatorSelect.textOnly")}</WarningHint>
                     ) : null,
                     warningFor("operator"),
                   )}
@@ -731,15 +731,15 @@ const AiPreviewCard = ({
                   {operatorSuggestion ? (
                     <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-action-soft px-2.5 py-2 text-[13px] font-semibold text-text">
                       <span className="min-w-0 flex-[1_1_160px]">
-                        {t("aiOperatorSuggest", { name: operatorSuggestion.name })}
+                        {t("operatorSelect.suggest", { name: operatorSuggestion.name })}
                       </span>
                       <Button
                         size="sm"
                         variant="secondary"
-                        aria-label={t("aiOperatorSuggestPickAria", { name: operatorSuggestion.name })}
+                        aria-label={t("operatorSelect.suggestPickAria", { name: operatorSuggestion.name })}
                         onClick={() => pickOperator(operatorSuggestion.id)}
                       >
-                        {t("aiOperatorSuggestPick")}
+                        {t("operatorSelect.suggestPick")}
                       </Button>
                     </div>
                   ) : null}

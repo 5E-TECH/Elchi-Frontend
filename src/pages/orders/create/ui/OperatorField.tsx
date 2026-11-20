@@ -1,9 +1,10 @@
 // dizayn-v2: (maket yo'q) superadmin-neworders-create-manual-step2
-import { memo, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo, type ReactNode } from "react";
+import { TriangleAlert } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useSelectableMarketOperators } from "../../../../entities/market-operator";
-import { Field, Select, TextInput, type SelectOption } from "../../../../shared/ui/primitives";
+import { suggestOperator, useSelectableMarketOperators } from "../../../../entities/market-operator";
+import { Button, Field, Select, TextInput, type SelectOption } from "../../../../shared/ui/primitives";
 import type { OrderCreateFormValues } from "../model/orderCreateForm";
 
 type OperatorFieldProps = {
@@ -14,6 +15,14 @@ type OperatorFieldProps = {
 /** «Tanlanmagan» — bo'sh qiymatli variant: `Select` uni sukut deb ko'rsatadi, × tanlovni shunga qaytaradi. */
 const NONE = "";
 
+/** Maydon ostidagi sariq ogohlantirish (AI kartasidagi `WarningHint` bilan bir xil ko'rinish). */
+const WarningHint = ({ children }: { children: ReactNode }) => (
+  <span className="flex items-start gap-1.5 text-[13px] font-semibold text-warning-fg">
+    <TriangleAlert size={16} aria-hidden="true" className="mt-px shrink-0" />
+    <span className="min-w-0">{children}</span>
+  </span>
+);
+
 /**
  * «OPERATOR» — buyurtma xulosasidagi maydon (BeePost `operator_id` tanlovi kabi; maket yo'q — eng yaqini
  * `*-create-manual-step2` dagi «Operator» maydoni). Ega qoidasi: admin ma'lumotnoma qiymatini yozmaydi — forma
@@ -22,6 +31,9 @@ const NONE = "";
  *    `operator` (uning ismi) yuboriladi; «Tanlanmagan» da ostida erkin matn («Ro'yxatda yo'q operator»);
  *  - ro'yxat yuklanmaguncha, bo'sh yoki yuklanmasa — avvalgi erkin matn maydoni (yuklanmasa izoh bilan), faqat
  *    `operator` matni ketadi.
+ *  - 2026-11-20: erkin matnda yozilgan ism ro'yxatdagi operatorga mos kelsa — «Tanlash» TAKLIFI (avtomatik emas);
+ *    mos kelmasa — «komissiya yozilmaydi» ogohlantirishi. Ilgari ism yozib qo'yilsa buyurtma `operator_id` siz
+ *    yaratilib, sotuvda operatorga komissiya yozilmasdi va bu hech qayerda ko'rinmasdi.
  * Market operatori roli bu maydonni ko'rmaydi (`Step2Summary` → `selfOperator`).
  */
 const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
@@ -34,6 +46,7 @@ const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
   } = useFormContext<OrderCreateFormValues>();
   const market = useWatch({ control, name: "market" });
   const operatorId = useWatch({ control, name: "details.operator_id" }) ?? NONE;
+  const typedOperator = useWatch({ control, name: "details.operator" });
   const operatorsQuery = useSelectableMarketOperators(market ? String(market.id) : null, {
     ownMarket: isMarketRole,
   });
@@ -58,9 +71,20 @@ const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
     [operators, t],
   );
 
+  /** Ro'yxatdan tanlash: `operator_id` + ismi (chekda va buyurtmada); «Tanlanmagan» — ism tozalanadi (BeePost kabi). */
+  const pickOperator = (id: string) => {
+    clearErrors("details.operator_id");
+    setValue("details.operator_id", id, { shouldDirty: true });
+    setValue("details.operator", operators?.find((item) => item.id === id)?.name ?? "", { shouldDirty: true });
+  };
+
+  // Erkin matnda yozilgan ism ro'yxatdagi BITTA operatorga mos kelsa — taklif; tanlanmaguncha `operator_id` yo'q.
+  const suggestion = hasList && !operatorId ? suggestOperator(typedOperator, operators) : null;
+  const textOnly = hasList && !operatorId && !suggestion && Boolean(typedOperator?.trim());
+
   // Kalitlar: ro'yxat kelganda React erkin matn `Controller` ini `details.operator_id` ga qayta nomlab ishlatmasin —
   // aks holda react-hook-form `details.operator` ni ro'yxatdan o'chiradi (qiymat `undefined` bo'lib qoladi).
-  const freeText = (label: string, hint?: string) => (
+  const freeText = (label: string, hint?: ReactNode, extra?: ReactNode) => (
     <Controller
       key="operator-text"
       control={control}
@@ -76,12 +100,27 @@ const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
             onBlur={field.onBlur}
             ref={field.ref}
           />
+          {extra}
         </Field>
       )}
     />
   );
 
   if (!hasList) return freeText(t("operator"), loadFailed ? t("operatorSelect.loadFailed") : undefined);
+
+  const suggestionRow = suggestion ? (
+    <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-action-soft px-2.5 py-2 text-[13px] font-semibold text-text">
+      <span className="min-w-0 flex-[1_1_160px]">{t("operatorSelect.suggest", { name: suggestion.name })}</span>
+      <Button
+        size="sm"
+        variant="secondary"
+        aria-label={t("operatorSelect.suggestPickAria", { name: suggestion.name })}
+        onClick={() => pickOperator(suggestion.id)}
+      >
+        {t("operatorSelect.suggestPick")}
+      </Button>
+    </div>
+  ) : null;
 
   return (
     <>
@@ -101,22 +140,21 @@ const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
               name={field.name}
               options={options}
               value={field.value || NONE}
-              onChange={(next) => {
-                const id = next ?? NONE;
-                clearErrors("details.operator_id");
-                field.onChange(id);
-                // Chekda va buyurtmada — tanlangan ism; «Tanlanmagan» — ism tozalanadi (BeePost kabi), pastda yoziladi.
-                setValue("details.operator", operators?.find((item) => item.id === id)?.name ?? "", {
-                  shouldDirty: true,
-                });
-              }}
+              onChange={(next) => pickOperator(next ?? NONE)}
               onBlur={field.onBlur}
               ref={field.ref}
             />
           </Field>
         )}
       />
-      {operatorId ? null : freeText(t("operatorSelect.otherLabel"))}
+      {operatorId
+        ? null
+        : freeText(
+            t("operatorSelect.otherLabel"),
+            // Ism yozilgan, lekin ro'yxatdan tanlanmagan — buyurtma operatorsiz, komissiya yozilmaydi.
+            textOnly ? <WarningHint>{t("operatorSelect.textOnly")}</WarningHint> : undefined,
+            suggestionRow,
+          )}
     </>
   );
 };
