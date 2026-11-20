@@ -71,6 +71,27 @@ export const PROFILES = {
   },
 } as const;
 
+/**
+ * BE #738: gateway har qatorga joriy foydalanuvchi uchun `rollback` qo'shadi — rollback roli yo'q (admin, market) —
+ * `NOT_ALLOWED_ROLE`; menejer / kuryer — bu soxta ro'yxatdagi kutilmoqda / yangi qatorlar `STATUS_NOT_ROLLBACKABLE`.
+ */
+const withRollback = (role: keyof typeof PROFILES, row: Record<string, unknown>) => {
+  if ("rollback" in row) return row;
+  const canRollback = role === "manager" || role === "courier";
+  const status = String(row.status ?? "");
+  if (canRollback && (status === "sold" || status === "cancelled")) return row;
+  return {
+    ...row,
+    rollback: canRollback
+      ? { allowed: false, code: "STATUS_NOT_ROLLBACKABLE", message: `Rollback mumkin emas (status: ${status})` }
+      : {
+          allowed: false,
+          code: "NOT_ALLOWED_ROLE",
+          message: "Buyurtmani qaytarish faqat superadmin, menejer va kuryer uchun",
+        },
+  };
+};
+
 export const mockStatusCountsApi = async (
   page: Page,
   role: keyof typeof PROFILES = "admin",
@@ -110,7 +131,7 @@ export const mockStatusCountsApi = async (
       state.listQueries.push(Object.fromEntries(url.searchParams));
       return reply(route, {
         statusCode: 200,
-        data: state.orders,
+        data: state.orders.map((row) => withRollback(role, row)),
         meta: { page: 1, limit: 10, total: STATUS_COUNTS.all, totalPages: 125 },
         total: STATUS_COUNTS.all,
       });
