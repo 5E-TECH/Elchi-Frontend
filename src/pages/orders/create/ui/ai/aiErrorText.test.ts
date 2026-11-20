@@ -4,7 +4,7 @@ import uz from "../../../../../locales/uz/orders.json";
 import ru from "../../../../../locales/ru/orders.json";
 import en from "../../../../../locales/en/orders.json";
 import type { AiConfirmFailureCode, AiParseFailureReason } from "../../../../../entities/ai-order";
-import { confirmFailureText, parseFailureView, parseHttpErrorView } from "./aiErrorText";
+import { confirmFailureText, confirmGateError, parseFailureView, parseHttpErrorView } from "./aiErrorText";
 
 /**
  * AI XATO MATNLARI (6LSlbHoi): har sabab o'z matni va harakati bilan,
@@ -156,6 +156,72 @@ describe("qo'lda yaratish yo'q rol (market operatori, MO-3)", () => {
       const text = (locale as { operatorCreate: Record<string, string> }).operatorCreate.aiServer;
       expect(text).toBeTruthy();
       expect(text).not.toMatch(/qo'lda|вручную|manual/i);
+    }
+  });
+});
+
+describe("confirmGateError (AI ack darvozasi — hech narsa yaratilmagan)", () => {
+  const error = (status: number, data: unknown, headers: Record<string, string> = {}) => ({ response: { status, data, headers } });
+
+  it("409 CHECKS_NOT_ACKNOWLEDGED → kartalar va ularning bloklovchi kodlari (noma'lum kod tashlanadi)", () => {
+    expect(
+      confirmGateError(
+        error(409, {
+          statusCode: 409,
+          code: "CHECKS_NOT_ACKNOWLEDGED",
+          missing: ["district_low_confidence", "price_check"],
+          orders: [
+            { index: 0, missing: ["district_low_confidence"] },
+            { index: 2, missing: ["price_check", "qty_check"] },
+            { index: "x", missing: ["price_check"] },
+            { index: 3, missing: [] },
+          ],
+        }),
+      ),
+    ).toEqual({
+      kind: "ack",
+      orders: [
+        { index: 0, missing: ["district_low_confidence"] },
+        { index: 2, missing: ["price_check"] },
+      ],
+    });
+  });
+
+  it("503 AI_CHECKS_UNAVAILABLE → soniya tanadan, bo'lmasa `Retry-After` dan, bo'lmasa 5", () => {
+    expect(confirmGateError(error(503, { code: "AI_CHECKS_UNAVAILABLE", retry_after_seconds: 7 }))).toEqual({
+      kind: "unavailable",
+      retryAfterSeconds: 7,
+    });
+    expect(confirmGateError(error(503, { code: "AI_CHECKS_UNAVAILABLE" }, { "retry-after": "12" }))).toEqual({
+      kind: "unavailable",
+      retryAfterSeconds: 12,
+    });
+    expect(confirmGateError(error(503, { code: "AI_CHECKS_UNAVAILABLE" }))).toEqual({ kind: "unavailable", retryAfterSeconds: 5 });
+  });
+
+  it("400 AI_DRAFT_* → `indexes`", () => {
+    for (const code of ["AI_DRAFT_REQUIRED", "AI_DRAFT_NOT_FOUND", "AI_DRAFT_ITEM_NOT_FOUND"]) {
+      expect(confirmGateError(error(400, { code, indexes: [1, -2, 3] }))).toEqual({ kind: "draft", indexes: [1, 3] });
+    }
+  });
+
+  it("boshqa xato (kodsiz 400, 5xx, javobsiz) — `null`: avvalgi umumiy ishlov", () => {
+    expect(confirmGateError(error(400, { message: "x" }))).toBeNull();
+    expect(confirmGateError(error(502, "Bad Gateway"))).toBeNull();
+    expect(confirmGateError(new Error("Network Error"))).toBeNull();
+  });
+
+  it("yangi matnlar uch tilda bor", () => {
+    for (const key of [
+      "aiAckMissingSummary",
+      "aiAckMissingCard",
+      "aiChecksUnavailable",
+      "aiDraftNotFound",
+      "aiAwaitingAck",
+      "aiAckDistrict",
+      "aiJumpToAck",
+    ]) {
+      for (const locale of [uz, ru, en] as Record<string, unknown>[]) expect(locale[key], key).toBeTruthy();
     }
   });
 });
