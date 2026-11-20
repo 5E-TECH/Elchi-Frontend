@@ -48,8 +48,10 @@ export type MarketGroupLinkDialogProps = {
   open: boolean;
   code: GroupLinkCode;
   /** Sarlavha ostida: «{market} · {guruh turi}». */
-  marketName: string;
-  groupType: NotificationGroupType;
+  marketName?: string;
+  groupType?: NotificationGroupType;
+  /** Sarlavha ostidagi matn o'rniga (masalan filial kassasi guruhi: «{filial} · Kassa hisoboti guruhi»). */
+  description?: string;
   /** Havola amal qiladigan oxirgi lahza (ms, mahalliy soat bo'yicha). */
   expiresAtMs: number;
   /** Sanoqning to'liq muddati (progress 100% i), sukut — 10 daqiqa. */
@@ -77,13 +79,15 @@ export type MarketGroupLinkDialogProps = {
  * - buyruq rejimi (`deep_link` yo'q — bot nomi sozlanmagan; maket yo'q, naqsh `common-profile-telegram-command-dialog`):
  *   buyruq, muddat (sanoqsiz), o'z qadamlari, faqat «Yopish»;
  * - muddati tugadi: `sunken` ichida bo'sh holat va «Yangi havola olish».
- * Telefonda o'zi pastki varaqa (`Dialog`).
+ * Telefonda o'zi pastki varaqa (`Dialog`). Filial kassasi guruhi ham shu oynadan foydalanadi (`description` bilan;
+ * maket yo'q — eng yaqini shu oyna).
  */
 export const MarketGroupLinkDialog = ({
   open,
   code,
   marketName,
-  groupType,
+  groupType = "create",
+  description,
   expiresAtMs,
   totalMs,
   expired,
@@ -184,7 +188,7 @@ export const MarketGroupLinkDialog = ({
       size="lg"
       icon={Users}
       title={t("group.title")}
-      description={t("group.description", { market: marketName, type: typeLabel })}
+      description={description ?? t("group.description", { market: marketName ?? "", type: typeLabel })}
       footer={footer}
     >
       {body}

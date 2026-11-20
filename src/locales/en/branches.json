@@ -282,5 +282,48 @@
       "empty": "No branch orders in this period",
       "emptyHint": "Pick another period — accepted and sold orders will show up here."
     }
+  },
+  "telegram": {
+    "title": "Cash report · Telegram",
+    "hint": "When the cash desk (shift) closes — manually or automatically at the end of the day — the report is sent to the branch Telegram group or to the managers' private chats.",
+    "groupTitle": "Branch group",
+    "connected": "Connected",
+    "inactive": "Inactive",
+    "notConnected": "Not connected",
+    "notConnectedHint": "The report is not sent to a group",
+    "since": "since {{date}}",
+    "reason": {
+      "botRemoved": "The bot was removed from the group — add it back and reconnect",
+      "sendBlocked": "The bot can no longer post — restore the permission or reconnect",
+      "chatNotFound": "Group not found — reconnect",
+      "manual": "Deactivated manually",
+      "unknown": "The report is not being sent to this group"
+    },
+    "link": "Connect",
+    "relink": "Reconnect",
+    "replace": "Replace",
+    "unlink": "Disconnect",
+    "targetLabel": "Send the report to",
+    "targetGroup": "Group",
+    "targetPrivate": "Private chat",
+    "targetGroupHint": "The branch group — every member sees the cash amounts",
+    "targetPrivateHint": "The branch managers' private Telegram chats, via the bot. Managers must connect their Telegram in the profile",
+    "targetGroupMissing": "No active group — the report is not sent to anyone. Connect a group or choose «Private chat».",
+    "targetGroupSaved": "The report now goes to the branch group",
+    "targetPrivateSaved": "The report now goes to the managers' private chats",
+    "targetError": "Could not save where to send the report",
+    "dialogDescription": "{{branch}} · Cash report group",
+    "connectedToast": "Group connected",
+    "connectedText": "{{branch}}: the cash report now comes to this group.",
+    "linkError": "Could not get the link",
+    "unlinkConfirm": {
+      "title": "Disconnect the group?",
+      "description": "The {{branch}} cash report will no longer be sent to this group. The bot stays in the group — remove it yourself if needed.",
+      "confirm": "Disconnect"
+    },
+    "unlinked": "Group disconnected",
+    "unlinkError": "Could not disconnect the group",
+    "loadError": "Could not load the Telegram status",
+    "loadErrorText": "Try again."
   }
 }

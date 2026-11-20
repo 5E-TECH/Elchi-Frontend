@@ -278,5 +278,48 @@
       "empty": "Bu davrda filial buyurtmalari yo'q",
       "emptyHint": "Boshqa davrni tanlang — qabul qilingan va sotilgan buyurtmalar shu yerda ko'rinadi."
     }
+  },
+  "telegram": {
+    "title": "Kassa hisoboti · Telegram",
+    "hint": "Kassa (smena) yopilganda — qo'lda yoki kun oxirida avtomatik — hisobot filial Telegram guruhiga yoki menejerlarning shaxsiy chatiga yuboriladi.",
+    "groupTitle": "Filial guruhi",
+    "connected": "Ulangan",
+    "inactive": "Nofaol",
+    "notConnected": "Ulanmagan",
+    "notConnectedHint": "Hisobot guruhga yuborilmaydi",
+    "since": "{{date}} dan",
+    "reason": {
+      "botRemoved": "Bot guruhdan chiqarilgan — botni qayta qo'shib, qayta ulang",
+      "sendBlocked": "Botning yozish huquqi olingan — huquqni qaytaring yoki qayta ulang",
+      "chatNotFound": "Guruh topilmadi — qayta ulang",
+      "manual": "Qo'lda nofaol qilingan",
+      "unknown": "Hisobot bu guruhga yuborilmayapti"
+    },
+    "link": "Ulash",
+    "relink": "Qayta ulash",
+    "replace": "Almashtirish",
+    "unlink": "Uzish",
+    "targetLabel": "Hisobot qayerga",
+    "targetGroup": "Guruhga",
+    "targetPrivate": "Shaxsiy chatga",
+    "targetGroupHint": "Filial guruhiga — guruhdagi hamma kassa summalarini ko'radi",
+    "targetPrivateHint": "Filial menejerlarining shaxsiy Telegram chatiga, bot orqali. Menejer o'z Telegram'ini profilda ulagan bo'lishi kerak",
+    "targetGroupMissing": "Guruh ulanmagan yoki nofaol — hisobot hech kimga yuborilmaydi. Guruhni ulang yoki «Shaxsiy chatga» ni tanlang.",
+    "targetGroupSaved": "Hisobot endi filial guruhiga yuboriladi",
+    "targetPrivateSaved": "Hisobot endi menejerlarning shaxsiy chatiga yuboriladi",
+    "targetError": "Hisobot manzili saqlanmadi",
+    "dialogDescription": "{{branch}} · Kassa hisoboti guruhi",
+    "connectedToast": "Guruh ulandi",
+    "connectedText": "{{branch}}: kassa hisoboti endi shu guruhga keladi.",
+    "linkError": "Havola olinmadi",
+    "unlinkConfirm": {
+      "title": "Guruhni uzasizmi?",
+      "description": "{{branch}} kassa hisoboti bu guruhga boshqa yuborilmaydi. Bot guruhda qoladi — kerak bo'lsa o'zingiz chiqaring.",
+      "confirm": "Uzish"
+    },
+    "unlinked": "Guruh uzildi",
+    "unlinkError": "Guruh uzilmadi",
+    "loadError": "Telegram holati yuklanmadi",
+    "loadErrorText": "Qayta urinib ko'ring."
   }
 }

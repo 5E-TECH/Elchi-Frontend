@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-shift-report
-import { Check, Crown, Send, Store, Truck, Unlink, type LucideIcon } from "lucide-react";
+import { Building2, Check, Crown, Send, Store, Truck, Unlink, UserRound, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
   ShiftReport,
@@ -13,12 +13,18 @@ import { Badge, Card, TONE_FG, type Tone } from "../../../shared/ui/primitives";
 /**
  * «HISOBOT KIMLARGA YUBORILDI» (maket `superadmin-payments-shift-report`, gWI4gYkw) — `GET finance/shift/:id/report`
  * → `deliveries[]` (faqat superadmin). Oxirgi raund qabul qiluvchi turi bo'yicha guruhlanadi (superadmin · kuryerlar ·
- * marketlar), har kanal (Telegram — DM va market guruhi birga, tizim) uchun «yuborildi / jami»; yuborilmaganlar sababi
+ * marketlar · filial guruhi · filial menejerlari), har kanal (Telegram — DM va market guruhi birga, tizim) uchun «yuborildi / jami»; yuborilmaganlar sababi
  * bilan («Telegram ulanmagan»). `skipped` qatorlar (kanal sozlamada o'chiq) hisobga kirmaydi.
  */
 
-const KIND_ORDER: ShiftReportRecipientKind[] = ["superadmin", "courier", "market"];
-const KIND_ICON: Record<ShiftReportRecipientKind, LucideIcon> = { superadmin: Crown, courier: Truck, market: Store };
+const KIND_ORDER: ShiftReportRecipientKind[] = ["superadmin", "courier", "market", "branch", "branch_manager"];
+const KIND_ICON: Record<ShiftReportRecipientKind, LucideIcon> = {
+  superadmin: Crown,
+  courier: Truck,
+  market: Store,
+  branch: Building2,
+  branch_manager: UserRound,
+};
 const FAILED_SHOWN = 3;
 
 type ChannelKey = "telegram" | "in_app";

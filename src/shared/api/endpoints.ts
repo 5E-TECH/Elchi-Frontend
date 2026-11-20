@@ -591,6 +591,12 @@ export const API_ENDPOINTS = {
     // 404 — HQ yo'q, 400 — eski backend: `branches/:id` ga tushadi)
     HQ: "branches/hq",
     BY_ID: (id: string | number) => `branches/${id}`, // GET / PATCH / DELETE
+    // Filial kassasi Telegram guruhi: GET holat (`report_target`, `group`, `can_manage`), POST bir martalik havola
+    // (`t.me/<bot>?startgroup=…`), PATCH `{ report_target: "group" | "private" }`, DELETE guruhni uzish.
+    TELEGRAM: (id: string | number) => `branches/${id}/telegram`,
+    TELEGRAM_LINK_CODE: (id: string | number) => `branches/${id}/telegram/link-code`,
+    TELEGRAM_REPORT_TARGET: (id: string | number) => `branches/${id}/telegram/report-target`,
+    TELEGRAM_GROUP: (id: string | number) => `branches/${id}/telegram/group`,
     DESCENDANTS: (id: string | number) => `branches/${id}/descendants`,
     ANALYTICS_MARKETS: (id: string | number) => `branches/${id}/analytics/markets`,
     RETURN_BATCHES: (id: string | number) => `branches/${id}/return-batches`,

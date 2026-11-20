@@ -39,6 +39,8 @@ export const queryKeys = {
     withSentBatches: (params: object) => ["branches", "with-sent-batches", params] as const,
     detail: (id: string) => ["branches", "detail", id] as const,
     employees: (id: string) => ["branches", id, "employees"] as const,
+    /** Filial kassasi Telegram guruhi va hisobot manzili (`GET branches/:id/telegram`). */
+    telegram: (id: string) => ["branches", id, "telegram"] as const,
     /**
      * HQ kuryerlari — Carrier API «Yangi tashqi yetkazuvchi» tanlovi (`GET branches/:id/users`, faqat `COURIER`,
      * `CarrierCourier` shaklida). `employees(id)` prefiksi ostida — xodimlar o'zgarsa birga eskiradi, lekin shakli

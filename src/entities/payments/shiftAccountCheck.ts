@@ -27,7 +27,7 @@ import { getErrorStatus } from "../../shared/lib/errorKind";
  * (`cards[].photo_required` / `ai_enabled`), bo'lmasa `master && karta bayrog'i` (`effectiveShiftCardFlags`).
  *
  * 2026-10-26 (y8Tqm9Ap, gWI4gYkw): sozlamalarda `auto_close` (`enabled`, `times[]` — Toshkent `HH:MM`, `scope`,
- * `warn_before_min`) va `report` (`recipients` superadmin / couriers / markets × `telegram` / `in_app`, `format`
+ * `warn_before_min`) va `report` (`recipients` superadmin / couriers / markets / branches × `telegram` / `in_app`, `format`
  * pdf | xlsx); hisobotda `close_reason` (manual | auto), `closed_by_system`, `auto_close` (`{closed_at, label}` —
  * sariq banner), `report` (yuborish holati, fayl — faqat superadmin) va `deliveries[]` («Hisobot kimlarga
  * yuborildi», faqat superadmin); `POST finance/shift/:id/report/resend` — qayta yuborish (faqat superadmin).
@@ -152,7 +152,8 @@ export type ShiftLateAlertSettings = {
   channels: ShiftReportChannels;
 };
 /** gWI4gYkw: hisobot qabul qiluvchilari guruhlari va kanallari. */
-export const SHIFT_REPORT_RECIPIENT_GROUPS = ["superadmin", "couriers", "markets"] as const;
+/** `branches` — filial kassasi hisoboti: Telegram — filial guruhiga yoki menejerlar shaxsiy chatiga, tizim — menejerlarga. */
+export const SHIFT_REPORT_RECIPIENT_GROUPS = ["superadmin", "couriers", "markets", "branches"] as const;
 export type ShiftReportRecipientGroup = (typeof SHIFT_REPORT_RECIPIENT_GROUPS)[number];
 export type ShiftReportChannels = { telegram: boolean; in_app: boolean };
 export const SHIFT_REPORT_FORMATS = ["pdf", "xlsx"] as const;
@@ -250,8 +251,15 @@ export type ShiftReportDeliveryStatus = "queued" | "sent" | "failed" | "skipped"
 const SHIFT_REPORT_DELIVERY_STATUSES: readonly ShiftReportDeliveryStatus[] = ["queued", "sent", "failed", "skipped"];
 export type ShiftReportDeliveryChannel = "in_app" | "telegram" | "telegram_group";
 const SHIFT_REPORT_DELIVERY_CHANNELS: readonly ShiftReportDeliveryChannel[] = ["in_app", "telegram", "telegram_group"];
-export type ShiftReportRecipientKind = "superadmin" | "courier" | "market";
-const SHIFT_REPORT_RECIPIENT_KINDS: readonly ShiftReportRecipientKind[] = ["superadmin", "courier", "market"];
+/** `branch` — filial guruhi (`recipient_id` — filial id), `branch_manager` — menejerning shaxsiy chati. */
+export type ShiftReportRecipientKind = "superadmin" | "courier" | "market" | "branch" | "branch_manager";
+const SHIFT_REPORT_RECIPIENT_KINDS: readonly ShiftReportRecipientKind[] = [
+  "superadmin",
+  "courier",
+  "market",
+  "branch",
+  "branch_manager",
+];
 
 /** «Hisobot kimlarga yuborildi» qatori (faqat superadmin ko'radi; boshqalarga bo'sh massiv). */
 export type ShiftReportDelivery = {

@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-shift-settings
-import { Bell, Crown, Info, Send, Store, Truck, type LucideIcon } from "lucide-react";
+import { Bell, Building2, Crown, Info, Send, Store, Truck, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   SHIFT_REPORT_RECIPIENT_GROUPS,
@@ -36,6 +36,7 @@ const GROUP_ICON: Record<ShiftReportRecipientGroup, LucideIcon> = {
   superadmin: Crown,
   couriers: Truck,
   markets: Store,
+  branches: Building2,
 };
 
 export const ReportSendCard = ({

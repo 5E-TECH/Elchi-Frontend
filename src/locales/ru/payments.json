@@ -1191,12 +1191,16 @@
         "kind": {
           "superadmin": "Суперадмин",
           "courier": "Курьеры · {{value}}",
-          "market": "Магазины · {{value}}"
+          "market": "Магазины · {{value}}",
+          "branch": "Группа филиала · {{value}}",
+          "branch_manager": "Менеджеры филиала · {{value}}"
         },
         "hint": {
           "superadmin": "полный отчёт и {{format}}",
           "courier": "Только свои операции",
-          "market": "Только выплаты им"
+          "market": "Только выплаты им",
+          "branch": "Итоги кассы — в группу",
+          "branch_manager": "Итоги кассы — в личный чат"
         },
         "channel": {
           "telegram": "Telegram",
@@ -1289,12 +1293,14 @@
         "groups": {
           "superadmin": "Суперадмин",
           "couriers": "Курьеры",
-          "markets": "Магазины"
+          "markets": "Магазины",
+          "branches": "Касса филиала"
         },
         "groupHints": {
           "superadmin": "Полный отчёт и файл",
           "couriers": "Только свои операции",
-          "markets": "Только выплаты им · Telegram — в личный чат владельца"
+          "markets": "Только выплаты им · Telegram — в личный чат владельца",
+          "branches": "В группу филиала или менеджерам"
         },
         "channels": {
           "telegram": "Telegram",

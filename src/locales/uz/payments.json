@@ -1188,12 +1188,16 @@
         "kind": {
           "superadmin": "Superadmin",
           "courier": "Kuryerlar · {{value}} ta",
-          "market": "Marketlar · {{value}} ta"
+          "market": "Marketlar · {{value}} ta",
+          "branch": "Filial guruhi · {{value}} ta",
+          "branch_manager": "Filial menejerlari · {{value}} ta"
         },
         "hint": {
           "superadmin": "to'liq hisobot va {{format}}",
           "courier": "Faqat o'z operatsiyalari",
-          "market": "Faqat o'ziga to'lovlar"
+          "market": "Faqat o'ziga to'lovlar",
+          "branch": "Kassa xulosasi — guruhga",
+          "branch_manager": "Kassa xulosasi — shaxsiy chatga"
         },
         "channel": {
           "telegram": "Telegram",
@@ -1283,12 +1287,14 @@
         "groups": {
           "superadmin": "Superadmin",
           "couriers": "Kuryerlar",
-          "markets": "Marketlar"
+          "markets": "Marketlar",
+          "branches": "Filial kassasi"
         },
         "groupHints": {
           "superadmin": "To'liq hisobot va ilova",
           "couriers": "Faqat o'z operatsiyalari",
-          "markets": "Faqat o'ziga to'lovlar · Telegram — egasining shaxsiy chatiga"
+          "markets": "Faqat o'ziga to'lovlar · Telegram — egasining shaxsiy chatiga",
+          "branches": "Filial guruhiga yoki menejerlarga"
         },
         "channels": {
           "telegram": "Telegram",

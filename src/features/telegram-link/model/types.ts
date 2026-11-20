@@ -28,7 +28,8 @@ export interface GroupLinkCodeRequest {
  */
 export interface GroupLinkCode {
   token: string;
-  purpose: "market_group";
+  /** `market_group` — market guruhi; `branch_group` — filial kassasi guruhi (`group_type` ahamiyatsiz). */
+  purpose: "market_group" | "branch_group";
   group_type: NotificationGroupType;
   expires_at: string;
   deep_link: string | null;

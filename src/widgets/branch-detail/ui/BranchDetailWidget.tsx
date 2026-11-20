@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import type { Branch, Employee } from "../../../entities/branch";
 import { AddEmployeeModal } from "../../../features/branch-add-employee";
 import { BranchEditModal } from "../../../features/branch-edit";
+import { BranchTelegramCard } from "../../../features/branch-telegram";
 import {
   branchStatusLabel,
   branchStatusTone,
@@ -42,7 +43,8 @@ type InfoItem = { key: string; icon: LucideIcon; label: string; value: string; s
  * Joylashuv (tuman; «viloyat, manzil») · Xodimlar «{n} ta» · Yaratilgan sana (telefonda ixcham: joylashuv
  * tepada, ikkalasi pastda yonma-yon). Keyin «Filial ko'rsatkichlari» (`metrics` — sahifa beradi:
  * `pages/branches/ui/BranchMetricsSection.tsx`, `GET /analytics/dashboard?branch_id=`, 6CYRjoZG) va
- * «Filial xodimlari».
+ * «Filial xodimlari». Kassa kartasidan keyin «Kassa hisoboti · Telegram» (`BranchTelegramCard`): kassa yopilganda
+ * hisobot filial guruhiga yoki menejerlarning shaxsiy chatiga (HQ — faqat superadmin boshqaradi).
  */
 const BranchDetailWidget = ({ branchId, branch, employeesQuery, metrics }: BranchDetailWidgetProps) => {
   const { t, i18n } = useTranslation("branches");
@@ -189,6 +191,8 @@ const BranchDetailWidget = ({ branchId, branch, employeesQuery, metrics }: Branc
       {metrics}
 
       <BranchCashboxDebtCard branch={branch} />
+
+      <BranchTelegramCard branchId={branchId} branchName={branch.name} />
 
       <BranchEmployeesSection branchId={branchId} query={employeesQuery} />
 
