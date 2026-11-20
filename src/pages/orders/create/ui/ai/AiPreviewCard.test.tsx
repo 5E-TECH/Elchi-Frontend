@@ -56,7 +56,12 @@ const renderCard = (preview: AiPreviewOrder) => {
  * Kartadagi tanlov maydonlari — v2 `Field` + `Select searchable` (yorliq bilan nomlangan combobox; majburiy
  * belgisi `*` ekran o'quvchidan yashirin): «Viloyat», «Tuman», «Katalogdagi mahsulot».
  */
-const FIELD = { region: "Viloyat", district: "Tuman", item: "Katalogdagi mahsulot" } as const;
+const FIELD = {
+  region: "Viloyat",
+  district: "Tuman",
+  item: "Katalogdagi mahsulot",
+  addProduct: "Mahsulot qo'shish",
+} as const;
 const selectField = (name: (typeof FIELD)[keyof typeof FIELD]) => screen.getAllByRole("combobox", { name })[0];
 
 const openSelect = async (name: (typeof FIELD)[keyof typeof FIELD]) => {
@@ -231,6 +236,59 @@ describe("AiPreviewCard", () => {
 
     expect(changes.at(-1)?.items[0]).toMatchObject({ product_id: "502", allow_free_text: false });
     expect(card()).toHaveAttribute("data-ready", "true");
+  });
+
+  it("AI mahsulot o'qimagan: izoh + «Mahsulot qo'shish» — katalogdan tanlansa qator qo'shiladi va karta `ready`", async () => {
+    const { card, changes } = renderCard(aiPreview({ items: [] }));
+
+    expect(card()).toHaveAttribute("data-ready", "false");
+    expect(within(screen.getByTestId("ai-issues")).getByText("Mahsulot yo'q")).toBeInTheDocument();
+    expect(screen.getByText("AI mahsulotni o'qimadi — quyida katalogdan qo'shing")).toBeInTheDocument();
+
+    await openSelect(FIELD.addProduct);
+    expect(openOptions().map((option) => option.label)).toEqual(["Telefon ushlagich", "Avto changyutgich"]);
+    fireEvent.click(screen.getByRole("option", { name: "Avto changyutgich" }));
+
+    expect(changes.at(-1)?.items).toEqual([
+      {
+        name: "Avto changyutgich",
+        quantity: 1,
+        product_id: "502",
+        resolved_name: "Avto changyutgich",
+        candidates: [],
+        added_manually: true,
+      },
+    ]);
+    const row = screen.getByTestId("ai-item-row");
+    // «AI o'qidi: …» emas — operator o'zi qo'shgan.
+    expect(within(row).getByText("Qo'lda qo'shildi")).toBeInTheDocument();
+    expect(within(row).queryByText(/AI o'qidi/)).toBeNull();
+    expect(card()).toHaveAttribute("data-ready", "true");
+    // Tanlangandan keyin maydon yana bo'sh — keyingi mahsulotni qo'shish mumkin.
+    expect(selectField(FIELD.addProduct)).toHaveValue("");
+  });
+
+  it("«Mahsulot qo'shish» ro'yxatida kartadagi mahsulot yo'q; AI o'qigan qator «AI o'qidi» bilan qoladi", async () => {
+    const { changes } = renderCard(aiPreview());
+
+    await openSelect(FIELD.addProduct);
+    expect(openOptions().map((option) => option.label)).toEqual(["Avto changyutgich"]);
+    fireEvent.click(screen.getByRole("option", { name: "Avto changyutgich" }));
+
+    expect(changes.at(-1)?.items.map((item) => [item.product_id, item.added_manually === true])).toEqual([
+      ["501", false],
+      ["502", true],
+    ]);
+    const rows = screen.getAllByTestId("ai-item-row");
+    expect(within(rows[0]).getByText(/AI o'qidi/)).toBeInTheDocument();
+    expect(within(rows[1]).getByText("Qo'lda qo'shildi")).toBeInTheDocument();
+
+    // Katalogdagi hamma mahsulot kartada — ro'yxat bo'sh, «Topilmadi» emas.
+    await openSelect(FIELD.addProduct);
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+    // Ro'yxatda va ekran o'quvchi e'lonida — ikki joyda.
+    expect(screen.getAllByText("Barcha mahsulotlar qo'shilgan").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Topilmadi")).toBeNull();
   });
 
   it("\"Katalogda yo'q, shundayligicha yuborish\" belgilangandagina `allow_free_text` qo'yiladi", () => {

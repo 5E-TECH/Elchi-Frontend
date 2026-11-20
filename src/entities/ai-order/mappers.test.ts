@@ -171,6 +171,29 @@ describe("buildAiConfirmPayload", () => {
     expect(order.items).toEqual([{ product_name: "Avto changyutgich", quantity: 1, allow_unlisted_product: true }]);
   });
 
+  it("operator katalogdan O'ZI qo'shgan mahsulot — oddiy `{ product_id, quantity }`, `added_manually` serverga KETMAYDI", () => {
+    const [order] = buildAiConfirmPayload(
+      [
+        preview({
+          items: [
+            {
+              name: "Avto changyutgich",
+              quantity: 2,
+              product_id: "502",
+              resolved_name: "Avto changyutgich",
+              candidates: [],
+              added_manually: true,
+            },
+          ],
+        }),
+      ],
+      { includeMarketId: false },
+    ).orders;
+
+    expect(order.items).toEqual([{ product_id: "502", quantity: 2 }]);
+    expect(allKeys(order)).not.toContain("added_manually");
+  });
+
   it("tahlil javobidagi `draft_id` bo'lsa har buyurtmaga qo'shiladi, bo'lmasa kalit umuman yo'q", () => {
     const withDraft = buildAiConfirmPayload([preview({ draft_id: "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60" })], {
       includeMarketId: false,
