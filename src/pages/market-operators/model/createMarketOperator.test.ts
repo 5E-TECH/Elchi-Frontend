@@ -26,6 +26,18 @@ describe("buildCreateMarketOperatorPayload", () => {
     });
     expect(payload.name).toBe("Nodira O'tkirova-ALIYEVA");
   });
+
+  it("komissiya berilsa — turi va qiymati AYNI tanada (atomik); berilmasa kalitlar umuman yo'q", () => {
+    const values = { name: "Lola Karimova", phone_number: "+998901234567", password: "Secret123" };
+    expect(buildCreateMarketOperatorPayload(values, { type: "percent", value: 4.5 })).toEqual({
+      ...values,
+      commission_type: "percent",
+      commission_value: 4.5,
+    });
+    const without = buildCreateMarketOperatorPayload(values, null);
+    expect(without).not.toHaveProperty("commission_type");
+    expect(without).not.toHaveProperty("commission_value");
+  });
 });
 
 describe("validateCreateOperator", () => {

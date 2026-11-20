@@ -11,7 +11,7 @@ import {
   type AiPreviewOrder,
 } from "../../../../../entities/ai-order";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
-import { marketOperatorKeys, useSelectableMarketOperators } from "../../../../../entities/market-operator";
+import { marketOperatorKeys, suggestOperator, useSelectableMarketOperators } from "../../../../../entities/market-operator";
 import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../../../entities/product";
 import type { MarketOption } from "../../model/orderCreateForm";
 import { CreateAlert } from "../CreateAlert";
@@ -22,7 +22,7 @@ import AiInputPanel from "./AiInputPanel";
 import AiPreviewCard, { type AiAreaItem, type AiProductOption } from "./AiPreviewCard";
 import { confirmFailureText, confirmHttpErrorText } from "./aiErrorText";
 import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "./aiDraft";
-import { chosenOperatorId, isOperatorRejectedResult, suggestOperator } from "./aiOperator";
+import { chosenOperatorId, isOperatorRejectedResult } from "./aiOperator";
 import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
 import { useKeepFocusedFieldVisible } from "./useKeepFocusedFieldVisible";

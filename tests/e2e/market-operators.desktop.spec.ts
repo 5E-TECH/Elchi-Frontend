@@ -40,7 +40,7 @@ test("⭐ yon menyuda «Operatorlar», jadval, ogohlantirish va «Faqat ularni k
   expect(mock.leaked).toEqual([]);
 });
 
-test("⭐ operator qo'shish: POST {name, phone_number, password} → PATCH komissiya → «Operator qo'shildi»", async ({ page }) => {
+test("⭐ operator qo'shish: BITTA POST {name, phone_number, password, komissiya} → «Operator qo'shildi», PATCH yo'q", async ({ page }) => {
   const mock = await openMarketOperators(page);
 
   await page.getByRole("button", { name: "Operator qo'shish" }).click();
@@ -55,8 +55,17 @@ test("⭐ operator qo'shish: POST {name, phone_number, password} → PATCH komis
 
   await expect(toast(page, "Operator qo'shildi", { tone: "success" })).toBeVisible();
   await expect(dialog).toBeHidden();
-  expect(mock.posts).toEqual([{ name: "Lola Karimova", phone_number: "+998901234567", password: "Lola2026ok" }]);
-  expect(mock.patches).toEqual([{ id: "47", body: { commission_type: "percent", commission_value: 4.5 } }]);
+  // 2026-11-20: komissiya ayni so'rovda (atomik) — ilgari alohida PATCH yiqilsa operator komissiyasiz qolardi.
+  expect(mock.posts).toEqual([
+    {
+      name: "Lola Karimova",
+      phone_number: "+998901234567",
+      password: "Lola2026ok",
+      commission_type: "percent",
+      commission_value: 4.5,
+    },
+  ]);
+  expect(mock.patches).toEqual([]);
   await expect(page.getByRole("row", { name: /Lola Karimova/ })).toContainText("4,5%");
 });
 

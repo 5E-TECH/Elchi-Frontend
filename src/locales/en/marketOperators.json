@@ -116,10 +116,7 @@
     "failedText": "Check the details and try again.",
     "blocked": "The store is blocked — operators can't be added",
     "created": "Operator added",
-    "createdText": "{{name}} can now sign in with this phone and password.",
-    "commissionFailed": "Operator added, commission not saved",
-    "commissionFailedText": "Set the commission for {{name}} again — until then no earnings are recorded.",
-    "setCommission": "Set"
+    "createdText": "{{name}} can now sign in with this phone and password."
   },
   "commissionDialog": {
     "title": "Commission",

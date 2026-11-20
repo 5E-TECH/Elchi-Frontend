@@ -248,7 +248,7 @@ describe("MarketOperatorsPage — operator qo'shish", () => {
     await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "Lola-2025x");
   };
 
-  it("POST faqat 3 maydon, so'ng PATCH komissiya (qat'iy summa); xabar «Operator qo'shildi»", async () => {
+  it("komissiya bilan — BITTA POST (atomik, B3ZtzCCx), PATCH yo'q; xabar «Operator qo'shildi»", async () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(await screen.findByRole("button", { name: "Operator qo'shish" }));
@@ -258,17 +258,15 @@ describe("MarketOperatorsPage — operator qo'shish", () => {
     await user.type(within(dialog).getByLabelText(/Komissiya/, { selector: "input" }), "5 000");
     await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
 
-    await waitFor(() =>
-      expect(api.patch).toHaveBeenCalledWith("market-operators/46/commission", {
-        commission_type: "fixed",
-        commission_value: 5000,
-      }),
-    );
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
     expect(api.post).toHaveBeenCalledWith("market-operators", {
       name: "Lola Karimova",
       phone_number: "+998901234567",
       password: "Lola-2025x",
+      commission_type: "fixed",
+      commission_value: 5000,
     });
+    expect(api.patch).not.toHaveBeenCalled();
     expect(await screen.findByText("Operator qo'shildi")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Operator qo'shish" })).not.toBeInTheDocument());
   });
@@ -325,8 +323,8 @@ describe("MarketOperatorsPage — operator qo'shish", () => {
     expect(api.patch).not.toHaveBeenCalled();
   });
 
-  it("PATCH yiqilsa — «Operator qo'shildi, komissiya saqlanmadi» + «Belgilash» Komissiya oynasini ochadi", async () => {
-    api.patch.mockRejectedValueOnce(axiosError(500));
+  it("komissiya rad etilsa (POST 400) — operator YARATILMAYDI (atomik): oyna ochiq, «Operator qo'shilmadi», PATCH yo'q", async () => {
+    api.post.mockRejectedValueOnce(axiosError(400, "Komissiya foizi 0 dan 100 gacha bo'lishi kerak"));
     const user = userEvent.setup();
     renderPage();
     await user.click(await screen.findByRole("button", { name: "Operator qo'shish" }));
@@ -335,10 +333,11 @@ describe("MarketOperatorsPage — operator qo'shish", () => {
     await user.type(within(dialog).getByLabelText(/Komissiya/, { selector: "input" }), "4");
     await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
 
-    expect(await screen.findByText("Operator qo'shildi, komissiya saqlanmadi")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Belgilash" }));
-    const commission = await screen.findByRole("dialog", { name: "Komissiya" });
-    expect(commission).toHaveTextContent("Lola Karimova");
+    expect(await screen.findByText("Operator qo'shilmadi")).toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledWith("market-operators", expect.objectContaining({ commission_type: "percent", commission_value: 4 }));
+    expect(screen.getByRole("dialog", { name: "Operator qo'shish" })).toBeInTheDocument();
+    expect(screen.queryByText("Operator qo'shildi, komissiya saqlanmadi")).not.toBeInTheDocument();
+    expect(api.patch).not.toHaveBeenCalled();
   });
 });
 
@@ -579,7 +578,7 @@ describe("MarketOperatorsPage — review tuzatishlari", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Operator qo'shish" })).toHaveFocus());
   });
 
-  it("POST javobida id yo'q — komissiya saqlanmagan deb aytiladi, PATCH va «Belgilash» yo'q", async () => {
+  it("POST javobida id yo'q — komissiya baribir saqlangan (ayni so'rovda): «Operator qo'shildi», PATCH yo'q", async () => {
     api.post.mockResolvedValueOnce({ data: { statusCode: 201, data: { name: "Lola Karimova" } } });
     const user = userEvent.setup();
     renderPage();
@@ -591,9 +590,9 @@ describe("MarketOperatorsPage — review tuzatishlari", () => {
     await user.type(within(dialog).getByLabelText(/Komissiya/, { selector: "input" }), "4");
     await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
 
-    expect(await screen.findByText("Operator qo'shildi, komissiya saqlanmadi")).toBeInTheDocument();
-    expect(screen.queryByText("Operator qo'shildi")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Belgilash" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Operator qo'shildi")).toBeInTheDocument();
+    expect(screen.queryByText("Operator qo'shildi, komissiya saqlanmadi")).not.toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledWith("market-operators", expect.objectContaining({ commission_value: 4 }));
     expect(api.patch).not.toHaveBeenCalled();
   });
 

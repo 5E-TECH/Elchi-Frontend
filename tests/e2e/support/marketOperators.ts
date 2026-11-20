@@ -196,10 +196,19 @@ export const mockMarketOperators = async (page: Page, { empty = false, theme }: 
       return reply(route, wrap({ items, meta: { page: 1, limit: 20, total: items.length, totalPages: 1 } }));
     }
     if (path === "market-operators" && method === "POST") {
-      const body = request.postDataJSON() as { name: string; phone_number: string };
+      // B3ZtzCCx: komissiya (ixtiyoriy) — AYNI so'rovda, backend kabi bitta yozuvga.
+      const body = request.postDataJSON() as {
+        name: string;
+        phone_number: string;
+        commission_type?: Operator["commission_type"];
+        commission_value?: Operator["commission_value"];
+      };
       mock.posts.push(body);
       const created = operator(String(46 + mock.posts.length), body.name, body.phone_number, {
         createdAt: new Date().toISOString(),
+        ...(body.commission_type !== undefined
+          ? { commission_type: body.commission_type, commission_value: body.commission_value ?? null }
+          : {}),
       });
       operators.unshift(created);
       return reply(route, wrap(created, 201), 201);

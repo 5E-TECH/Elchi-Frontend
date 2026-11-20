@@ -1,4 +1,4 @@
-import type { CreateMarketOperatorRequest } from "../../../entities/market-operator";
+import type { CommissionType, CreateMarketOperatorRequest } from "../../../entities/market-operator";
 import { isCompleteUzbekistanPhone } from "../../../shared/lib/phone";
 import { checkPasswordPolicy } from "../../../shared/lib/passwordPolicy";
 import { normalizePersonName } from "../../../shared/lib/personName";
@@ -40,15 +40,18 @@ const normalizePhoneNumber = (value: string) => {
 };
 
 /**
- * `POST /market-operators` tanasi — FAQAT 3 maydon (`forbidNonWhitelisted`): `market_id` va `role` serverda JWT dan,
- * komissiya alohida `PATCH :id/commission` bilan.
+ * `POST /market-operators` tanasi (`forbidNonWhitelisted`): `market_id` va `role` serverda JWT dan. Komissiya
+ * berilsa — AYNI so'rovda, turi va qiymati BIRGA (backend atomik yozadi; noto'g'ri komissiya — 400 va operator
+ * YARATILMAYDI). Berilmasa — kalitlar umuman yo'q (komissiyasiz operator).
  */
 export const buildCreateMarketOperatorPayload = (
   values: MarketOperatorCreateFormValues,
+  commission?: { type: CommissionType; value: number } | null,
 ): CreateMarketOperatorRequest => ({
   name: normalizeName(values.name),
   phone_number: normalizePhoneNumber(values.phone_number),
   password: values.password,
+  ...(commission ? { commission_type: commission.type, commission_value: commission.value } : {}),
 });
 
 /** Mijoz tomonidagi tekshiruv (backend bilan bir xil chegaralar). Bo'sh obyekt — xato yo'q. */

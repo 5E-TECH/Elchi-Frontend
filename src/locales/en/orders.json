@@ -825,10 +825,6 @@
   "aiHttpForbiddenTitle": "No permission",
   "aiHttpForbiddenDescription": "You are not allowed to create orders with AI. Enter the order manually.",
   "aiCreateFailedWith": "The order was not created: {{detail}}",
-  "aiOperatorTextOnly": "Not selected from the list — no commission will be recorded for this operator",
-  "aiOperatorSuggest": "«{{name}}» is on the list — select them so the commission is recorded",
-  "aiOperatorSuggestPick": "Select",
-  "aiOperatorSuggestPickAria": "Select «{{name}}» as the operator",
   "aiOperatorSuggestAll": "{{count}} order(s) name an operator from the list",
   "aiOperatorSuggestAllText": "Once selected, the order and its sale commission are credited to that operator. You can still change each card.",
   "aiOperatorSuggestAllPick": "Select for all",
@@ -1099,7 +1095,11 @@
     "none": "Not selected",
     "pickedHint": "The order and commission are credited to this operator",
     "otherLabel": "Operator not on the list",
-    "loadFailed": "Couldn't load the operator list — type the name manually"
+    "loadFailed": "Couldn't load the operator list — type the name manually",
+    "textOnly": "Not selected from the list — no commission will be recorded for this operator",
+    "suggest": "«{{name}}» is on the list — select them so the commission is recorded",
+    "suggestPick": "Select",
+    "suggestPickAria": "Select «{{name}}» as the operator"
   },
   "operatorAssign": {
     "open": "Assign",

@@ -162,10 +162,46 @@ describe("OrderCreate — «Operator» tanlovi", () => {
     expect(freeText()).toHaveValue("");
 
     await user.type(freeText() as HTMLElement, "Shahzoda");
+    // Ro'yxatda yo'q ism — ogohlantirish: buyurtma operatorsiz, komissiya yozilmaydi.
+    expect(within(aside()).getByText("Ro'yxatdan tanlanmagan — bu operatorga komissiya yozilmaydi")).toBeInTheDocument();
     await submit(user);
     expect(lastPayload()).toMatchObject({ operator: "Shahzoda" });
     expect(lastPayload()).not.toHaveProperty("operator_id");
     expect(lastPayload()).not.toHaveProperty("market_id");
+  });
+
+  it("2026-11-20: ro'yxatdagi operator ismi qo'lda yozilsa — faqat TAKLIF; «Tanlash» bosilsa `operator_id` bilan ketadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    await operatorSelect();
+    await fillOrder(user);
+
+    await user.type(freeText() as HTMLElement, "kamola");
+    expect(
+      within(aside()).getByText("Ro'yxatda «Kamola Yusupova» bor — komissiya yozilishi uchun tanlang"),
+    ).toBeInTheDocument();
+    // Taklif bor — «komissiya yozilmaydi» ogohlantirishi o'rniga.
+    expect(within(aside()).queryByText(/komissiya yozilmaydi/)).not.toBeInTheDocument();
+    expect(await operatorSelect()).toHaveTextContent("Tanlanmagan");
+
+    await user.click(within(aside()).getByRole("button", { name: "«Kamola Yusupova» ni operator qilib tanlash" }));
+    expect(await operatorSelect()).toHaveTextContent("Kamola Yusupova");
+    expect(freeText()).not.toBeInTheDocument();
+
+    await submit(user);
+    expect(lastPayload()).toMatchObject({ operator_id: "31", operator: "Kamola Yusupova" });
+  });
+
+  it("taklif bosilmasa — ism faqat matn bo'lib ketadi (avtomatik bog'lanmaydi)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    await operatorSelect();
+    await fillOrder(user);
+
+    await user.type(freeText() as HTMLElement, "Kamola Yusupova");
+    await submit(user);
+    expect(lastPayload()).toMatchObject({ operator: "Kamola Yusupova" });
+    expect(lastPayload()).not.toHaveProperty("operator_id");
   });
 
   it("market almashsa operator tanlovi va undan olingan ism tozalanadi — yangi market ro'yxati so'raladi", async () => {
