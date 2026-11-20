@@ -92,6 +92,12 @@ export const API_ENDPOINTS = {
     // bo'yicha. SUPERADMIN, ADMIN, REGISTRATOR, MANAGER, BRANCH — `market_id` majburiy; MARKET va MARKET_OPERATOR —
     // o'z marketi (tokendan), boshqa `market_id` — 400.
     SELECTABLE: "market-operators/selectable",
+    // 2026-11-20 (MARKET): operator ismi faqat MATN bo'lib qolgan (operator_id siz) eski buyurtmalar — ism bo'yicha
+    // guruhlar → { groups: [{ name, key, total_orders, sold_orders, order_ids (≤ 500) }], total_orders }.
+    UNLINKED_ORDERS: "market-operators/unlinked-orders",
+    // POST { operator_id, order_ids (1–100) } → { assigned, failed, earnings_recorded, results } (har biri
+    // `PUT /orders/:id/operator` qoidasi bilan; sotilganiga ulush darhol yoziladi).
+    UNLINKED_ORDERS_ASSIGN: "market-operators/unlinked-orders/assign",
   },
   // Logistlar (superadmin/admin; LG-2, dzyVftBx): GET ?search&status&page&limit (limit ≤ 100) → { items, meta } /
   // POST { name, phone_number, password, salary, payment_day? } — filialsiz, viloyatlar alohida (REGIONS.LOGIST_BULK).

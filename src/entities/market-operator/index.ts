@@ -7,26 +7,35 @@ export type {
   MarketOperatorListParams,
   MarketOperatorStatus,
   SelectableMarketOperator,
+  UnlinkedAssignResult,
+  UnlinkedOperatorGroup,
+  UnlinkedOperatorOrders,
 } from "./model/types";
 export {
+  assignUnlinkedOrders,
   createMarketOperator,
   deleteMarketOperator,
   getMarketOperators,
   getSelectableMarketOperators,
+  getUnlinkedOperatorOrders,
   normalizeMarketOperator,
   normalizeMarketOperatorList,
   normalizeSelectableMarketOperators,
+  normalizeUnlinkedOperatorOrders,
+  UNLINKED_ASSIGN_CHUNK,
   updateMarketOperatorCommission,
   updateMarketOperatorWarehouseAccess,
 } from "./api/marketOperatorApi";
 export {
   marketOperatorKeys,
+  useAssignUnlinkedOrders,
   useCreateMarketOperator,
   useDeleteMarketOperator,
   useMarketOperators,
   useRefreshMarketOperators,
   useSelectableMarketOperators,
   useUpdateMarketOperatorCommission,
+  useUnlinkedOperatorOrders,
   useUpdateMarketOperatorWarehouseAccess,
 } from "./api/useMarketOperators";
 export {

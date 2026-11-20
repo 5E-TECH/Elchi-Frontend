@@ -351,5 +351,28 @@
     "doneText": "{{amount}} in total — added to “Earned”.",
     "failed": "Couldn't calculate",
     "failedText": "Try again — what's already recorded won't repeat."
+  },
+  "unlinked": {
+    "title": "Orders not linked to an operator: {{value}}",
+    "description": "These orders have the operator's name only as text — they are not linked to an operator, so no commission was recorded on sale. Pick the operator for each name and link them: sold orders get their commission calculated right away.",
+    "label": "Orders not linked to an operator",
+    "groupName": "“{{name}}”",
+    "counts": "{{total}} orders, {{sold}} sold",
+    "operator": "Operator for “{{name}}”",
+    "pickOperator": "Select an operator",
+    "assign": "Link",
+    "assignFor": "Link “{{name}}” orders",
+    "cancel": "Cancel",
+    "confirmTitle": "Link to “{{operator}}”?",
+    "confirmText": "{{value}} orders with the name “{{name}}” will be linked to this operator. Commission for the {{sold}} sold orders is calculated now at the operator's current rate. The linked operator cannot be changed later.",
+    "done": "{{value}} orders linked to “{{operator}}”",
+    "doneEarnings": "Commission for {{value}} sold orders is calculated at the operator's rate.",
+    "doneNoEarnings": "Commission is recorded once the orders are sold.",
+    "partial": "{{assigned}} linked, {{failed}} not linked",
+    "partialText": "Some orders already had an operator or have changed — the list was refreshed.",
+    "failed": "Couldn't link the orders",
+    "failedText": "Try again — already linked orders won't be repeated.",
+    "showAll": "Show all ({{value}})",
+    "showLess": "Show less"
   }
 }

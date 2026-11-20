@@ -32,6 +32,7 @@ import { MissingEarningsDialog } from "./ui/MissingEarningsDialog";
 import { MarketOperatorsTabs } from "./ui/MarketOperatorsTabs";
 import { OperatorPaymentsView } from "./ui/OperatorPaymentsView";
 import { OperatorsSkeleton, OperatorsTable } from "./ui/OperatorsTable";
+import { UnlinkedOrdersCard } from "./ui/UnlinkedOrdersCard";
 import { useDeleteOperatorConfirm } from "./ui/useDeleteOperatorConfirm";
 import { usePaymentDialogs } from "./ui/usePaymentDialogs";
 
@@ -220,6 +221,10 @@ const OperatorsListView = ({ marketName }: { marketName: string | null }) => {
           onToggleOnlyUnset={() => setOnlyUnset((value) => !value)}
         />
       )}
+
+      {/* 2026-11-20: operator ismi faqat matn bo'lib qolgan eski buyurtmalar — operatorga biriktirish. */}
+      {/* Ro'yxat yuklangach (asosiy so'rov birinchi; ro'yxat yiqilsa — qo'shimcha so'rov ham yo'q). */}
+      {data && !noOperators ? <UnlinkedOrdersCard /> : null}
 
       <Card padding="none" aria-label={t("list.label")} footer={footer}>
         {noOperators ? null : (

@@ -47,6 +47,26 @@ export type SelectableMarketOperator = {
 };
 
 /**
+ * 2026-11-20 — operator ismi faqat MATN bo'lib qolgan (operator_id siz) eski buyurtmalar guruhi (bir xil ism).
+ * Ularga sotuvda komissiya yozilmagan; market operatorni tanlab ommaviy biriktiradi.
+ */
+export type UnlinkedOperatorGroup = {
+  /** Buyurtmadagi yozuv (eng yangisi). */
+  name: string;
+  key: string;
+  totalOrders: number;
+  /** Sotilgan — biriktirilsa ulush darhol yoziladi. */
+  soldOrders: number;
+  /** Eng yangisi birinchi, ko'pi bilan 500 (ko'prog'i biriktirilgach qayta so'raladi). */
+  orderIds: string[];
+};
+
+export type UnlinkedOperatorOrders = { groups: UnlinkedOperatorGroup[]; totalOrders: number };
+
+/** Ommaviy biriktirish natijasi (barcha bo'laklar yig'indisi). */
+export type UnlinkedAssignResult = { assigned: number; failed: number; earningsRecorded: number };
+
+/**
  * `POST /market-operators` tanasi (`forbidNonWhitelisted`). Komissiya — ixtiyoriy, AYNI so'rovda (backend B3ZtzCCx:
  * operator va komissiya bitta yozuvda, atomik; ikkalasi BIRGA yoki hech biri). Ilgari ikkinchi `PATCH :id/commission`
  * bilan yozilardi — u yiqilsa operator komissiyasiz qolib, sotuvlarida komissiya yozilmasdi.
