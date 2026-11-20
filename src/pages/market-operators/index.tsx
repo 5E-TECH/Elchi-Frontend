@@ -28,6 +28,7 @@ import { operatorsWithoutCommission } from "./model/unsetCommission";
 import { CommissionDialog } from "./ui/CommissionDialog";
 import { CommissionWarning } from "./ui/CommissionWarning";
 import { CreateOperatorDialog } from "./ui/CreateOperatorDialog";
+import { MissingEarningsDialog } from "./ui/MissingEarningsDialog";
 import { MarketOperatorsTabs } from "./ui/MarketOperatorsTabs";
 import { OperatorPaymentsView } from "./ui/OperatorPaymentsView";
 import { OperatorsSkeleton, OperatorsTable } from "./ui/OperatorsTable";
@@ -82,6 +83,8 @@ const OperatorsListView = ({ marketName }: { marketName: string | null }) => {
   const [onlyUnset, setOnlyUnset] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [commissionOperator, setCommissionOperator] = useState<MarketOperator | null>(null);
+  // 2026-11-20: «O'tgan sotuvlarga hisoblash» oynasi.
+  const [missingOperator, setMissingOperator] = useState<MarketOperator | null>(null);
   const confirmDelete = useDeleteOperatorConfirm();
   const { openRecord, dialogs: paymentDialogs } = usePaymentDialogs();
   /** Sarlavhadagi yoki bo'sh holatdagi «Operator qo'shish» (bir vaqtda bittasi chiziladi). */
@@ -296,6 +299,7 @@ const OperatorsListView = ({ marketName }: { marketName: string | null }) => {
               busy={isFetching && isPlaceholderData}
               onCommission={openCommission}
               onRecordPayment={(operator) => openRecord({ id: operator.id, name: operator.name })}
+              onMissingEarnings={setMissingOperator}
               onDelete={handleDelete}
             />
           )}
@@ -309,6 +313,7 @@ const OperatorsListView = ({ marketName }: { marketName: string | null }) => {
         onSetCommission={openCommission}
       />
       <CommissionDialog operator={commissionOperator} onClose={() => setCommissionOperator(null)} />
+      <MissingEarningsDialog operator={missingOperator} onClose={() => setMissingOperator(null)} />
       {paymentDialogs}
     </div>
   );

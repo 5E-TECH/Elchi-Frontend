@@ -1,6 +1,7 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type {
+  MissingEarnings,
   MyOperatorBalance,
   MyOperatorPaymentList,
   OperatorAccountPageParams,
@@ -245,6 +246,37 @@ export const getOperatorAccountEarnings = async (
 ): Promise<OperatorEarningList> => {
   const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_EARNINGS(operatorId), { params });
   return normalizeOperatorEarnings(response.data);
+};
+
+export const normalizeMissingEarnings = (value: unknown): MissingEarnings => {
+  const data = asRecord(unwrap(value)) ?? {};
+  const type = data.commission_type;
+  return {
+    soldOrders: toNumber(data.sold_orders),
+    alreadyRecorded: toNumber(data.already_recorded),
+    missing: toNumber(data.missing),
+    toRecord: toNumber(data.to_record),
+    amount: toNumber(data.amount),
+    commissionType: type === "percent" || type === "fixed" ? type : null,
+    commissionValue: toNumber(data.commission_value),
+    truncated: data.truncated === true,
+    created: toNumber(data.created),
+    createdAmount: toNumber(data.created_amount),
+  };
+};
+
+/** 2026-11-20 — oldindan ko'rish (hech narsa yozilmaydi). */
+export const getMissingEarnings = async (operatorId: string): Promise<MissingEarnings> => {
+  const response = await api.get(API_ENDPOINTS.FINANCE.OPERATOR_MISSING_EARNINGS, {
+    params: { operator_id: operatorId },
+  });
+  return normalizeMissingEarnings(response.data);
+};
+
+/** 2026-11-20 — joriy stavka bilan yozish (takror bosish ikkinchi qator ochmaydi). */
+export const recordMissingEarnings = async (operatorId: string): Promise<MissingEarnings> => {
+  const response = await api.post(API_ENDPOINTS.FINANCE.OPERATOR_MISSING_EARNINGS, { operator_id: operatorId });
+  return normalizeMissingEarnings(response.data);
 };
 
 /** Har mantiqiy to'lov uchun yangi kalit. */
