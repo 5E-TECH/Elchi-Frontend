@@ -40,6 +40,10 @@ const mockOrdersApi = async (page: Page, exportHeaders: Record<string, string>, 
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
+    // «Internet uzildi»: ilova saytini tekshirish (`HEAD /robots.txt`) ham javobsiz — aks holda bu «Server javob bermadi».
+    if (mode === "network" && url.origin === ORIGIN && url.pathname === "/robots.txt") {
+      return route.abort("internetdisconnected");
+    }
     if (url.origin === ORIGIN) return route.continue();
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
