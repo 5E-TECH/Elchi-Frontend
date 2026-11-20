@@ -133,6 +133,14 @@ export type AiPreviewOrder = {
    * avtomatik bog'lanmaydi. Tasdiqlashda `orders[].operator_id` — buyurtma va sotuvdagi komissiya shu operatorga.
    */
   operator_id?: string | null;
+  /**
+   * Kartada ODAM tanlagan MAVJUD mijoz (`GET /customers/suggest` — telefon bazada bor). Backend emas — FRONTEND yozadi:
+   * ai-parse uni bermaydi, avtomatik tanlanmaydi. Tasdiqlashda `orders[].customer_id` — buyurtma o'sha kartaga
+   * yoziladi (yangi karta ochilmaydi), ism va telefon kartadagidek.
+   */
+  customer_id?: string | null;
+  /** Mijoz tanlanishidan oldingi ism va telefon («Bekor qilish» qaytaradi). FRONTEND holati, serverga ketmaydi. */
+  customer_before_link?: { name: string; phone: string } | null;
   where_deliver: DeliveryType;
   /**
    * Tahlil javobidagi `draft_id` — backend emas, FRONTEND har buyurtmaga
@@ -237,6 +245,12 @@ export type AiConfirmOrder = {
    * yozadi. Tanlanmasa yuborilmaydi — buyurtma operatorsiz, `operator` faqat matn (komissiya yozilmaydi).
    */
   operator_id?: string;
+  /**
+   * Tanlangan mavjud mijoz (`POST /orders` `customer_id` bilan AYNI egalik qoidasi). Qabul qilinsa buyurtma o'sha
+   * kartaga yoziladi; `customer.name` / `phone_number` kartadagi qiymat bo'lishi kerak (AI auditi soxta tuzatish
+   * ko'rsatmasin). Tasdiqlanmagan id — shu buyurtma `create_failed`.
+   */
+  customer_id?: string;
   /** Tahlil javobidagi `draft_id` (bo'lsa) — xarajatni buyurtmaga bog'lash uchun. */
   draft_id?: string;
   /**

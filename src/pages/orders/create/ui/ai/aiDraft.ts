@@ -60,6 +60,9 @@ export const toDraft = (source: AiPreviewOrder, key: string, draftId?: string, p
     operator: source.operator ?? "",
     // Operator faqat ODAM ro'yxatdan tanlaganda bog'lanadi — AI chiqishida bo'lsa ham e'tiborsiz.
     operator_id: null,
+    // Mavjud mijoz faqat ODAM kartada tanlaganda bog'lanadi (`customers/suggest`).
+    customer_id: null,
+    customer_before_link: null,
     where_deliver: source.where_deliver === "address" ? "address" : "center",
     items: (source.items ?? []).map((item, itemIndex) => ({
       ...item,
