@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-orders-detail, superadmin-orders-detail-cancelled, manager-orders-detail-cancelled, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
-import { Clock, Info, Lock, Repeat } from "lucide-react";
+import { Clock, Info, Lock, Repeat, RotateCcw } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
@@ -50,6 +50,11 @@ type DetailAlertsProps = {
    * kuryerdan tashqari — kuryer eski buyurtmani ocholmaydi, 403), eski buyurtmada — eski mahsulot qayerdaligi.
    */
   replacement?: OrderReplacementInfo | null;
+  /**
+   * BE #738: buyurtmani qaytarib bo'lmasligining server sababi (`rollback.message`) — «Qaytarish yopiq.» izohi
+   * (maket yo'q — eng yaqini `manager-orders-detail-cancelled` dagi neytral «Tahrirlash yopiq.» qulf izohi).
+   */
+  rollbackBlockedReason?: string | null;
 };
 
 const RETURN_STATE_KEYS = {
@@ -75,6 +80,7 @@ export const DetailAlerts = ({
   marketListHref = null,
   lockReason = null,
   replacement = null,
+  rollbackBlockedReason = null,
 }: DetailAlertsProps) => {
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -235,13 +241,27 @@ export const DetailAlerts = ({
     return null;
   })();
 
-  if (!approval && !lock && !parentOrderId && !replacementAlert) return null;
+  const rollbackAlert =
+    rollbackBlockedReason && layout === "default" ? (
+      <DetailAlert
+        tone="neutral"
+        icon={RotateCcw}
+        role="note"
+        title={t("orderDetail.rollbackBlockedTitle")}
+        data-testid="rollback-blocked-reason"
+      >
+        {rollbackBlockedReason}
+      </DetailAlert>
+    ) : null;
+
+  if (!approval && !lock && !parentOrderId && !replacementAlert && !rollbackAlert) return null;
 
   return (
     <div className="flex flex-col gap-3">
       {approval}
       {replacementAlert}
       {lock}
+      {rollbackAlert}
       <OrderParentBanner parentOrderId={parentOrderId} />
     </div>
   );

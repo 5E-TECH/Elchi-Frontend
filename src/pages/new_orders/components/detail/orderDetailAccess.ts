@@ -1,6 +1,11 @@
 import type { RootState } from "../../../../app/config/store";
 import { readFulfillmentSource } from "../../../../entities/order";
 import { isCourierHeldOrder } from "../../../../entities/orders/custody";
+import {
+  hasCancelPost,
+  isCancelledSentOrder,
+  resolveRollbackAvailability,
+} from "../../../../entities/orders/rollbackEligibility";
 import { canRollbackOrderStatus } from "../../../../entities/orders/rollbackTarget";
 import { canInitiateReturn, canMarkReturnedToMarket } from "../../../../features/order-return";
 import { isMarketSideRole } from "../../../../entities/user/lib/role";
@@ -23,9 +28,12 @@ import type { OrderDetail } from "./orderDetailModel";
  *    viloyat ombori buyurtmasi (hfkhYrGk №4) HQ'dan o'tmaydi — u yaratilishidanoq (RECEIVED) qulf, sababi «omborda
  *    band qilingan» (`productsLockReason: "warehouse"`); Markaziy ombor (`warehouse.kind: HQ`) — HQ'da qabul, «hq»;
  *    ega 2026-11-13: HQ xodimi ombordan yaratgani `new` — u ham yaratilishidanoq qulf, sababi «omborda band qilingan»;
- *  - sotish / bekor qilish / qaytarish — faqat REGIONAL · HYBRID menejeri VA uning per-menejer
+ *  - sotish / bekor qilish — faqat REGIONAL · HYBRID menejeri VA uning per-menejer
  *    `can_sell_cancel` bayrog'i yoqilgan bo'lsa (ro'yxatdagi `canUseManagerTableActions` bilan
- *    AYNI qoida; backend sotish/bekorni baribir 403 bilan to'sadi).
+ *    AYNI qoida; backend sotish/bekorni baribir 403 bilan to'sadi);
+ *  - qaytarish (BE #738) — server maydoni `rollback.allowed` (filial turi, `can_sell_cancel`, holat shartlari
+ *    e'tiborsiz); rad etilgan bo'lsa sababi (`rollback.message`) sahifada; maydon noma'lum (`null` / eski backend) —
+ *    avvalgi qoida (superadmin — holat bo'yicha, hududiy menejer — sotilgan / bekor, jo'natilmagan bekor).
  *
  * Ko'rinish maketlar bo'yicha: market va kuryer — faqat o'qish (tahrirlash tugmasi umuman yo'q);
  * market operatori (MO-3; maket yo'q — eng yaqini `market-orders-detail`) — market ko'rinishi, faqat o'qish:
@@ -111,6 +119,12 @@ export interface OrderDetailAccess {
   /** fix3b LC-04: kuryer qo'lidagi buyurtmani menejer sotmaydi (backend 400). */
   canSell: boolean;
   canRollback: boolean;
+  /**
+   * Qaytarib bo'lmasligining server sababi (`rollback.message`; masalan «Faqat superadmin qaytara oladi») — sarlavha
+   * ostida izoh. Ruxsat bor, maydon noma'lum, rol / holat umuman qaytarilmaydigan (`NOT_ALLOWED_ROLE`,
+   * `STATUS_NOT_ROLLBACKABLE`) yoki kuryer / market ko'rinishi — `null`.
+   */
+  rollbackBlockedReason: string | null;
   canStartReturn: boolean;
   canHandOverReturn: boolean;
   /**
@@ -155,6 +169,16 @@ export const getOrderDetailAccess = ({
   const isRegionalManager = role === "manager" && (branchType === "REGIONAL" || branchType === "HYBRID");
   const canManagerSellCancel = isRegionalManager && canSellCancel;
   const canUseCourierActions = canManagerSellCancel && canRunCourierAction(order);
+  // Ortga qaytarish (y2RarzlT). Zaxira (maydon noma'lum): superadmin — sotilgan, bekor, yopilgan, to'langan, qisman
+  // to'langan; hududiy menejer (`can_sell_cancel`) — sotilgan, bekor (jo'natilgan bekor posilka — yo'q).
+  const rollback = resolveRollbackAvailability(order, () =>
+    Boolean(order) &&
+    !isCancelledSentOrder(order) &&
+    ((role === "superadmin" && canRollbackOrderStatus("superadmin", order?.status)) ||
+      (canManagerSellCancel && canRollbackOrderStatus("manager", order?.status) && !hasCancelPost(order))),
+  );
+  // Tugma faqat umumiy ko'rinishda (kuryer / market sarlavhasida amallar yo'q).
+  const canRollback = layout === "default" && rollback.allowed;
 
   return {
     layout,
@@ -168,11 +192,8 @@ export const getOrderDetailAccess = ({
     isRegionalManager,
     canUseCourierActions,
     canSell: canUseCourierActions && !isCourierHeldOrder(order),
-    // Ortga qaytarish (y2RarzlT, backend qoidasi): superadmin — sotilgan, bekor, yopilgan, to'langan, qisman to'langan;
-    // hududiy menejer (`can_sell_cancel`) — sotilgan, bekor.
-    canRollback:
-      (role === "superadmin" && canRollbackOrderStatus("superadmin", order?.status)) ||
-      (canManagerSellCancel && canRollbackOrderStatus("manager", order?.status)),
+    canRollback,
+    rollbackBlockedReason: layout === "default" && !rollback.allowed ? rollback.reason : null,
     canStartReturn: canInitiateReturn(rawRole, order),
     canHandOverReturn: canMarkReturnedToMarket(rawRole, order),
     canViewTracking: !isMarketOperator,

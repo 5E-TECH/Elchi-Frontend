@@ -1,12 +1,13 @@
 // dizayn-v2: (maket yo'q) courier-orders-sell-dialog
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 
 /**
  * Amal rad etildi (2KisY7DL) — backend sababi sotish / bekor qilish oynasi ichida. Maketda xato holati yo'q:
- * ko'rinishi `ExtraCostNoticeAlert` dagi `.el-alert`, ton — danger.
+ * ko'rinishi `ExtraCostNoticeAlert` dagi `.el-alert`, ton — danger. `hint` — sabab ostidagi ikkinchi qator (qaytarish
+ * oynasi: «pul ko'chmadi — birozdan keyin qayta urinib ko'ring»).
  */
-export const OrderActionErrorAlert = memo(({ message }: { message: string }) => {
+export const OrderActionErrorAlert = memo(({ message, hint }: { message: string; hint?: ReactNode }) => {
   const ref = useRef<HTMLDivElement>(null);
   // Telefonda pastki varaqa uzun bo'lsa sabab tanasining oxirida, ko'rinmay qolardi — chiqqanda ko'rinishga suriladi.
   // `scroll-my-3`: suriladigan joy chetiga yopishmaydi (12 px bo'shliq) — Manrope bilan kasr pikselli balandlikda
@@ -22,7 +23,14 @@ export const OrderActionErrorAlert = memo(({ message }: { message: string }) => 
       className="flex scroll-my-3 items-start gap-2 rounded-xl bg-danger-soft px-3 py-2.5 text-[13px] text-danger-fg"
     >
       <TriangleAlert className="mt-0.5 size-4 flex-none" aria-hidden="true" />
-      <p className="min-w-0 text-text">{message}</p>
+      {hint ? (
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="text-text">{message}</p>
+          <p className="text-text-muted">{hint}</p>
+        </div>
+      ) : (
+        <p className="min-w-0 text-text">{message}</p>
+      )}
     </div>
   );
 });

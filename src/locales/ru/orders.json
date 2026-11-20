@@ -90,7 +90,8 @@
     "refreshErrorTitle": "Список не обновился",
     "refreshErrorText": "Список может быть устаревшим.",
     "refreshErrorTextWithCounts": "Список и счётчики вкладок могут быть устаревшими.",
-    "refreshDismiss": "Закрыть предупреждение"
+    "refreshDismiss": "Закрыть предупреждение",
+    "rollbackUnavailable": "№{{id}} нельзя вернуть: {{reason}}"
   },
   "list": "Список заказов",
   "create": "Создать заказ",
@@ -306,6 +307,16 @@
   "rollbackTargetCancel": "Отменить",
   "rollbackCashNote": "Записи кассы по заказу тоже будут возвращены.",
   "rollbackStatusChange": "Из статуса «{{from}}» в статус «{{to}}»",
+  "rollbackErrorStateChanged": "Статус заказа изменился — повторите попытку.",
+  "rollbackErrorStateChangedHint": "«Повторить» заново загрузит заказ и отправит запрос ещё раз.",
+  "rollbackErrorUnavailable": "Сервис временно не ответил.",
+  "rollbackErrorUnavailableHint": "Деньги не перемещены. Повторите попытку чуть позже.",
+  "rollbackErrorInProgress": "Запрос на возврат этого заказа ещё выполняется. Подождите и повторите — действие не выполнится дважды.",
+  "rollbackErrorKeyMismatch": "Запрос отличается от предыдущей попытки. Повторите попытку.",
+  "rollbackErrorNoResponse": "Сервер не ответил — заказ, возможно, уже возвращён.",
+  "rollbackErrorNoResponseHint": "Повторить безопасно: действие не выполнится дважды.",
+  "rollbackSuperadminLedgerNote": "Если деньги уже переданы в HQ или маркету — наличные не перемещаются: кредит курьера и филиала и долг маркета записываются в учёт.",
+  "orderRolledBackTitle": "Заказ возвращён в статус «{{status}}»",
   "sellOrderTitle": "Продажа заказа",
   "extraCostApprovalHint": "Если указать, потребуется подтверждение маркета",
   "extraCostApprovalRequestedAction": "Запрошенное действие",
@@ -908,7 +919,8 @@
     "deleteConfirm": "Удалить",
     "deleting": "Удаление…",
     "deleted": "Заказ №{{id}} удалён",
-    "deletedWarehouseDescription": "Резерв на складе снят."
+    "deletedWarehouseDescription": "Резерв на складе снят.",
+    "rollbackBlockedTitle": "Возврат закрыт."
   },
   "createCatalogEmptyHint": "Каталог этого маркета пуст. Добавьте товар через поле «Товар не из каталога».",
   "amountInput": {

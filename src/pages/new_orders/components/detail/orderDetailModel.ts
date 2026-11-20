@@ -1,4 +1,5 @@
 import { readOrderReplacement } from "../../../../entities/order/model/orderReplacement";
+import type { OrderRollbackEligibility } from "../../../../entities/order/types/order";
 import { resolveAssetUrl } from "../../../../shared/lib/assetUrl";
 import type { EditableOrderSnapshot } from "../newOrderUpdateRules";
 
@@ -62,6 +63,8 @@ export interface OrderDetail extends EditableOrderSnapshot {
   region?: { id?: string; name?: string };
   items: OrderDetailItem[];
   customer: OrderDetailCustomer;
+  /** BE #738: qaytarish ruxsati (`readRollbackEligibility`); `null` / yo'q — noma'lum, zaxira qoida. */
+  rollback?: OrderRollbackEligibility | null;
   [key: string]: unknown;
 }
 

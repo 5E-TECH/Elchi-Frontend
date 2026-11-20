@@ -67,6 +67,36 @@ const orders = [
     holder_type: "COURIER",
     holder_courier_id: COURIER_ID,
   },
+  // BE #738: server maydoni bor qatorlar — qaror faqat `rollback.allowed` dan.
+  {
+    ...baseOrder,
+    id: "506",
+    status: "sold",
+    customer: { name: "Topshirilgan sotuv", phone_number: "+998900000006" },
+    holder_type: "COURIER",
+    holder_courier_id: COURIER_ID,
+    rollback: { allowed: false, code: "COURIER_REMITTED", message: "Pul filialga topshirilgan — buyurtmani menejer yoki superadmin qaytaradi" },
+  },
+  {
+    ...baseOrder,
+    id: "507",
+    status: "cancelled",
+    customer: { name: "Server ruxsat bergan bekor", phone_number: "+998900000007" },
+    // Zaxira qoidasi bo'yicha tugma chiqmasdi (posilka filialda) — server qarori ustun.
+    holder_type: "BRANCH",
+    holder_courier_id: null,
+    rollback: { allowed: true, code: null, message: null },
+  },
+  {
+    ...baseOrder,
+    id: "508",
+    status: "cancelled",
+    customer: { name: "Bekorlar pochtasidagi bekor", phone_number: "+998900000008" },
+    holder_type: "COURIER",
+    holder_courier_id: COURIER_ID,
+    canceled_post_id: "41",
+    rollback: null,
+  },
 ];
 
 const rollbackMutate = vi.fn();
@@ -119,6 +149,16 @@ describe("Kuryer — bekor qilinganni qayta tiklash (fix3b LC-05)", () => {
     expect(restoreButtonIn("Sotilgan mijoz")).toBeInTheDocument();
   });
 
+  it("⭐ BE #738: `allowed: false` (pul topshirilgan) — tugma yo'q; `allowed: true` — zaxira qoidasidan qat'i nazar bor", async () => {
+    const user = userEvent.setup();
+    await openAllTab(user);
+
+    expect(restoreButtonIn("Topshirilgan sotuv")).not.toBeInTheDocument();
+    expect(restoreButtonIn("Server ruxsat bergan bekor")).toBeInTheDocument();
+    // `rollback: null` — zaxira: bekorlar pochtasiga solingan posilka (`canceled_post_id`) — tugma yo'q.
+    expect(restoreButtonIn("Bekorlar pochtasidagi bekor")).not.toBeInTheDocument();
+  });
+
   it("HQ/filial qabul qilgan, boshqa kuryerdagi yoki pochtaga yuborilgan bekor buyurtmada tugma yo'q", async () => {
     const user = userEvent.setup();
     await openAllTab(user);
@@ -162,6 +202,7 @@ describe("Kuryer — bekor qilinganni qayta tiklash (fix3b LC-05)", () => {
 
     expect(rollbackMutate).toHaveBeenCalledWith({ orderId: "501", targetStatus: "waiting" }, expect.anything());
     expect(screen.queryByText("Ogohlantirish")).not.toBeInTheDocument();
-    expect(await screen.findByText("Buyurtma qayta tiklandi")).toBeInTheDocument();
+    // BE #738: sarlavha maqsad holat bilan («Kutilmoqda»).
+    expect(await screen.findByText("Buyurtma «Kutilmoqda» holatiga qaytarildi")).toBeInTheDocument();
   });
 });

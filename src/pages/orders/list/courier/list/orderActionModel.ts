@@ -1,4 +1,6 @@
 import i18n from "../../../../../i18n";
+import { ORDER_STATUS_NS, ORDER_STATUS_REGISTRY } from "../../../../../entities/order";
+import { ROLLBACK_TARGET_STATUS, type RollbackTarget } from "../../../../../entities/orders/rollbackTarget";
 import { notify } from "../../../../../shared/lib/notify";
 
 /**
@@ -124,5 +126,41 @@ export const notifyOrderActionDone = (
     description: name
       ? i18n.t("orders:orderActionDoneDescription", { id: order.id, name })
       : i18n.t("orders:orderNumberShort", { id: order.id }),
+  });
+};
+
+/**
+ * Muvaffaqiyatli qaytarish javobidagi hisob-kitob izohlari (BE #738 superadmin daftar teskarisi va D1 kuryer krediti):
+ * `"Order WAITING holatiga qaytarildi. Kuryer filialga topshirgan N so'm …. Filialga N so'm …"` — birinchi (texnik)
+ * gapdan keyingilari. Izoh yo'q yoki shakl boshqacha — `null`.
+ */
+export const getRollbackResultNotes = (response: unknown): string | null => {
+  const message = (response as { message?: unknown } | null | undefined)?.message;
+  if (typeof message !== "string") return null;
+  const match = /^Order \S+ holatiga qaytarildi\.\s*(.+)$/s.exec(message.trim());
+  const notes = match?.[1]?.trim();
+  return notes ? notes : null;
+};
+
+/**
+ * Qaytarish bajarildi — sarlavha maqsad holat bilan («Buyurtma «Kutilmoqda» holatiga qaytarildi»; oynadagi «… holatiga
+ * qaytariladi» jumlasi bilan bir xil), izoh — server hisob-kitob izohi (kuryer / filial krediti, market qarzi) yoki
+ * qaysi buyurtma.
+ */
+export const notifyRollbackDone = (
+  order: { id: string; customer?: { name?: string | null } | null } | null | undefined,
+  target: RollbackTarget,
+  response?: unknown,
+) => {
+  if (!order) return;
+  const status = i18n.t(ORDER_STATUS_REGISTRY[ROLLBACK_TARGET_STATUS[target]].labelKey, { ns: ORDER_STATUS_NS });
+  const notes = getRollbackResultNotes(response);
+  const name = order.customer?.name?.trim();
+  const reference = name
+    ? i18n.t("orders:orderActionDoneDescription", { id: order.id, name })
+    : i18n.t("orders:orderNumberShort", { id: order.id });
+  notify.success(i18n.t("orders:orderRolledBackTitle", { status }), {
+    description: notes ? `${reference}. ${notes}` : reference,
+    ...(notes ? { duration: 10_000 } : {}),
   });
 };

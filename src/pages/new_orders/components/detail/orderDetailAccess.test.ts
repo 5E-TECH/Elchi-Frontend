@@ -100,6 +100,106 @@ describe("getOrderDetailAccess — rollar va qulflar", () => {
   });
 });
 
+describe("qaytarish — server maydoni `rollback` (BE #738, D1–D4)", () => {
+  const allowed = { allowed: true, code: null, message: null };
+  const denied = (code: string, message: string) => ({ allowed: false, code, message });
+
+  it("⭐ `allowed: true` — eski FE shartlari (filial turi, `can_sell_cancel`, holat) e'tiborsiz", () => {
+    for (const [role, branchType, canSellCancel] of [
+      ["manager", "PICKUP", false],
+      ["manager", "HQ", true],
+      ["manager", "REGIONAL", true],
+      ["superadmin", null, false],
+    ] as const) {
+      const access = getOrderDetailAccess({
+        role,
+        branchType,
+        canSellCancel,
+        order: order({ status: "sold", rollback: allowed }),
+      });
+      expect([access.canRollback, access.rollbackBlockedReason], `${role} ${branchType}`).toEqual([true, null]);
+    }
+  });
+
+  it("⭐ `allowed: false` — tugma yo'q, server sababi sahifada (hududiy menejer, sotilgan / bekor)", () => {
+    const cases = [
+      ["sold", denied("SUPERADMIN_ONLY", "Buyurtma puli bosh ofisga o'tgan — faqat superadmin qaytara oladi")],
+      ["cancelled", denied("PARCEL_NOT_IN_BRANCH", "Posilka filialdan jo'natilgan — qaytarib bo'lmaydi")],
+      ["sold", denied("NO_PERMISSION", "Sizda buyurtmani sotish / bekor qilish huquqi yo'q — qaytarish ham mumkin emas")],
+      ["sold", denied("NOT_OWN_BRANCH", "Buyurtma sizning filialingizga tegishli emas")],
+    ] as const;
+    for (const [status, rollback] of cases) {
+      const access = getOrderDetailAccess({
+        role: "manager",
+        branchType: "REGIONAL",
+        canSellCancel: true,
+        order: order({ status, rollback }),
+      });
+      expect(access.canRollback, rollback.code).toBe(false);
+      expect(access.rollbackBlockedReason, rollback.code).toBe(rollback.message);
+    }
+  });
+
+  it("superadmin `CORRECTION_REQUIRED` — sabab (T6 yo'l-yo'rig'i) ko'rinadi", () => {
+    const message = "Hisob-kitob holati avtomatik qaytarishga yaramaydi — buxgalteriya tuzatishi kerak";
+    const access = getOrderDetailAccess({
+      role: "superadmin",
+      branchType: null,
+      order: order({ status: "paid", rollback: denied("CORRECTION_REQUIRED", message) }),
+    });
+    expect([access.canRollback, access.rollbackBlockedReason]).toEqual([false, message]);
+  });
+
+  it("«jim» kodlar (rol / holat umuman qaytarilmaydi) — sabab yo'q", () => {
+    const admin = getOrderDetailAccess({
+      role: "admin",
+      branchType: null,
+      order: order({ status: "sold", rollback: denied("NOT_ALLOWED_ROLE", "Buyurtmani qaytarish faqat superadmin, menejer va kuryer uchun") }),
+    });
+    expect([admin.canRollback, admin.rollbackBlockedReason]).toEqual([false, null]);
+    const waiting = getOrderDetailAccess({
+      role: "manager",
+      branchType: "REGIONAL",
+      canSellCancel: true,
+      order: order({ status: "waiting", rollback: denied("STATUS_NOT_ROLLBACKABLE", "Rollback mumkin emas (status: waiting)") }),
+    });
+    expect([waiting.canRollback, waiting.rollbackBlockedReason]).toEqual([false, null]);
+  });
+
+  it("kuryer va market ko'rinishida tugma ham, sabab ham yo'q (sarlavhada amal yo'q)", () => {
+    const courier = getOrderDetailAccess({ role: "courier", branchType: null, order: order({ status: "sold", rollback: allowed }) });
+    expect([courier.canRollback, courier.rollbackBlockedReason]).toEqual([false, null]);
+    const remitted = getOrderDetailAccess({
+      role: "courier",
+      branchType: null,
+      order: order({ status: "sold", rollback: denied("COURIER_REMITTED", "Pul filialga topshirilgan") }),
+    });
+    expect(remitted.rollbackBlockedReason).toBeNull();
+  });
+
+  it("⭐ `rollback: null` / maydon yo'q — zaxira (avvalgi qoida); jo'natilgan bekor posilka — yo'q", () => {
+    for (const rollback of [null, undefined, { allowed: "yes" }]) {
+      const fields = rollback === undefined ? { status: "sold" } : { status: "sold", rollback };
+      const regional = getOrderDetailAccess({ role: "manager", branchType: "REGIONAL", canSellCancel: true, order: order(fields) });
+      expect([regional.canRollback, regional.rollbackBlockedReason]).toEqual([true, null]);
+      const pickup = getOrderDetailAccess({ role: "manager", branchType: "PICKUP", canSellCancel: true, order: order(fields) });
+      expect(pickup.canRollback).toBe(false);
+    }
+    const regional = (fields: Record<string, unknown>) =>
+      getOrderDetailAccess({ role: "manager", branchType: "REGIONAL", canSellCancel: true, order: order({ rollback: null, ...fields }) })
+        .canRollback;
+    expect(regional({ status: "cancelled" })).toBe(true);
+    expect(regional({ status: "cancelled", transport_status: "cancelled (sent)" })).toBe(false);
+    expect(regional({ status: "cancelled (sent)" })).toBe(false);
+    expect(regional({ status: "cancelled", canceled_post_id: "41" })).toBe(false);
+    // Superadmin: bekorlar pochtasidagi (`cancelled`) — ruxsat (backend D4 superadminni cheklamaydi), jo'natilgan — yo'q.
+    const sa = (fields: Record<string, unknown>) =>
+      getOrderDetailAccess({ role: "superadmin", branchType: null, order: order({ rollback: null, ...fields }) }).canRollback;
+    expect(sa({ status: "cancelled", canceled_post_id: "41" })).toBe(true);
+    expect(sa({ status: "cancelled", transport_status: "cancelled (sent)" })).toBe(false);
+  });
+});
+
 describe("market operatori (MO-3) — market ko'rinishi, faqat o'qish", () => {
   it("market maketi; tahrirlash, sotish/bekor, qaytarish va topshirish yo'q (har holatda)", () => {
     for (const status of ["new", "waiting", "sold", "cancelled", "paid"]) {

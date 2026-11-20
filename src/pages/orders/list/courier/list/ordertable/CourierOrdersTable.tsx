@@ -150,9 +150,10 @@ const CourierOrdersTable = ({
   };
 
   // `onRestore` berilmagan jadvalda (Kutilayotgan, `?status=sold` havolasi) «Qayta tiklash» chizilmaydi —
-  // aks holda hech narsa qilmaydigan tugma chiqardi.
+  // aks holda hech narsa qilmaydigan tugma chiqardi. `canRestore` berilsa qaror o'shaniki (BE #738: server
+  // `rollback.allowed`, noma'lum bo'lsa sahifaning zaxira qoidasi); berilmasa — holat bo'yicha.
   const showRestore = (order: Order) =>
-    Boolean(onRestore) && isRollbackCandidate(order) && (canRestore ? canRestore(order) : true);
+    Boolean(onRestore) && (canRestore ? canRestore(order) : isRollbackCandidate(order));
 
   const nameOf = (order: Order) => order.customer?.name?.trim() || "—";
   const money = (order: Order) => formatMoneyLocalized(Number(order.total_price) || 0, { language });

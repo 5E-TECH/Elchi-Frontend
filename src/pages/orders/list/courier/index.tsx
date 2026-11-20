@@ -9,12 +9,13 @@ import Tabs from "./list/tabs";
 import SellModal from "./list/SellModal";
 import CancelModal from "./list/CancelModal";
 import RollbackOrderDialog from "./list/RollbackOrderDialog";
-import type { RollbackTarget } from "../../../../entities/orders/rollbackTarget";
-import { notifyOrderActionDone } from "./list/orderActionModel";
+import { notifyOrderActionDone, notifyRollbackDone } from "./list/orderActionModel";
+import { useRollbackOrderFlow } from "./list/useRollbackOrderFlow";
 import PendingOrdersTable from "./list/ordertable/pendingOrderTable";
 import AllOrdersTable from "./list/ordertable/AllOrdersTable";
 import CancelledOrdersTable from "./list/ordertable/CancelledOrdersTable";
 import {
+  isRollbackCandidate,
   isSelectableCancelledOrder,
   isUnsentCancelledOrder,
   normalizeOrderStatus,
@@ -41,6 +42,7 @@ import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/
 import { getActionErrorMessage } from "../../../../shared/lib/actionError";
 import { canCourierRestoreCancelledOrder } from "../../../../entities/orders/custody";
 import { getRollbackWarning } from "../../../../entities/orders/rollbackResult";
+import { hasCancelPost, resolveRollbackAvailability } from "../../../../entities/orders/rollbackEligibility";
 import type { CancelOrderPayload } from "../../../../entities/orders/cancelReason";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../../entities/orders/sellPayment";
 import { notify } from "../../../../shared/lib/notify";
@@ -371,14 +373,18 @@ const CourierOrders = () => {
   const currentUserId = useSelector(
     (state: RootState) => state.user.user?.id ?? state.role.id,
   );
-  // fix3b LC-05: bekor qilingan buyurtmani kuryer faqat posilka hali o'zida
-  // (holder = shu kuryer) turganda tiklaydi. Filial/HQ qabul qilib bo'lgan
-  // bo'lsa backend 400 qaytaradi — tugma ko'rsatilmaydi. Sotilgan qator
-  // avvalgidek.
+  // «Qayta tiklash» (BE #738): server maydoni `rollback.allowed` (masalan pul filialga topshirilgan —
+  // `COURIER_REMITTED`, tugma yo'q). Maydon noma'lum (`null` / eski backend) — avvalgi qoida: sotilgan yoki bekor,
+  // jo'natilmagan; bekor qilingan buyurtma faqat posilka hali shu kuryerda (fix3b LC-05) va bekorlar pochtasida emas.
   const canRestoreOrder = useCallback(
     (order: Order) =>
-      normalizeOrderStatus(order.status) !== "cancelled" ||
-      canCourierRestoreCancelledOrder(order, currentUserId),
+      resolveRollbackAvailability(
+        order,
+        () =>
+          isRollbackCandidate(order) &&
+          (normalizeOrderStatus(order.status) !== "cancelled" ||
+            (canCourierRestoreCancelledOrder(order, currentUserId) && !hasCancelPost(order))),
+      ).allowed,
     [currentUserId],
   );
 
@@ -392,7 +398,6 @@ const CourierOrders = () => {
   const [cancelOrder, setCancelOrder] = useState<Order | null>(null);
   // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
   const [approvalOrderId, setApprovalOrderId] = useState<string | null>(null);
-  const [rollbackOrder, setRollbackOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [hiddenSentCancelledOrderIds, setHiddenSentCancelledOrderIds] =
     useState<Set<string>>(getHiddenSentCancelledOrderIds);
@@ -495,7 +500,21 @@ const CourierOrders = () => {
   };
 
   // Oyna yoki kamera ochiq — avtomatik yangilanish to'xtaydi (tasdiq pollingi davom etadi).
-  const refreshPaused = useOrdersRefreshPaused(Boolean(sellOrder || cancelOrder || rollbackOrder));
+  // Qaytarish oynasi (BE #738): xato oyna ichida, `Idempotency-Key`, «holat o'zgardi» → qayta o'qib qayta urinish.
+  const rollback = useRollbackOrderFlow<Order>({
+    mutation: RollbackOrder,
+    onSuccess: (response, order, target) => {
+      // fix3b L1 / CODE-14: rollback bajarildi, lekin bekor qilinganlar
+      // pochtasi yaratilmadi — oddiy muvaffaqiyat emas, ogohlantirish.
+      const warning = getRollbackWarning(response, t("rollbackCancelPostWarning"));
+      if (!warning) {
+        notifyRollbackDone(order, target, response);
+        return;
+      }
+      notify.warning(t("common:warning"), { description: warning, duration: 8000 });
+    },
+  });
+  const refreshPaused = useOrdersRefreshPaused(Boolean(sellOrder || cancelOrder || rollback.order));
   const ordersQuery = useGetOrderCourier(
     params,
     (current) =>
@@ -515,7 +534,6 @@ const CourierOrders = () => {
 
   const { mutate: sellMutate, isPending: isSelling } = SellOrder;
   const { mutate: partlySellMutate, isPending: isPartlySelling } = PartlySellOrder;
-  const { mutate: rollbackMutate, isPending: isRollbacking } = RollbackOrder;
   const { mutate: cancelMutate, isPending: isCancelling } = CancelOrder;
   const { mutate: sendToPostMutate, isPending: isSendingToPost } = SendToPost;
 
@@ -821,25 +839,6 @@ const CourierOrders = () => {
         onError: notifyActionError,
       },
     );
-  };
-
-  const handleRollbackConfirm = (targetStatus: RollbackTarget) => {
-    if (!rollbackOrder) return;
-    const order = rollbackOrder;
-    rollbackMutate({ orderId: order.id, targetStatus }, {
-      onSuccess: (response) => {
-        setRollbackOrder(null);
-        // fix3b L1 / CODE-14: rollback bajarildi, lekin bekor qilinganlar
-        // pochtasi yaratilmadi — oddiy muvaffaqiyat emas, ogohlantirish.
-        const warning = getRollbackWarning(response, t("rollbackCancelPostWarning"));
-        if (!warning) {
-          notifyOrderActionDone("rollback", order);
-          return;
-        }
-        notify.warning(t("common:warning"), { description: warning, duration: 8000 });
-      },
-      onError: notifyActionError,
-    });
   };
 
   const handleSelectChange = (id: string, checked: boolean) => {
@@ -1150,7 +1149,7 @@ const CourierOrders = () => {
                   onRowClick={handleOpenDetail}
                   onDeliver={(order) => setSellOrder(order)}
                   onCancel={(order) => setCancelOrder(order)}
-                  onRestore={(order) => setRollbackOrder(order)}
+                  onRestore={rollback.open}
                   canRestore={canRestoreOrder}
                 />
               )}
@@ -1203,13 +1202,7 @@ const CourierOrders = () => {
         awaitingApproval={!!cancelOrder && approvalOrderId === cancelOrder.id}
       />
 
-      <RollbackOrderDialog
-        order={rollbackOrder}
-        variant="courier"
-        loading={isRollbacking}
-        onCancel={() => setRollbackOrder(null)}
-        onConfirm={handleRollbackConfirm}
-      />
+      <RollbackOrderDialog {...rollback.dialogProps} variant="courier" />
     </div>
   );
 };

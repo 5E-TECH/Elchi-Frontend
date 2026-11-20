@@ -580,6 +580,25 @@ describe("OrdersTable — menejer amallari", () => {
     expect(within(paid).getByLabelText("Amal yo'q")).toHaveTextContent("—");
   });
 
+  it("⭐ BE #738: `canRollbackOrder` qaror beradi; rad etilgan qatorda «—» + server sababi (`title`, ekran o'quvchi)", () => {
+    const reason = "Buyurtma puli bosh ofisga o'tgan — faqat superadmin qaytara oladi";
+    renderActions({
+      canRollbackOrder: (order: { id: string }) => order.id === "p-1",
+      getRollbackBlockReason: (order: { id: string }) => (order.id === "s-1" ? reason : null),
+    });
+    const [waiting, sold, paid] = bodyRows();
+
+    // Sotilgan, lekin server ruxsat bermagan — tugma yo'q, sabab katakda.
+    expect(within(sold).queryByRole("button", { name: /qaytarish|sotish|bekor/ })).not.toBeInTheDocument();
+    const blocked = within(sold).getByLabelText(`№s-1 ni qaytarib bo'lmaydi: ${reason}`);
+    expect(blocked).toHaveTextContent("—");
+    expect(blocked).toHaveAttribute("title", reason);
+    // Server ruxsat bergan (to'langan, `canUseOrderActions` false bo'lsa ham) — «Qaytarish».
+    expect(within(paid).getByRole("button", { name: "№p-1 ni kutilmoqda holatiga qaytarish" })).toBeInTheDocument();
+    // Kutilmoqda — sotish / bekor avvalgidek.
+    expect(within(waiting).getByRole("button", { name: "№w-1 ni sotish" })).toBeInTheDocument();
+  });
+
   it("amal so'rovi ketayotganda hamma amal tugmalari o'chiq", () => {
     renderActions({ isOrderActionPending: true });
 

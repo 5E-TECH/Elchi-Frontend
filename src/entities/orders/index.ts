@@ -6,6 +6,8 @@ import type { SellOrderPayload } from "./sellPayment";
 import type { ExtraCostRejectReason } from "./extraCostDecision";
 import type { ExtraCostItem, ExtraCostMode } from "./extraCostRequest";
 import type { RollbackTarget } from "./rollbackTarget";
+import { classifyRollbackError } from "./rollbackError";
+import { settleRollbackKey, takeRollbackKey } from "./rollbackIdempotency";
 import { EXTRA_COST_APPROVALS_QUERY_KEY, todayOrdersByMarketKey } from "./queryKeys";
 
 export {
@@ -68,6 +70,16 @@ export const todayMarketsQueryOptions = (params?: unknown) => ({
 export const cancelledMarketsQueryOptions = (params?: { search?: string }) => ({
   queryKey: [orders, "markets", "cancelled", params] as const,
   queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params }).then((res) => res.data),
+});
+
+/**
+ * `GET /orders/:id` so'rovi — kalit va `queryFn` bitta joyda: tafsilot sahifasi (`useGetOrderById`) va qaytarish
+ * oynasidagi «Qayta urinish» (`STATE_CHANGED` — avval buyurtma qayta o'qiladi, `rollback` maydoni yangilanadi) bir
+ * kesh yozuvini ulashadi.
+ */
+export const orderByIdQueryOptions = (orderId: string) => ({
+  queryKey: [orders, orderId] as const,
+  queryFn: () => api.get(API_ENDPOINTS.ORDERS.BY_ID(orderId)).then((res) => res.data),
 });
 
 export type ExtraCostApproval = {
@@ -322,8 +334,7 @@ export const useOrders = () => {
     refetchInterval?: (data: unknown) => number | false,
   ) =>
     useQuery({
-      queryKey: [orders, orderId],
-      queryFn: () => api.get(API_ENDPOINTS.ORDERS.BY_ID(orderId)).then((res) => res.data),
+      ...orderByIdQueryOptions(orderId),
       enabled: enabled && Boolean(orderId),
       refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
       // Tafsilot sahifasi xatoni o'zi ko'rsatadi (D-13: 404 — «Buyurtma topilmadi», boshqasi — «Qayta urinish»),
@@ -462,11 +473,35 @@ export const useOrders = () => {
     onSuccess: invalidateMoney,
   });
 
-  // Ortga qaytarish (y2RarzlT): `target_status` — «Kutilmoqda» (sukut), «Bekor qilish», kuryerda «Bekor — jo'natilgan».
+  /**
+   * Ortga qaytarish (y2RarzlT): `target_status` — «Kutilmoqda» (sukut), «Bekor qilish», kuryerda «Bekor — jo'natilgan».
+   * BE #738: har so'rovda `Idempotency-Key` (buyurtma + maqsad uchun bitta, qayta urinishda o'sha — `rollbackIdempotency`)
+   * va 60 s dan uzun kutish. Muvaffaqiyat ham, xato ham buyurtmalar keshini eskirtiradi — ro'yxat / tafsilotdagi
+   * `rollback` maydoni yangilanadi (xatoda pul ko'chmagan — pul keshlari tegilmaydi).
+   */
   const RollbackOrder = useMutation({
     mutationFn: ({ orderId, targetStatus }: { orderId: string; targetStatus: RollbackTarget }) =>
-      api.post(API_ENDPOINTS.ORDERS.ROLLBACK(orderId), { target_status: targetStatus }).then((res) => res.data),
-    onSuccess: invalidateMoney,
+      api
+        .post(
+          API_ENDPOINTS.ORDERS.ROLLBACK(orderId),
+          { target_status: targetStatus },
+          {
+            headers: { "Idempotency-Key": takeRollbackKey(orderId, targetStatus) },
+            // Gateway rollback'ni 60 s kutadi (BE #738) — brauzer undan oldin uzmasin, aks holda server javobi
+            // (natija yoki aniq xato) o'rniga «javob kelmadi» bo'lardi.
+            timeout: LONG_REQUEST_TIMEOUT_MS,
+          },
+        )
+        .then((res) => res.data),
+    onSuccess: (_data, { orderId, targetStatus }) => {
+      settleRollbackKey(orderId, targetStatus);
+      invalidateMoney();
+    },
+    onError: (error, { orderId, targetStatus }) => {
+      // 422 — kalit boshqa tanaga bog'langan: keyingi urinish yangi kalit bilan.
+      if (classifyRollbackError(error).kind === "key_mismatch") settleRollbackKey(orderId, targetStatus);
+      void client.invalidateQueries({ queryKey: [orders] });
+    },
   });
 
   const SendToPost = useMutation({

@@ -844,8 +844,52 @@ describe("NewOrderUpdate — sotilgan buyurtmani qaytarish (RollbackOrderDialog)
     await user.click(within(dialog).getByRole("button", { name: "Ha, qaytarish" }));
 
     expect(rollbackMutation.mutate).toHaveBeenCalledWith({ orderId: "1251175", targetStatus: "waiting" }, expect.anything());
-    expect(await screen.findByText("Buyurtma qayta tiklandi")).toBeInTheDocument();
+    expect(await screen.findByText("Buyurtma «Kutilmoqda» holatiga qaytarildi")).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+
+  it("⭐ BE #738: server `rollback.allowed` — HQ menejerida ham tugma (eski filial turi sharti e'tiborsiz), sababsiz", () => {
+    orderState.status = "sold";
+    orderState.extra = { rollback: { allowed: true, code: null, message: null } };
+    try {
+      renderAsUser("manager", { branch: { id: "1", type: "HQ" }, can_sell_cancel: true });
+      expect(screen.getByRole("button", { name: "Qaytarish" })).toBeInTheDocument();
+      expect(screen.queryByTestId("rollback-blocked-reason")).not.toBeInTheDocument();
+    } finally {
+      orderState.extra = undefined;
+    }
+  });
+
+  it("⭐ BE #738: `allowed: false` — tugma yo'q, «Qaytarish yopiq.» va server sababi sahifada", () => {
+    orderState.status = "sold";
+    orderState.extra = {
+      rollback: {
+        allowed: false,
+        code: "SUPERADMIN_ONLY",
+        message: "Buyurtma puli bosh ofisga o'tgan — faqat superadmin qaytara oladi",
+      },
+    };
+    try {
+      renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" }, can_sell_cancel: true });
+      expect(screen.queryByRole("button", { name: "Qaytarish" })).not.toBeInTheDocument();
+      const note = screen.getByTestId("rollback-blocked-reason");
+      expect(note).toHaveTextContent("Qaytarish yopiq.");
+      expect(note).toHaveTextContent("Buyurtma puli bosh ofisga o'tgan — faqat superadmin qaytara oladi");
+    } finally {
+      orderState.extra = undefined;
+    }
+  });
+
+  it("BE #738: admin (`NOT_ALLOWED_ROLE`) — tugma ham, sabab ham yo'q", () => {
+    orderState.status = "sold";
+    orderState.extra = { rollback: { allowed: false, code: "NOT_ALLOWED_ROLE", message: "Faqat superadmin, menejer va kuryer" } };
+    try {
+      renderAsUser("admin");
+      expect(screen.queryByRole("button", { name: "Qaytarish" })).not.toBeInTheDocument();
+      expect(screen.queryByTestId("rollback-blocked-reason")).not.toBeInTheDocument();
+    } finally {
+      orderState.extra = undefined;
+    }
   });
 
   it("HQ menejeri yoki admin — «Qaytarish» yo'q (bayroq bo'lsa ham)", () => {

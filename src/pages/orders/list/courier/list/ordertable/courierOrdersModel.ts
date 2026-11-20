@@ -7,6 +7,7 @@
  * ko'rinishda u «Bekor — jo'natilgan» (chegarali badge).
  */
 import type { ServerPendingExtraCostApproval } from "../../../../../../entities/orders/extraCostApproval";
+import type { OrderRollbackEligibility } from "../../../../../../entities/orders/rollbackEligibility";
 
 export const Order_status = {
   CREATED: "created",
@@ -53,6 +54,10 @@ export type Order = {
   extra_cost_request?: unknown;
   /** Hamkor (tashqi) buyurtma id'si — bor bo'lsa xarajat eski (replay) yo'ldan (`isExtraCostReplayOrder`). */
   external_id?: string | null;
+  /** Bekorlar pochtasi (S11) — solingan bekor posilkani kuryer qaytara olmaydi. */
+  canceled_post_id?: string | null;
+  /** BE #738: «Qayta tiklash» ruxsati (`readRollbackEligibility`); `null` — noma'lum, zaxira qoida. */
+  rollback?: OrderRollbackEligibility | null;
 };
 
 /** Ro'yxat tablari (URL `status` paramiga bog'langan). */

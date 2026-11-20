@@ -90,7 +90,8 @@
     "refreshErrorTitle": "Ro'yxat yangilanmadi",
     "refreshErrorText": "Ro'yxat eskirgan bo'lishi mumkin.",
     "refreshErrorTextWithCounts": "Ro'yxat va tab sonlari eskirgan bo'lishi mumkin.",
-    "refreshDismiss": "Ogohlantirishni yopish"
+    "refreshDismiss": "Ogohlantirishni yopish",
+    "rollbackUnavailable": "№{{id}} ni qaytarib bo'lmaydi: {{reason}}"
   },
   "list": "Buyurtmalar ro'yxati",
   "create": "Buyurtma yaratish",
@@ -306,6 +307,16 @@
   "rollbackTargetCancel": "Bekor qilish",
   "rollbackCashNote": "Buyurtmaning kassa yozuvlari ham qaytariladi.",
   "rollbackStatusChange": "{{from}} holatidan {{to}} holatiga",
+  "rollbackErrorStateChanged": "Buyurtma holati o'zgardi — qayta urinib ko'ring.",
+  "rollbackErrorStateChangedHint": "«Qayta urinish» buyurtmani yangidan o'qiydi va so'rovni qayta yuboradi.",
+  "rollbackErrorUnavailable": "Xizmat vaqtincha javob bermadi.",
+  "rollbackErrorUnavailableHint": "Pul ko'chmadi. Birozdan so'ng qayta urinib ko'ring.",
+  "rollbackErrorInProgress": "Bu buyurtmani qaytarish so'rovi hali bajarilmoqda. Biroz kuting va qayta urinib ko'ring — amal ikki marta bajarilmaydi.",
+  "rollbackErrorKeyMismatch": "So'rov avvalgi urinishdan farq qiladi. Qayta urinib ko'ring.",
+  "rollbackErrorNoResponse": "Server javob bermadi — buyurtma qaytarilgan bo'lishi mumkin.",
+  "rollbackErrorNoResponseHint": "Qayta urinish xavfsiz: amal ikki marta bajarilmaydi.",
+  "rollbackSuperadminLedgerNote": "Pul HQ'ga o'tgan yoki market to'langan bo'lsa — naqd ko'chmaydi: kuryer va filial krediti hamda market qarzi daftarga yoziladi.",
+  "orderRolledBackTitle": "Buyurtma «{{status}}» holatiga qaytarildi",
   "sellOrderTitle": "Buyurtmani sotish",
   "extraCostApprovalHint": "Kiritilsa, market tasdig'idan o'tadi",
   "extraCostApprovalRequestedAction": "So'ralgan amal",
@@ -908,7 +919,8 @@
     "deleteConfirm": "O'chirish",
     "deleting": "O'chirilmoqda…",
     "deleted": "Buyurtma №{{id}} o'chirildi",
-    "deletedWarehouseDescription": "Ombordagi band bo'shatildi."
+    "deletedWarehouseDescription": "Ombordagi band bo'shatildi.",
+    "rollbackBlockedTitle": "Qaytarish yopiq."
   },
   "createCatalogEmptyHint": "Bu marketning katalogi bo'sh. Mahsulotni «Katalogda yo'q mahsulot» maydoni orqali qo'shing.",
   "amountInput": {

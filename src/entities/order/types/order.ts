@@ -69,6 +69,19 @@ export interface OrderCancelReturn {
     handover_method: OrderCancelHandoverMethod | null;
 }
 
+/**
+ * BE #738 (ega qarorlari D1–D4): joriy foydalanuvchi buyurtmani qaytara oladimi — `POST /orders/rollback/:id` bilan AYNI
+ * qaror. `GET /orders`, `GET /orders/:id`, kuryer ro'yxatlarida. O'qish — `readRollbackEligibility`
+ * (`entities/orders/rollbackEligibility`).
+ */
+export interface OrderRollbackEligibility {
+    allowed: boolean;
+    /** Rad etish kodi (`SUPERADMIN_ONLY`, `PARCEL_NOT_IN_BRANCH` …); ruxsat bo'lsa `null`. */
+    code: string | null;
+    /** Rad etish sababi (o'zbekcha, endpoint 400/403 matni bilan bir xil); ruxsat bo'lsa `null`. */
+    message: string | null;
+}
+
 export interface OrderListItem {
     id: string;
     /** Mijozga ko'rinadigan raqam («EL-100081», `enrichOrders`; yorliqdagi) — ro'yxatda shu ko'rsatiladi (rwAy8Qyk). */
@@ -168,6 +181,8 @@ export interface OrderListItem {
      * rejimda yozmaydi — eski replay yo'li (`isExtraCostReplayOrder`).
      */
     external_id?: string | null;
+    /** BE #738: qaytarish ruxsati; `null` — noma'lum (order-service ulgurmadi), yo'q — eski backend. */
+    rollback?: OrderRollbackEligibility | null;
     /** HQ marketga qaytarishni boshlagan (`POST orders/:id/initiate-return`). */
     return_requested?: boolean;
     /** Qaytarish sababi (initiate-return `reason`). */

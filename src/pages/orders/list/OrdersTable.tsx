@@ -109,6 +109,13 @@ interface Props {
     onSellOrder?: (order: OrderListItem) => void;
     onCancelOrder?: (order: OrderListItem) => void;
     onRollbackOrder?: (order: OrderListItem) => void;
+    /**
+     * Qatorda «Qaytarish» bormi (BE #738: server `rollback.allowed`, noma'lum bo'lsa sahifaning zaxira qoidasi).
+     * Berilmasa — avvalgidek: `canUseOrderActions` va holat (sotilgan / bekor).
+     */
+    canRollbackOrder?: (order: OrderListItem) => boolean;
+    /** Qaytarib bo'lmasligining server sababi — «—» katagining `title` / ekran o'quvchi matni. */
+    getRollbackBlockReason?: (order: OrderListItem) => string | null;
     /** Biror amal so'rovi ketmoqda — hamma amal tugmalari o'chiq. */
     isOrderActionPending?: boolean;
     isSelectable?: (order: OrderListItem) => boolean;
@@ -147,6 +154,8 @@ const OrdersTable = ({
     onSellOrder,
     onCancelOrder,
     onRollbackOrder,
+    canRollbackOrder,
+    getRollbackBlockReason,
     isOrderActionPending = false,
     isSelectable,
     selectedIds = EMPTY_SELECTED_IDS,
@@ -234,16 +243,12 @@ const OrdersTable = ({
             const id = order.id;
             const size = place === "table" ? "sm" : "md";
             const grow = place === "card" ? "flex-1" : undefined;
-            if (!canUseOrderActions?.(order)) {
-                return place === "table" ? (
-                    <span className="text-text-subtle" aria-label={t("ordersList.noAction")}>
-                        —
-                    </span>
-                ) : null;
-            }
-
-            if (ROLLBACK_STATUSES.has(order.status)) {
-                return onRollbackOrder ? (
+            const isRollbackRow = ROLLBACK_STATUSES.has(order.status);
+            const rollbackable = canRollbackOrder
+                ? canRollbackOrder(order)
+                : isRollbackRow && Boolean(canUseOrderActions?.(order));
+            if (onRollbackOrder && rollbackable) {
+                return (
                     <Button
                         variant="secondary"
                         size={size}
@@ -258,6 +263,21 @@ const OrdersTable = ({
                     >
                         {t("ordersList.rollback")}
                     </Button>
+                );
+            }
+            if (isRollbackRow || !canUseOrderActions?.(order)) {
+                // Maket: amalsiz qator — «—». Server sababi (masalan «Faqat superadmin qaytara oladi») — `title` va
+                // ekran o'quvchi matnida (telefon kartasida joy yo'q — sabab tafsilot sahifasida).
+                const reason = getRollbackBlockReason?.(order) ?? null;
+                return place === "table" ? (
+                    <span
+                        className="text-text-subtle"
+                        title={reason ?? undefined}
+                        aria-label={reason ? t("ordersList.rollbackUnavailable", { id, reason }) : t("ordersList.noAction")}
+                        data-rollback-blocked={reason ? "" : undefined}
+                    >
+                        —
+                    </span>
                 ) : null;
             }
 
@@ -307,8 +327,10 @@ const OrdersTable = ({
             );
         },
         [
+            canRollbackOrder,
             canSellOrder,
             canUseOrderActions,
+            getRollbackBlockReason,
             hasActions,
             isOrderActionPending,
             onCancelOrder,

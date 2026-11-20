@@ -90,7 +90,8 @@
     "refreshErrorTitle": "The list wasn't refreshed",
     "refreshErrorText": "The list may be out of date.",
     "refreshErrorTextWithCounts": "The list and tab counts may be out of date.",
-    "refreshDismiss": "Dismiss warning"
+    "refreshDismiss": "Dismiss warning",
+    "rollbackUnavailable": "№{{id}} can't be returned: {{reason}}"
   },
   "list": "Order list",
   "create": "Create order",
@@ -306,6 +307,16 @@
   "rollbackTargetCancel": "Cancel order",
   "rollbackCashNote": "The order's cashbox entries are reversed too.",
   "rollbackStatusChange": "From {{from}} to {{to}}",
+  "rollbackErrorStateChanged": "The order state changed — please try again.",
+  "rollbackErrorStateChangedHint": "“Try again” reloads the order and sends the request again.",
+  "rollbackErrorUnavailable": "The service did not respond.",
+  "rollbackErrorUnavailableHint": "No money was moved. Please try again shortly.",
+  "rollbackErrorInProgress": "The return request for this order is still in progress. Wait and try again — it will not run twice.",
+  "rollbackErrorKeyMismatch": "The request differs from the previous attempt. Please try again.",
+  "rollbackErrorNoResponse": "The server did not respond — the order may already be returned.",
+  "rollbackErrorNoResponseHint": "Trying again is safe: the action will not run twice.",
+  "rollbackSuperadminLedgerNote": "If the money already reached HQ or the market was paid, no cash moves: the courier and branch credits and the market debt are recorded in the ledger.",
+  "orderRolledBackTitle": "Order returned to “{{status}}”",
   "sellOrderTitle": "Sell order",
   "extraCostApprovalHint": "If entered, it needs the market's approval",
   "extraCostApprovalRequestedAction": "Requested action",
@@ -908,7 +919,8 @@
     "deleteConfirm": "Delete",
     "deleting": "Deleting…",
     "deleted": "Order #{{id}} deleted",
-    "deletedWarehouseDescription": "The warehouse reservation was released."
+    "deletedWarehouseDescription": "The warehouse reservation was released.",
+    "rollbackBlockedTitle": "Return is closed."
   },
   "createCatalogEmptyHint": "This market's catalog is empty. Add the product with the “Product not in catalog” field.",
   "amountInput": {

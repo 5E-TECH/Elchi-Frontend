@@ -1,6 +1,6 @@
 // dizayn-v2: courier-orders-rollback-confirm, manager-orders-rollback-dialog
 import { memo, useId, useRef, useState } from "react";
-import { ArrowRight, RotateCcw, TriangleAlert } from "lucide-react";
+import { ArrowRight, Info, RefreshCw, RotateCcw, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   humanizeOrderStatus,
@@ -14,11 +14,13 @@ import {
   ROLLBACK_TARGET_STATUS,
   type RollbackTarget,
 } from "../../../../../entities/orders/rollbackTarget";
+import { OrderActionErrorAlert } from "../../../../../entities/orders/ui/OrderActionErrorAlert";
 import { formatPhone } from "../../../../../shared/lib/formatPhone";
 import { Button, Dialog, SegmentedControl } from "../../../../../shared/ui/primitives";
 import { OrderCustomerSummary } from "./OrderActionParts";
 import { getDeliveryLabelKey, type ActionOrder, type OrderActionVariant } from "./orderActionModel";
 import { useActionDialogSession } from "./useActionDialogSession";
+import type { RollbackDialogError } from "./useRollbackOrderFlow";
 
 /**
  * BUYURTMANI QAYTARISH (rollback) TASDIG'I — sotilgan yoki bekor qilingan buyurtma «Kutilmoqda»
@@ -32,6 +34,10 @@ import { useActionDialogSession } from "./useActionDialogSession";
  * Maqsad holat (y2RarzlT, `target_status`): «Kutilmoqda» · «Bekor qilish» · kuryerda «Bekor — jo'natilgan»
  * (`getRollbackTargets`); bekor qilingan buyurtma faqat «Kutilmoqda» ga — tanlov chiqmaydi. Maketda tanlov va
  * kassa izohi yo'q (ega qarori kutilmoqda) — `SegmentedControl` va bir jumlalik izoh.
+ *
+ * BE #738: rad etish / xato OYNA ICHIDA (`error`, `OrderActionErrorAlert`; maketda xato holati yo'q — sotish
+ * oynasidagi naqsh): qayta urinish mumkin bo'lsa asosiy tugma «Qayta urinish», aniq rad etishda o'chiq. Superadmin
+ * oynasida daftar izohi (`ledgerNote`: pul HQ'ga o'tgan / market to'langan — naqd ko'chmaydi).
  */
 
 type Props = {
@@ -42,6 +48,12 @@ type Props = {
   loading?: boolean;
   onCancel: () => void;
   onConfirm: (target: RollbackTarget) => void;
+  /** So'rov rad etildi yoki javob kelmadi — oyna ichida (`useRollbackOrderFlow`). */
+  error?: RollbackDialogError | null;
+  /** Maqsad holat almashtirildi (avvalgi xato endi tegishli emas). */
+  onTargetChange?: () => void;
+  /** Superadmin: «pul HQ'ga o'tgan / market to'langan — naqd ko'chmaydi, daftarga yoziladi» izohi. */
+  ledgerNote?: boolean;
 };
 
 const RollbackDialog = ({
@@ -51,6 +63,9 @@ const RollbackDialog = ({
   loading = false,
   onCancel,
   onConfirm,
+  error = null,
+  onTargetChange,
+  ledgerNote = false,
 }: Omit<Props, "order" | "variant"> & { order: ActionOrder; open: boolean; variant: OrderActionVariant }) => {
   const { t } = useTranslation(["orders", "common"]);
   const ids = useId();
@@ -62,7 +77,13 @@ const RollbackDialog = ({
     return key ? t(ORDER_STATUS_REGISTRY[key].labelKey, { ns: ORDER_STATUS_NS }) : (humanizeOrderStatus(status) ?? "—");
   };
   const targets = getRollbackTargets(isManager ? "manager" : "courier", order.status);
-  const [target, setTarget] = useState<RollbackTarget>(targets[0]);
+  const [selected, setSelected] = useState<RollbackTarget>(targets[0]);
+  // Qayta o'qilgan buyurtmaning holati o'zgarsa (`STATE_CHANGED` → qayta urinish) tanlov ro'yxati ham o'zgaradi.
+  const target = targets.includes(selected) ? selected : targets[0];
+  const setTarget = (next: RollbackTarget) => {
+    setSelected(next);
+    if (next !== target) onTargetChange?.();
+  };
   const targetStatus = ROLLBACK_TARGET_STATUS[target];
   const targetLabel = statusLabel(targetStatus);
   const choice =
@@ -78,15 +99,37 @@ const RollbackDialog = ({
         }))}
       />
     ) : null;
-  const cashNote = <p className="m-0 text-[13px] text-text-muted">{t("rollbackCashNote")}</p>;
+  const cashNote = (
+    <>
+      <p className="m-0 text-[13px] text-text-muted">{t("rollbackCashNote")}</p>
+      {ledgerNote ? (
+        <div
+          role="note"
+          data-testid="rollback-ledger-note"
+          className="flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted"
+        >
+          <Info size={16} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <p className="m-0 min-w-0">{t("rollbackSuperadminLedgerNote")}</p>
+        </div>
+      ) : null}
+      {error ? <OrderActionErrorAlert message={error.message} hint={error.hint} /> : null}
+    </>
+  );
 
+  const retry = Boolean(error?.retry);
   const footer = (
     <>
       <Button ref={cancelRef} variant="secondary" disabled={loading} onClick={onCancel}>
         {t("back", { ns: "common" })}
       </Button>
-      <Button leftIcon={RotateCcw} loading={loading} onClick={() => onConfirm(target)}>
-        {isManager ? t("rollbackConfirmLabel") : t("rollbackRestoreConfirm")}
+      <Button
+        leftIcon={retry ? RefreshCw : RotateCcw}
+        loading={loading}
+        // Aniq rad etish (qayta urinish ma'nosiz) — tugma o'chiq, sabab oynada.
+        disabled={Boolean(error) && !retry}
+        onClick={() => onConfirm(target)}
+      >
+        {retry ? t("retry", { ns: "common" }) : isManager ? t("rollbackConfirmLabel") : t("rollbackRestoreConfirm")}
       </Button>
     </>
   );

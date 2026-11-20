@@ -25,7 +25,6 @@ import {
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../entities/orders/sellPayment";
 import { AssignOperatorDialog, canAssignOrderOperator } from "../../../features/order-operator-assign";
 import { InitiateReturnModal, MarkReturnedModal } from "../../../features/order-return";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
 import { Button, QueryBoundary } from "../../../shared/ui/primitives";
 import { OrderMeta, readOrderMeta } from "../../../widgets/order-meta";
@@ -33,9 +32,13 @@ import { OrderReturnPathCard, useOrderReturnPath } from "../../../widgets/order-
 import { OrderTracking } from "../../../widgets/order-tracking";
 import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
 import CancelModal from "../../orders/list/courier/list/CancelModal";
-import { notifyOrderActionDone } from "../../orders/list/courier/list/orderActionModel";
+import {
+  notifyOrderActionDone,
+  notifyRollbackDone,
+  type ActionOrder,
+} from "../../orders/list/courier/list/orderActionModel";
 import RollbackOrderDialog from "../../orders/list/courier/list/RollbackOrderDialog";
-import type { RollbackTarget } from "../../../entities/orders/rollbackTarget";
+import { useRollbackOrderFlow } from "../../orders/list/courier/list/useRollbackOrderFlow";
 import SellModal from "../../orders/list/courier/list/SellModal";
 import { AddressCard } from "./detail/AddressCard";
 import { CourierContactCard, CourierPaymentCard, CourierProductsCard } from "./detail/CourierCards";
@@ -142,7 +145,6 @@ const NewOrderUpdate = () => {
   const [editing, setEditing] = useState<EditDialogKind>(null);
   const [isSellOpen, setIsSellOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
-  const [isRollbackOpen, setIsRollbackOpen] = useState(false);
   const [isInitiateReturnOpen, setIsInitiateReturnOpen] = useState(false);
   const [isMarkReturnedOpen, setIsMarkReturnedOpen] = useState(false);
   const [isAssignOperatorOpen, setIsAssignOperatorOpen] = useState(false);
@@ -200,15 +202,6 @@ const NewOrderUpdate = () => {
   }, [location.key, marketId, navigate]);
 
   // ─── Sotish / bekor qilish / qaytarish ──────────────────────────────────────
-  const showActionError = useCallback(
-    (error: unknown) => {
-      notify.error(t("error", { ns: "common" }), {
-        description: getBackendErrorMessage(error) ?? t("orderActionError", { ns: "orders" }),
-      });
-    },
-    [t],
-  );
-
   // 2KisY7DL: sotish / qisman sotish / bekor rad etilsa sabab oyna ichida (toast oyna ortida qolardi).
   const { message: sellErrorMessage, show: showSellError, clear: clearSellError } = useActionDialogError(
     t("orderActionError", { ns: "orders" }),
@@ -320,17 +313,14 @@ const NewOrderUpdate = () => {
     [CancelOrder, actionOrder, clearCancelError, closeCancelModal, refreshTracking, showCancelError],
   );
 
-  const handleRollback = useCallback((targetStatus: RollbackTarget) => {
-    if (!actionOrder) return;
-    RollbackOrder.mutate({ orderId: actionOrder.id, targetStatus }, {
-      onSuccess: () => {
-        setIsRollbackOpen(false);
-        refreshTracking();
-        notifyOrderActionDone("rollback", actionOrder);
-      },
-      onError: showActionError,
-    });
-  }, [RollbackOrder, actionOrder, refreshTracking, showActionError]);
+  // Qaytarish oynasi (BE #738): xato oyna ichida, `Idempotency-Key`, «holat o'zgardi» → qayta o'qib qayta urinish.
+  const rollback = useRollbackOrderFlow<ActionOrder>({
+    mutation: RollbackOrder,
+    onSuccess: (response, rolledBack, targetStatus) => {
+      refreshTracking();
+      notifyRollbackDone(rolledBack, targetStatus, response);
+    },
+  });
 
   // hfkhYrGk №6: superadmin — qabul qilingan ombor buyurtmasini o'chirish (tasdiq oynasi, band bo'shaydi).
   const requestDelete = useDeleteWarehouseOrder({ order, deleteOrder, onDeleted: handleBack });
@@ -380,7 +370,9 @@ const NewOrderUpdate = () => {
             leftIcon={RotateCcw}
             title={t("ordersList.rollbackHint", { ns: "orders" })}
             aria-haspopup="dialog"
-            onClick={() => setIsRollbackOpen(true)}
+            onClick={() => {
+              if (actionOrder) rollback.open(actionOrder);
+            }}
           >
             {t("ordersList.rollback", { ns: "orders" })}
           </Button>
@@ -564,6 +556,7 @@ const NewOrderUpdate = () => {
           marketListHref={isNewOrdersRoute && access.layout === "market" ? `/new-orders/${marketId}` : null}
           lockReason={lockReason}
           replacement={replacement}
+          rollbackBlockedReason={access.rollbackBlockedReason}
         />
       ) : null}
 
@@ -619,13 +612,7 @@ const NewOrderUpdate = () => {
         awaitingApproval={isApprovalRequested}
         variant="manager"
       />
-      <RollbackOrderDialog
-        order={isRollbackOpen ? actionOrder : null}
-        variant="manager"
-        loading={RollbackOrder.isPending}
-        onCancel={() => setIsRollbackOpen(false)}
-        onConfirm={handleRollback}
-      />
+      <RollbackOrderDialog {...rollback.dialogProps} variant="manager" ledgerNote={role === "superadmin"} />
 
       {/* Faqat ochilganda mount — yopiq oyna so'rov hook'larini yaratmaydi. */}
       {isInitiateReturnOpen && order ? (

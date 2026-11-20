@@ -41,7 +41,12 @@ import OrdersTable from "./list/OrdersTable";
 import { getOrdersRefetchInterval, ORDERS_REFRESH_INTERVAL_MS, useOrdersRefresh, useOrdersRefreshPaused } from "./list/useOrdersRefresh";
 import { OrdersRefreshButton, OrdersRefreshDescription, OrdersRefreshTitleMeta } from "./list/OrdersRefreshMeta";
 import { OrdersRefreshAlert } from "./list/OrdersRefreshAlert";
-import type { RollbackTarget } from "../../entities/orders/rollbackTarget";
+import {
+  hasCancelPost,
+  isCancelledSentOrder,
+  readRollbackEligibility,
+  resolveRollbackAvailability,
+} from "../../entities/orders/rollbackEligibility";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
 import { canCreateOrders, canViewCancelReasons, canViewReplacementReturns } from "../../app/lib/access";
@@ -53,6 +58,7 @@ import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
 import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
 import RollbackOrderDialog from "./list/courier/list/RollbackOrderDialog";
+import { useRollbackOrderFlow } from "./list/courier/list/useRollbackOrderFlow";
 import { notifyOrderActionDone, type ActionOrder } from "./list/courier/list/orderActionModel";
 import { resetFilters, setFilterValue } from "../../shared/model/filterSlice";
 import { clearAllSearch } from "../../shared/model/searchSlice";
@@ -64,7 +70,6 @@ import { readQrScopeText } from "../../shared/lib/coverageReasons";
 import { orderByRecent, scanNotify, useRecentScans } from "../../shared/lib/scanner/scanSession";
 import type { ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
 import { extractScannerToken } from "../../shared/lib/scanToken";
-import { getActionErrorMessage } from "../../shared/lib/actionError";
 import { useActionDialogError } from "../../entities/orders/actionDialogError";
 import { isCourierHeldOrder } from "../../entities/orders/custody";
 import type { CancelOrderPayload } from "../../entities/orders/cancelReason";
@@ -271,7 +276,6 @@ const Orders = () => {
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
   // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
   const [approvalOrderId, setApprovalOrderId] = useState<string | null>(null);
-  const [rollbackOrder, setRollbackOrder] = useState<OrderListItem | null>(null);
   const [selectedCancelledIds, setSelectedCancelledIds] = useState<Set<string>>(new Set());
 
   const role = useSelector((state: RootState) => state.role.role);
@@ -490,7 +494,9 @@ const Orders = () => {
 
   // Avtomatik yangilanish (OR-1): 60 s va ilovaga qaytganda; oyna yoki kamera ochiq bo'lsa to'xtaydi (tasdiq
   // pollingi — oyna aynan uni kutadi — davom etadi). Kuryer o'z ro'yxatini (`CourierOrders`) o'zi so'raydi.
-  const refreshPaused = useOrdersRefreshPaused(Boolean(sellOrder || cancelOrder || rollbackOrder));
+  // Qaytarish oynasi (BE #738): xato oyna ichida, `Idempotency-Key`, «holat o'zgardi» → qayta o'qib qayta urinish.
+  const rollback = useRollbackOrderFlow<OrderListItem>({ mutation: RollbackOrder });
+  const refreshPaused = useOrdersRefreshPaused(Boolean(sellOrder || cancelOrder || rollback.order));
   const ordersQuery = useGetOrders(
     apiParams,
     role !== "courier",
@@ -596,11 +602,33 @@ const Orders = () => {
   }, [canSendCancelledToHq, items]);
 
   const canUseOrderActions = useCallback(
-    (order: OrderListItem) =>
-      canUseManagerTableActions &&
-      (TABLE_ACTION_STATUSES.has(order.status) || TABLE_ROLLBACK_STATUSES.has(order.status)),
+    (order: OrderListItem) => canUseManagerTableActions && TABLE_ACTION_STATUSES.has(order.status),
     [canUseManagerTableActions],
   );
+  /**
+   * «Qaytarish» (BE #738): server maydoni `rollback.allowed` — filial turi, `can_sell_cancel` va holat shartlari
+   * e'tiborsiz (server ular bilan birga o'z filiali, pul bosqichi va posilka joyini tekshiradi). Maydon noma'lum
+   * (`null` / eski backend) — avvalgi qoida: hududiy menejer, sotilgan yoki bekor, bekor posilka jo'natilmagan.
+   */
+  const rollbackAvailability = useCallback(
+    (order: OrderListItem) =>
+      resolveRollbackAvailability(
+        order,
+        () =>
+          canUseManagerTableActions &&
+          TABLE_ROLLBACK_STATUSES.has(order.status) &&
+          !isCancelledSentOrder(order) &&
+          !hasCancelPost(order),
+      ),
+    [canUseManagerTableActions],
+  );
+  const canRollbackOrder = useCallback((order: OrderListItem) => rollbackAvailability(order).allowed, [rollbackAvailability]);
+  const getRollbackBlockReason = useCallback((order: OrderListItem) => rollbackAvailability(order).reason, [rollbackAvailability]);
+  // Amallar ustuni: hududiy menejer (sotish / bekor) — har doim; boshqa menejer (HQ, PICKUP filial) — server biror
+  // qatorni qaytarishga ruxsat bergandagina (eski FE bu menejerlarga ustunni umuman chizmasdi).
+  const showRollbackActions =
+    canUseManagerTableActions ||
+    (role === "manager" && tableItems.some((order) => readRollbackEligibility(order)?.allowed === true));
   // fix3b LC-04: kuryer qo'lidagi buyurtmani kuryerning o'zi sotadi — menejer
   // "Sotish"ni (qisman sotish ham shu oynada) bossa backend 400 qaytaradi
   // ("Bu buyurtma kuryer qo'lida..."). Tugma o'chiq va sababi yozilgan;
@@ -701,16 +729,6 @@ const Orders = () => {
     clearCancelError();
   }, [clearCancelError]);
 
-  // fix3 FE-ORD-02: menejer jadvalidagi sotish/bekor/qaytarish rad etilsa —
-  // sabab ko'rinadi (avval jimgina yutilardi). Oyna ochiq qoladi.
-  const notifyActionError = useCallback(
-    (error: unknown) => {
-      const description = getActionErrorMessage(error, t("orderActionError"));
-      if (description) notify.error(description);
-    },
-    [t],
-  );
-
   const handleSellOrder = useCallback(
     (orderId: string, payload: SellOrderPayload) => {
       const order = sellOrder ?? { id: orderId };
@@ -801,19 +819,6 @@ const Orders = () => {
     },
     [CancelOrder, cancelOrder, clearCancelError, closeCancelModal, showCancelError],
   );
-
-  const handleRollbackOrder = useCallback((targetStatus: RollbackTarget) => {
-    if (!rollbackOrder) return;
-
-    const order = rollbackOrder;
-    RollbackOrder.mutate({ orderId: order.id, targetStatus }, {
-      onSuccess: () => {
-        setRollbackOrder(null);
-        notifyOrderActionDone("rollback", order);
-      },
-      onError: notifyActionError,
-    });
-  }, [RollbackOrder, notifyActionError, rollbackOrder]);
 
   const handleSelectCancelled = useCallback((id: string, checked: boolean) => {
     setSelectedCancelledIds((previous) => {
@@ -1281,7 +1286,9 @@ const Orders = () => {
           canSellOrder={canManagerSellOrder}
           onSellOrder={canUseManagerTableActions ? setSellOrder : undefined}
           onCancelOrder={canUseManagerTableActions ? setCancelOrder : undefined}
-          onRollbackOrder={canUseManagerTableActions ? setRollbackOrder : undefined}
+          onRollbackOrder={showRollbackActions ? rollback.open : undefined}
+          canRollbackOrder={canRollbackOrder}
+          getRollbackBlockReason={getRollbackBlockReason}
           isSelectable={canSendCancelledToHq ? isUnsentCancelledOrder : undefined}
           selectedIds={selectedCancelledIds}
           onSelectChange={canSendCancelledToHq ? handleSelectCancelled : undefined}
@@ -1319,13 +1326,7 @@ const Orders = () => {
         awaitingApproval={!!cancelOrder && approvalOrderId === cancelOrder.id}
         variant="manager"
       />
-      <RollbackOrderDialog
-        order={rollbackOrder}
-        variant="manager"
-        loading={RollbackOrder.isPending}
-        onCancel={() => setRollbackOrder(null)}
-        onConfirm={handleRollbackOrder}
-      />
+      <RollbackOrderDialog {...rollback.dialogProps} variant="manager" />
     </div>
   );
 };

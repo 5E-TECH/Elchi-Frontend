@@ -113,7 +113,7 @@ describe("Menejer ro'yxati — amal oynalari (dizayn v2)", () => {
     rollbackMutate.mockReset();
   });
 
-  it("qaytarish: «Buyurtmani qaytarish» tasdig'i → POST rollback → oyna yopiladi, «Buyurtma qayta tiklandi»", async () => {
+  it("qaytarish: «Buyurtmani qaytarish» tasdig'i → POST rollback → oyna yopiladi, «Buyurtma «Kutilmoqda» holatiga qaytarildi»", async () => {
     const user = userEvent.setup();
     rollbackMutate.mockImplementation((_id: string, options?: MutateOptions) =>
       options?.onSuccess?.({ statusCode: 200, data: {} }),
@@ -127,11 +127,11 @@ describe("Menejer ro'yxati — amal oynalari (dizayn v2)", () => {
     await user.click(within(dialog).getByRole("button", { name: "Ha, qaytarish" }));
 
     expect(rollbackMutate).toHaveBeenCalledWith({ orderId: "10302", targetStatus: "waiting" }, expect.any(Object));
-    expect(await screen.findByText("Buyurtma qayta tiklandi")).toBeInTheDocument();
+    expect(await screen.findByText("Buyurtma «Kutilmoqda» holatiga qaytarildi")).toBeInTheDocument();
     expect(screen.getByText("№10302 · Malika Yusupova")).toBeInTheDocument();
   });
 
-  it("qaytarish rad etilsa — oyna ochiq qoladi, sabab xabarda", async () => {
+  it("qaytarish rad etilsa — oyna ochiq qoladi, sabab OYNA ICHIDA (BE #738), asosiy tugma o'chiq", async () => {
     const user = userEvent.setup();
     rollbackMutate.mockImplementation((_id: string, options?: MutateOptions) =>
       options?.onError?.(
@@ -147,9 +147,10 @@ describe("Menejer ro'yxati — amal oynalari (dizayn v2)", () => {
     const dialog = await screen.findByRole("alertdialog", { name: "Buyurtmani qaytarish" });
     await user.click(within(dialog).getByRole("button", { name: "Ha, qaytarish" }));
 
-    expect(await screen.findByText("Kassa yopilgan — qaytarib bo'lmaydi")).toBeInTheDocument();
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Kassa yopilgan — qaytarib bo'lmaydi");
     expect(screen.getByRole("alertdialog", { name: "Buyurtmani qaytarish" })).toBeInTheDocument();
-    expect(screen.queryByText("Buyurtma qayta tiklandi")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Ha, qaytarish" })).toBeDisabled();
+    expect(screen.queryByText("Buyurtma «Kutilmoqda» holatiga qaytarildi")).not.toBeInTheDocument();
   });
 
   it("sotish: «Buyurtmani sotish» (menejer varianti) → POST sell → «Buyurtma sotildi»", async () => {
