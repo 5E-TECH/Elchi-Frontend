@@ -17,6 +17,7 @@ import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
 import {
+  classifyNetworkFailure,
   emitNetworkError,
   emitNetworkRestored,
   isNetworkFailure,
@@ -299,7 +300,8 @@ const keepSessionWhileOffline = (error: unknown) => {
   const role = stored.role ?? fromToken?.role;
   if (role) store.dispatch(setRole(role));
   if (id) store.dispatch(setId(id));
-  if (axios.isAxiosError(error)) emitNetworkError(error);
+  // Sabab (internet / server) — xabardan oldin (`classifyNetworkFailure`; interceptor allaqachon aniqlagan bo'lsa — darhol).
+  if (axios.isAxiosError(error)) void classifyNetworkFailure(error).then(() => emitNetworkError(error));
   if (typeof window === "undefined") return;
 
   if (isNetworkFailure(error)) {

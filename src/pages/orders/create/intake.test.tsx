@@ -111,7 +111,7 @@ describe("OrderCreate — bugungi qabul vaqti", () => {
     renderWithProviders(<OrderCreate />, { preloadedState: marketState });
 
     await fillOrder(user);
-    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("orders/intake-settings"));
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("orders/intake-settings", { silentNetworkError: true }));
     expect(screen.queryByTestId("intake-closed")).toBeNull();
     expect(screen.queryByTestId("intake-until")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Buyurtma yaratish" }));

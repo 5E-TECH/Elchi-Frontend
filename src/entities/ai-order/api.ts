@@ -71,8 +71,10 @@ export const useAiConfirm = () => {
       api
         .post(API_ENDPOINTS.ORDERS.AI_CONFIRM, payload, { timeout: AI_REQUEST_TIMEOUT_MS })
         .then((res) => unwrap<AiConfirmResponse>(res.data)),
-    onSuccess: async () => {
-      await Promise.all([
+    // Qo'lda yaratishdagidek (`entities/order` `createOrder`, 2026-11-20): ro'yxatlar fonda yangilanadi — «Yaratildi»
+    // ularning qayta yuklanishini kutmaydi.
+    onSuccess: () => {
+      void Promise.all([
         client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
         client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
         // Qo'lda yaratishdagidek: mijozning «yangi buyurtma bor» ogohlantirishi va ombor qoldig'i.

@@ -1,4 +1,6 @@
 import axios, { type AxiosError } from "axios";
+import { isBrowserOffline } from "../shared/lib/chunkError";
+import { probeAppOrigin } from "../shared/lib/connectivityProbe";
 import { isRequestAborted, isRequestTimeout } from "../shared/lib/errorKind";
 
 /** Javob umuman kelmagan (tarmoq uzilgan, vaqt tugagan) — server "yo'q" demagan. */
@@ -35,7 +37,21 @@ export const isTransientAuthFailure = (error: unknown): boolean => {
  */
 export type NetworkDownKind = "offline" | "timeout";
 
-export type NetworkErrorDetail = { message?: string; url?: string; code?: string; kind: NetworkDownKind };
+/**
+ * Javobsiz xato (`offline`) kimda (2026-11-20): `internet` — foydalanuvchi interneti yo'q (yoki aniqlab bo'lmadi) —
+ * «Internet aloqasi yo'q»; `server` — ilovaning o'z sayti ochildi, faqat API javob bermadi
+ * (`shared/lib/connectivityProbe.ts`) — «Server javob bermadi». Holat (`downKind`) ikkalasida ham `offline`: birinchi
+ * javob xabarni yopadi va «Aloqa tiklandi» chiqadi.
+ */
+export type NetworkDownCause = "internet" | "server";
+
+export type NetworkErrorDetail = {
+  message?: string;
+  url?: string;
+  code?: string;
+  kind: NetworkDownKind;
+  cause?: NetworkDownCause;
+};
 export type NetworkRestoredDetail = { kind: NetworkDownKind };
 
 export const NETWORK_ERROR_EVENT = "elchi:network-error";
@@ -62,10 +78,36 @@ export const emitNetworkRestored = () => {
   window.dispatchEvent(new CustomEvent<NetworkRestoredDetail>(NETWORK_RESTORED_EVENT, { detail: { kind } }));
 };
 
+const dispatchNetworkError = (detail: NetworkErrorDetail) =>
+  window.dispatchEvent(new CustomEvent<NetworkErrorDetail>(NETWORK_ERROR_EVENT, { detail }));
+
+/** Javobsiz xatoga yozilgan sabab (`classifyNetworkFailure`). */
+export type NetworkCauseCarrier = { networkCause?: NetworkDownCause };
+
+/**
+ * Javobsiz xato (`ERR_NETWORK`; vaqt tugashi va bekor qilish emas) sababini aniqlab, XATONING O'ZIGA yozadi
+ * (`error.networkCause`, 2026-11-20): brauzer oflayn — `internet`; aks holda ilova sayti tekshiriladi
+ * (`probeAppOrigin`, 5 s ichida bitta so'rov) — javob berdi: `server`, yo'q: `internet`. Interceptor xatoni shundan
+ * KEYIN rad etadi — global xabar (`emitNetworkError`), sahifa ichidagi holat (`getErrorKind` → `ErrorState`) va
+ * chaqiruvchining `onError` i bir xil sababni ko'radi. Natija xato bilan birga yuradi: tekshiruv paytida boshqa
+ * so'rov javob olsa ham yiqilgan amalning xabari yo'qolmaydi.
+ */
+export const classifyNetworkFailure = async (error: unknown): Promise<void> => {
+  if (!isNetworkFailure(error) || isRequestAborted(error) || isRequestTimeout(error)) return;
+  const carrier = error as AxiosError & NetworkCauseCarrier;
+  if (carrier.networkCause) return;
+  if (isBrowserOffline()) {
+    carrier.networkCause = "internet";
+    return;
+  }
+  carrier.networkCause = (await probeAppOrigin()) ? "server" : "internet";
+};
+
 /**
  * NotificationProvider "Tarmoq xatosi" bildirishnomasini ko'rsatadi. Faqat axios tarmoq xatosi (13-band: oddiy
  * `Error` — masalan «Refresh token expired» — chiqishda «Internet aloqasi yo'q» chaqnamasin); bekor qilingan
  * so'rov — xabarsiz (12-band). `silent` — fon so'rovi: holat belgilanadi, xabar ochilmaydi (9-band).
+ * Javobsiz xatoning sababi (`cause`) — `classifyNetworkFailure` yozgani; aniqlanmagan bo'lsa — `internet` (avvalgidek).
  */
 export const emitNetworkError = (error: unknown, options?: { silent?: boolean }) => {
   if (typeof window === "undefined" || !isNetworkFailure(error) || isRequestAborted(error)) {
@@ -76,15 +118,12 @@ export const emitNetworkError = (error: unknown, options?: { silent?: boolean })
   markNetworkDown(kind);
   if (options?.silent) return;
 
-  window.dispatchEvent(
-    new CustomEvent<NetworkErrorDetail>(NETWORK_ERROR_EVENT, {
-      detail: {
-        message: error.message,
-        url: error.config?.url,
-        // Xabar matni uchun: vaqt tugadi — «Server javob bermadi», qolgani — internet yo'q.
-        code: error.code,
-        kind,
-      },
-    }),
-  );
+  dispatchNetworkError({
+    message: error.message,
+    url: error.config?.url,
+    // Xabar matni uchun: vaqt tugadi — «Server javob bermadi», javobsiz — `cause` bo'yicha.
+    code: error.code,
+    kind,
+    ...(kind === "offline" ? { cause: (error as NetworkCauseCarrier).networkCause ?? "internet" } : {}),
+  });
 };
