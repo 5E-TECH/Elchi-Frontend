@@ -7,6 +7,9 @@ export type DeployTarget = "production" | "staging";
 
 export declare const DEPLOY_TARGETS: DeployTarget[];
 
+/** Muhit → kabinet hosti (CSP `wss://`). */
+export declare const SITE_HOSTS: Record<DeployTarget, string>;
+
 /** `.env.<muhit>` → API ilova bilan bir domen orqali (`VITE_BASE_URL=/api/`) chaqiriladimi. */
 export declare const envSameOrigin: (root: string, target: DeployTarget) => boolean;
 

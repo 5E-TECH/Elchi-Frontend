@@ -21,7 +21,12 @@ export default defineConfig({
     launchOptions: blockProdApi,
   },
   webServer: {
-    command: "npm run build && npx vite preview --host 127.0.0.1 --port 4175 --strictPort",
+    // API to'g'ridan-to'g'ri (cross-origin) rejimda: spec'lardagi mock'lar `api.elchipochta.uz` hosti va yo'l nomi
+    // bo'yicha (`auth/refresh`, …). Production `.env.production` da bir domenli `/api/` — uni `vite preview` proksi
+    // qilmaydi; Worker proksining o'zi `src/test/apiProxyWorker.test.ts` da. Bu yerdagi tekshiruvlar (SW, yuklanish,
+    // unumdorlik, push) API manziliga bog'liq emas.
+    command:
+      "VITE_BASE_URL=https://api.elchipochta.uz/ npm run build && npx vite preview --host 127.0.0.1 --port 4175 --strictPort",
     url: "http://127.0.0.1:4175",
     reuseExistingServer: false,
     timeout: 600_000,
