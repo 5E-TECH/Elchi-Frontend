@@ -60,7 +60,8 @@ const lastPayload = () => orderPosts().at(-1)?.[1] as Record<string, unknown>;
 
 const aside = () => screen.getByRole("complementary", { name: "Buyurtma xulosasi" });
 const operatorSelect = () => screen.findByRole("combobox", { name: "Operator" });
-const freeText = () => screen.queryByLabelText("Ro'yxatda yo'q operator");
+/** Ega (2026-11-21): ro'yxat bor bo'lsa erkin matn («Ro'yxatda yo'q operator») YO'Q — faqat tanlov. */
+const freeText = () => document.getElementById("details.operator");
 
 /** v2 `Select`: ochiladi va portaldagi ro'yxatdan variant tanlanadi. */
 const pickOption = async (user: ReturnType<typeof userEvent.setup>, comboboxId: string, option: string) => {
@@ -111,7 +112,7 @@ beforeEach(() => {
 });
 
 describe("OrderCreate — «Operator» tanlovi", () => {
-  it("admin: tanlangan market operatorlari (`market_id` bilan) — «Tanlanmagan» sukut, ostida «Ro'yxatda yo'q operator»", async () => {
+  it("admin: tanlangan market operatorlari (`market_id` bilan) — «Tanlanmagan» sukut, erkin matn yo'q", async () => {
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: adminState });
     await chooseMarket(user);
@@ -119,8 +120,8 @@ describe("OrderCreate — «Operator» tanlovi", () => {
     const select = await operatorSelect();
     expect(select).toHaveTextContent("Tanlanmagan");
     expect(selectableCalls()).toEqual([[SELECTABLE, { params: { market_id: "3" } }]]);
-    expect(freeText()).toHaveAttribute("id", "details.operator");
-    expect(freeText()).toHaveAttribute("placeholder", "Operator ismi");
+    expect(freeText()).toBeNull();
+    expect(screen.queryByText("Ro'yxatda yo'q operator")).not.toBeInTheDocument();
 
     await user.click(select);
     const listbox = await screen.findByRole("listbox");
@@ -141,14 +142,14 @@ describe("OrderCreate — «Operator» tanlovi", () => {
     await pickOption(user, "details.operator_id", "Dilnoza Karimova");
 
     expect(await operatorSelect()).toHaveTextContent("Dilnoza Karimova");
-    expect(freeText()).not.toBeInTheDocument();
+    expect(freeText()).toBeNull();
     expect(within(aside()).getByText("Buyurtma va komissiya shu operatorga yoziladi")).toBeInTheDocument();
 
     await submit(user);
     expect(lastPayload()).toMatchObject({ market_id: "3", operator_id: "11", operator: "Dilnoza Karimova" });
   });
 
-  it("market roli: o'z ro'yxati (`market_id` siz); tanlov «Tanlanmagan» ga qaytsa ism tozalanadi, qo'lda yozilgani ketadi", async () => {
+  it("market roli: o'z ro'yxati (`market_id` siz); «Tanlanmagan» ga qaytsa ism tozalanadi va buyurtma operatorsiz", async () => {
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: marketState });
 
@@ -157,50 +158,36 @@ describe("OrderCreate — «Operator» tanlovi", () => {
     await fillOrder(user);
 
     await pickOption(user, "details.operator_id", "Kamola Yusupova");
-    expect(freeText()).not.toBeInTheDocument();
     await pickOption(user, "details.operator_id", "Tanlanmagan");
-    expect(freeText()).toHaveValue("");
+    expect(freeText()).toBeNull();
 
-    await user.type(freeText() as HTMLElement, "Shahzoda");
-    // Ro'yxatda yo'q ism — ogohlantirish: buyurtma operatorsiz, komissiya yozilmaydi.
-    expect(within(aside()).getByText("Ro'yxatdan tanlanmagan — bu operatorga komissiya yozilmaydi")).toBeInTheDocument();
     await submit(user);
-    expect(lastPayload()).toMatchObject({ operator: "Shahzoda" });
+    expect(lastPayload()).not.toHaveProperty("operator");
     expect(lastPayload()).not.toHaveProperty("operator_id");
     expect(lastPayload()).not.toHaveProperty("market_id");
   });
 
-  it("2026-11-20: ro'yxatdagi operator ismi qo'lda yozilsa — faqat TAKLIF; «Tanlash» bosilsa `operator_id` bilan ketadi", async () => {
+  it("2026-11-21: ro'yxat kelguncha yozilgan ism ro'yxat chiqqach tozalanadi — operator_id siz ism yuborilmaydi", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    mocks.get.mockImplementation((url: string, config?: { params?: { market_id?: string } }) =>
+      url === SELECTABLE ? gate.then((): Promise<unknown> => apiGet(url, config)) : apiGet(url, config),
+    );
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: marketState });
-    await operatorSelect();
-    await fillOrder(user);
 
-    await user.type(freeText() as HTMLElement, "kamola");
-    expect(
-      within(aside()).getByText("Ro'yxatda «Kamola Yusupova» bor — komissiya yozilishi uchun tanlang"),
-    ).toBeInTheDocument();
-    // Taklif bor — «komissiya yozilmaydi» ogohlantirishi o'rniga.
-    expect(within(aside()).queryByText(/komissiya yozilmaydi/)).not.toBeInTheDocument();
+    // Ro'yxat hali kelmagan — vaqtincha «Operator» matn maydoni.
+    await waitFor(() => expect(freeText()).not.toBeNull());
+    await user.type(freeText() as HTMLElement, "Shahzoda");
+    release();
+
     expect(await operatorSelect()).toHaveTextContent("Tanlanmagan");
-
-    await user.click(within(aside()).getByRole("button", { name: "«Kamola Yusupova» ni operator qilib tanlash" }));
-    expect(await operatorSelect()).toHaveTextContent("Kamola Yusupova");
-    expect(freeText()).not.toBeInTheDocument();
-
-    await submit(user);
-    expect(lastPayload()).toMatchObject({ operator_id: "31", operator: "Kamola Yusupova" });
-  });
-
-  it("taklif bosilmasa — ism faqat matn bo'lib ketadi (avtomatik bog'lanmaydi)", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
-    await operatorSelect();
+    expect(freeText()).toBeNull();
     await fillOrder(user);
-
-    await user.type(freeText() as HTMLElement, "Kamola Yusupova");
     await submit(user);
-    expect(lastPayload()).toMatchObject({ operator: "Kamola Yusupova" });
+    expect(lastPayload()).not.toHaveProperty("operator");
     expect(lastPayload()).not.toHaveProperty("operator_id");
   });
 
@@ -215,7 +202,7 @@ describe("OrderCreate — «Operator» tanlovi", () => {
 
     const select = await operatorSelect();
     expect(select).toHaveTextContent("Tanlanmagan");
-    expect(freeText()).toHaveValue("");
+    expect(freeText()).toBeNull();
     expect(selectableCalls().at(-1)).toEqual([SELECTABLE, { params: { market_id: "4" } }]);
     await user.click(select);
     expect(
@@ -283,7 +270,7 @@ describe("OrderCreate — «Operator» tanlovi", () => {
     await waitFor(() => expect(selectableCalls().length).toBeGreaterThan(1));
     await waitFor(() => expect(document.getElementById("details.operator_id")).toHaveTextContent("Tanlanmagan"));
     expect(document.getElementById("details.operator_id")).toHaveAttribute("aria-invalid", "true");
-    expect(freeText()).toHaveValue("");
+    expect(freeText()).toBeNull();
   });
 
   it("market operatori — o'zgarmagan: o'z ismi faqat o'qish uchun, ro'yxat so'ralmaydi", async () => {

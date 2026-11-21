@@ -1086,12 +1086,11 @@
   "operatorSelect": {
     "none": "Tanlanmagan",
     "pickedHint": "Buyurtma va komissiya shu operatorga yoziladi",
-    "otherLabel": "Ro'yxatda yo'q operator",
     "loadFailed": "Operatorlar ro'yxati yuklanmadi — ismini qo'lda yozing",
-    "textOnly": "Ro'yxatdan tanlanmagan — bu operatorga komissiya yozilmaydi",
     "suggest": "Ro'yxatda «{{name}}» bor — komissiya yozilishi uchun tanlang",
     "suggestPick": "Tanlash",
-    "suggestPickAria": "«{{name}}» ni operator qilib tanlash"
+    "suggestPickAria": "«{{name}}» ni operator qilib tanlash",
+    "aiRead": "Xabarda «{{name}}» deb yozilgan — operatorni ro'yxatdan tanlang"
   },
   "operatorAssign": {
     "open": "Biriktirish",

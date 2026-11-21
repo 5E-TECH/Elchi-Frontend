@@ -1,10 +1,9 @@
 // dizayn-v2: (maket yo'q) superadmin-neworders-create-manual-step2
-import { memo, useEffect, useMemo, type ReactNode } from "react";
-import { TriangleAlert } from "lucide-react";
+import { memo, useEffect, useMemo } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { suggestOperator, useSelectableMarketOperators } from "../../../../entities/market-operator";
-import { Button, Field, Select, TextInput, type SelectOption } from "../../../../shared/ui/primitives";
+import { useSelectableMarketOperators } from "../../../../entities/market-operator";
+import { Field, Select, TextInput, type SelectOption } from "../../../../shared/ui/primitives";
 import type { OrderCreateFormValues } from "../model/orderCreateForm";
 
 type OperatorFieldProps = {
@@ -15,25 +14,16 @@ type OperatorFieldProps = {
 /** «Tanlanmagan» — bo'sh qiymatli variant: `Select` uni sukut deb ko'rsatadi, × tanlovni shunga qaytaradi. */
 const NONE = "";
 
-/** Maydon ostidagi sariq ogohlantirish (AI kartasidagi `WarningHint` bilan bir xil ko'rinish). */
-const WarningHint = ({ children }: { children: ReactNode }) => (
-  <span className="flex items-start gap-1.5 text-[13px] font-semibold text-warning-fg">
-    <TriangleAlert size={16} aria-hidden="true" className="mt-px shrink-0" />
-    <span className="min-w-0">{children}</span>
-  </span>
-);
-
 /**
  * «OPERATOR» — buyurtma xulosasidagi maydon (BeePost `operator_id` tanlovi kabi; maket yo'q — eng yaqini
  * `*-create-manual-step2` dagi «Operator» maydoni). Ega qoidasi: admin ma'lumotnoma qiymatini yozmaydi — forma
  * taklif qiladi.
- *  - marketda faol operator bor — `Select` («Tanlanmagan» sukut + operatorlar): tanlansa `operator_id` va
- *    `operator` (uning ismi) yuboriladi; «Tanlanmagan» da ostida erkin matn («Ro'yxatda yo'q operator»);
- *  - ro'yxat yuklanmaguncha, bo'sh yoki yuklanmasa — avvalgi erkin matn maydoni (yuklanmasa izoh bilan), faqat
- *    `operator` matni ketadi.
- *  - 2026-11-20: erkin matnda yozilgan ism ro'yxatdagi operatorga mos kelsa — «Tanlash» TAKLIFI (avtomatik emas);
- *    mos kelmasa — «komissiya yozilmaydi» ogohlantirishi. Ilgari ism yozib qo'yilsa buyurtma `operator_id` siz
- *    yaratilib, sotuvda operatorga komissiya yozilmasdi va bu hech qayerda ko'rinmasdi.
+ *  - marketda faol operator bor — FAQAT `Select` («Tanlanmagan» sukut + operatorlar): tanlansa `operator_id` va
+ *    `operator` (uning ismi) yuboriladi, «Tanlanmagan» — buyurtma operatorsiz (ism ham yuborilmaydi).
+ *    Ega (2026-11-21): «Ro'yxatda yo'q operator» erkin matni kerak emas — olib tashlandi. U orqali yozilgan ism
+ *    buyurtmaga faqat matn bo'lib tushardi (`operator_id` siz) va sotuvda operatorga komissiya yozilmasdi;
+ *  - ro'yxat yuklanmaguncha, bo'sh yoki yuklanmasa — avvalgi «Operator» erkin matn maydoni (yuklanmasa izoh bilan),
+ *    faqat `operator` matni ketadi. Ro'yxat kelsa — o'sha paytgacha yozilgan matn tozalanadi.
  * Market operatori roli bu maydonni ko'rmaydi (`Step2Summary` → `selfOperator`).
  */
 const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
@@ -63,6 +53,12 @@ const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
     setValue("details.operator", "", { shouldDirty: true });
   }, [operatorId, operators, operatorsQuery.isPending, setValue]);
 
+  // Ro'yxat bor, operator tanlanmagan — erkin matn yo'q: ro'yxat kelguncha yozilgan ism ham yuborilmasin (aks holda
+  // buyurtma operator ismi bilan, lekin `operator_id` siz yaratilardi — komissiya yozilmaydi).
+  useEffect(() => {
+    if (hasList && !operatorId && typedOperator) setValue("details.operator", "", { shouldDirty: true });
+  }, [hasList, operatorId, typedOperator, setValue]);
+
   const options = useMemo<SelectOption[]>(
     () => [
       { value: NONE, label: t("operatorSelect.none") },
@@ -78,84 +74,60 @@ const OperatorField = ({ isMarketRole }: OperatorFieldProps) => {
     setValue("details.operator", operators?.find((item) => item.id === id)?.name ?? "", { shouldDirty: true });
   };
 
-  // Erkin matnda yozilgan ism ro'yxatdagi BITTA operatorga mos kelsa — taklif; tanlanmaguncha `operator_id` yo'q.
-  const suggestion = hasList && !operatorId ? suggestOperator(typedOperator, operators) : null;
-  const textOnly = hasList && !operatorId && !suggestion && Boolean(typedOperator?.trim());
-
-  // Kalitlar: ro'yxat kelganda React erkin matn `Controller` ini `details.operator_id` ga qayta nomlab ishlatmasin —
-  // aks holda react-hook-form `details.operator` ni ro'yxatdan o'chiradi (qiymat `undefined` bo'lib qoladi).
-  const freeText = (label: string, hint?: ReactNode, extra?: ReactNode) => (
-    <Controller
-      key="operator-text"
-      control={control}
-      name="details.operator"
-      render={({ field }) => (
-        <Field id="details.operator" label={label} hint={hint} error={errors.details?.operator?.message}>
-          <TextInput
-            personName
-            name={field.name}
-            placeholder={t("operatorPlaceholder")}
-            value={field.value}
-            onValueChange={field.onChange}
-            onBlur={field.onBlur}
-            ref={field.ref}
-          />
-          {extra}
-        </Field>
-      )}
-    />
-  );
-
-  if (!hasList) return freeText(t("operator"), loadFailed ? t("operatorSelect.loadFailed") : undefined);
-
-  const suggestionRow = suggestion ? (
-    <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-action-soft px-2.5 py-2 text-[13px] font-semibold text-text">
-      <span className="min-w-0 flex-[1_1_160px]">{t("operatorSelect.suggest", { name: suggestion.name })}</span>
-      <Button
-        size="sm"
-        variant="secondary"
-        aria-label={t("operatorSelect.suggestPickAria", { name: suggestion.name })}
-        onClick={() => pickOperator(suggestion.id)}
-      >
-        {t("operatorSelect.suggestPick")}
-      </Button>
-    </div>
-  ) : null;
-
-  return (
-    <>
+  if (!hasList) {
+    // Kalitlar: ro'yxat kelganda React erkin matn `Controller` ini `details.operator_id` ga qayta nomlab ishlatmasin —
+    // aks holda react-hook-form `details.operator` ni ro'yxatdan o'chiradi (qiymat `undefined` bo'lib qoladi).
+    return (
       <Controller
-        key="operator-id"
+        key="operator-text"
         control={control}
-        name="details.operator_id"
+        name="details.operator"
         render={({ field }) => (
           <Field
-            id="details.operator_id"
+            id="details.operator"
             label={t("operator")}
-            labelAs="span"
-            hint={field.value ? t("operatorSelect.pickedHint") : undefined}
-            error={errors.details?.operator_id?.message}
+            hint={loadFailed ? t("operatorSelect.loadFailed") : undefined}
+            error={errors.details?.operator?.message}
           >
-            <Select
+            <TextInput
+              personName
               name={field.name}
-              options={options}
-              value={field.value || NONE}
-              onChange={(next) => pickOperator(next ?? NONE)}
+              placeholder={t("operatorPlaceholder")}
+              value={field.value}
+              onValueChange={field.onChange}
               onBlur={field.onBlur}
               ref={field.ref}
             />
           </Field>
         )}
       />
-      {operatorId
-        ? null
-        : freeText(
-            t("operatorSelect.otherLabel"),
-            // Ism yozilgan, lekin ro'yxatdan tanlanmagan — buyurtma operatorsiz, komissiya yozilmaydi.
-            textOnly ? <WarningHint>{t("operatorSelect.textOnly")}</WarningHint> : undefined,
-            suggestionRow,
-          )}
-    </>
+    );
+  }
+
+  return (
+    <Controller
+      key="operator-id"
+      control={control}
+      name="details.operator_id"
+      render={({ field }) => (
+        <Field
+          id="details.operator_id"
+          label={t("operator")}
+          labelAs="span"
+          hint={field.value ? t("operatorSelect.pickedHint") : undefined}
+          error={errors.details?.operator_id?.message}
+        >
+          <Select
+            name={field.name}
+            options={options}
+            value={field.value || NONE}
+            onChange={(next) => pickOperator(next ?? NONE)}
+            onBlur={field.onBlur}
+            ref={field.ref}
+          />
+        </Field>
+      )}
+    />
   );
 };
 

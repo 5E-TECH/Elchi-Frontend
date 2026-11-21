@@ -22,7 +22,7 @@ import AiInputPanel from "./AiInputPanel";
 import AiPreviewCard, { type AiAreaItem, type AiProductOption } from "./AiPreviewCard";
 import { confirmFailureText, confirmHttpErrorText } from "./aiErrorText";
 import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "./aiDraft";
-import { chosenOperatorId, isOperatorRejectedResult } from "./aiOperator";
+import { chosenOperatorId, confirmOperatorFields, isOperatorRejectedResult } from "./aiOperator";
 import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
 import { useKeepFocusedFieldVisible } from "./useKeepFocusedFieldVisible";
@@ -247,8 +247,8 @@ const AiCreatePanel = ({
         readyTargets.map((draft) =>
           selfOperator
             ? { ...draft.order, operator: "", operator_id: null }
-            : // Eskirgan tanlov (market almashgan / operator o'chirilgan) yuborilmaydi — `chosenOperatorId`.
-              { ...draft.order, operator_id: chosenOperatorId(draft.order, operators) || null },
+            : // Eskirgan tanlov yuborilmaydi; ro'yxat bor va tanlanmagan — operatorsiz (`confirmOperatorFields`).
+              { ...draft.order, ...confirmOperatorFields(draft.order, operators) },
         ),
         { marketId, includeMarketId: !isMarketRole },
       ),

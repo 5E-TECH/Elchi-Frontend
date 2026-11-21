@@ -1094,12 +1094,11 @@
   "operatorSelect": {
     "none": "Not selected",
     "pickedHint": "The order and commission are credited to this operator",
-    "otherLabel": "Operator not on the list",
     "loadFailed": "Couldn't load the operator list — type the name manually",
-    "textOnly": "Not selected from the list — no commission will be recorded for this operator",
     "suggest": "«{{name}}» is on the list — select them so the commission is recorded",
     "suggestPick": "Select",
-    "suggestPickAria": "Select «{{name}}» as the operator"
+    "suggestPickAria": "Select «{{name}}» as the operator",
+    "aiRead": "The message says “{{name}}” — pick the operator from the list"
   },
   "operatorAssign": {
     "open": "Assign",
