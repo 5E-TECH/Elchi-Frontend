@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chosenOperatorId, isOperatorRejectedResult } from "./aiOperator";
+import { chosenOperatorId, confirmOperatorFields, isOperatorRejectedResult } from "./aiOperator";
 
 /**
  * AI kartasidagi «Operator» tanlovi — eskirgan tanlov va rad etilgan natija (taklif — `operatorMatch.test.ts`).
@@ -41,5 +41,33 @@ describe("isOperatorRejectedResult", () => {
   it("boshqa xato va muvaffaqiyatli natija — yo'q", () => {
     expect(isOperatorRejectedResult({ ok: false, reason: "Buyurtma uchun tuman tanlanmagan" })).toBe(false);
     expect(isOperatorRejectedResult({ ok: true })).toBe(false);
+  });
+});
+
+describe("confirmOperatorFields (2026-11-21: ro'yxat bor — erkin matn yo'q)", () => {
+  const LIST = [{ id: "31", name: "Sevinch Karimova" }];
+
+  it("tanlangan — id va ismi", () => {
+    expect(confirmOperatorFields({ operator_id: "31", operator: "Sevinch Karimova" }, LIST)).toEqual({
+      operator_id: "31",
+      operator: "Sevinch Karimova",
+    });
+  });
+
+  it("ro'yxat bor, tanlanmagan — operatorsiz: AI o'qigan ism ham yuborilmaydi", () => {
+    expect(confirmOperatorFields({ operator_id: null, operator: "#sevinch" }, LIST)).toEqual({
+      operator_id: null,
+      operator: "",
+    });
+    // Eskirgan tanlov (ro'yxatda yo'q) — xuddi shunday.
+    expect(confirmOperatorFields({ operator_id: "99", operator: "Eski" }, LIST)).toEqual({ operator_id: null, operator: "" });
+  });
+
+  it("ro'yxat yo'q / bo'sh — kartadagi matn avvalgidek", () => {
+    expect(confirmOperatorFields({ operator_id: null, operator: "Kamola" }, undefined)).toEqual({
+      operator_id: null,
+      operator: "Kamola",
+    });
+    expect(confirmOperatorFields({ operator_id: null, operator: "Kamola" }, [])).toEqual({ operator_id: null, operator: "Kamola" });
   });
 });

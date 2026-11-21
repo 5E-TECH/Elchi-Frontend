@@ -29,6 +29,21 @@ export const chosenOperatorId = (
 };
 
 /**
+ * Tasdiqlashga ketadigan operator maydonlari. Ega (2026-11-21): ro'yxat bor bo'lsa «Ro'yxatda yo'q operator» erkin
+ * matni yo'q — operator tanlanmagan karta OPERATORSIZ ketadi (AI o'qigan ism ham yuborilmaydi: aks holda buyurtmada
+ * ism ko'rinardi, lekin `operator_id` yo'q — sotuvda komissiya yozilmasdi). Ro'yxat yo'q / bo'sh / xato — avvalgidek
+ * kartadagi matn (o'sha holatda erkin matn maydoni ko'rinadi).
+ */
+export const confirmOperatorFields = (
+  order: Pick<AiDraftOrder, "operator_id" | "operator">,
+  operators: readonly SelectableMarketOperator[] | undefined,
+): { operator_id: string | null; operator: string } => {
+  const id = chosenOperatorId(order, operators);
+  if (id) return { operator_id: id, operator: order.operator ?? "" };
+  return { operator_id: null, operator: operators?.length ? "" : (order.operator ?? "") };
+};
+
+/**
  * ai-confirm natijasi: tanlangan operator rad etildi (o'chirilgan / bloklangan / boshqa market) — ro'yxat
  * yangilanadi va eskirgan tanlov kartada o'z-o'zidan tushadi (`chosenOperatorId`). Kod bo'lmasa (eski gateway) —
  * backend matni («Tanlangan operator bu marketga tegishli emas…»), qo'lda formadagi `isOperatorRejected` kabi.
