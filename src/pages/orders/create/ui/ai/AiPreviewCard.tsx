@@ -324,6 +324,33 @@ const AiPreviewCard = ({
     return options;
   };
 
+  /**
+   * «Mahsulot qo'shish» (ega, 2026-11-21): AI matnda mahsulotni o'qimagan yoki biri tushib qolgan bo'lsa operator
+   * katalogdan O'ZI qo'shadi (qo'lda formadagi «Mahsulot qo'shish» kabi). Kartada bor mahsulot ro'yxatda yo'q —
+   * sonini qatordagi «+» bilan oshiradi.
+   */
+  const chosenProductIds = new Set(order.items.map((item) => item.product_id).filter(Boolean));
+  const addProductOptions: SelectOption[] = products
+    .filter((product) => !chosenProductIds.has(product.id))
+    .map((product) => ({ value: product.id, label: product.name }));
+  const addProduct = (productId: string | null) => {
+    const product = products.find((item) => item.id === productId);
+    if (!product || chosenProductIds.has(product.id)) return;
+    update({
+      items: [
+        ...order.items,
+        {
+          name: product.name,
+          quantity: 1,
+          product_id: product.id,
+          resolved_name: product.name,
+          candidates: [],
+          added_manually: true,
+        },
+      ],
+    });
+  };
+
   const phoneUnreadable = !toLocalPhone(order.phone_number) && Boolean(source.phone_number?.trim());
   const failedTitle = t("aiCreateFailedTitle");
   const failedText = draft.createError ? stripTitle(draft.createError, failedTitle) : "";
@@ -565,7 +592,7 @@ const AiPreviewCard = ({
             <Package size={16} aria-hidden="true" className="shrink-0 text-text-muted" />
             {t("aiItems")}
           </h3>
-          {order.items.length === 0 ? <WarningHint>{t("aiIssueItemsMissing")}</WarningHint> : null}
+          {order.items.length === 0 ? <WarningHint>{t("aiItemsMissingHint")}</WarningHint> : null}
           {warningFor("items")}
           {order.items.length > 0 ? (
             <ul className="flex flex-col gap-2">
@@ -580,7 +607,13 @@ const AiPreviewCard = ({
                   >
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                       <p className="min-w-0 flex-[1_1_200px] text-[13px] text-text-muted [overflow-wrap:anywhere]">
-                        {t("aiReadAs")}: <span className="font-semibold text-text">{name}</span>
+                        {item.added_manually ? (
+                          t("aiAddedManually")
+                        ) : (
+                          <>
+                            {t("aiReadAs")}: <span className="font-semibold text-text">{name}</span>
+                          </>
+                        )}
                       </p>
                       <div className="flex items-center gap-1">
                         <div
@@ -650,6 +683,19 @@ const AiPreviewCard = ({
               })}
             </ul>
           ) : null}
+
+          <Field label={t("addProduct")} labelAs="span" id={`${idPrefix}-add-product`}>
+            <Select
+              searchable
+              options={addProductOptions}
+              value={null}
+              onChange={addProduct}
+              placeholder={t("aiPickFromCatalog")}
+              loading={productsLoading}
+              // Katalogdagi hamma mahsulot kartada — ro'yxat bo'sh, lekin «Topilmadi» emas.
+              noOptionsText={products.length > 0 ? t("aiAddProductEmpty") : undefined}
+            />
+          </Field>
         </section>
 
         <div className={cx(FIELD_GRID, "border-t border-border pt-5")}>

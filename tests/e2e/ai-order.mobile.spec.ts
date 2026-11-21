@@ -39,7 +39,7 @@ const reply = (route: Route, body: unknown, status = 200) =>
 
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
-const mockApi = async (page: Page) => {
+const mockApi = async (page: Page, orders: unknown[] = parsedOrders) => {
   const leaked: string[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -62,7 +62,7 @@ const mockApi = async (page: Page) => {
       return reply(route, wrap({ id: "7", role: "market", name: "E2E market", status: "active" }));
     }
     if (path === "orders/ai-availability") return reply(route, wrap({ enabled: true, state: "enabled" }));
-    if (path === "orders/ai-parse") return reply(route, wrap({ ok: true, orders: parsedOrders }));
+    if (path === "orders/ai-parse") return reply(route, wrap({ ok: true, orders }));
     if (path === "region") return reply(route, wrap(aiRegions));
     const region = path.match(/^region\/(\d+)$/);
     if (region) return reply(route, { districts: aiDistrictsByRegion[region[1]] ?? [] });
@@ -77,7 +77,7 @@ const mockApi = async (page: Page) => {
   return leaked;
 };
 
-const openAiMode = async (page: Page) => {
+const openAiMode = async (page: Page, expectedCards = 12) => {
   await page.goto("/login");
   await page.locator('input[name="elchi-login-phone"]').fill("900000001");
   await page.locator('input[name="password"]').fill("0990");
@@ -90,7 +90,7 @@ const openAiMode = async (page: Page) => {
 
   await page.getByRole("textbox", { name: "Buyurtma matni" }).fill("12 ta buyurtma matni");
   await page.getByRole("button", { name: "Tahlil qilish" }).click();
-  await expect(page.getByTestId("ai-preview-card")).toHaveCount(12);
+  await expect(page.getByTestId("ai-preview-card")).toHaveCount(expectedCards);
 };
 
 /** Haqiqiy skroll konteyneri — `<main>`: ildiz div'da overflow:hidden, document doim teng. */
@@ -307,6 +307,32 @@ test.describe("AI buyurtma — 390px", () => {
     await expect(comment).toHaveValue(/eshik oldida$/);
     await expectVisibleAboveBar("comment");
 
+    expect(leaked).toEqual([]);
+  });
+
+  test("AI mahsulot o'qimagan karta: «Mahsulot qo'shish» telefonda katalogdan qo'shadi, karta tayyor bo'ladi", async ({
+    page,
+  }) => {
+    const leaked = await mockApi(page, [aiPreview({ customer_name: "Mahsulotsiz Mijoz", items: [] })]);
+    await openAiMode(page, 1);
+
+    const card = page.getByTestId("ai-preview-card");
+    await expect(card).toHaveAttribute("data-ready", "false");
+    await expect(card.getByText("AI mahsulotni o'qimadi — quyida katalogdan qo'shing")).toBeVisible();
+
+    const add = card.getByRole("combobox", { name: "Mahsulot qo'shish" });
+    const addBox = (await add.boundingBox())!;
+    expect(addBox.height).toBeGreaterThanOrEqual(44);
+    await add.click();
+    await page.getByRole("option", { name: "Avto changyutgich" }).click();
+
+    const row = card.getByTestId("ai-item-row");
+    await expect(row).toHaveCount(1);
+    await expect(row.getByText("Qo'lda qo'shildi")).toBeVisible();
+    await expect(card).toHaveAttribute("data-ready", "true");
+
+    const { scrollWidth, clientWidth } = await mainOverflow(page);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
     expect(leaked).toEqual([]);
   });
 });
