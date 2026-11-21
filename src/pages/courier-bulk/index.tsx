@@ -24,6 +24,7 @@ import { API_ENDPOINTS } from "../../shared/api";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { notify } from "../../shared/lib/notify";
+import { cx } from "../../shared/lib/cx";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
 import { Button, PageHeader, useConfirm, type ConfirmConsequence } from "../../shared/ui/primitives";
 import { playScanFeedback } from "../../shared/lib/scanner/feedback";
@@ -670,6 +671,7 @@ const CourierBulkPage = () => {
   const cancelOnlyButton = (
     <Button
       variant="secondary"
+      size={isPhone ? "lg" : "md"}
       leftIcon={CircleX}
       fullWidth={isPhone}
       aria-haspopup="dialog"
@@ -737,10 +739,12 @@ const CourierBulkPage = () => {
 
       {isPhone ? (
         <>
-          <div aria-hidden="true" className="h-[72px] shrink-0" />
-          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 flex gap-2 border-t border-border bg-surface px-4 py-3">
-            {hasCancelMarks ? <div className="w-2/5 shrink-0">{cancelOnlyButton}</div> : null}
-            <div className="min-w-0 flex-1">{finalizeButton}</div>
+          {/* «Faqat bekorlar» faqat «Bekor» belgisi bo'lsa — «Kunni yakunlash» ustida to'liq enli (yonma-yon
+              ikkala yorliq 390 px ga sig'maydi). */}
+          <div aria-hidden="true" className={cx("shrink-0", hasCancelMarks ? "h-[128px]" : "h-[72px]")} />
+          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 flex flex-col gap-2 border-t border-border bg-surface px-4 py-3">
+            {hasCancelMarks ? cancelOnlyButton : null}
+            {finalizeButton}
           </div>
         </>
       ) : null}
