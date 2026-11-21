@@ -3,9 +3,9 @@
  *
  * Production build'ga TEGMAYDI: `vite.config.ts` bu funksiyalarni faqat `VITE_APP_ENV=staging` bo'lganda chaqiradi,
  * production `dist/` avvalgidek (bayt-bayt) chiqadi. Staging'da esa build oxirida:
- *   - `_headers` — CSP'dagi API hosti (connect-src https + wss, img-src, media-src, report-uri) test API'ga
- *     almashtiriladi va `X-Robots-Tag: noindex, nofollow` qo'shiladi; bir domenli API'da (`VITE_BASE_URL=/api/`)
- *     connect-src ga kabinetning o'z `wss://` hosti ham qo'shiladi (socket.io endi kabinet origin'ida);
+ *   - `_headers` — CSP'dagi API hosti (connect-src https + wss, img-src, media-src, report-uri) test API'ga,
+ *     kabinetning o'z `wss://` hosti (bir domenli API'da socket.io) — test kabinetga almashtiriladi va
+ *     `X-Robots-Tag: noindex, nofollow` qo'shiladi;
  *   - `index.html` — robots/googlebot `noindex, nofollow`, sarlavha «[TEST] …», PWA nomlari «… TEST»;
  *   - `manifest.webmanifest` — ilova nomi «… TEST» (telefonga o'rnatilgan ikki ilova adashmasin);
  *   - `sw.js` — tizim bildirishnomasi sarlavhasi «[TEST] …», SW versiyasi «…-staging»;
@@ -61,6 +61,9 @@ export const stagingApiHost = (baseUrl, name = "VITE_BASE_URL") => {
  */
 export const SAME_ORIGIN_API_PATH = "/api/";
 
+/** Production kabinet hosti — `public/_headers` CSP connect-src dagi `wss://` (socket.io bir domenli API'da). */
+export const PRODUCTION_SITE_HOST = "admin.elchipochta.uz";
+
 /** TEST kabinet hosti — `wrangler.jsonc` → `env.staging.routes` (test solishtiradi). */
 export const STAGING_SITE_HOST = "test-admin.elchipochta.uz";
 
@@ -80,23 +83,19 @@ export const stagingApiTarget = (env) => {
 };
 
 /**
- * `_headers` (xeshlar to'ldirilgan): production API hosti → staging hosti, `/*` ga `X-Robots-Tag`. Bir domenli API'da
- * connect-src ga `wss://<kabinet hosti>` qo'shiladi: socket.io kabinet origin'iga ulanadi (`'self'` wss'ni hamma
- * brauzerda ham qamramaydi). API hosti img-src / media-src / connect-src da qoladi — backend absolyut fayl URL
- * qaytarsa ham ochiladi.
+ * `_headers` (xeshlar to'ldirilgan): production API hosti → staging hosti, kabinetning `wss://admin…` (socket.io bir
+ * domenli API'da kabinet origin'ida; `'self'` wss'ni hamma brauzerda ham qamramaydi) → `wss://test-admin…`, `/*` ga
+ * `X-Robots-Tag`. API hosti img-src / media-src / connect-src da qoladi — backend absolyut fayl URL qaytarsa ham ochiladi.
  */
-export const stagingHeaders = (headers, apiHost, { sameOrigin = false } = {}) => {
+export const stagingHeaders = (headers, apiHost) => {
   const host = new RegExp(`(https|wss)://${escapeRegExp(PRODUCTION_API_HOST)}(?![\\w.-])`, "g");
   if (!host.test(headers)) throw new Error(`staging: _headers da ${PRODUCTION_API_HOST} topilmadi`);
-  let retargeted = headers.replace(host, (_, scheme) => `${scheme}://${apiHost}`);
-  if (sameOrigin) {
-    retargeted = replaceExact(
-      retargeted,
-      /connect-src 'self' /,
-      `connect-src 'self' wss://${STAGING_SITE_HOST} `,
-      "_headers connect-src 'self'",
-    );
-  }
+  const retargeted = replaceExact(
+    headers.replace(host, (_, scheme) => `${scheme}://${apiHost}`),
+    new RegExp(`wss://${escapeRegExp(PRODUCTION_SITE_HOST)}(?![\\w.-])`),
+    `wss://${STAGING_SITE_HOST}`,
+    `_headers connect-src wss://${PRODUCTION_SITE_HOST}`,
+  );
   return replaceExact(retargeted, /^\/\*\n/m, "/*\n  X-Robots-Tag: noindex, nofollow\n", "_headers «/*» qoidasi");
 };
 

@@ -9,6 +9,8 @@ export declare const STAGING_ROBOTS_TXT: string;
 
 /** Bir domenli API yo'li (`VITE_BASE_URL=/api/`) — Worker (`worker/index.ts`) shu prefiksni proksi qiladi. */
 export declare const SAME_ORIGIN_API_PATH: "/api/";
+/** Production kabinet hosti (`public/_headers` CSP connect-src dagi `wss://`). */
+export declare const PRODUCTION_SITE_HOST: "admin.elchipochta.uz";
 /** TEST kabinet hosti (`wrangler.jsonc` → `env.staging.routes`). */
 export declare const STAGING_SITE_HOST: "test-admin.elchipochta.uz";
 
@@ -17,10 +19,10 @@ export declare const stagingApiHost: (baseUrl: string | undefined, name?: string
 /** `.env.staging` → API hosti va bir domenli rejim (`VITE_BASE_URL=/api/` → `VITE_PUBLIC_API_URL`); aks holda xato. */
 export declare const stagingApiTarget: (env: Record<string, string | undefined>) => { apiHost: string; sameOrigin: boolean };
 /**
- * `_headers`: production API hosti → staging hosti, `/*` ga `X-Robots-Tag: noindex, nofollow`; `sameOrigin` da
- * connect-src ga `wss://<kabinet hosti>`.
+ * `_headers`: production API hosti → staging hosti, `wss://admin…` → `wss://test-admin…`, `/*` ga
+ * `X-Robots-Tag: noindex, nofollow`.
  */
-export declare const stagingHeaders: (headers: string, apiHost: string, options?: { sameOrigin?: boolean }) => string;
+export declare const stagingHeaders: (headers: string, apiHost: string) => string;
 /** `index.html`: noindex, «[TEST]» sarlavha, PWA nomlari. */
 export declare const stagingIndexHtml: (html: string) => string;
 /** `manifest.webmanifest`: ilova nomi «… TEST». */

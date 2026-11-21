@@ -100,10 +100,7 @@ const cspInlineScriptHashes = (): Plugin => {
       }
       const hashes = inlineScriptHashes(readFileSync(htmlPath, "utf8"));
       const headers = fillInlineScriptHashes(readFileSync(headersPath, "utf8"), hashes);
-      writeFileSync(
-        headersPath,
-        staging ? stagingHeaders(headers, staging.apiHost, { sameOrigin: staging.sameOrigin }) : headers,
-      );
+      writeFileSync(headersPath, staging ? stagingHeaders(headers, staging.apiHost) : headers);
     },
   };
 };

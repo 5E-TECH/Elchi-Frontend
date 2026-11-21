@@ -12,17 +12,19 @@
  *     `shared/const` zaxirasi sifatida qoladi — u faqat `VITE_BASE_URL` bo'sh bo'lganda ishlardi, staging build'i esa
  *     bunga yo'l qo'ymaydi: `scripts/staging-build.mjs` → `stagingApiHost`).
  *   - `manifest.webmanifest` / `robots.txt`: staging — «TEST» nom va `Disallow: /`; production — yo'q.
- *   - Bir domenli API (`VITE_BASE_URL=/api/`, hozircha faqat staging): `wrangler.jsonc` dagi o'sha muhit Worker'i
- *     `/api/*` va `/socket.io/*` ni aynan shu API hostiga proksi qiladi (`main`, `assets.binding`,
- *     `assets.run_worker_first`, `vars.API_ORIGIN`); `_headers` connect-src da kabinetning `wss://` hosti. Worker'siz
- *     chiqsa har API so'rovi SPA `index.html` ni olardi. Production'da bu rejim hali yoqilmagan — rad etiladi
- *     (Elchi-Backend docs/ops/same-origin-api.md).
+ *   - Bir domenli API (`VITE_BASE_URL=/api/`): `wrangler.jsonc` dagi o'sha muhit Worker'i `/api/*` va `/socket.io/*`
+ *     ni aynan shu API hostiga proksi qiladi (`main`, `assets.binding`, `assets.run_worker_first`, `vars.API_ORIGIN`);
+ *     `_headers` connect-src da o'sha muhit kabinetining `wss://` hosti. Worker'siz chiqsa har API so'rovi SPA
+ *     `index.html` ni olardi (Elchi-Backend docs/ops/same-origin-api.md).
  * Xato bo'lsa — ro'yxat va exit 1 (CI deploy qadamiga yetmaydi). Test: `src/test/stagingBuild.test.ts`.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SAME_ORIGIN_API_PATH, STAGING_SITE_HOST } from "./staging-build.mjs";
+import { PRODUCTION_SITE_HOST, SAME_ORIGIN_API_PATH, STAGING_SITE_HOST } from "./staging-build.mjs";
+
+/** Muhit → kabinet hosti (CSP `wss://` — socket.io bir domenli API'da kabinet origin'ida). */
+export const SITE_HOSTS = { production: PRODUCTION_SITE_HOST, staging: STAGING_SITE_HOST };
 
 export const DEPLOY_TARGETS = ["production", "staging"];
 
@@ -73,7 +75,6 @@ export const checkDeployTarget = ({ target, dir, root = process.cwd() }) => {
   const foreign = envApiHost(root, staging ? "production" : "staging");
   const sameOrigin = envSameOrigin(root, target);
   const errors = [];
-  if (sameOrigin && !staging) errors.push("production: bir domenli API (VITE_BASE_URL nisbiy) hali yoqilmagan");
   if (sameOrigin) errors.push(...checkSameOriginWorker(wranglerTarget(root, target), own));
   const read = (file) => {
     const path = join(dir, file);
@@ -86,7 +87,8 @@ export const checkDeployTarget = ({ target, dir, root = process.cwd() }) => {
   for (const source of [`https://${own}`, `wss://${own}`, `report-uri https://${own}/csp-report`]) {
     if (!headers.includes(source)) errors.push(`_headers: «${source}» yo'q`);
   }
-  if (sameOrigin && !headers.includes(`wss://${STAGING_SITE_HOST}`)) errors.push(`_headers: «wss://${STAGING_SITE_HOST}» yo'q`);
+  const site = SITE_HOSTS[target];
+  if (sameOrigin && !hostPattern(`wss://${site}`).test(headers)) errors.push(`_headers: «wss://${site}» yo'q`);
   if (hostPattern(foreign).test(headers)) errors.push(`_headers: begona API hosti ${foreign}`);
   if (/^\s*X-Robots-Tag: noindex/m.test(headers) !== staging) {
     errors.push(`_headers: X-Robots-Tag noindex ${staging ? "yo'q" : "bor"}`);

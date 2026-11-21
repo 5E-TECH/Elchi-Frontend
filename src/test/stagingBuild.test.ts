@@ -17,6 +17,7 @@ import {
 import { fillInlineScriptHashes, inlineScriptHashes } from "../../scripts/csp-headers.mjs";
 import {
   PRODUCTION_API_HOST,
+  PRODUCTION_SITE_HOST,
   SAME_ORIGIN_API_PATH,
   STAGING_ROBOTS_TXT,
   STAGING_SITE_HOST,
@@ -56,16 +57,17 @@ describe(".env.staging / .env.production", () => {
       VITE_DEBUG: "false",
     });
     expect(envSameOrigin(root, "staging")).toBe(true);
-    expect(envSameOrigin(root, "production")).toBe(false);
     expect(stagingApiTarget(env(".env.staging"))).toEqual({ apiHost: "test-api.elchipochta.uz", sameOrigin: true });
   });
 
-  it("production: VITE_APP_ENV=production (staging kodi build vaqtida tushib qoladi), API o'zgarmagan", () => {
+  it("production: bir domenli API (/api/ → Worker), ommaviy API hosti — production API, VITE_APP_ENV=production", () => {
     expect(env(".env.production")).toEqual({
-      VITE_BASE_URL: `https://${PRODUCTION_API_HOST}/`,
+      VITE_BASE_URL: SAME_ORIGIN_API_PATH,
+      VITE_PUBLIC_API_URL: `https://${PRODUCTION_API_HOST}/`,
       VITE_DEBUG: "false",
       VITE_APP_ENV: "production",
     });
+    expect(envSameOrigin(root, "production")).toBe(true);
     expect(envApiHost(root, "production")).toBe(PRODUCTION_API_HOST);
     expect(envApiHost(root, "staging")).toBe("test-api.elchipochta.uz");
   });
@@ -153,7 +155,7 @@ describe("staging build almashtirishlari (scripts/staging-build.mjs)", () => {
       /topilmadi/,
     );
     expect(() =>
-      stagingHeaders(headersFile.replace("connect-src 'self' ", "connect-src "), "test-api.elchipochta.uz", { sameOrigin: true }),
+      stagingHeaders(headersFile.replace(`wss://${PRODUCTION_SITE_HOST} `, ""), "test-api.elchipochta.uz"),
     ).toThrow(/connect-src/);
   });
 
@@ -162,7 +164,7 @@ describe("staging build almashtirishlari (scripts/staging-build.mjs)", () => {
   });
 });
 
-describe("wrangler.jsonc — staging alohida Worker, production o'zgarmagan", () => {
+describe("wrangler.jsonc — production va staging: bir xil bir domenli Worker, alohida API", () => {
   type WorkerConfig = {
     name: string;
     main?: string;
@@ -176,16 +178,25 @@ describe("wrangler.jsonc — staging alohida Worker, production o'zgarmagan", ()
     env: Record<string, WorkerConfig>;
   };
 
-  it("production (yuqori daraja): Worker elchi-frontend, marshrutsiz (domen dashboard'da), dist SPA, skriptsiz", () => {
+  const zone = (host: string) => host.split(".").slice(-2).join(".");
+
+  it("production (yuqori daraja): Worker elchi-frontend, marshrutsiz (domen dashboard'da), dist SPA", () => {
     expect(config.name).toBe("elchi-frontend");
     expect(config.routes).toBeUndefined();
-    expect(config.assets).toEqual({ directory: "./dist", not_found_handling: "single-page-application" });
-    // Bir domenli API production'da hali yoqilmagan: `wrangler deploy` (env'siz) avvalgidek faqat statik fayllar.
-    expect(config.main).toBeUndefined();
-    expect(config.vars).toBeUndefined();
-    expect(checkSameOriginWorker(wranglerTarget(root, "production"), PRODUCTION_API_HOST)).toContain(
-      "wrangler: Worker skripti (main) yo'q",
-    );
+    expect(config.assets).toMatchObject({ directory: "./dist", not_found_handling: "single-page-application" });
+  });
+
+  it("production: bir domenli API — FAQAT /api/* va /socket.io/* Worker'ga, API_ORIGIN — production API, BIR zonada", () => {
+    expect(config.main).toBe("worker/index.ts");
+    expect(config.assets).toEqual({
+      directory: "./dist",
+      not_found_handling: "single-page-application",
+      binding: "ASSETS",
+      run_worker_first: [`${API_PREFIX}/*`, `${SOCKET_IO_PREFIX}*`],
+    });
+    expect(config.vars).toEqual({ API_ORIGIN: `https://${PRODUCTION_API_HOST}` });
+    expect(checkSameOriginWorker(wranglerTarget(root, "production"), envApiHost(root, "production"))).toEqual([]);
+    expect(zone(PRODUCTION_API_HOST)).toBe(zone(PRODUCTION_SITE_HOST));
   });
 
   it("env.staging: Worker elchi-frontend-test + custom domen test-admin.elchipochta.uz, o'sha dist/SPA", () => {
@@ -197,21 +208,16 @@ describe("wrangler.jsonc — staging alohida Worker, production o'zgarmagan", ()
     expect(staging.workers_dev).toBe(false);
   });
 
-  it("env.staging: bir domenli API — FAQAT /api/* va /socket.io/* Worker'ga, qolgani o'sha statik dist/SPA", () => {
+  it("env.staging: production bilan bir xil Worker va assets (meros emas — qayta yozilgan), API — test API", () => {
     const staging = config.env.staging;
-    expect(staging.main).toBe("worker/index.ts");
-    expect(staging.assets).toEqual({
-      ...config.assets,
-      binding: "ASSETS",
-      run_worker_first: [`${API_PREFIX}/*`, `${SOCKET_IO_PREFIX}*`],
-    });
+    expect(staging.main).toBe(config.main);
+    expect(staging.assets).toEqual(config.assets);
     expect(checkSameOriginWorker(wranglerTarget(root, "staging"), envApiHost(root, "staging"))).toEqual([]);
   });
 
   it("API_ORIGIN — .env.staging dagi API hosti, https, kabinet bilan BIR zonada (aks holda CF-Connecting-IP = Worker IP)", () => {
     const origin = new URL(config.env.staging.vars?.API_ORIGIN ?? "");
     expect(origin.href).toBe(`https://${envApiHost(root, "staging")}/`);
-    const zone = (host: string) => host.split(".").slice(-2).join(".");
     expect(zone(origin.host)).toBe("elchipochta.uz");
     expect(zone(origin.host)).toBe(zone(STAGING_SITE_HOST));
   });
@@ -288,7 +294,7 @@ describe("deploy qo'riqchisi (scripts/check-deploy-target.mjs)", () => {
     const headers = fillInlineScriptHashes(headersFile, inlineScriptHashes(page));
     mkdirSync(join(dir, "assets"));
     writeFileSync(join(dir, "assets", "index-abc123.js"), `const a="https://${host}/";const b="https://${PRODUCTION_API_HOST}";`);
-    writeFileSync(join(dir, "_headers"), staging ? stagingHeaders(headers, host, { sameOrigin: true }) : headers);
+    writeFileSync(join(dir, "_headers"), staging ? stagingHeaders(headers, host) : headers);
     writeFileSync(join(dir, "index.html"), page);
     writeFileSync(join(dir, "manifest.webmanifest"), staging ? stagingManifest(manifestFile) : manifestFile);
     writeFileSync(join(dir, "robots.txt"), staging ? STAGING_ROBOTS_TXT : robotsFile);
@@ -321,23 +327,34 @@ describe("deploy qo'riqchisi (scripts/check-deploy-target.mjs)", () => {
     );
   });
 
-  it("bir domenli staging build'i: kabinet wss bo'lmasa — xato; production'da bu rejim rad etiladi", () => {
-    const dir = fakeDist("staging");
-    writeFileSync(join(dir, "_headers"), readFileSync(join(dir, "_headers"), "utf8").replace(` wss://${STAGING_SITE_HOST}`, ""));
-    expect(checkDeployTarget({ target: "staging", dir, root })).toEqual([`_headers: «wss://${STAGING_SITE_HOST}» yo'q`]);
+  it("bir domenli build: o'z kabinetining wss'i bo'lmasa — xato (production ham, staging ham)", () => {
+    for (const [target, site] of [
+      ["staging", STAGING_SITE_HOST],
+      ["production", PRODUCTION_SITE_HOST],
+    ] as const) {
+      const dir = fakeDist(target);
+      writeFileSync(join(dir, "_headers"), readFileSync(join(dir, "_headers"), "utf8").replace(` wss://${site}`, ""));
+      expect(checkDeployTarget({ target, dir, root }), target).toEqual([`_headers: «wss://${site}» yo'q`]);
+    }
+  });
 
-    // Production .env nisbiy bo'lib qolsa (Worker'siz production'ga) — deploy to'xtaydi.
+  it("⭐ Worker'siz wrangler bilan bir domenli production build'i chiqmaydi (har API so'rovi index.html olardi)", () => {
     const fakeRoot = mkdtempSync(join(tmpdir(), "elchi-root-"));
     dirs.push(fakeRoot);
-    writeFileSync(join(fakeRoot, ".env.production"), "VITE_BASE_URL=/api/\nVITE_PUBLIC_API_URL=https://api.elchipochta.uz/\n");
+    writeFileSync(join(fakeRoot, ".env.production"), readText(".env.production"));
     writeFileSync(join(fakeRoot, ".env.staging"), readText(".env.staging"));
-    writeFileSync(join(fakeRoot, "wrangler.jsonc"), readText("wrangler.jsonc"));
-    expect(checkDeployTarget({ target: "production", dir: fakeDist("production"), root: fakeRoot })).toEqual(
-      expect.arrayContaining([
-        "production: bir domenli API (VITE_BASE_URL nisbiy) hali yoqilmagan",
-        "wrangler: Worker skripti (main) yo'q",
-      ]),
-    );
+    const config = JSON.parse(readText("wrangler.jsonc").replace(/^\s*\/\/.*$/gm, "")) as Record<string, unknown>;
+    // Avvalgi (statik) production sozlamasi: skript, binding, run_worker_first va vars yo'q.
+    const withoutWorker = Object.fromEntries(Object.entries(config).filter(([key]) => key !== "main" && key !== "vars"));
+    const assets = { directory: "./dist", not_found_handling: "single-page-application" };
+    writeFileSync(join(fakeRoot, "wrangler.jsonc"), JSON.stringify({ ...withoutWorker, assets }));
+    expect(checkDeployTarget({ target: "production", dir: fakeDist("production"), root: fakeRoot })).toEqual([
+      "wrangler: Worker skripti (main) yo'q",
+      "wrangler: assets.binding ASSETS emas",
+      "wrangler: run_worker_first da /api/* yo'q",
+      "wrangler: run_worker_first da /socket.io/* yo'q",
+      "wrangler: vars.API_ORIGIN https://api.elchipochta.uz emas (yo'q)",
+    ]);
   });
 
   it("noma'lum muhit yoki bo'sh papka — xato", () => {
