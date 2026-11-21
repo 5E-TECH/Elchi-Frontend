@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-preview
+// dizayn-v2: superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-preview, superadmin-neworders-create-ai-preview-checks, admin-neworders-create-ai-checks, manager-new-orders-create-ai-checks, registrator-new-orders-create-ai-checks, market-new-orders-create-ai-preview-checks
 import { memo, useId, useMemo, useState, type ReactNode } from "react";
 import {
   Building2,
@@ -288,9 +288,10 @@ const AiPreviewCard = ({
   const regionOptions: SelectOption[] = regions.map((region) => ({ value: String(region.id), label: areaLabel(region) }));
 
   /**
-   * «Operator» (qo'lda formadagi `OperatorField` kabi): ro'yxat bo'lsa — tanlov, «Tanlanmagan» da ostida erkin matn
-   * («Ro'yxatda yo'q operator»), AI o'qigan ism ro'yxatdagi operatorga mos kelsa — «Tanlash» taklifi (avtomatik
-   * EMAS). Tanlansa `operator` — uning ismi; «Tanlanmagan» ga qaytsa — AI o'qigan matn.
+   * «Operator» (qo'lda formadagi `OperatorField` kabi): ro'yxat bo'lsa — FAQAT tanlov (2026-11-21: erkin matn olib
+   * tashlandi), AI o'qigan ism ro'yxatdagi operatorga mos kelsa — «Tanlash» taklifi (avtomatik EMAS), mos kelmasa —
+   * «Xabarda «…» deb yozilgan» izohi. Tanlansa `operator` — uning ismi; «Tanlanmagan» ga qaytsa — AI o'qigan matn
+   * (faqat taklif uchun; ro'yxat bor bo'lsa yuborilmaydi). Ro'yxat yo'q / xato — avvalgi erkin matn.
    */
   const operatorList = operators ?? [];
   const hasOperatorList = operatorList.length > 0;
@@ -970,51 +971,43 @@ const AiPreviewCard = ({
               <TextInput value={selfOperator.name?.trim() || t("operatorCreate.operatorYou")} readOnly />
             </Field>
           ) : hasOperatorList ? (
-            <>
-              <Field
-                label={t("operator")}
-                labelAs="span"
-                id={`${idPrefix}-operator-id`}
-                hint={pickedOperatorId ? t("operatorSelect.pickedHint") : undefined}
-              >
-                <Select
-                  name={`${idPrefix}-operator-id`}
-                  options={operatorOptions}
-                  value={pickedOperatorId}
-                  onChange={(next) => pickOperator(next ?? "")}
-                />
-              </Field>
-              {pickedOperatorId ? null : (
-                <Field
-                  label={t("operatorSelect.otherLabel")}
-                  id={`${idPrefix}-operator`}
-                  hint={hints(
-                    // Ism yozilgan, lekin ro'yxatdan tanlanmagan — buyurtma operatorsiz, komissiya yozilmaydi.
-                    order.operator?.trim() && !operatorSuggestion ? (
-                      <WarningHint key="text-only">{t("operatorSelect.textOnly")}</WarningHint>
-                    ) : null,
-                    warningFor("operator"),
-                  )}
-                >
-                  {operatorTextInput}
-                  {operatorSuggestion ? (
-                    <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-action-soft px-2.5 py-2 text-[13px] font-semibold text-text">
-                      <span className="min-w-0 flex-[1_1_160px]">
-                        {t("operatorSelect.suggest", { name: operatorSuggestion.name })}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        aria-label={t("operatorSelect.suggestPickAria", { name: operatorSuggestion.name })}
-                        onClick={() => pickOperator(operatorSuggestion.id)}
-                      >
-                        {t("operatorSelect.suggestPick")}
-                      </Button>
-                    </div>
-                  ) : null}
-                </Field>
+            // Ega (2026-11-21): ro'yxat bor — FAQAT tanlov, «Ro'yxatda yo'q operator» erkin matni yo'q. Tanlanmasa
+            // buyurtma operatorsiz (AI o'qigan ism ham yuborilmaydi — `AiCreatePanel.submit`).
+            <Field
+              label={t("operator")}
+              labelAs="span"
+              id={`${idPrefix}-operator-id`}
+              hint={hints(
+                pickedOperatorId ? <span key="picked">{t("operatorSelect.pickedHint")}</span> : null,
+                // AI xabarda ism o'qigan, lekin u ro'yxatdagi bitta operatorga mos kelmaydi — odam o'zi tanlaydi.
+                !pickedOperatorId && order.operator?.trim() && !operatorSuggestion ? (
+                  <span key="ai-read">{t("operatorSelect.aiRead", { name: order.operator.trim() })}</span>
+                ) : null,
+                warningFor("operator"),
               )}
-            </>
+            >
+              <Select
+                name={`${idPrefix}-operator-id`}
+                options={operatorOptions}
+                value={pickedOperatorId}
+                onChange={(next) => pickOperator(next ?? "")}
+              />
+              {operatorSuggestion ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-action-soft px-2.5 py-2 text-[13px] font-semibold text-text">
+                  <span className="min-w-0 flex-[1_1_160px]">
+                    {t("operatorSelect.suggest", { name: operatorSuggestion.name })}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    aria-label={t("operatorSelect.suggestPickAria", { name: operatorSuggestion.name })}
+                    onClick={() => pickOperator(operatorSuggestion.id)}
+                  >
+                    {t("operatorSelect.suggestPick")}
+                  </Button>
+                </div>
+              ) : null}
+            </Field>
           ) : (
             <Field
               label={t("operator")}

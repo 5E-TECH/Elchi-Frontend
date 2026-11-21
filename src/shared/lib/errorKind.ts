@@ -2,8 +2,10 @@
  * SO'ROV XATOSI TURI — dizayn v2 xato holatlari uchun (`ErrorState`, taxta `tizim-errors` 02).
  *
  *   server    — 5xx;
- *   timeout   — vaqt chegarasi (axios `ECONNABORTED` / `ETIMEDOUT`: o'qish 60 s × 2, amal 20 s; «Request aborted» emas);
- *   offline   — brauzer oflayn yoki javob umuman kelmadi (tarmoq xatosi);
+ *   timeout   — vaqt chegarasi (axios `ECONNABORTED` / `ETIMEDOUT`: o'qish 60 s × 2, amal 20 s; «Request aborted» emas)
+ *               yoki javob kelmadi, lekin ilova sayti ochildi — internet bor, server javob bermadi
+ *               (`networkCause: "server"`, `auth/networkError.ts` `classifyNetworkFailure`, 2026-11-20);
+ *   offline   — brauzer oflayn yoki javob umuman kelmadi va sayt ham ochilmadi / tekshirilmagan (tarmoq xatosi);
  *   forbidden — 403 (xato emas: kulrang, «Qayta urinish» yo'q);
  *   section   — bitta bo'lim/tab ishdan chiqdi (faqat qo'lda beriladi);
  *   generic   — boshqa 4xx va noma'lum.
@@ -20,6 +22,8 @@ type ErrorLike = {
   response?: { status?: number; data?: { message?: unknown; error?: unknown } };
   request?: unknown;
   message?: unknown;
+  /** Javobsiz xato sababi (`classifyNetworkFailure`): `server` — internet bor, API javob bermadi. */
+  networkCause?: string;
 };
 
 const asErrorLike = (error: unknown): ErrorLike | null =>
@@ -50,6 +54,18 @@ export const isRequestAborted = (error: unknown): boolean =>
   asErrorLike(error)?.code === "ECONNABORTED" && !isRequestTimeout(error);
 
 /**
+ * So'rov sozlamasidagi belgi: javobsiz GET ni axios adapteri o'zi qayta urinib bo'lgan (`shared/api/readRetry.ts`) —
+ * React Query uni yana qayta so'ramaydi (`shouldRetryQuery`): har xato turiga bitta qayta urinish qavati.
+ */
+export const NETWORK_RETRIED_FLAG = "_networkRetried";
+
+/** Javobsiz GET adapter qayta urinishlaridan keyin ham yiqildi (`NETWORK_RETRIED_FLAG`). */
+export const isNetworkRetriedByAdapter = (error: unknown): boolean => {
+  const config = (asErrorLike(error) as { config?: Record<string, unknown> } | null)?.config;
+  return config?.[NETWORK_RETRIED_FLAG] === true;
+};
+
+/**
  * Xato turi. Tartib: brauzer oflayn → vaqt chegarasi → bekor qilingan → javobsiz so'rov (tarmoq) → 403 →
  * 5xx → qolgani.
  * axios'ga bog'lanmaydi (shakli bo'yicha tekshiradi).
@@ -63,7 +79,10 @@ export const getErrorKind = (error: unknown): ErrorKind => {
   // internet bor.
   if (e.code === "ERR_CANCELED" || isRequestAborted(e)) return "generic";
   const status = getErrorStatus(error);
-  if (status == null && (e.code === "ERR_NETWORK" || (e.isAxiosError === true && e.request != null))) return "offline";
+  if (status == null && (e.code === "ERR_NETWORK" || (e.isAxiosError === true && e.request != null))) {
+    // Internet bor (ilova sayti ochildi), faqat API javob bermadi — «Internet aloqasi yo'q» deb aytilmaydi.
+    return e.networkCause === "server" ? "timeout" : "offline";
+  }
   if (status === 403) return "forbidden";
   if (status != null && status >= 500) return "server";
   return "generic";

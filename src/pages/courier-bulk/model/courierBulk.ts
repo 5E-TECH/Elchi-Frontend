@@ -1,6 +1,5 @@
 import { readOrderReplacement } from "../../../entities/order/model/orderReplacement";
 import type { OrderListItem } from "../../../entities/order/types/order";
-import { isCourierHeldOrder } from "../../../entities/orders/custody";
 import { isProofRequiredByConditions, toKnownAmount } from "../../../entities/orders/proofRequirement";
 
 export type CourierBulkAction = "sold" | "cancel" | "tomorrow";
@@ -8,7 +7,10 @@ export type CourierBulkAction = "sold" | "cancel" | "tomorrow";
 /** Skanerlash rejimi: skanerlangan buyurtma bekor qilishga yoki ertaga qoldirishga belgilanadi. */
 export type CourierBulkScanMode = Exclude<CourierBulkAction, "sold">;
 
-/** Kim yopyapti: kuryerning o'zi yoki filial menejeri (menejer kuryer qo'lidagini sotmaydi — LC-04). */
+/**
+ * Kim yopyapti: kuryerning o'zi yoki filial menejeri. Menejer kuryer qo'lidagi buyurtmani KURYER NOMIDAN sotadi
+ * (BE LC-04, 2026-11-21: pul kuryer kassasi orqali) — natija qoidalari ikkalasida bir xil.
+ */
 export type CourierBulkViewer = "courier" | "manager";
 
 export type CourierBulkOrder = OrderListItem & {
@@ -77,23 +79,20 @@ export const mergeCourierBulkOrders = (pages: CourierBulkOrder[][]): CourierBulk
 };
 
 /**
- * Natijalar soni. Belgilanmagan buyurtma hech qaysi natijaga kirmaydi (faqat `total`) — sukut natija yo'q, u
- * yakunlashda o'zgarmaydi (ega 2026-11-05: «default hech nimada turmasligi kerak»).
+ * Natijalar soni. Belgilanmagan buyurtma «Sotiladi»ga kiradi — sukut natija «sotildi» (BeePost modeli, ega
+ * 2026-11-21: «kunni yakunlash xuddi BeePost'nikiday ishlashi kerak»; 2026-11-05 dagi «sukut yo'q» qarori bekor).
  */
 export const getCourierBulkCounts = (
   orders: Array<{ id: string }>,
   actions: Record<string, CourierBulkAction>,
-  viewer: CourierBulkViewer = "courier",
 ): CourierBulkCounts => {
   return orders.reduce<CourierBulkCounts>(
     (accumulator, order) => {
       const action = getCourierBulkOrderAction(order.id, actions);
       accumulator.total += 1;
-      if (action === null) return accumulator;
       // lQjt6sKP: eski mahsulot olinmagan almashtirish bu yerdan sotilmaydi — «Sotiladi»ga qo'shilmaydi
       // (tasdiq oynasidagi soldCount bilan bir xil); «Kutilayotgan» (total) da qoladi — buyurtma WAITING.
-      // Menejerda kuryer qo'lidagi buyurtma ham shunday (LC-04).
-      if (action === "sold" && isCourierBulkSellBlocked(order, viewer)) return accumulator;
+      if (action === "sold" && isCourierBulkSellBlocked(order)) return accumulator;
       accumulator[action] += 1;
       return accumulator;
     },
@@ -101,11 +100,14 @@ export const getCourierBulkCounts = (
   );
 };
 
-/** Qatorga qo'yilgan belgi; belgilanmagan — `null` (sukut «sotildi» yo'q). */
+/**
+ * Qator natijasi. Belgilanmagan — «sotildi» (sukut, BeePost modeli): kun oxirida skaner bilan faqat qaytgan
+ * (bekor) va ertaga qoladigan posilkalar belgilanadi, qolgani sotiladi.
+ */
 export const getCourierBulkOrderAction = (
   orderId: string,
   actions: Record<string, CourierBulkAction>,
-): CourierBulkAction | null => actions[orderId] ?? null;
+): CourierBulkAction => actions[orderId] ?? "sold";
 
 /*
  * COURIER-SCAN (ega, 2026-11-17): kuryer skani = qabul — skan bilan olingan posilka darhol «Kutilmoqda» (WAITING).
@@ -113,30 +115,21 @@ export const getCourierBulkOrderAction = (
  * to'siqsiz belgilanadi (sotish / bekor yo'ldagini backend o'zi qabul qiladi).
  */
 
-/** Nega buyurtma bu yerdan sotilmaydi: almashtirish (lQjt6sKP) yoki menejerda kuryer qo'lida (LC-04). */
-export type CourierBulkSellBlock = "replacement" | "courierHeld";
+/** Nega buyurtma bu yerdan sotilmaydi: almashtirish (lQjt6sKP). */
+export type CourierBulkSellBlock = "replacement";
 
 /**
  * Almashtirish buyurtmasi (lQjt6sKP) eski mahsulot olinmaguncha «Eski mahsulotni oldim» tasdig'isiz sotilmaydi
  * (backend 400). Ommaviy yopishda bunday tasdiq yo'q — buyurtma «sotildi» bo'lib YUBORILMAYDI, kutilmoqda holatida
- * qoladi; kuryer uni «Buyurtmalar»dan tasdiq bilan sotadi.
+ * qoladi; kuryer uni «Buyurtmalar»dan tasdiq bilan sotadi. Bekor qilish — odatdagidek.
  *
- * Menejer kuryer qo'lidagi buyurtmani sotmaydi (LC-04, backend 400 «Bu buyurtma kuryer qo'lida — uni kuryerning o'zi
- * sotadi»; «Buyurtmalar» sahifasidagi `canManagerSellOrder` bilan bir xil) — u ham yuborilmaydi, kutilmoqda qoladi.
- * Ikkala holatda bekor qilish — odatdagidek. Menejerda kuryer qo'lidagi almashtirish ham `courierHeld`: «Buyurtmalar»dan
- * ham uni menejer sotmaydi, to'g'ri yo'l — kuryerning o'zi.
+ * Menejerda kuryer qo'lidagi buyurtma endi to'silmaydi: backend uni kuryer nomidan sotadi (LC-04, 2026-11-21 —
+ * pul kuryer kassasi va qarzi orqali, kuryer sotganidagidek).
  */
-export const getCourierBulkSellBlock = (
-  order: unknown,
-  viewer: CourierBulkViewer = "courier",
-): CourierBulkSellBlock | null => {
-  if (viewer === "manager" && isCourierHeldOrder(order)) return "courierHeld";
-  if (readOrderReplacement(order).needsOldItemConfirm) return "replacement";
-  return null;
-};
+export const getCourierBulkSellBlock = (order: unknown): CourierBulkSellBlock | null =>
+  readOrderReplacement(order).needsOldItemConfirm ? "replacement" : null;
 
-export const isCourierBulkSellBlocked = (order: unknown, viewer: CourierBulkViewer = "courier") =>
-  getCourierBulkSellBlock(order, viewer) !== null;
+export const isCourierBulkSellBlocked = (order: unknown) => getCourierBulkSellBlock(order) !== null;
 
 /** «Sotildi» belgisidagi, lekin bu yerdan sotib bo'lmaydigan almashtirish buyurtmalari. */
 export const getCourierBulkReplacementHeld = <T extends { id: string }>(
@@ -145,14 +138,10 @@ export const getCourierBulkReplacementHeld = <T extends { id: string }>(
 ): T[] => getCourierBulkKept(orders, actions).replacement;
 
 export type CourierBulkKept<T> = {
-  /** Belgilanmagan — so'rovsiz kutilmoqda qoladi (sukut natija yo'q). */
-  unmarked: T[];
   /** «Ertaga» belgisi — so'rovsiz kutilmoqda qoladi (FE-CB-09). */
   tomorrow: T[];
-  /** «Sotildi», lekin almashtirish — «Buyurtmalar»dan sotiladi. */
+  /** «Sotildi» (belgilanmagani ham), lekin almashtirish — «Buyurtmalar»dan sotiladi. */
   replacement: T[];
-  /** «Sotildi», lekin menejerda kuryer qo'lida — kuryerning o'zi sotadi. */
-  courierHeld: T[];
 };
 
 /**
@@ -162,27 +151,22 @@ export type CourierBulkKept<T> = {
 export const getCourierBulkKept = <T extends { id: string }>(
   orders: T[],
   actions: Record<string, CourierBulkAction>,
-  viewer: CourierBulkViewer = "courier",
 ): CourierBulkKept<T> => {
-  const kept: CourierBulkKept<T> = { unmarked: [], tomorrow: [], replacement: [], courierHeld: [] };
+  const kept: CourierBulkKept<T> = { tomorrow: [], replacement: [] };
   orders.forEach((order) => {
     const action = getCourierBulkOrderAction(order.id, actions);
-    if (action === null) {
-      kept.unmarked.push(order);
-      return;
-    }
     if (action === "tomorrow") {
       kept.tomorrow.push(order);
       return;
     }
-    const block = action === "sold" ? getCourierBulkSellBlock(order, viewer) : null;
+    const block = action === "sold" ? getCourierBulkSellBlock(order) : null;
     if (block) kept[block].push(order);
   });
   return kept;
 };
 
 /**
- * "Kunni yakunlash" da API ga ketadigan buyurtmalar (fix3 FE-CB-09).
+ * "Kunni yakunlash" da API ga ketadigan buyurtmalar (fix3 FE-CB-09; BeePost modeli 2026-11-21).
  *
  * "Ertaga" belgilangan buyurtma uchun so'rov YUBORILMAYDI — u shunchaki
  * kutilmoqda (WAITING) holatida qoladi. Ilgari POST /orders/:id/could-not-deliver
@@ -190,23 +174,28 @@ export const getCourierBulkKept = <T extends { id: string }>(
  * buyurtmani qabul qiladi, bu ro'yxat esa faqat WAITING — ya'ni har bir
  * "ertaga" doim 400 berardi va butun yakunlash "xatolik" bilan tugardi.
  *
- * Belgilanmagan buyurtma uchun ham so'rov YUBORILMAYDI — sukut natija yo'q (ega 2026-11-05): ilgari belgilanmagani
- * «sotildi» bo'lib ketardi, 10 tasini «Sotildi» belgilab yakunlasa, qolgan belgilanmaganlari ham sotilardi.
+ * Belgilanmagan buyurtma — «sotildi» (sukut): BeePost'dagidek, «Bekor» va «Ertaga» skanerlanganidan tashqari hammasi
+ * sotiladi. Tasdiq oynasida bu alohida aytiladi va belgilash katagi bilan tasdiqlanadi.
  *
- * Eski mahsulot olinmagan almashtirish buyurtmasi (menejerda — kuryer qo'lidagi ham) «sotildi» bo'lib yuborilmaydi
- * (`isCourierBulkSellBlocked`).
+ * Eski mahsulot olinmagan almashtirish buyurtmasi «sotildi» bo'lib yuborilmaydi (`isCourierBulkSellBlocked`).
  */
 export const getCourierBulkFinalizeTasks = <T extends { id: string }>(
   orders: T[],
   actions: Record<string, CourierBulkAction>,
-  viewer: CourierBulkViewer = "courier",
 ): Array<CourierBulkFinalizeTask<T>> =>
   orders.flatMap((order) => {
     const action = getCourierBulkOrderAction(order.id, actions);
-    if (action === null || action === "tomorrow") return [];
-    if (action === "sold" && isCourierBulkSellBlocked(order, viewer)) return [];
+    if (action === "tomorrow") return [];
+    if (action === "sold" && isCourierBulkSellBlocked(order)) return [];
     return [{ order, action }];
   });
+
+/** «Faqat bekorlarni bajarish» (BeePost «Faqat bekor»): faqat «Bekor» belgilanganlar, sotuv so'rovi ketmaydi. */
+export const getCourierBulkCancelOnlyTasks = <T extends { id: string }>(
+  orders: T[],
+  actions: Record<string, CourierBulkAction>,
+): Array<CourierBulkFinalizeTask<T>> =>
+  orders.flatMap((order) => (actions[order.id] === "cancel" ? [{ order, action: "cancel" as const }] : []));
 
 /**
  * Yakunlashdan keyingi belgilar: muvaffaqiyatli bajarilganlar olib
@@ -222,14 +211,14 @@ export const getCourierBulkActionsAfterFinalize = (
     Object.entries(actions).filter(([orderId]) => !succeededOrderIds.has(orderId)),
   ) as Record<string, CourierBulkAction>;
 
-/** Buyurtma qo'lda belgilanganmi (belgilanmagani yakunlashda o'zgarmaydi). */
+/** Buyurtma qo'lda / skan bilan belgilanganmi (belgilanmagani yakunlashda sotiladi — sukut). */
 export const isCourierBulkOrderMarked = (orderId: string, actions: Record<string, CourierBulkAction>) =>
   actions[orderId] !== undefined;
 
 /**
- * Belgilanmagan buyurtmalar soni — yakunlashda o'zgarmaydiganlar (`getCourierBulkKept().unmarked` bilan bir xil):
- * «Sotiladi» kartasi izohi, tasdiq oynasi va kameradagi «Belgilanmagan N ta — o'zgarmaydi». «Belgilanmagan» natija
- * filtri va qatordagi belgi ham shu ta'rif bilan (`filterCourierBulkOrders`, `CourierBulkOrders`).
+ * Belgilanmagan buyurtmalar soni — yakunlashda SUKUT bo'yicha sotiladiganlar: «Sotiladi» kartasi izohi, tasdiq
+ * oynasi (belgilash katagi) va kameradagi «Belgilanmagan N ta — sotiladi». «Belgilanmagan» natija filtri va
+ * qatordagi belgi ham shu ta'rif bilan (`filterCourierBulkOrders`, `CourierBulkOrders`).
  */
 export const getCourierBulkUnmarkedCount = (
   orders: Array<{ id: string }>,
@@ -244,17 +233,13 @@ const digitsOf = (value: string) => value.replace(/\D/g, "");
 /**
  * Qidiruv (ism, telefon yoki buyurtma raqami) va «Natija» filtri — faqat mijoz tomonida, yangi API parametrisiz.
  * Telefon raqamlar bo'yicha ham solishtiriladi («90 214» → `+998902146631`). Bu yerdan sotilmaydigani («sotildi»
- * belgisi bilan) «Sotiladi» ga kirmaydi — kartalardagi sonlar bilan bir xil. «Belgilanmagan» — hech qanday belgi
- * qo'yilmaganlar.
+ * belgisi bilan) «Sotiladi» ga kirmaydi — kartalardagi sonlar bilan bir xil. «Sotiladi» — belgilanmaganlar ham
+ * (sukut); «Belgilanmagan» — hech qanday belgi qo'yilmaganlar (ular ham sotiladi).
  */
 export const filterCourierBulkOrders = <T extends CourierBulkOrder>(
   orders: T[],
   actions: Record<string, CourierBulkAction>,
-  {
-    query,
-    result,
-    viewer = "courier",
-  }: { query: string; result: CourierBulkResultFilter; viewer?: CourierBulkViewer },
+  { query, result }: { query: string; result: CourierBulkResultFilter },
 ): T[] => {
   const needle = query.trim().toLocaleLowerCase();
   const needleDigits = digitsOf(needle);
@@ -263,7 +248,7 @@ export const filterCourierBulkOrders = <T extends CourierBulkOrder>(
     if (
       result === "sold" &&
       getCourierBulkOrderAction(order.id, actions) === "sold" &&
-      isCourierBulkSellBlocked(order, viewer)
+      isCourierBulkSellBlocked(order)
     ) {
       return false;
     }
@@ -404,15 +389,144 @@ export const withCourierBulkRetry = async <R>(
 };
 
 /**
+ * Bitta bulk so'rovdagi buyurtmalar soni (BE chegarasi 50). Server bo'lakni KETMA-KET bajaradi: ~20 ta sotuv bir necha
+ * soniya — brauzer kutish chegarasidan (`LONG_REQUEST_TIMEOUT_MS`) ancha past; 100 ta buyurtma = 5 so'rov (ilgari 100).
+ */
+export const COURIER_BULK_CHUNK_SIZE = 20;
+
+export const chunkCourierBulk = <T>(items: readonly T[], size = COURIER_BULK_CHUNK_SIZE): T[][] => {
+  const step = Math.max(1, Math.floor(size));
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += step) chunks.push(items.slice(index, index + step));
+  return chunks;
+};
+
+/** BE bulk javobidagi xato bergan buyurtma. */
+export type CourierBulkServerFailure = { order_id: string; status_code: number; message: string };
+
+/** BE `POST /orders/bulk/*` javobi (`{ statusCode, data: { succeeded, failed } }` yoki ichki `data`) → natija. */
+export const extractCourierBulkServerResult = (
+  payload: unknown,
+): { succeeded: string[]; failed: CourierBulkServerFailure[] } | null => {
+  const source = asRecord(payload);
+  const data = Array.isArray(source.succeeded) ? source : asRecord(source.data);
+  if (!Array.isArray(data.succeeded) || !Array.isArray(data.failed)) return null;
+  return {
+    succeeded: data.succeeded.map((id) => String(id)),
+    failed: data.failed.map((raw) => {
+      const failure = asRecord(raw);
+      return {
+        order_id: String(failure.order_id ?? ""),
+        status_code: Number(failure.status_code) || 0,
+        message: typeof failure.message === "string" ? failure.message : "",
+      };
+    }),
+  };
+};
+
+/**
+ * Server qaytargan bitta buyurtma xatosi — axios xatosi SHAKLIDA: natija oynasi (`getBackendErrorMessage`) backend
+ * sababini, `getCourierBulkRetryKind` esa qayta yuborish turini (429 / 5xx / 409 «Takroriy so'rov») o'qiydi.
+ */
+export const toCourierBulkOrderError = (failure: Pick<CourierBulkServerFailure, "status_code" | "message">) => ({
+  response: {
+    status: failure.status_code,
+    data: failure.message ? { message: failure.message } : {},
+  },
+});
+
+/**
+ * Bitta amal (sotish YOKI bekor) buyurtmalarini bulk so'rovlar bilan bajaradi: 20 tadan bo'lak, bo'laklar KETMA-KET
+ * (bir kuryer / filial kassasi qatorlari uchun server qulf raqobati yo'q, gateway chegarasi yeyilmaydi).
+ *
+ * Har so'rov yakunlash kaliti bilan (`send` uni sarlavhaga qo'yadi) — server har buyurtmaga shundan barqaror kalit
+ * oladi, shuning uchun qayta yuborish amalni ikki marta bajarmaydi:
+ *  - butun so'rov vaqtinchalik xato bersa (429, 5xx, tarmoq, brauzer kutish chegarasi) — bo'lak shu kalit bilan
+ *    `withCourierBulkRetry` qoidasi bo'yicha qayta yuboriladi;
+ *  - javobdagi vaqtinchalik buyurtma xatolari (5xx, 409 «hali bajarilmoqda») — faqat o'sha buyurtmalar kutib qayta
+ *    yuboriladi; biznes xatosi (4xx) — darhol natijaga.
+ * Natija — har buyurtma id → `PromiseSettledResult` (`summarizeCourierBulkResults` bilan mos).
+ */
+export const runCourierBulkAction = async (
+  orderIds: readonly string[],
+  send: (orderIds: readonly string[]) => Promise<unknown>,
+  {
+    delays = COURIER_BULK_RETRY_DELAYS_MS,
+    serverRetries = COURIER_BULK_SERVER_RETRIES,
+    wait = sleep,
+    chunkSize = COURIER_BULK_CHUNK_SIZE,
+    onChunkDone,
+  }: {
+    delays?: readonly number[];
+    serverRetries?: number;
+    wait?: (ms: number) => Promise<void>;
+    chunkSize?: number;
+    /** Bo'lak yakuniy natijasi chiqqanda — shu bo'lakdagi buyurtmalar soni (jarayon ko'rsatkichi uchun). */
+    onChunkDone?: (count: number) => void;
+  } = {},
+): Promise<Map<string, PromiseSettledResult<unknown>>> => {
+  const outcome = new Map<string, PromiseSettledResult<unknown>>();
+  const limitFor = (kind: CourierBulkRetryKind) =>
+    kind === "server" ? Math.min(serverRetries, delays.length) : delays.length;
+
+  for (const chunk of chunkCourierBulk(orderIds, chunkSize)) {
+    let pending: readonly string[] = chunk;
+    for (let attempt = 0; pending.length > 0; attempt += 1) {
+      let payload: unknown;
+      try {
+        payload = await send(pending);
+      } catch (error) {
+        const kind = getCourierBulkRetryKind(error);
+        if (!kind || attempt >= limitFor(kind)) {
+          pending.forEach((orderId) => outcome.set(orderId, { status: "rejected", reason: error }));
+          break;
+        }
+        await wait(delays[attempt]);
+        continue;
+      }
+
+      const result = extractCourierBulkServerResult(payload);
+      const retry: string[] = [];
+      let retryKind: CourierBulkRetryKind | null = null;
+      const reported = new Set<string>();
+      result?.succeeded.forEach((orderId) => {
+        reported.add(orderId);
+        outcome.set(orderId, { status: "fulfilled", value: undefined });
+      });
+      result?.failed.forEach((failure) => {
+        reported.add(failure.order_id);
+        const error = toCourierBulkOrderError(failure);
+        outcome.set(failure.order_id, { status: "rejected", reason: error });
+        const kind = getCourierBulkRetryKind(error);
+        if (!kind) return;
+        retry.push(failure.order_id);
+        // Bittasi «server» bo'lsa — qisqaroq chegara (doimiy nosozlikda cho'zilmasin).
+        retryKind = retryKind === "server" || kind === "server" ? "server" : "wait";
+      });
+      // Javobda yo'q buyurtma (kutilmagan) — sababsiz xato, qayta yuborilmaydi.
+      pending
+        .filter((orderId) => !reported.has(orderId))
+        .forEach((orderId) =>
+          outcome.set(orderId, { status: "rejected", reason: toCourierBulkOrderError({ status_code: 0, message: "" }) }),
+        );
+
+      if (retry.length === 0 || retryKind === null || attempt >= limitFor(retryKind)) break;
+      await wait(delays[attempt]);
+      pending = retry;
+    }
+    onChunkDone?.(chunk.length);
+  }
+  return outcome;
+};
+
+/**
  * Bitta yakunlash urinishidagi amal kaliti: qayta yuborishda o'zgarmaydi (backend takrorni tanib oladi), keyingi
  * «Kunni yakunlash» — yangi `runId`, yangi kalit (xato bergan buyurtma qaytadan bajariladi).
  */
 export const getCourierBulkIdempotencyKey = (runId: string, action: CourierBulkFinalizeAction, orderId: string) =>
   `courier-bulk:${runId}:${action}:${orderId}`;
 
-/** Isbotsiz buyurtmalar — avvalgidek 6 tadan parallel. */
-export const COURIER_BULK_CONCURRENCY = 6;
-/** Isbotli buyurtmalar (fayl yuklash + amal) — ko'pi bilan 2 tadan parallel (j9KFyqlS). */
+/** Isbotli buyurtmalar (fayl yuklash + amal) — yakka so'rov bilan, ko'pi bilan 2 tadan parallel (j9KFyqlS). */
 export const COURIER_BULK_PROOF_CONCURRENCY = 2;
 
 /**

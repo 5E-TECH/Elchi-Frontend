@@ -70,6 +70,16 @@ secrets: `.env.production` is committed and holds only public `VITE_*` values.
 `wrangler.jsonc`. `not_found_handling: single-page-application` makes deep links
 work with react-router. `npm run deploy` still works for a manual release.
 
+**Same-origin API.** The app calls the API through its own origin
+(`https://admin.elchipochta.uz/api/*`, `.env.production` → `VITE_BASE_URL=/api/`), so the browser sends no CORS
+preflight and Cloudflare/tunnel error pages reach the app as real HTTP statuses. A small Worker
+(`worker/index.ts` → `worker/proxy.ts`) runs **only** for `/api/*` and `/socket.io/*` (`assets.run_worker_first`)
+and proxies them to `vars.API_ORIGIN` (same Cloudflare zone); every other path is served straight from static
+assets. The Worker pins the client IP (`x-real-ip` ← `CF-Connecting-IP`), rewrites the refresh cookie path
+`/auth` → `/api/auth` and turns non-JSON 5xx pages into JSON. Every `/api/*` request is a Worker invocation
+(Workers Free: 100,000/day). External integrators keep using `https://api.elchipochta.uz` directly
+(`VITE_PUBLIC_API_URL`). Prerequisites, checks and rollback: `../Elchi-Backend/docs/ops/same-origin-api.md`.
+
 This project is **not** on Cloudflare Pages, Netlify or Vercel. A stale
 `wrangler.toml` (Pages, project `elchi-pochta`), `netlify.toml` and `vercel.json`
 used to sit alongside the real config and were removed — wrangler prefers
@@ -93,6 +103,8 @@ Flow: `dev` → merge into `test` → https://test-admin.elchipochta.uz (API htt
 - Before every deploy CI runs `npm run check:target`, so a staging `dist` can never be deployed to production
   (or the other way round). A production-mode build on the `test` branch inside Cloudflare Workers Builds fails on
   purpose (`WORKERS_CI_BRANCH`).
+- **Same-origin API** works the same way as in production (see «Deployment»): `https://test-admin.elchipochta.uz/api/*`,
+  `env.staging` has the same Worker with `vars.API_ORIGIN` = the test API.
 
 Owner checklist before enabling (`STAGING_ENABLED=true`):
 

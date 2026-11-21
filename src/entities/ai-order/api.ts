@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { AxiosError } from "axios";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { ORDER_KEY } from "../order/api/orderApi";
@@ -11,6 +12,7 @@ import type {
   AiParseResponse,
   AiStatusResponse,
 } from "./types";
+import { toAiOrderTrace } from "./trace";
 
 /**
  * ⚠️ `api` instansida GLOBAL TIMEOUT YO'Q. AI tahlili o'nlab soniya davom
@@ -71,8 +73,10 @@ export const useAiConfirm = () => {
       api
         .post(API_ENDPOINTS.ORDERS.AI_CONFIRM, payload, { timeout: AI_REQUEST_TIMEOUT_MS })
         .then((res) => unwrap<AiConfirmResponse>(res.data)),
-    onSuccess: async () => {
-      await Promise.all([
+    // Qo'lda yaratishdagidek (`entities/order` `createOrder`, 2026-11-20): ro'yxatlar fonda yangilanadi — «Yaratildi»
+    // ularning qayta yuklanishini kutmaydi.
+    onSuccess: () => {
+      void Promise.all([
         client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
         client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
         // Qo'lda yaratishdagidek: mijozning «yangi buyurtma bor» ogohlantirishi va ombor qoldig'i.
@@ -122,5 +126,31 @@ export const useAiStatus = () =>
   useQuery({
     queryKey: [AI_STATUS_KEY],
     queryFn: () => api.get(API_ENDPOINTS.AI.STATUS).then((res) => unwrap<AiStatusResponse>(res.data)),
+    meta: { silentError: true },
+  });
+
+export const AI_TRACE_KEY = "ai-order-trace";
+
+/**
+ * `GET orders/:id/ai-trace` — AI buyurtma audit izi (faqat superadmin/admin). 404 (AI'dan yaratilmagan — backend:
+ * «404 = oddiy buyurtma, bo'limni yashiring») va 403 xato EMAS: `null`, «AI izi» chiqmaydi. Boshqa xato (5xx,
+ * timeout) — query xatosi, global xabarsiz (`silentError`); oyna o'zi «Qayta urinish» chizadi. Anthropic chaqirilmaydi.
+ */
+export const useOrderAiTrace = (orderId: string, enabled: boolean) =>
+  useQuery({
+    queryKey: [AI_TRACE_KEY, orderId],
+    queryFn: async () => {
+      try {
+        const res = await api.get(API_ENDPOINTS.ORDERS.AI_TRACE(orderId));
+        return toAiOrderTrace(res.data);
+      } catch (error) {
+        const status = (error as AxiosError | undefined)?.response?.status;
+        if (status === 404 || status === 403) return null;
+        throw error;
+      }
+    },
+    enabled: enabled && Boolean(orderId),
+    staleTime: 5 * 60_000,
+    retry: false,
     meta: { silentError: true },
   });

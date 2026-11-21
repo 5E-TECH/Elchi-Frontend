@@ -17,7 +17,8 @@ export const ORDER_INTAKE_KEY = ["order-intake"] as const;
 
 const fetchOrderIntake = async (): Promise<OrderIntakeState> => {
   try {
-    const response = await api.get(API_ENDPOINTS.ORDERS.INTAKE_SETTINGS);
+    // Fonda (5 daqiqada) so'raladi, xatosi global xabar bermaydi — javobsizlikda ham (2026-11-20).
+    const response = await api.get(API_ENDPOINTS.ORDERS.INTAKE_SETTINGS, { silentNetworkError: true });
     return normalizeOrderIntake(response.data);
   } catch (error) {
     // Backend hali chiqmagan — funksiya yo'q (xato emas, hech narsa to'silmaydi).

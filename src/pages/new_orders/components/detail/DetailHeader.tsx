@@ -35,6 +35,11 @@ type DetailHeaderProps = {
   handoverMethod?: string | null;
   /** «Marketga topshirildi» vaqti (tarixdagi topshirish hodisasi; yo'q bo'lsa sahifa `last_handover_at` beradi). */
   handoverAt?: unknown;
+  /**
+   * «Yaratish usuli: AI bilan · AI izi» qatori (maket `*-orders-detail-ai-trace-dialog`) — «Yaratilgan: …» ostida.
+   * Faqat odatiy (xodim) tafsilotida; qatorning o'zi rol va iz bo'yicha chizilmasligi mumkin (`OrderAiTraceRow`).
+   */
+  aiTrace?: ReactNode;
 };
 
 /**
@@ -52,6 +57,7 @@ export const DetailHeader = ({
   actions,
   handoverMethod,
   handoverAt,
+  aiTrace,
 }: DetailHeaderProps) => {
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
   const placeText = useCancelReturnPlaceText();
@@ -126,12 +132,13 @@ export const DetailHeader = ({
       );
     }
     if (layout === "market") return createdPart;
-    if (!createdPart && !marketName) return null;
+    if (!createdPart && !marketName && !aiTrace) return null;
     return (
       <>
         {createdPart}
         {createdPart && marketName ? " · " : null}
         {marketName}
+        {aiTrace}
       </>
     );
   })();

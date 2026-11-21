@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { BULK_CANCEL_COMMENT, BULK_SOLD_COMMENT, markResult, mockCourierBulkApi, openCourierBulk } from "./support/floor";
+import { BULK_CANCEL_COMMENT, BULK_SOLD_COMMENT, mockCourierBulkApi, openCourierBulk } from "./support/floor";
 import { enterCode, expectNoHorizontalScroll, FAKE_CAMERA, openScannerFromBottomNav } from "./support/scannerCamera";
 
 /**
  * 390px: `/courier-bulk` — markaziy «Skaner» kamerani shu sahifa ustida ochadi (sahifada «Kamera bilan
  * skanerlash» yo'q). Kamera ichida «Bekor / Ertaga» rejimi; «Ro'yxat» — «Skanerlanganlar · 2 / 3 · …»;
- * «Tugatish» — kamera yopiladi, yakunlash sahifadagi «Kunni yakunlash» (tasdiq) bilan. Sukut natija yo'q: skanerlanmagan
- * qator belgilanmagan qoladi, «Sotildi» qatorda alohida tanlanadi (ega 2026-11-05).
+ * «Tugatish» — kamera yopiladi, yakunlash sahifadagi «Kunni yakunlash» (tasdiq) bilan. Sukut natija «Sotildi»
+ * (BeePost modeli, ega 2026-11-21): skanerlanmagan qator yakunlashda sotiladi.
  */
 test.use(FAKE_CAMERA);
 
@@ -32,7 +32,7 @@ test.describe("Tezkor amal — kamera rejimlari, 390px", () => {
     await camera.getByRole("button", { name: "Ro'yxat" }).click();
     const sheet = page.getByRole("dialog", { name: "Skanerlanganlar" });
     await expect(sheet.getByText("2 / 3 · 1 ta bekor, 1 ta ertaga")).toBeVisible();
-    await expect(sheet.getByText("Belgilanmagan 1 ta buyurtma o'zgarmaydi.")).toBeVisible();
+    await expect(sheet.getByText("Belgilanmagan 1 ta buyurtma sotiladi.")).toBeVisible();
     await sheet.getByRole("button", { name: "Tugatish" }).click();
     await expect(camera).toBeHidden();
 
@@ -41,11 +41,13 @@ test.describe("Tezkor amal — kamera rejimlari, 390px", () => {
       page.getByRole("radiogroup", { name: `${name}: natija` }).getByRole("radio", { name: option });
     await expect(row("Feruza Mirzayeva", "Bekor")).toHaveAttribute("aria-checked", "true");
     await expect(row("Ali Valiyev", "Ertaga")).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByRole("radiogroup", { name: "Dilnoza Rahimova: natija" }).getByRole("radio", { checked: true })).toHaveCount(0);
-    await markResult(page, "Dilnoza Rahimova", "Sotildi");
+    // Skanerlanmagan Dilnoza — sukut «Sotildi».
+    await expect(row("Dilnoza Rahimova", "Sotildi")).toHaveAttribute("aria-checked", "true");
 
     await page.getByRole("button", { name: "Kunni yakunlash", exact: true }).click();
     const confirm = page.getByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
+    await expect(confirm.getByRole("button", { name: "Tasdiqlash" })).toBeDisabled();
+    await confirm.getByRole("checkbox", { name: "Belgilanmagan 1 ta buyurtma SOTILISHINI tushunaman" }).check();
     await confirm.getByRole("button", { name: "Tasdiqlash" }).click();
     await expect.poll(() => api.requests.length).toBe(2);
     expect(api.cancels).toEqual([{ id: "10401", body: expect.objectContaining({ comment: BULK_CANCEL_COMMENT }) }]);

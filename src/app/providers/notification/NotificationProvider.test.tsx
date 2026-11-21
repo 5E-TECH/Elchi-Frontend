@@ -11,6 +11,7 @@ import { Toaster } from "../../../shared/ui/primitives";
 import { createAppQueryClient } from "../../lib/provider";
 import {
   NotificationProvider,
+  OFFLINE_EVENT_GRACE_MS,
   useAppNotification,
 } from "./NotificationProvider";
 
@@ -182,6 +183,41 @@ describe("NotificationProvider", () => {
       act(() => onlineManager.setOnline(true));
     });
 
+    it("internet bor, faqat API javob bermadi (`cause: server`) — «Server javob bermadi», aloqa qaytsa yopiladi", () => {
+      vi.useFakeTimers();
+      render(
+        <NotificationProvider>
+          <div />
+        </NotificationProvider>,
+      );
+
+      act(() => {
+        window.dispatchEvent(new CustomEvent("elchi:network-error", { detail: { kind: "offline", cause: "server" } }));
+      });
+      expect(screen.getByText("Server javob bermadi")).toBeInTheDocument();
+      expect(screen.queryByText("Internet aloqasi yo'q")).not.toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(20_000));
+      expect(screen.getByText("Server javob bermadi")).toBeInTheDocument();
+
+      restored("offline");
+      act(() => vi.advanceTimersByTime(300));
+      expect(screen.queryByText("Server javob bermadi")).not.toBeInTheDocument();
+      expect(screen.getByText("Aloqa tiklandi")).toBeInTheDocument();
+    });
+
+    it("faqat fon so'rovi jim yiqilgan (xabar ko'rsatilmagan) — «Aloqa tiklandi» ham chiqmaydi", () => {
+      vi.useFakeTimers();
+      render(
+        <NotificationProvider>
+          <div />
+        </NotificationProvider>,
+      );
+
+      restored("offline");
+      act(() => vi.advanceTimersByTime(300));
+      expect(screen.queryByText("Aloqa tiklandi")).not.toBeInTheDocument();
+    });
+
     it("aloqa qaytsa «Internet aloqasi yo'q» yopiladi, «Aloqa tiklandi» 3 s ko'rinib yo'qoladi", () => {
       vi.useFakeTimers();
       render(
@@ -261,7 +297,8 @@ describe("NotificationProvider", () => {
       expect(screen.getByText("Internet aloqasi yo'q")).toBeInTheDocument();
     });
 
-    it("brauzer oflayn bo'lishi bilan (so'rovsiz ham) xabar chiqadi; onlayn — faol so'rovlar qayta yuboriladi", async () => {
+    it("brauzer oflayn bo'lsa (so'rovsiz ham) xabar 2 s dan keyin chiqadi; onlayn — faol so'rovlar qayta yuboriladi", () => {
+      vi.useFakeTimers();
       const refetch = vi.spyOn(queryClient, "refetchQueries").mockResolvedValue();
       render(
         <NotificationProvider>
@@ -270,11 +307,29 @@ describe("NotificationProvider", () => {
       );
 
       act(() => onlineManager.setOnline(false));
-      expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(OFFLINE_EVENT_GRACE_MS - 1));
+      expect(screen.queryByText("Internet aloqasi yo'q")).not.toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(1));
+      expect(screen.getByText("Internet aloqasi yo'q")).toBeInTheDocument();
       act(() => onlineManager.setOnline(true));
       expect(refetch).toHaveBeenCalledWith({ type: "active" });
       // «Tiklandi» — faqat haqiqiy javobdan (captive portal), brauzer `online` dan emas.
       expect(screen.queryByText("Aloqa tiklandi")).not.toBeInTheDocument();
+    });
+
+    it("qisqa `offline`→`online` (Wi-Fi ↔ mobil almashishi) — xabar chiqmaydi", () => {
+      vi.useFakeTimers();
+      render(
+        <NotificationProvider>
+          <div />
+        </NotificationProvider>,
+      );
+
+      act(() => onlineManager.setOnline(false));
+      act(() => vi.advanceTimersByTime(800));
+      act(() => onlineManager.setOnline(true));
+      act(() => vi.advanceTimersByTime(5_000));
+      expect(screen.queryByText("Internet aloqasi yo'q")).not.toBeInTheDocument();
     });
 
     it("apiRequest: javobsiz xatoda ikkinchi «Xatolik» chiqmaydi (interceptor xabari yetarli)", async () => {

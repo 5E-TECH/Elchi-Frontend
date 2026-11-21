@@ -61,7 +61,10 @@ test.describe("Biriktirish va Tezkor amal — 390px", () => {
     await confirm.getByRole("button", { name: "Tasdiqlash" }).click();
 
     await expect(toast(page, "Kun yakunlandi")).toBeVisible();
-    expect(api.sells).toEqual([{ id: "10401", body: { comment: BULK_SOLD_COMMENT, extraCost: 0 } }]);
+    expect(api.sells).toEqual([{ id: "10401", body: { comment: BULK_SOLD_COMMENT } }]);
+    expect(api.bulkCalls.map(({ action, orderIds }) => ({ action, orderIds }))).toEqual([
+      { action: "sell", orderIds: ["10401"] },
+    ]);
     expect(api.cancels).toEqual([]);
     expect(api.leaked).toEqual([]);
   });
@@ -112,8 +115,9 @@ test.describe("Biriktirish va Tezkor amal — 390px", () => {
     ]);
     // Isbot faqat isbot talab qiladigan buyurtmaga: bitta yuklash, uning kaliti №10402 so'roviga.
     expect(api.uploads).toEqual(["proof/e2e-1.jpg"]);
+    // Isbotsizi — bulk, isbotlisi — yakka so'rov.
     expect([...api.sells].sort((a, b) => a.id.localeCompare(b.id))).toEqual([
-      { id: "10401", body: { comment: BULK_SOLD_COMMENT, extraCost: 0 } },
+      { id: "10401", body: { comment: BULK_SOLD_COMMENT } },
       { id: "10402", body: { comment: BULK_SOLD_COMMENT, extraCost: 0, proofFileKeys: ["proof/e2e-1.jpg"] } },
     ]);
     expect(api.leaked).toEqual([]);

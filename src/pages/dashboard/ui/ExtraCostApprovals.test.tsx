@@ -72,7 +72,10 @@ describe("ExtraCostApprovals — market dashboardidagi tasdiqlar bloki", () => {
     renderBlock();
 
     const list = await screen.findByRole("list", { name: "Kutilayotgan so'rovlar" });
-    expect(http.get).toHaveBeenCalledWith("orders/extra-cost-approvals", { params: { status: "pending" } });
+    expect(http.get).toHaveBeenCalledWith("orders/extra-cost-approvals", {
+      params: { status: "pending" },
+      silentNetworkError: true,
+    });
     expect(screen.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" })).toBeInTheDocument();
     expect(screen.getByText("3 ta so'rov kutilmoqda")).toBeInTheDocument();
 
