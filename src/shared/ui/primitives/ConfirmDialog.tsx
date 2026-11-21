@@ -148,6 +148,11 @@ export type ConfirmContent = {
   irreversible?: boolean | ReactNode;
   /** Qo'shimcha erkin mazmun (masalan izoh maydoni) — boshqa bloklardan keyin. */
   children?: ReactNode;
+  /**
+   * Xavfli ommaviy amal uchun belgilash katagi («… sotilishini tushunaman»): belgilanmaguncha tasdiqlash tugmasi
+   * o'chiq. Har ochilishda belgisiz boshlanadi.
+   */
+  acknowledge?: ReactNode;
   /** Kenglik (sukut `sm` — 440). */
   size?: DialogSize;
   /**
@@ -293,6 +298,9 @@ type ConfirmState = {
   detailsId: string;
   /** Xato qutisi (`blockConfirm` da tasdiqlash tugmasining `aria-describedby`). */
   errorId: string;
+  /** `acknowledge` katagi belgilanganmi. */
+  acknowledged: boolean;
+  onAcknowledgeChange: (value: boolean) => void;
 };
 
 /** Xato → ko'rinish: `errorView` → `errorMessage` → backend matni → «Amalni bajarib bo'lmadi…». */
@@ -330,6 +338,7 @@ const useConfirmParts = (
     content.irreversible === true ? t("dialog.irreversible") : content.irreversible ? content.irreversible : null;
   const { error } = state;
   const blocked = Boolean(error?.blockConfirm) && !state.pending;
+  const needsAcknowledge = content.acknowledge != null && !state.acknowledged && !state.pending;
 
   const body = (
     <>
@@ -396,6 +405,19 @@ const useConfirmParts = (
 
       {content.children}
 
+      {content.acknowledge != null ? (
+        <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-sm font-semibold text-text">
+          <input
+            type="checkbox"
+            checked={state.acknowledged}
+            disabled={state.pending}
+            onChange={(event) => state.onAcknowledgeChange(event.target.checked)}
+            className="mt-px size-[18px] shrink-0 cursor-pointer accent-action"
+          />
+          <span className="min-w-0">{content.acknowledge}</span>
+        </label>
+      ) : null}
+
       {irreversible ? (
         <p className="m-0 flex items-start gap-2 text-[13px] font-semibold text-danger-fg">
           <ButtonIcon icon={TriangleAlert} px={16} className="mt-0.5" />
@@ -435,7 +457,7 @@ const useConfirmParts = (
         leftIcon={content.confirmIcon}
         loading={state.pending}
         loadingText={content.loadingLabel}
-        disabled={blocked}
+        disabled={blocked || needsAcknowledge}
         aria-describedby={blocked ? state.errorId : undefined}
         onClick={state.onConfirm}
       >
@@ -507,12 +529,14 @@ export const ConfirmDialog = ({
   const error = wasDismissed ? null : caughtError;
   // Qayta ochilganda eski xato ko'rinmasin (holat render paytida tozalanadi — effektsiz).
   const [wasOpen, setWasOpen] = useState(open);
+  const [acknowledged, setAcknowledged] = useState(false);
   if (wasOpen !== open) {
     setWasOpen(open);
     if (open) {
       setError(null);
       setDismissed(null);
       setPending(false);
+      setAcknowledged(false);
     }
   }
 
@@ -525,6 +549,7 @@ export const ConfirmDialog = ({
 
   const handleConfirm = () => {
     if (busy || error?.blockConfirm) return;
+    if (content.acknowledge != null && !acknowledged) return;
     setError(null);
     let result: unknown;
     try {
@@ -560,6 +585,8 @@ export const ConfirmDialog = ({
       onConfirm: handleConfirm,
       detailsId,
       errorId,
+      acknowledged,
+      onAcknowledgeChange: setAcknowledged,
     },
     cancelRef,
     alertRef,
@@ -644,6 +671,8 @@ export const ConfirmDialogPanel = ({
     onConfirm: () => {},
     detailsId,
     errorId,
+    acknowledged: false,
+    onAcknowledgeChange: () => {},
   });
   return (
     <DialogPanel
