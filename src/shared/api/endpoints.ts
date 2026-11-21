@@ -224,6 +224,8 @@ export const API_ENDPOINTS = {
     AI_PARSE: "orders/ai-parse", // POST multipart: text, market_id, images[]
     AI_CONFIRM: "orders/ai-confirm", // POST { market_id?, orders[] }
     AI_AVAILABILITY: "orders/ai-availability", // GET { enabled, state } — AI tabini ko'rsatish/yashirish
+    // GET — AI buyurtma audit izi (faqat superadmin/admin; AI'dan yaratilmagan buyurtma — 404).
+    AI_TRACE: (id: string | number) => `orders/${id}/ai-trace`,
   },
 
   // ── Posts (registrator/courier/branch) ───────────────────────────────────

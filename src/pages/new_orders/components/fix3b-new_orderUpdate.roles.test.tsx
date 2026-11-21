@@ -44,6 +44,8 @@ const baseOrder = {
 
 const idleMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
 
+// «AI izi» qatori (superadmin/admin) o'z so'rovini yuboradi — sahifa testida o'chiq, o'zi `aiTrace/OrderAiTrace.test.tsx` da.
+vi.mock("./detail/aiTrace/OrderAiTrace", () => ({ OrderAiTraceRow: () => null }));
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
     useGetOrderById: () => ({ data: { data: { ...baseOrder, ...orderState } }, isLoading: false }),

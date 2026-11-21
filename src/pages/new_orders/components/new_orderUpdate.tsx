@@ -46,6 +46,7 @@ import { CustomerCard } from "./detail/CustomerCard";
 import { DetailAlerts } from "./detail/DetailAlerts";
 import { DetailErrorState, DetailNotFound } from "./detail/DetailErrorState";
 import { DetailHeader } from "./detail/DetailHeader";
+import { OrderAiTraceRow } from "./detail/aiTrace/OrderAiTrace";
 import { OrderPrintMenu } from "./detail/OrderPrintMenu";
 import { OrderQrCard } from "./detail/OrderQrCard";
 import { DetailSkeleton } from "./detail/DetailSkeleton";
@@ -541,6 +542,8 @@ const NewOrderUpdate = () => {
         actions={access.layout === "market" ? printMenu : headerActions}
         handoverMethod={handoverMethod}
         handoverAt={handoverAt}
+        // vncdmXOy: AI bilan yaratilgan buyurtma — «AI izi» (faqat superadmin/admin; iz topilmasa qator yo'q).
+        aiTrace={access.layout === "default" ? <OrderAiTraceRow orderId={orderId} order={order} role={role} /> : null}
       />
 
       {order ? (
