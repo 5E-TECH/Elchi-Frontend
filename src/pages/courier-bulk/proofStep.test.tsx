@@ -10,14 +10,15 @@ import { renderWithProviders } from "../../test/test-utils";
  * yubormasdi va bunday marketda doim yiqilardi.
  *
  * Tekshiriladi: isbot qadami faqat isbot kerak bo'lgan buyurtmalar uchun, isbotsiz «Yakunlash»
- * o'chiq, fayl sotish so'roviga boradi, qolganlari avvalgidek, isbotlilar ko'pi bilan 2 tadan
- * parallel, xato berganlar sababi bilan ro'yxatda, har so'rovda `X-Request-Source: courier-bulk`.
+ * o'chiq, fayl sotish so'roviga boradi (yakka so'rov, ko'pi bilan 2 tadan parallel), isbotsizlar
+ * BULK so'rov bilan (20 tadan bo'lak, ketma-ket), xato berganlar sababi bilan ro'yxatda, har
+ * so'rovda `X-Request-Source: courier-bulk`.
  *
- * Sukut natija yo'q (ega 2026-11-05): sotiladigan qatorlar «Sotildi» bilan aniq belgilanadi (`markSold`);
- * belgilanmagan qator (isbot talab qilsa ham) isbot qadamiga kirmaydi, so'rovsiz kutilmoqda holatida qoladi.
+ * BeePost modeli (ega 2026-11-21): belgilanmagan qator — sukut «sotildi». U isbot talab qilsa isbot
+ * qadamiga kiradi; tasdiq oynasida belgilanmaganlar sotilishi belgilash katagi bilan tasdiqlanadi.
  */
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), sell: vi.fn(), cancel: vi.fn() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), sell: vi.fn(), cancel: vi.fn(), bulk: vi.fn() }));
 
 vi.mock("../../shared/api/api", () => ({ api: { get: mocks.get } }));
 
@@ -25,13 +26,41 @@ vi.mock("../../entities/orders", () => ({
   useOrders: () => ({
     SellOrder: { mutateAsync: mocks.sell, isPending: false },
     CancelOrder: { mutateAsync: mocks.cancel, isPending: false },
+    BulkOrderAction: { mutateAsync: mocks.bulk, isPending: false },
   }),
 }));
 
+/** Isbotli (yakka) so'rov: har amal + buyurtma uchun barqaror kalit (qayta yuborishda o'zgarmaydi). */
 const BULK_HEADERS = {
   "X-Request-Source": "courier-bulk",
-  // Har amal + buyurtma uchun barqaror kalit (qayta yuborishda o'zgarmaydi).
   "Idempotency-Key": expect.stringMatching(/^courier-bulk:[^:]+:(sold|cancel):\d+$/),
+};
+
+/** Isbotsizlar (bulk so'rov): bitta yakunlash kaliti — barcha bo'laklarga ayni. */
+const PLAIN_HEADERS = {
+  "X-Request-Source": "courier-bulk",
+  "Idempotency-Key": expect.stringMatching(/^courier-bulk:[^:]+$/),
+};
+
+const SOLD_COMMENT = "Kuryer tezkor amal orqali sotildi deb yakunladi";
+
+type BulkCall = { action: "sold" | "cancel"; orderIds: string[]; comment?: string; headers?: Record<string, string> };
+type BulkFailure = { order_id: string; status_code: number; message: string };
+
+const bulkCalls = () => mocks.bulk.mock.calls.map(([call]) => call as BulkCall);
+
+/** Server javobi: berilgan `failed` dan tashqari hammasi bajarildi. */
+const bulkBody = ({ action, orderIds }: BulkCall, failed: BulkFailure[] = []) => {
+  const failedIds = new Set(failed.map((failure) => failure.order_id));
+  return {
+    statusCode: 200,
+    data: {
+      action,
+      total: orderIds.length,
+      succeeded: orderIds.filter((orderId) => !failedIds.has(orderId)),
+      failed: failed.filter((failure) => orderIds.includes(failure.order_id)),
+    },
+  };
 };
 
 type Conditions = string[] | null;
@@ -59,48 +88,69 @@ const scan = (value: string) => {
   fireEvent.keyDown(window, { key: "Enter" });
 };
 
-/**
- * Qatorlarda «Sotildi»ni aniq belgilaydi — sukut natija yo'q (ega 2026-11-05): belgilanmagan qator yakunlashda
- * o'zgarmaydi, sotilishi kerak bo'lganlari qo'lda belgilanadi.
- */
-const markSold = async (user: ReturnType<typeof userEvent.setup>, ...names: string[]) => {
-  for (const name of names) {
-    const group = await screen.findByRole("radiogroup", { name: `${name}: natija` });
-    await user.click(within(group).getByRole("radio", { name: "Sotildi" }));
-    expect(within(group).getByRole("radio", { name: "Sotildi" })).toBeChecked();
-  }
+/** Qatordagi natija tanlovi. */
+const markAs = async (user: ReturnType<typeof userEvent.setup>, name: string, label: "Bekor" | "Ertaga") => {
+  const group = await screen.findByRole("radiogroup", { name: `${name}: natija` });
+  await user.click(within(group).getByRole("radio", { name: label }));
+  expect(within(group).getByRole("radio", { name: label })).toBeChecked();
+};
+
+/** Belgilanmagan qator: sukut «Sotildi» tanlangan ko'rinadi. */
+const expectDefaultSold = (name: string) => {
+  const group = screen.getByRole("radiogroup", { name: `${name}: natija` });
+  expect(within(group).getByRole("radio", { name: "Sotildi" })).toBeChecked();
+  expect(within(group).getByRole("radio", { name: "Bekor" })).not.toBeChecked();
+  expect(within(group).getByRole("radio", { name: "Ertaga" })).not.toBeChecked();
+};
+
+const openConfirm = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(await screen.findByRole("button", { name: /Kunni yakunlash/ }));
+  return screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
+};
+
+/** Belgilanmaganlar sotilishini tasdiqlash katagi (bo'lsa) belgilanadi, keyin «Tasdiqlash». */
+const confirmDialog = async (user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) => {
+  const acknowledge = within(dialog).queryByRole("checkbox", { name: /SOTILISHINI tushunaman/ });
+  if (acknowledge) await user.click(acknowledge);
+  await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
 };
 
 const confirmFinalize = async (user: ReturnType<typeof userEvent.setup>) => {
-  await user.click(await screen.findByRole("button", { name: /Kunni yakunlash/ }));
-  const dialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
-  await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+  const dialog = await openConfirm(user);
+  await confirmDialog(user, dialog);
 };
 
 const proofInput = (group: HTMLElement) => group.querySelector<HTMLInputElement>('input[type="file"]')!;
 
 describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
   beforeEach(() => {
+    localStorage.clear();
     mocks.get.mockReset();
     mocks.sell.mockReset().mockResolvedValue({});
     mocks.cancel.mockReset().mockResolvedValue({});
+    mocks.bulk.mockReset().mockImplementation((call: BulkCall) => Promise.resolve(bulkBody(call)));
   });
 
-  it("isbot kerak bo'lmasa — qo'shimcha qadamsiz yakunlanadi, so'rovda X-Request-Source", async () => {
+  it("isbot kerak bo'lmasa — qo'shimcha qadamsiz bulk so'rov bilan yakunlanadi, so'rovda X-Request-Source", async () => {
     serve([order("10", "Ali"), order("11", "Vali", ["cancel_any"])]);
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await markSold(user, "Ali", "Vali");
+    expect(await screen.findByText("Vali")).toBeInTheDocument();
+    expectDefaultSold("Ali");
+    expectDefaultSold("Vali");
     await confirmFinalize(user);
 
-    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mocks.bulk).toHaveBeenCalledTimes(1));
     expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument();
-    expect(mocks.sell).toHaveBeenCalledWith({
-      orderId: "10",
-      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0 },
-      headers: BULK_HEADERS,
+    // #11 — market faqat bekor qilishda isbot so'raydi, sotishda yo'q → isbotsiz.
+    expect(mocks.bulk).toHaveBeenCalledWith({
+      action: "sold",
+      orderIds: ["10", "11"],
+      comment: SOLD_COMMENT,
+      headers: PLAIN_HEADERS,
     });
+    expect(mocks.sell).not.toHaveBeenCalled();
     expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
   });
 
@@ -109,7 +159,6 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await markSold(user, "Ali", "Vali");
     await confirmFinalize(user);
 
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
@@ -118,25 +167,23 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     expect(within(dialog).queryByRole("group", { name: "№11 · Vali" })).not.toBeInTheDocument();
     expect(dialog).toHaveTextContent("Qolgan 1 ta buyurtma isbotsiz yakunlanadi.");
     expect(within(dialog).getByRole("button", { name: "Yakunlash" })).toBeDisabled();
-    // Isbot tanlanmaguncha hech narsa yuborilmaydi.
+    // Isbot tanlanmaguncha hech narsa yuborilmaydi (isbotsizlar ham).
     expect(mocks.sell).not.toHaveBeenCalled();
+    expect(mocks.bulk).not.toHaveBeenCalled();
 
-    // «Orqaga» — hech narsa yuborilmaydi, belgilar joyida.
+    // «Orqaga» — hech narsa yuborilmaydi, natijalar joyida (sukut «Sotildi»).
     await user.click(within(dialog).getByRole("button", { name: "Orqaga" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument());
     expect(mocks.sell).not.toHaveBeenCalled();
-    for (const name of ["Ali", "Vali"]) {
-      const group = screen.getByRole("radiogroup", { name: `${name}: natija` });
-      expect(within(group).getByRole("radio", { name: "Sotildi" })).toBeChecked();
-    }
+    expect(mocks.bulk).not.toHaveBeenCalled();
+    for (const name of ["Ali", "Vali"]) expectDefaultSold(name);
   });
 
-  it("isbot tanlangach sotish so'roviga fayl boradi; isbotsiz buyurtma avvalgidek", async () => {
+  it("isbot tanlangach sotish so'roviga fayl boradi (yakka so'rov); isbotsiz buyurtma bulk bilan", async () => {
     serve([order("10", "Ali", ["sell_any"]), order("11", "Vali")]);
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await markSold(user, "Ali", "Vali");
     await confirmFinalize(user);
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
     const group = within(dialog).getByRole("group", { name: "№10 · Ali" });
@@ -149,24 +196,25 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     expect(submit).toBeEnabled();
     await user.click(submit);
 
-    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(1));
     expect(mocks.sell).toHaveBeenCalledWith({
       orderId: "10",
-      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0, proof },
+      data: { comment: SOLD_COMMENT, extraCost: 0, proof },
       headers: BULK_HEADERS,
     });
-    expect(mocks.sell).toHaveBeenCalledWith({
-      orderId: "11",
-      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0 },
-      headers: BULK_HEADERS,
+    await waitFor(() => expect(mocks.bulk).toHaveBeenCalledTimes(1));
+    expect(mocks.bulk).toHaveBeenCalledWith({
+      action: "sold",
+      orderIds: ["11"],
+      comment: SOLD_COMMENT,
+      headers: PLAIN_HEADERS,
     });
     expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument());
   });
 
-  it("belgilanmagan qator (isbotli ham) — isbot qadamiga kirmaydi, so'rovsiz kutilmoqda qoladi", async () => {
-    // Sukut natija yo'q (ega 2026-11-05): #10, #13 — «Sotildi»; #11 (market sotishda isbot so'raydi) va #12 —
-    // belgilanmagan, yakunlashda kutilmoqda holatida qoladi.
+  it("belgilanmagan isbotli qator ham (sukut «sotildi») isbot qadamiga kiradi; «Ertaga» — so'rovsiz", async () => {
+    // #10, #11 — market sotishda isbot so'raydi, belgilanmagan (sukut «sotildi»); #12 — «Ertaga»; #13 — belgisiz oddiy.
     serve([
       order("10", "Ali", ["sell_any"]),
       order("11", "Vali", ["sell_any"]),
@@ -176,91 +224,94 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await markSold(user, "Ali", "Hasan");
-    // Belgilanmagan qatorda hech qaysi natija tanlanmagan.
-    for (const name of ["Vali", "Gani"]) {
-      const radios = within(screen.getByRole("radiogroup", { name: `${name}: natija` })).getAllByRole("radio");
-      expect(radios).toHaveLength(3);
-      for (const radio of radios) expect(radio).not.toBeChecked();
-    }
+    await markAs(user, "Gani", "Ertaga");
+    for (const name of ["Ali", "Vali", "Hasan"]) expectDefaultSold(name);
 
-    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
-    const confirmDialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
-    expect(confirmDialog).toHaveTextContent("4 ta buyurtma: quyidagilar bajariladi");
-    expect(confirmDialog).toHaveTextContent("2 ta sotilgan deb belgilanadi");
-    expect(confirmDialog).toHaveTextContent("Sotilgan holatiga o'tadi");
-    expect(confirmDialog).toHaveTextContent("2 tasi belgilanmagan — o'zgarmaydi");
-    expect(confirmDialog).toHaveTextContent("Kutilmoqda holatida qoladi");
-    expect(within(confirmDialog).getByRole("note")).toHaveTextContent("2 ta buyurtma holati darhol o'zgaradi.");
-    await user.click(within(confirmDialog).getByRole("button", { name: "Tasdiqlash" }));
+    const confirm = await openConfirm(user);
+    expect(confirm).toHaveTextContent("4 ta buyurtma: quyidagilar bajariladi");
+    expect(confirm).toHaveTextContent("3 ta sotilgan deb belgilanadi");
+    expect(confirm).toHaveTextContent("Sotilgan holatiga o'tadi — 3 tasi belgilanmagan (skanerlanmagan)");
+    expect(confirm).toHaveTextContent("1 tasi ertaga qoladi");
+    expect(confirm).not.toHaveTextContent("o'zgarmaydi");
+    expect(within(confirm).getByRole("note")).toHaveTextContent("3 ta buyurtma holati darhol o'zgaradi.");
+    // Belgilash katagisiz «Tasdiqlash» o'chiq.
+    expect(within(confirm).getByRole("button", { name: "Tasdiqlash" })).toBeDisabled();
+    expect(
+      within(confirm).getByRole("checkbox", { name: "Belgilanmagan 3 ta buyurtma SOTILISHINI tushunaman" }),
+    ).not.toBeChecked();
+    await confirmDialog(user, confirm);
 
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
-    expect(dialog).toHaveTextContent("1 ta buyurtma uchun market rasm yoki video isbot talab qiladi");
+    expect(dialog).toHaveTextContent("2 ta buyurtma uchun market rasm yoki video isbot talab qiladi");
     expect(within(dialog).getByRole("group", { name: "№10 · Ali" })).toBeInTheDocument();
-    // #11 ham isbot talab qiladi, lekin belgilanmagan — undan isbot so'ralmaydi.
-    expect(within(dialog).queryByRole("group", { name: "№11 · Vali" })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("group", { name: "№11 · Vali" })).toBeInTheDocument();
     expect(within(dialog).queryByRole("group", { name: "№12 · Gani" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("group", { name: "№13 · Hasan" })).not.toBeInTheDocument();
     expect(dialog).toHaveTextContent("Qolgan 1 ta buyurtma isbotsiz yakunlanadi.");
-    expect(dialog).toHaveTextContent("Isbot tanlandi: 0 / 1");
+    expect(dialog).toHaveTextContent("Isbot tanlandi: 0 / 2");
 
-    const proof = image("isbot_10.jpg");
-    await user.upload(proofInput(within(dialog).getByRole("group", { name: "№10 · Ali" })), proof);
-    expect(dialog).toHaveTextContent("Isbot tanlandi: 1 / 1");
+    const proof10 = image("isbot_10.jpg");
+    const proof11 = image("isbot_11.jpg");
+    await user.upload(proofInput(within(dialog).getByRole("group", { name: "№10 · Ali" })), proof10);
+    expect(within(dialog).getByRole("button", { name: "Yakunlash" })).toBeDisabled();
+    await user.upload(proofInput(within(dialog).getByRole("group", { name: "№11 · Vali" })), proof11);
+    expect(dialog).toHaveTextContent("Isbot tanlandi: 2 / 2");
     await user.click(within(dialog).getByRole("button", { name: "Yakunlash" }));
 
     await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(2));
     expect(mocks.sell).toHaveBeenCalledWith({
       orderId: "10",
-      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0, proof },
+      data: { comment: SOLD_COMMENT, extraCost: 0, proof: proof10 },
       headers: BULK_HEADERS,
     });
     expect(mocks.sell).toHaveBeenCalledWith({
-      orderId: "13",
-      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0 },
+      orderId: "11",
+      data: { comment: SOLD_COMMENT, extraCost: 0, proof: proof11 },
       headers: BULK_HEADERS,
     });
-    // Belgilanmaganlar — hech qanday so'rov yo'q.
-    for (const orderId of ["11", "12"]) {
-      expect(mocks.sell).not.toHaveBeenCalledWith(expect.objectContaining({ orderId }));
-    }
+    await waitFor(() => expect(mocks.bulk).toHaveBeenCalledTimes(1));
+    expect(bulkCalls()[0]).toEqual({ action: "sold", orderIds: ["13"], comment: SOLD_COMMENT, headers: PLAIN_HEADERS });
+    // «Ertaga» — hech qanday so'rov yo'q.
+    expect(mocks.sell).not.toHaveBeenCalledWith(expect.objectContaining({ orderId: "12" }));
     expect(mocks.cancel).not.toHaveBeenCalled();
     expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
-    expect(await screen.findByText(/2 ta belgilanmagan buyurtma o'zgarmadi\./)).toBeInTheDocument();
-    // Yakunlangandan keyin ham belgilanmaganlar uchun kechikkan so'rov yo'q.
+    expect(await screen.findByText(/1 ta buyurtma ertaga qoldirildi\./)).toBeInTheDocument();
+    expect(screen.queryByText(/belgilanmagan buyurtma o'zgarmadi/)).not.toBeInTheDocument();
+    // Yakunlangandan keyin ham kechikkan so'rov yo'q.
     expect(mocks.sell).toHaveBeenCalledTimes(2);
+    expect(mocks.bulk).toHaveBeenCalledTimes(1);
   });
 
-  it("isbot faqat belgilanmagan qatorga kerak bo'lsa — isbot qadamisiz darhol yakunlanadi", async () => {
-    // #10 — market sotishda isbot so'raydi, lekin belgilanmagan: isbot qadamini ochmaydi, so'rov ketmaydi;
-    // #11 — «Sotildi», isbotsiz darhol yakunlanadi.
+  it("sotish isboti kerak qator «Ertaga» qoldirilsa — isbot qadamisiz darhol yakunlanadi", async () => {
+    // #10 — market sotishda isbot so'raydi, lekin «Ertaga»: isbot qadamini ochmaydi, so'rov ketmaydi;
+    // #11 — belgisiz (sukut «sotildi»), isbotsiz darhol bulk bilan yakunlanadi.
     serve([order("10", "Ali", ["sell_any"]), order("11", "Vali")]);
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await markSold(user, "Vali");
-    const radios = within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getAllByRole("radio");
-    expect(radios).toHaveLength(3);
-    for (const radio of radios) expect(radio).not.toBeChecked();
+    await markAs(user, "Ali", "Ertaga");
+    expectDefaultSold("Vali");
 
-    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
-    const confirmDialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
-    expect(confirmDialog).toHaveTextContent("1 ta sotilgan deb belgilanadi");
-    expect(confirmDialog).toHaveTextContent("1 tasi belgilanmagan — o'zgarmaydi");
-    expect(within(confirmDialog).getByRole("note")).toHaveTextContent("1 ta buyurtma holati darhol o'zgaradi.");
-    await user.click(within(confirmDialog).getByRole("button", { name: "Tasdiqlash" }));
+    const confirm = await openConfirm(user);
+    expect(confirm).toHaveTextContent("1 ta sotilgan deb belgilanadi");
+    expect(confirm).toHaveTextContent("1 tasi ertaga qoladi");
+    expect(within(confirm).getByRole("note")).toHaveTextContent("1 ta buyurtma holati darhol o'zgaradi.");
+    await confirmDialog(user, confirm);
 
     // Isbot qadami ochilsa isbot tanlanmaguncha so'rov ketmasdi — so'rov ketgani qadam yo'qligini bildiradi.
-    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.bulk).toHaveBeenCalledTimes(1));
     expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument();
-    expect(mocks.sell).toHaveBeenCalledWith({
-      orderId: "11",
-      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0 },
-      headers: BULK_HEADERS,
+    expect(mocks.bulk).toHaveBeenCalledWith({
+      action: "sold",
+      orderIds: ["11"],
+      comment: SOLD_COMMENT,
+      headers: PLAIN_HEADERS,
     });
+    expect(mocks.sell).not.toHaveBeenCalled();
     expect(mocks.cancel).not.toHaveBeenCalled();
     expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
-    expect(await screen.findByText(/1 ta belgilanmagan buyurtma o'zgarmadi\./)).toBeInTheDocument();
-    expect(mocks.sell).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/1 ta buyurtma ertaga qoldirildi\./)).toBeInTheDocument();
+    expect(mocks.bulk).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("dialog", { name: "Isbot yuklang" })).not.toBeInTheDocument();
   });
 
@@ -269,7 +320,6 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await markSold(user, "Ali");
     await confirmFinalize(user);
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
     const group = within(dialog).getByRole("group", { name: "№10 · Ali" });
@@ -294,7 +344,7 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     expect(await screen.findByText("Vali")).toBeInTheDocument();
     scan("TOKEN-11");
     expect(await screen.findByText("Vali bekor qilishga belgilandi")).toBeInTheDocument();
-    await markSold(user, "Ali", "Gani");
+    // Ali va Gani — belgisiz (sukut «sotildi»).
 
     await confirmFinalize(user);
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
@@ -313,8 +363,8 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     await user.upload(proofInput(sellGroup), sellProof);
     await user.click(within(dialog).getByRole("button", { name: "Yakunlash" }));
 
-    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(2));
-    expect(mocks.cancel).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.cancel).toHaveBeenCalledTimes(1));
     expect(mocks.cancel).toHaveBeenCalledWith({
       orderId: "11",
       data: { comment: "Kuryer tezkor amal orqali bekor qildi", extraCost: 0, proof: cancelProof },
@@ -323,30 +373,38 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     expect(mocks.sell).toHaveBeenCalledWith(
       expect.objectContaining({ orderId: "12", data: expect.objectContaining({ proof: sellProof }) }),
     );
-    expect(mocks.sell).toHaveBeenCalledWith(
-      expect.objectContaining({ orderId: "10", data: expect.not.objectContaining({ proof: expect.anything() }) }),
-    );
+    // #10 — isbotsiz, bulk sotish so'rovida (fayl yo'q).
+    await waitFor(() => expect(mocks.bulk).toHaveBeenCalledTimes(1));
+    expect(bulkCalls()[0]).toEqual({ action: "sold", orderIds: ["10"], comment: SOLD_COMMENT, headers: PLAIN_HEADERS });
+    expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
   });
 
-  it("isbotli buyurtmalarda parallellik 2 dan oshmaydi, isbotsizlar avvalgidek 6 tagacha", async () => {
+  it("isbotlilar ko'pi bilan 2 tadan parallel; isbotsizlar 20 tadan bo'lak bilan, bo'laklar ketma-ket, bitta kalit", async () => {
     const proofOrders = ["20", "21", "22", "23", "24"].map((id) => order(id, `Mijoz ${id}`, ["sell_any"]));
-    const plainOrders = ["30", "31", "32", "33", "34", "35", "36", "37"].map((id) => order(id, `Oddiy ${id}`));
+    const plainOrders = Array.from({ length: 45 }, (_, index) => order(String(100 + index), `Oddiy ${100 + index}`));
     serve([...proofOrders, ...plainOrders]);
 
-    const inFlight = { proof: 0, plain: 0 };
-    const peak = { proof: 0, plain: 0 };
-    mocks.sell.mockImplementation(async ({ data }: { data: { proof?: File } }) => {
-      const kind = data.proof ? "proof" : "plain";
-      inFlight[kind] += 1;
-      peak[kind] = Math.max(peak[kind], inFlight[kind]);
-      await new Promise((resolve) => setTimeout(resolve, 15));
-      inFlight[kind] -= 1;
+    const inFlight = { proof: 0, bulk: 0 };
+    const peak = { proof: 0, bulk: 0 };
+    const tick = () => new Promise((resolve) => setTimeout(resolve, 15));
+    mocks.sell.mockImplementation(async () => {
+      inFlight.proof += 1;
+      peak.proof = Math.max(peak.proof, inFlight.proof);
+      await tick();
+      inFlight.proof -= 1;
       return {};
+    });
+    mocks.bulk.mockImplementation(async (call: BulkCall) => {
+      inFlight.bulk += 1;
+      peak.bulk = Math.max(peak.bulk, inFlight.bulk);
+      await tick();
+      inFlight.bulk -= 1;
+      return bulkBody(call);
     });
 
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
-    await markSold(user, ...[...proofOrders, ...plainOrders].map(({ customer }) => customer.name));
+    expect(await screen.findByText("Oddiy 144")).toBeInTheDocument();
     await confirmFinalize(user);
 
     const dialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
@@ -356,27 +414,39 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     }
     await user.click(within(dialog).getByRole("button", { name: "Yakunlash" }));
 
-    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(13));
+    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(5));
+    await waitFor(() => expect(mocks.bulk).toHaveBeenCalledTimes(3));
     expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
+    expect(screen.getByText(/50 ta buyurtma muvaffaqiyatli yakunlandi/)).toBeInTheDocument();
     expect(peak.proof).toBe(2);
-    expect(peak.plain).toBeGreaterThan(2);
-    expect(peak.plain).toBeLessThanOrEqual(6);
-  });
+    // 45 ta isbotsiz = 3 ta bulk so'rov (20 + 20 + 5), bir vaqtda faqat bittasi; hammasi sahifa tartibida.
+    expect(peak.bulk).toBe(1);
+    expect(bulkCalls().map((call) => call.orderIds.length)).toEqual([20, 20, 5]);
+    expect(bulkCalls().flatMap((call) => call.orderIds)).toEqual(plainOrders.map(({ id }) => id));
+    expect(bulkCalls().every((call) => call.action === "sold")).toBe(true);
+    // Bitta yakunlashning barcha bo'laklari — ayni `Idempotency-Key`.
+    const keys = new Set(bulkCalls().map((call) => call.headers?.["Idempotency-Key"]));
+    expect(keys.size).toBe(1);
+    expect([...keys][0]).toMatch(/^courier-bulk:[^:]+$/);
+  }, 30_000);
 
   it("xato berganlar ro'yxati — har buyurtma backend sababi bilan, sahifadagi tartibda; bajarilganlar soni", async () => {
-    // #11 — isbotli (alohida navbatda), #12 — isbotsiz: ro'yxat baribir sahifa tartibida.
+    // #11 — isbotli (yakka so'rov, alohida navbatda), #12 — isbotsiz (bulk javobidagi `failed`): ro'yxat baribir
+    // sahifa tartibida.
     serve([order("10", "Ali"), order("11", "Vali", ["sell_any"]), order("12", "Gani")]);
     mocks.sell.mockImplementation(async ({ orderId }: { orderId: string }) => {
       if (orderId === "11") {
         throw { response: { data: { message: "Buyurtma holati sotishga mos emas" } } };
       }
-      if (orderId === "12") throw {};
       return {};
     });
+    // #12 — server sababsiz rad etdi (biznes xatosi, qayta yuborilmaydi).
+    mocks.bulk.mockImplementation(async (call: BulkCall) =>
+      bulkBody(call, [{ order_id: "12", status_code: 400, message: "" }]),
+    );
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await markSold(user, "Ali", "Vali", "Gani");
     await confirmFinalize(user);
     const proofDialog = await screen.findByRole("dialog", { name: "Isbot yuklang" });
     await user.upload(proofInput(within(proofDialog).getByRole("group", { name: "№11 · Vali" })), image("isbot_11.jpg"));
@@ -393,6 +463,9 @@ describe("CourierBulkPage — isbot qadami (j9KFyqlS)", () => {
     expect(rows[1]).toHaveTextContent("№12 · Gani");
     expect(rows[1]).toHaveTextContent("Server sababini ko'rsatmadi");
     expect(screen.queryByText("Kun yakunlandi")).not.toBeInTheDocument();
+    // 400 — qayta yuborilmaydi: bitta bulk so'rov (#10, #12).
+    expect(mocks.bulk).toHaveBeenCalledTimes(1);
+    expect(bulkCalls()[0].orderIds).toEqual(["10", "12"]);
 
     await user.click(within(dialog).getByRole("button", { name: "Tushunarli" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Yakunlashda xatolik" })).not.toBeInTheDocument());

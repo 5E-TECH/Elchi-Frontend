@@ -15,8 +15,6 @@
   "confirmCancelOneHint": "№{{id}} · {{name}} — bekor qilingan holatiga o'tadi",
   "confirmTomorrow": "{{count}} tasi ertaga qoladi",
   "confirmTomorrowHint": "Kutilmoqda holatida qoladi",
-  "confirmUnmarked": "{{count}} tasi belgilanmagan — o'zgarmaydi",
-  "confirmUnmarkedHint": "Kutilmoqda holatida qoladi",
   "confirmAction": "Tasdiqlash",
   "confirmBack": "Orqaga",
   "scanMissingTitle": "Buyurtma topilmadi",
@@ -33,10 +31,10 @@
   "finalizeErrorTitle": "Yakunlashda xatolik",
   "finalizeNothing": "Yakunlanadigan buyurtma yo'q — ertaga qoldirilganlar kutilmoqda holatida qoladi.",
   "finalizeTomorrowKept": "{{count}} ta buyurtma ertaga qoldirildi.",
-  "finalizeUnmarkedKept": "{{count}} ta belgilanmagan buyurtma o'zgarmadi.",
   "page": {
     "clearMarks": "Belgilarni tozalash",
-    "finalize": "Kunni yakunlash"
+    "finalize": "Kunni yakunlash",
+    "cancelOnly": "Faqat bekorlar"
   },
   "stats": {
     "label": "Kun yakuni",
@@ -45,7 +43,7 @@
     "pendingCourier": "Sizga biriktirilgan, yakunlanmagan",
     "pendingManager": "Filial kuryerlarida, yakunlanmagan",
     "sold": "Sotiladi",
-    "soldUnmarked": "Belgilanmagan: <strong>{{count}} ta</strong> — o'zgarmaydi",
+    "soldUnmarked": "Shundan belgilanmagan: <strong>{{count}} ta</strong>",
     "cancel": "Bekor qilinadi",
     "cancelHint": "Bekor qilingan holatiga o'tadi",
     "tomorrow": "Ertaga qoladi",
@@ -68,7 +66,7 @@
   "list": {
     "title": "Kutilayotgan buyurtmalar",
     "titleShort": "Kutilayotganlar",
-    "description": "Belgilanmaganlari o'zgarmaydi",
+    "description": "Belgilanmaganlari sotiladi",
     "search": "Ism, telefon yoki raqam",
     "searchLabel": "Buyurtmalarni ism, telefon yoki raqam bo'yicha qidirish",
     "filterLabel": "Natija bo'yicha filtr",
@@ -95,7 +93,6 @@
     "noMatchTitle": "Buyurtma topilmadi",
     "noMatchHint": "Qidiruv yoki natija filtrini o'zgartiring.",
     "replacementHint": "Almashtirish — «Buyurtmalar»dan «Eski mahsulotni oldim» bilan soting",
-    "courierHeldHint": "Kuryer qo'lida — uni kuryerning o'zi sotadi",
     "lastError": "Yakunlanmadi: {{reason}}"
   },
   "states": {
@@ -105,7 +102,9 @@
   "confirm": {
     "soldMarked": "Sotilgan holatiga o'tadi",
     "irreversibleTitle": "Bu amalni ortga qaytarib bo'lmaydi",
-    "irreversibleText": "{{count}} ta buyurtma holati darhol o'zgaradi."
+    "irreversibleText": "{{count}} ta buyurtma holati darhol o'zgaradi.",
+    "soldUnmarkedHint": "Sotilgan holatiga o'tadi — {{count}} tasi belgilanmagan (skanerlanmagan)",
+    "managerOnBehalf": "Kuryer qo'lidagi {{count}} ta buyurtma kuryer nomidan sotiladi — naqd pul kuryer kassasida (kuryer o'zi sotgandagidek)."
   },
   "orderLabel": "№{{id}} · {{name}}",
   "actionSell": "Sotish",
@@ -126,7 +125,7 @@
   "camera": {
     "context": "{{value}} ta kutilayotgan buyurtma",
     "meter": "ta skanerlandi",
-    "unmarked": "Belgilanmagan {{value}} ta buyurtma o'zgarmaydi.",
+    "unmarked": "Belgilanmagan {{value}} ta buyurtma sotiladi.",
     "listTitle": "Skanerlanganlar",
     "listDescription": "{{done}} / {{total}} · {{cancel}} ta bekor, {{tomorrow}} ta ertaga",
     "markedCancel": "Bekor qilishga belgilandi №{{id}} · {{name}}",
@@ -137,9 +136,15 @@
   "confirmReplacementHint": "Kutilmoqda holatida qoladi — eski mahsulotni olib, «Buyurtmalar»dan «Eski mahsulotni oldim» bilan soting",
   "finalizeReplacementKept": "{{count}} ta almashtirish buyurtmasi «Buyurtmalar»dan sotiladi.",
   "finalizeNothingPlain": "Yakunlanadigan buyurtma yo'q.",
-  "finalizeCourierHeldKept": "{{count}} ta buyurtma kuryer qo'lida — ularni kuryerning o'zi sotadi.",
-  "confirmCourierHeld": "{{count}} ta buyurtma kuryer qo'lida — sotilmaydi",
-  "confirmCourierHeldHint": "Kutilmoqda holatida qoladi — uni kuryerning o'zi sotadi",
   "noPermissionTitle": "Sotish va bekor qilish ruxsati yo'q",
-  "noPermissionText": "Kunni yakunlash uchun superadmin sizga sotish/bekor ruxsatini berishi kerak."
+  "noPermissionText": "Kunni yakunlash uchun superadmin sizga sotish/bekor ruxsatini berishi kerak.",
+  "scanMovedTitle": "Belgi o'zgartirildi",
+  "bulkCancelCommentManager": "Menejer tezkor amal orqali bekor qildi",
+  "bulkSoldCommentManager": "Menejer tezkor amal orqali sotildi deb yakunladi",
+  "confirmAcknowledge": "Belgilanmagan {{count}} ta buyurtma SOTILISHINI tushunaman",
+  "cancelOnlyTitle": "Faqat bekorlarni bajarish",
+  "cancelOnlyDescription": "{{count}} ta buyurtma bekor qilinadi. Qolganlari o'zgarmaydi — ularni keyin «Kunni yakunlash» bilan yoping.",
+  "cancelOnlyAction": "Bekor qilish",
+  "cancelOnlyNothing": "Bekor qilishga belgilangan buyurtma yo'q.",
+  "finalizeProgress": "Bajarilmoqda: {{done}} / {{total}}"
 }

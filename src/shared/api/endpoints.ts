@@ -197,6 +197,9 @@ export const API_ENDPOINTS = {
     PARTLY_SELL: (id: string | number) => `orders/partly-sell/${id}`, // POST
     ROLLBACK: (id: string | number) => `orders/rollback/${id}`, // POST
     CANCEL: (id: string | number) => `orders/cancel/${id}`, // POST courier cancel (proof per §5)
+    // «Tezkor amal» — kunni yakunlash: POST { order_ids (1–50), comment? } → { succeeded, failed[{order_id,status_code,message}] }
+    BULK_SELL: "orders/bulk/sell",
+    BULK_CANCEL: "orders/bulk/cancel", // POST { order_ids, comment?, reason? }
     EXTRA_COST_APPROVALS: "orders/extra-cost-approvals", // GET pending market approvals
     EXTRA_COST_APPROVAL_APPROVE: (id: string | number) =>
       `orders/extra-cost-approvals/${id}/approve`,

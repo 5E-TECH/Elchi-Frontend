@@ -35,7 +35,6 @@ import {
   type CourierBulkOrder,
   type CourierBulkResultFilter,
   type CourierBulkSort,
-  type CourierBulkViewer,
 } from "../model/courierBulk";
 import { ResultControl } from "./ResultControl";
 
@@ -43,8 +42,6 @@ type CourierBulkOrdersProps = {
   query: QueryLike<CourierBulkOrder[]>;
   orders: CourierBulkOrder[];
   actions: Record<string, CourierBulkAction>;
-  /** Menejerda kuryer qo'lidagi buyurtma sotilmaydi (LC-04) — qatorda izoh. */
-  viewer: CourierBulkViewer;
   /** Oxirgi yakunlashda xato bergan buyurtmalar: id → backend xatosi (qatorda sababi). */
   rowErrors: Readonly<Record<string, unknown>>;
   onSetAction: (order: CourierBulkOrder, action: CourierBulkAction) => void;
@@ -86,7 +83,6 @@ export const CourierBulkOrders = ({
   query,
   orders,
   actions,
-  viewer,
   rowErrors,
   onSetAction,
   busy,
@@ -113,11 +109,11 @@ export const CourierBulkOrders = ({
         filterCourierBulkOrders(
           orders,
           actions,
-          isPhone ? { query: "", result: "all", viewer } : { query: search, result, viewer },
+          isPhone ? { query: "", result: "all" } : { query: search, result },
         ),
         sort,
       ),
-    [actions, isPhone, orders, result, search, sort, viewer],
+    [actions, isPhone, orders, result, search, sort],
   );
 
   // «Barchasi» — bo'sh qiymatli variant: filtr tanlangach maydonda × chiqadi (ega qarori 2026-10-16).
@@ -133,29 +129,26 @@ export const CourierBulkOrders = ({
     <ResultControl
       layout={layout}
       value={getCourierBulkOrderAction(order.id, actions)}
+      implicit={!isCourierBulkOrderMarked(order.id, actions)}
       name={order.customer?.name ?? `№${order.id}`}
       disabled={busy}
       onChange={(action) => onSetAction(order, action)}
     />
   );
-  // «Belgilanmagan» — natija tanlanmagan qator (yakunlashda o'zgarmaydi). `getCourierBulkUnmarkedCount` bilan bir xil.
+  // «Belgilanmagan» — qo'lda / skan bilan belgi qo'yilmagan qator: yakunlashda SUKUT bo'yicha sotiladi (qatorda
+  // «Sotildi» tanlangan ko'rinadi). `getCourierBulkUnmarkedCount` bilan bir xil.
   const unmarkedBadge = (order: CourierBulkOrder) =>
     isCourierBulkOrderMarked(order.id, actions) ? null : (
       <Badge className="shrink-0">{t("list.unmarked")}</Badge>
     );
-  // Bu yerdan yopilmaydigan qator — qisqa izoh: eski mahsulot olinmagan almashtirish (lQjt6sKP, belgi bilan),
-  // menejerda kuryer qo'lidagi (LC-04). Oxirgi yakunlashda xato bergan qatorda — backend sababi (natija oynasi
-  // yopilgach ham).
+  // Bu yerdan yopilmaydigan qator — qisqa izoh: eski mahsulot olinmagan almashtirish (lQjt6sKP, belgi bilan).
+  // Oxirgi yakunlashda xato bergan qatorda — backend sababi (natija oynasi yopilgach ham).
   const rowNote = (order: CourierBulkOrder) => {
-    const block = getCourierBulkSellBlock(order, viewer);
+    const block = getCourierBulkSellBlock(order);
     const hold = block === "replacement" ? (
       <span className="flex min-w-0 flex-wrap items-center gap-1.5" data-testid="courier-bulk-replacement">
         <ReplacementTag order={order} />
         <span className="text-[13px] text-warning-fg">{t("list.replacementHint")}</span>
-      </span>
-    ) : block === "courierHeld" ? (
-      <span className={cx(NOTE_CLASS, "text-warning-fg")} data-testid="courier-bulk-courier-held">
-        {t("list.courierHeldHint")}
       </span>
     ) : null;
     const failed = Object.prototype.hasOwnProperty.call(rowErrors, order.id) ? (
