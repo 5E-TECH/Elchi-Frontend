@@ -16,26 +16,39 @@ const TINT: Record<CourierBulkAction, keyof typeof SEGMENT_TINT> = {
 const NONE = "" as const;
 
 type ResultControlProps = {
-  /** Qatordagi natija; `null` — belgilanmagan (sukut natija yo'q, yakunlashda o'zgarmaydi). */
+  /** Qatordagi natija (belgilanmagani — sukut «sotildi», BeePost modeli); `null` — hech qaysi tanlanmagan. */
   value: CourierBulkAction | null;
   /** Mijoz nomi — guruh nomi «{name}: natija». */
   name: string;
   onChange: (value: CourierBulkAction) => void;
+  /**
+   * Natija sukut bo'yicha («Sotildi» belgilanmagan qatorda). Shunda «Sotildi» allaqachon tanlangan ko'rinadi va
+   * `SegmentedControl` uni qayta bosishni e'tiborsiz qoldiradi — bosish baribir ANIQ «sotildi» belgisini qo'yadi
+   * («Belgilanmagan» yo'qoladi, tasdiq katagi sanog'idan chiqadi).
+   */
+  implicit?: boolean;
   disabled?: boolean;
   /** `table` — jadval qatorida ixcham; `list` — planshet/telefon kartasida to'liq enli, har variant ≥ 44 px. */
   layout: "table" | "list";
 };
 
 /**
- * Qator natijasi: «Sotildi | Bekor | Ertaga» (maket `courier-courier-bulk-main`). Belgilanmagan qatorda hech qaysi
- * variant tanlanmagan (ega 2026-11-05: «default hech nimada turmasligi kerak») — variant tanlansa belgi qo'yiladi va
+ * Qator natijasi: «Sotildi | Bekor | Ertaga» (maket `courier-courier-bulk-main`). Belgilanmagan qatorda «Sotildi»
+ * tanlangan ko'rinadi — yakunlashda u sotiladi (ega 2026-11-21, BeePost modeli); variant tanlansa belgi qo'yiladi va
  * guruh o'sha ton fonida bo'ladi. `SegmentedControl` qiymati hech bir variantga mos kelmasa hech biri `aria-checked`
  * emas, Tab guruhning birinchi faol variantiga kiradi.
  */
-export const ResultControl = ({ value, name, onChange, disabled = false, layout }: ResultControlProps) => {
+export const ResultControl = ({
+  value,
+  name,
+  onChange,
+  implicit = false,
+  disabled = false,
+  layout,
+}: ResultControlProps) => {
   const { t } = useTranslation("courierBulk");
 
-  return (
+  const control = (
     <SegmentedControl<CourierBulkAction | typeof NONE>
       ariaLabel={t("list.resultLabel", { name })}
       value={value ?? NONE}
@@ -53,5 +66,24 @@ export const ResultControl = ({ value, name, onChange, disabled = false, layout 
         SEGMENT_TINT[value ? TINT[value] : "none"],
       )}
     />
+  );
+
+  const promoteImplicit = implicit && value === "sold" && !disabled;
+  return (
+    // Sukut «Sotildi» qayta bosilsa (sichqoncha, Space / Enter) — aniq belgi qo'yiladi. O'ram DOIM bor: daraxt
+    // o'zgarmasin (aks holda guruh qayta yaratilib, klaviatura fokusi yo'qolardi).
+    <div
+      className="contents"
+      onClickCapture={
+        promoteImplicit
+          ? (event) => {
+              const radio = (event.target as HTMLElement).closest<HTMLElement>('[role="radio"]');
+              if (radio?.dataset.value === "sold") onChange("sold");
+            }
+          : undefined
+      }
+    >
+      {control}
+    </div>
   );
 };

@@ -1,21 +1,20 @@
 // dizayn-v2: courier-courier-bulk-main, manager-courier-bulk-main, courier-courier-bulk-confirm-dialog
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { useSelector } from "react-redux";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
   Check,
-  CircleDashed,
   CircleX,
   PackageCheck,
   Repeat,
   RotateCcw,
-  UserRound,
   Zap,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useOrders } from "../../entities/orders";
+import { isCourierHeldOrder } from "../../entities/orders/custody";
 import type { OrderListItem } from "../../entities/order/types/order";
 import { createIdempotencyKey } from "../../entities/warehouse/lib/idempotency";
 import type { RootState } from "../../app/config/store";
@@ -31,12 +30,12 @@ import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { orderByRecent, scanNotify, useRecentScans } from "../../shared/lib/scanner/scanSession";
 import type { ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
 import {
-  COURIER_BULK_CONCURRENCY,
   COURIER_BULK_PROOF_CONCURRENCY,
   COURIER_BULK_REQUEST_HEADERS,
   extractCourierBulkOrders,
   extractCourierBulkTotal,
   getCourierBulkActionsAfterFinalize,
+  getCourierBulkCancelOnlyTasks,
   getCourierBulkCounts,
   getCourierBulkFinalizeTasks,
   getCourierBulkKept,
@@ -45,6 +44,7 @@ import {
   hasAllCourierBulkProofs,
   isCourierBulkOrderMarked,
   mergeCourierBulkOrders,
+  runCourierBulkAction,
   runLimited,
   splitCourierBulkTasksByProof,
   getCourierBulkIdempotencyKey,
@@ -54,8 +54,12 @@ import {
   type CourierBulkFinalizeTask,
   type CourierBulkOrder,
   type CourierBulkScanMode,
-  type CourierBulkViewer,
 } from "./model/courierBulk";
+import {
+  pruneCourierBulkActions,
+  readCourierBulkMarks,
+  writeCourierBulkMarks,
+} from "./model/courierBulkMarksStorage";
 import { useIsBelowLg } from "./model/useIsBelowLg";
 import { BulkAlert } from "./ui/BulkAlert";
 import { CourierBulkOrders } from "./ui/CourierBulkOrders";
@@ -75,7 +79,9 @@ type ProofStep = {
 };
 
 /** Yakunlashda so'rov ketmaydigan buyurtmalar soni, sababi bo'yicha (`getCourierBulkKept`). */
-type KeptCounts = { unmarked: number; tomorrow: number; replacement: number; courierHeld: number };
+type KeptCounts = { tomorrow: number; replacement: number };
+
+const NOTHING_KEPT: KeptCounts = { tomorrow: 0, replacement: 0 };
 
 const COURIER_BULK_QUERY_KEY = ["orders", "courier", "bulk", "waiting"] as const;
 
@@ -93,6 +99,10 @@ const fetchAllCourierWaitingOrders = async () => {
         status: "waiting",
         page,
         limit: COURIER_BULK_PAGE_LIMIT,
+        // Menejer: faqat filialda / filial kuryerlarida JISMONAN turganlar — sota/bekor qila oladiganlari (BE
+        // `scope=actionable`; yaratilgan filial bo'yicha boshqa filialdagi buyurtma chiqib, 400 bermasin). Kuryerga
+        // ta'sir qilmaydi.
+        scope: "actionable",
       },
     });
 
@@ -111,9 +121,12 @@ const fetchAllCourierWaitingOrders = async () => {
 /**
  * «TEZKOR AMAL» — `/courier-bulk` (kuryer; REGIONAL/HYBRID menejer — filial kuryerlarining kutilayotganlari, backend
  * filialga cheklaydi). Kun yakunida har buyurtma natijasi belgilanadi: «Sotildi» — sotiladi, «Bekor» — bekor
- * qilinadi, «Ertaga» — so'rovsiz kutilmoqda holatida qoladi (FE-CB-09). Sukut natija YO'Q (ega 2026-11-05):
- * belgilanmagani ham so'rovsiz kutilmoqda qoladi. Belgilash: qatordagi «Sotildi | Bekor | Ertaga», USB skaner yoki
- * kamera (skanerlash rejimi bo'yicha).
+ * qilinadi, «Ertaga» — so'rovsiz kutilmoqda holatida qoladi (FE-CB-09). BEEPOST MODELI (ega 2026-11-21): sukut
+ * natija — «Sotildi»: kuryer kun oxirida faqat qaytgan (bekor) va ertaga qoladigan posilkalarni skanerlaydi,
+ * qolgani sotiladi (tasdiq oynasida belgilash katagi bilan). Boshqa rejimda qayta skanerlash belgini o'sha rejimga
+ * ko'chiradi; belgilar brauzerda saqlanadi (sahifa yangilansa yo'qolmaydi); «Faqat bekorlar» — sotuvsiz bekor.
+ * Menejer kuryer qo'lidagi buyurtmani kuryer nomidan sotadi (BE LC-04, pul kuryer kassasi orqali).
+ * Belgilash: qatordagi «Sotildi | Bekor | Ertaga», USB skaner yoki kamera (skanerlash rejimi bo'yicha).
  *
  * Maketlar: `courier-courier-bulk-main` (ikkala rol uchun bitta tartib; menejerda faqat «Kutilayotgan» izohi
  * boshqa — Q8), tasdiq oynasi `courier-courier-bulk-confirm-dialog` (`useConfirm`).
@@ -126,13 +139,15 @@ const fetchAllCourierWaitingOrders = async () => {
  * «Bekor qilish» belgini olib tashlaydi (server amali hali yo'q). «Tugatish» kamerani yopadi — yakunlash sahifadagi
  * «Kunni yakunlash» (tasdiq oynasi) bilan.
  *
- * Saqlangan: barcha sahifalarni yig'ish (100 tadan, 50 sahifagacha), skan takrori / topilmadi, yakunlash
- * `runLimited` + so'rov tanalari, xato bergan va «ertaga» belgilari qoladi. «Faqat bekorlarni qo'llash»
- * olib tashlandi (maketlarda yo'q — Q9).
+ * Saqlangan: barcha sahifalarni yig'ish (100 tadan, 50 sahifagacha), skan takrori / topilmadi, xato bergan va
+ * «ertaga» belgilari qoladi.
  *
- * Isbot (j9KFyqlS, dev cf13e85): tasdiqdan keyin market isbot talab qiladigan buyurtmalar bo'lsa — isbot qadami
- * (`CourierBulkProofDialog`, har buyurtmaga `ProofField`; hammasiga fayl tanlanmaguncha «Yakunlash» o'chiq).
- * Isbotlilar ko'pi bilan 2 tadan, qolganlari 6 tadan parallel; har so'rovda `X-Request-Source: courier-bulk`.
+ * YUBORISH: isbotsizlar BULK so'rov bilan (`POST /orders/bulk/cancel`, keyin `/bulk/sell`; 20 tadan bo'lak, bo'laklar
+ * ketma-ket, server har buyurtma natijasini qaytaradi) — ilgari har buyurtmaga alohida so'rov ketardi (100 ta = 100
+ * so'rov, gateway chegarasi 429 / order-service 500). Isbot (j9KFyqlS, dev cf13e85): tasdiqdan keyin market isbot
+ * talab qiladigan buyurtmalar bo'lsa — isbot qadami (`CourierBulkProofDialog`, har buyurtmaga `ProofField`; hammasiga
+ * fayl tanlanmaguncha «Yakunlash» o'chiq); ular yakka so'rov bilan, ko'pi bilan 2 tadan parallel. Har so'rovda
+ * `X-Request-Source: courier-bulk` va yakunlash kaliti (`Idempotency-Key`).
  * Xato berganlar — `CourierBulkResultDialog` (har biri backend sababi bilan, sahifa tartibida). Tanlangan isbot
  * shu buyurtma + amal uchun muvaffaqiyatgacha saqlanadi. Ikkala oynaga maket yo'q — eng yaqini:
  * `tizim-states-forms` + `courier-courier-bulk-confirm-dialog`.
@@ -143,12 +158,11 @@ const CourierBulkPage = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const isManager = role === "manager";
-  const viewer: CourierBulkViewer = isManager ? "manager" : "courier";
   // Menejer `can_sell_cancel` siz hech narsani sota ham, bekor qila ham olmaydi (backend 403) — yakunlash o'chiq.
   const managerCannotFinalize = isManager && !getUserCanSellCancel(currentUser);
   const isPhone = useIsPhone();
   const isBelowLg = useIsBelowLg();
-  const { SellOrder, CancelOrder } = useOrders();
+  const { SellOrder, CancelOrder, BulkOrderAction } = useOrders();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [isFinalizing, setIsFinalizing] = useState(false);
@@ -162,8 +176,30 @@ const CourierBulkPage = () => {
   });
   const { data: orders = [], isLoading, isFetching, refetch } = ordersQuery;
 
-  const [scanMode, setScanMode] = useState<CourierBulkScanMode>("cancel");
-  const [actions, setActions] = useState<Record<string, CourierBulkAction>>({});
+  // Belgilar brauzerda saqlanadi (foydalanuvchi bo'yicha): sahifa yangilansa / qaytilsa yo'qolmaydi.
+  const marksKey = `${role ?? ""}:${currentUser?.id ?? ""}`;
+  const [loadedMarksKey, setLoadedMarksKey] = useState(marksKey);
+  const [scanMode, setScanMode] = useState<CourierBulkScanMode>(() => readCourierBulkMarks(marksKey)?.scanMode ?? "cancel");
+  const [actions, setActions] = useState<Record<string, CourierBulkAction>>(
+    () => readCourierBulkMarks(marksKey)?.actions ?? {},
+  );
+  // Profil keyinroq yuklansa (kalit o'zgardi) — shu foydalanuvchining belgilari (holat render paytida — effektsiz).
+  if (loadedMarksKey !== marksKey) {
+    setLoadedMarksKey(marksKey);
+    const saved = readCourierBulkMarks(marksKey);
+    // Profil hali yuklanmagan paytda (kalitda id yo'q) qo'yilgan belgilar yo'qolmasin — saqlanganlar ustiga qo'shiladi.
+    const carry = loadedMarksKey.endsWith(":");
+    setActions(carry ? { ...(saved?.actions ?? {}), ...actions } : (saved?.actions ?? {}));
+    if (!carry) setScanMode(saved?.scanMode ?? "cancel");
+  }
+  const ordersSettled = ordersQuery.isSuccess && !isFetching && !isFinalizing;
+  useEffect(() => {
+    // Ro'yxat to'liq yuklangach — unda yo'q buyurtmalar (sotilgan, boshqa kuryerga o'tgan) belgisi saqlanmaydi.
+    const saved = ordersSettled ? pruneCourierBulkActions(actions, new Set(orders.map((order) => String(order.id)))) : actions;
+    writeCourierBulkMarks(marksKey, { actions: saved, scanMode });
+  }, [actions, marksKey, orders, ordersSettled, scanMode]);
+  // Yakunlash jarayoni (bo'laklar bajarilgani bo'yicha) — tugmada «Bajarilmoqda: N / M».
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [scanError, setScanError] = useState("");
   // Tasdiq oynasi ochiq: yuboriladiganlar ro'yxati oyna ochilishida olingan — skan belgilarni o'zgartirmasin.
   const [isConfirming, setIsConfirming] = useState(false);
@@ -176,16 +212,14 @@ const CourierBulkPage = () => {
   // Oxirgi yakunlashda xato bergan buyurtmalar (id → backend xatosi): qatorda sababi turadi — oyna yopilgach ham
   // buyurtma «o'zgarmay qolgan»dek ko'rinmasin. Belgi o'zgartirilsa yoki keyingi yakunlashda yangilanadi.
   const [rowErrors, setRowErrors] = useState<Record<string, unknown>>({});
-  // Skanerlangan token → buyurtma (takror skan rad etiladi; kamera «Bekor qilish» shu buyurtma tokenlarini bo'shatadi).
-  const scannedTokenRef = useRef<Map<string, string>>(new Map());
   const { recent: recentScanIds, touch: touchRecentScan, forget: forgetRecentScan, clear: clearRecentScans } =
     useRecentScans();
 
-  const counts = useMemo(() => getCourierBulkCounts(orders, actions, viewer), [actions, orders, viewer]);
+  const counts = useMemo(() => getCourierBulkCounts(orders, actions), [actions, orders]);
   const unmarkedCount = useMemo(() => getCourierBulkUnmarkedCount(orders, actions), [actions, orders]);
   const hasMarks = useMemo(() => orders.some((order) => isCourierBulkOrderMarked(order.id, actions)), [actions, orders]);
   const isInitialLoading = isLoading && orders.length === 0;
-  const isBusy = isFinalizing || SellOrder.isPending || CancelOrder.isPending;
+  const isBusy = isFinalizing || SellOrder.isPending || CancelOrder.isPending || BulkOrderAction.isPending;
 
 
   const forgetRowError = useCallback((orderId: string) => {
@@ -206,37 +240,35 @@ const CourierBulkPage = () => {
     [forgetRowError],
   );
 
-  /** Skan: tanlangan rejim belgisi; xuddi shu belgi qayta skanerlansa — aniq «sotildi». */
+  /**
+   * Skan (BeePost modeli): buyurtma tanlangan rejimga belgilanadi. Boshqa rejimda qayta skanerlansa — belgi o'sha
+   * rejimga KO'CHADI («Bekor» → «Ertaga» va aksincha); ayni rejimda qayta skanerlansa — «Qayta skaner» ogohlantirishi
+   * (belgi o'zgarmaydi). Ilgari takroriy token har doim rad etilardi — noto'g'ri rejimda skanerlangan posilkani skaner
+   * bilan tuzatib bo'lmasdi.
+   */
   const handleScanMatch = useCallback(
-    (order: OrderListItem, rawValue: string) => {
-      const tokenKey = rawValue.trim().toLowerCase() || order.id.toLowerCase();
+    (order: OrderListItem) => {
       const name = order.customer?.name ?? `#${order.id}`;
+      const previous = actions[order.id];
 
-      if (scannedTokenRef.current.has(tokenKey)) {
+      if (previous === scanMode) {
         scanNotify.warning(t("duplicateTitle"), { description: t("duplicateDescription") });
         void playScanFeedback("duplicate", t("duplicateDescription"));
         return;
       }
 
-      scannedTokenRef.current.set(tokenKey, order.id);
-      const next: CourierBulkAction = actions[order.id] === scanMode ? "sold" : scanMode;
-      setActions((prev) => ({ ...prev, [order.id]: prev[order.id] === scanMode ? "sold" : scanMode }));
+      const moved = previous === "cancel" || previous === "tomorrow";
+      setActions((prev) => ({ ...prev, [order.id]: scanMode }));
       forgetRowError(order.id);
       touchRecentScan(order.id);
       setScanError("");
-      scanNotify.success(t("scanSuccessTitle"), {
-        description: t(next === "cancel" ? "markedCancel" : next === "tomorrow" ? "markedTomorrow" : "camera.markedSold", {
-          name,
-          id: order.id,
-        }),
+      scanNotify.success(t(moved ? "scanMovedTitle" : "scanSuccessTitle"), {
+        description: t(scanMode === "cancel" ? "markedCancel" : "markedTomorrow", { name, id: order.id }),
         duration: 2000,
       });
       void playScanFeedback(
         "success",
-        t(next === "cancel" ? "camera.markedCancel" : next === "tomorrow" ? "camera.markedTomorrow" : "camera.markedSold", {
-          id: order.id,
-          name,
-        }),
+        t(scanMode === "cancel" ? "camera.markedCancel" : "camera.markedTomorrow", { id: order.id, name }),
         undefined,
         { voice: "selected" },
       );
@@ -251,7 +283,7 @@ const CourierBulkPage = () => {
     void playScanFeedback("missing", t("scanMissing"));
   }, [t]);
 
-  /** Kamera «Bekor qilish»: belgi olinadi (server amali yo'q), shu buyurtmani qayta skanerlash mumkin. */
+  /** Kamera «Bekor qilish»: belgi olinadi (server amali yo'q) — buyurtma yana sukut «sotildi»ga qaytadi. */
   const unmarkScannedOrder = useCallback(
     (orderId: string) => {
       setActions((prev) => {
@@ -260,7 +292,6 @@ const CourierBulkPage = () => {
         delete next[orderId];
         return next;
       });
-      for (const [token, id] of scannedTokenRef.current) if (id === orderId) scannedTokenRef.current.delete(token);
       forgetRecentScan(orderId);
       forgetRowError(orderId);
     },
@@ -323,7 +354,7 @@ const CourierBulkPage = () => {
       mode: scanMode,
       onModeChange: (value) => setScanMode(value === "tomorrow" ? "tomorrow" : "cancel"),
       progress: { done: scannedOrders.length, total: orders.length, label: t("camera.meter") },
-      // Belgilanmaganlar yakunlashda o'zgarmaydi (sukut natija yo'q) — kamerada ham shu aytiladi.
+      // Belgilanmaganlar yakunlashda sotiladi (sukut) — kamerada ham shu aytiladi.
       note: { title: t("camera.unmarked", { value: num(unmarkedCount) }) },
       list: cameraList,
       listTitle: t("camera.listTitle"),
@@ -341,7 +372,6 @@ const CourierBulkPage = () => {
   const clearActions = () => {
     setActions({});
     setRowErrors({});
-    scannedTokenRef.current.clear();
     clearRecentScans();
     setScanError("");
   };
@@ -349,10 +379,8 @@ const CourierBulkPage = () => {
   /** Natija xabaridagi «… qoldi» qatorlari — so'rov ketmagan buyurtmalar, sababi bilan. */
   const keptNotes = (kept: KeptCounts) =>
     [
-      kept.unmarked > 0 ? t("finalizeUnmarkedKept", { count: kept.unmarked }) : "",
       kept.tomorrow > 0 ? t("finalizeTomorrowKept", { count: kept.tomorrow }) : "",
       kept.replacement > 0 ? t("finalizeReplacementKept", { count: kept.replacement }) : "",
-      kept.courierHeld > 0 ? t("finalizeCourierHeldKept", { count: kept.courierHeld }) : "",
     ].filter(Boolean);
 
   const handleProofChange = useCallback((proofKey: string, file: File | undefined) => {
@@ -360,50 +388,80 @@ const CourierBulkPage = () => {
   }, []);
 
   /**
-   * So'rovlarni yuborish. Isbotsiz buyurtmalar 6 tadan, isbotlilar (fayl yuklash + amal) ko'pi bilan 2 tadan
-   * parallel; har so'rov `X-Request-Source: courier-bulk` (audit) va shu urinishdagi barqaror `Idempotency-Key`
-   * bilan — vaqtinchalik xato (429, 5xx, tarmoq) bo'lsa ayni kalit bilan qayta yuboriladi (`withCourierBulkRetry`).
+   * So'rovlarni yuborish. Isbotsizlar — BULK (`runCourierBulkAction`: avval barcha bekorlar, keyin sotuvlar, 20 tadan
+   * bo'lak, bo'laklar ketma-ket); isbotlilar (fayl yuklash + amal) — yakka so'rov, ko'pi bilan 2 tadan parallel. Har
+   * so'rov `X-Request-Source: courier-bulk` (audit) va shu yakunlashning barqaror `Idempotency-Key` i bilan —
+   * vaqtinchalik xato (429, 5xx, tarmoq) bo'lsa ayni kalit bilan qayta yuboriladi (amal ikki marta bajarilmaydi).
    */
   const runFinalize = async (tasks: FinalizeTask[], kept: KeptCounts) => {
     // Ro'yxat so'rovi birinchi so'rovdan OLDIN o'chadi (sinxron render): javob React qayta chizishidan oldin kelsa ham
     // ["orders"] eskirishi ro'yxatni qayta so'ramaydi.
     flushSync(() => setIsFinalizing(true));
+    setProgress({ done: 0, total: tasks.length });
+    const advance = (count: number) =>
+      setProgress((previous) => (previous ? { ...previous, done: Math.min(previous.total, previous.done + count) } : previous));
     const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
+    const comment = {
+      cancel: t(isManager ? "bulkCancelCommentManager" : "bulkCancelComment"),
+      sold: t(isManager ? "bulkSoldCommentManager" : "bulkSoldComment"),
+    };
+
+    const runId = createIdempotencyKey();
+    const runPlain = async () => {
+      const outcome = new Map<string, PromiseSettledResult<unknown>>();
+      const headers = { ...COURIER_BULK_REQUEST_HEADERS, "Idempotency-Key": `courier-bulk:${runId}` };
+      // BeePost tartibi: avval bekorlar, keyin sotuvlar.
+      for (const action of ["cancel", "sold"] as const) {
+        const orderIds = plainTasks.filter((task) => task.action === action).map((task) => String(task.order.id));
+        if (orderIds.length === 0) continue;
+        const results = await runCourierBulkAction(
+          orderIds,
+          (chunk) => BulkOrderAction.mutateAsync({ action, orderIds: chunk, comment: comment[action], headers }),
+          { onChunkDone: advance },
+        );
+        results.forEach((result, orderId) => outcome.set(`${action}:${orderId}`, result));
+      }
+      return outcome;
+    };
 
     // Isbot faqat isbot talab qilinadigan buyurtmaga yuboriladi (keraksiz fayl yuklanmaydi).
-    const runId = createIdempotencyKey();
-    const runTask =
-      (withProof: boolean) =>
-      async ({ order, action }: FinalizeTask) => {
-        const proof = withProof ? proofs[getCourierBulkProofKey({ order, action })] : undefined;
-        const proofData = proof instanceof File ? { proof } : {};
-        // 429 / 5xx / tarmoq — kutib ayni kalit bilan qayta yuboriladi, buyurtma «o'tmay» qolmasin.
-        const headers = {
-          ...COURIER_BULK_REQUEST_HEADERS,
-          "Idempotency-Key": getCourierBulkIdempotencyKey(runId, action, order.id),
-        };
+    const runProofTask = async ({ order, action }: FinalizeTask) => {
+      const proof = proofs[getCourierBulkProofKey({ order, action })];
+      const proofData = proof instanceof File ? { proof } : {};
+      // 429 / 5xx / tarmoq — kutib ayni kalit bilan qayta yuboriladi, buyurtma «o'tmay» qolmasin.
+      const headers = {
+        ...COURIER_BULK_REQUEST_HEADERS,
+        "Idempotency-Key": getCourierBulkIdempotencyKey(runId, action, order.id),
+      };
+      try {
         await withCourierBulkRetry(() =>
           action === "cancel"
             ? CancelOrder.mutateAsync({
                 orderId: order.id,
-                data: { comment: t("bulkCancelComment"), extraCost: 0, ...proofData },
+                data: { comment: comment.cancel, extraCost: 0, ...proofData },
                 headers,
               })
             : SellOrder.mutateAsync({
                 orderId: order.id,
-                data: { comment: t("bulkSoldComment"), extraCost: 0, ...proofData },
+                data: { comment: comment.sold, extraCost: 0, ...proofData },
                 headers,
               }),
         );
-      };
+      } finally {
+        advance(1);
+      }
+    };
 
-    const [plainResults, proofResults] = await Promise.all([
-      runLimited(plainTasks, COURIER_BULK_CONCURRENCY, runTask(false)),
-      runLimited(proofTasks, COURIER_BULK_PROOF_CONCURRENCY, runTask(true)),
+    const [plainOutcome, proofResults] = await Promise.all([
+      runPlain(),
+      runLimited(proofTasks, COURIER_BULK_PROOF_CONCURRENCY, runProofTask),
     ]);
     // Natija har vazifaga o'zi bilan bog'lanadi (`runLimited` — kirish tartibida); xatolar ro'yxati sahifa tartibida.
     const settled = new Map<FinalizeTask, PromiseSettledResult<unknown>>();
-    plainTasks.forEach((task, index) => settled.set(task, plainResults[index]));
+    plainTasks.forEach((task) => {
+      const result = plainOutcome.get(`${task.action}:${String(task.order.id)}`);
+      if (result) settled.set(task, result);
+    });
     proofTasks.forEach((task, index) => settled.set(task, proofResults[index]));
     const { succeededOrderIds, failures } = summarizeCourierBulkResults(
       tasks,
@@ -411,6 +469,7 @@ const CourierBulkPage = () => {
     );
 
     setIsFinalizing(false);
+    setProgress(null);
     setProofStep((previous) => (previous ? { ...previous, open: false } : previous));
     // Bajarilganlar ro'yxatdan darhol olib tashlanadi (yangilanishni kutmasdan): aks holda ular bir lahza belgisiz
     // qolib, «eski holatiga qaytdi»dek ko'rinardi.
@@ -447,19 +506,29 @@ const CourierBulkPage = () => {
     });
   };
 
+  /** Tasdiqdan keyin: isbot kerak bo'lsa — isbot qadami, aks holda darhol yuborish. */
+  const startRun = async (tasks: FinalizeTask[], kept: KeptCounts) => {
+    // Market isbot talab qiladigan buyurtmalar (j9KFyqlS): isbotsiz backend 400 qaytaradi — avval isbot
+    // qadami. Isbot kerak bo'lmasa — qo'shimcha qadamsiz darhol yakunlanadi.
+    const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
+    if (proofTasks.length > 0) {
+      setProofStep({ open: true, tasks, proofTasks, plainCount: plainTasks.length, kept });
+      return;
+    }
+    await runFinalize(tasks, kept);
+  };
+
   const handleFinalize = async () => {
     if (orders.length === 0 || isBusy || managerCannotFinalize) return;
 
-    // "Ertaga" va belgilanmagan — so'rovsiz, buyurtma kutilmoqda holatida qoladi (FE-CB-09; sukut natija yo'q).
-    const tasks = getCourierBulkFinalizeTasks(orders, actions, viewer);
-    // So'rov ketmaydiganlar sababi bilan: belgilanmagan; «ertaga»; almashtirish (lQjt6sKP — «Eski mahsulotni oldim»
-    // tasdig'i «Buyurtmalar» sotish oynasida); menejerda kuryer qo'lidagi (LC-04).
-    const keptOrders = getCourierBulkKept(orders, actions, viewer);
+    // BeePost modeli: belgilanmagani — «sotildi»; «ertaga» — so'rovsiz kutilmoqda qoladi (FE-CB-09).
+    const tasks = getCourierBulkFinalizeTasks(orders, actions);
+    // So'rov ketmaydiganlar sababi bilan: «ertaga»; almashtirish (lQjt6sKP — «Eski mahsulotni oldim» tasdig'i
+    // «Buyurtmalar» sotish oynasida).
+    const keptOrders = getCourierBulkKept(orders, actions);
     const kept: KeptCounts = {
-      unmarked: keptOrders.unmarked.length,
       tomorrow: keptOrders.tomorrow.length,
       replacement: keptOrders.replacement.length,
-      courierHeld: keptOrders.courierHeld.length,
     };
 
     if (tasks.length === 0) {
@@ -474,12 +543,16 @@ const CourierBulkPage = () => {
 
     // «Kunni yakunlash» — tasdiqlash oynasi orqali (maket `courier-courier-bulk-confirm-dialog`).
     const cancelTasks = tasks.filter((task) => task.action === "cancel");
-    const soldCount = tasks.length - cancelTasks.length;
+    const soldTasks = tasks.filter((task) => task.action === "sold");
+    // Sukut bo'yicha sotiladiganlar (qo'lda / skan bilan belgilanmagan) — belgilash katagi bilan tasdiqlanadi.
+    const unmarkedSold = soldTasks.filter((task) => !isCourierBulkOrderMarked(task.order.id, actions)).length;
+    // Menejer: kuryer qo'lidagilari kuryer nomidan sotiladi (BE LC-04 — pul kuryer kassasi orqali).
+    const onBehalfSold = isManager ? soldTasks.filter((task) => isCourierHeldOrder(task.order)).length : 0;
     const consequences: ConfirmConsequence[] = [];
-    if (soldCount > 0) {
+    if (soldTasks.length > 0) {
       consequences.push({
-        text: t("confirmSold", { count: soldCount }),
-        hint: t("confirm.soldMarked"),
+        text: t("confirmSold", { count: soldTasks.length }),
+        hint: unmarkedSold > 0 ? t("confirm.soldUnmarkedHint", { count: unmarkedSold }) : t("confirm.soldMarked"),
         tone: "success",
         icon: PackageCheck,
       });
@@ -503,27 +576,12 @@ const CourierBulkPage = () => {
         icon: CalendarClock,
       });
     }
-    if (kept.unmarked > 0) {
-      consequences.push({
-        text: t("confirmUnmarked", { count: kept.unmarked }),
-        hint: t("confirmUnmarkedHint"),
-        icon: CircleDashed,
-      });
-    }
     if (kept.replacement > 0) {
       consequences.push({
         text: t("confirmReplacement", { count: kept.replacement }),
         hint: t("confirmReplacementHint"),
         tone: "warning",
         icon: Repeat,
-      });
-    }
-    if (kept.courierHeld > 0) {
-      consequences.push({
-        text: t("confirmCourierHeld", { count: kept.courierHeld }),
-        hint: t("confirmCourierHeldHint"),
-        tone: "warning",
-        icon: UserRound,
       });
     }
     setIsConfirming(true);
@@ -534,26 +592,57 @@ const CourierBulkPage = () => {
       size: "md",
       closable: true,
       consequences,
+      note: onBehalfSold > 0 ? t("confirm.managerOnBehalf", { count: onBehalfSold }) : undefined,
       children: (
         <BulkAlert tone="warning" role="note" title={t("confirm.irreversibleTitle")}>
           {t("confirm.irreversibleText", { count: tasks.length })}
         </BulkAlert>
       ),
+      // BeePost'dagi xavfsizlik katagi: skanerlanmay qolgan posilka ham sotiladi — ongli tasdiq.
+      acknowledge: unmarkedSold > 0 ? t("confirmAcknowledge", { count: unmarkedSold }) : undefined,
       confirmLabel: t("confirmAction"),
       confirmIcon: Check,
       cancelLabel: t("confirmBack"),
     }).finally(() => setIsConfirming(false));
     if (!confirmed) return;
 
-    // Market isbot talab qiladigan buyurtmalar (j9KFyqlS): isbotsiz backend 400 qaytaradi — avval isbot
-    // qadami. Isbot kerak bo'lmasa — qo'shimcha qadamsiz darhol yakunlanadi.
-    const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
-    if (proofTasks.length > 0) {
-      setProofStep({ open: true, tasks, proofTasks, plainCount: plainTasks.length, kept });
+    await startRun(tasks, kept);
+  };
+
+  /** «Faqat bekorlar» (BeePost «Faqat bekor»): «Bekor» belgilanganlar bekor qilinadi, sotuv so'rovi ketmaydi. */
+  const handleCancelOnly = async () => {
+    if (orders.length === 0 || isBusy || managerCannotFinalize) return;
+    const tasks = getCourierBulkCancelOnlyTasks(orders, actions);
+    if (tasks.length === 0) {
+      notify.info(t("cancelOnlyTitle"), { description: t("cancelOnlyNothing") });
       return;
     }
+    const single = tasks.length === 1 ? tasks[0].order : null;
+    setIsConfirming(true);
+    const confirmed = await confirm({
+      title: t("cancelOnlyTitle"),
+      description: t("cancelOnlyDescription", { count: tasks.length }),
+      icon: CircleX,
+      tone: "danger",
+      size: "md",
+      closable: true,
+      consequences: [
+        {
+          text: t("confirmCancel", { count: tasks.length }),
+          hint: single
+            ? t("confirmCancelOneHint", { id: single.id, name: single.customer?.name ?? `#${single.id}` })
+            : t("confirmCancelHint"),
+          tone: "danger",
+          icon: CircleX,
+        },
+      ],
+      confirmLabel: t("cancelOnlyAction"),
+      confirmIcon: CircleX,
+      cancelLabel: t("confirmBack"),
+    }).finally(() => setIsConfirming(false));
+    if (!confirmed) return;
 
-    await runFinalize(tasks, kept);
+    await startRun(tasks, NOTHING_KEPT);
   };
 
   const handleProofSubmit = () => {
@@ -570,9 +659,24 @@ const CourierBulkPage = () => {
       aria-haspopup="dialog"
       disabled={orders.length === 0 || managerCannotFinalize}
       loading={isBusy}
+      loadingText={progress ? t("finalizeProgress", { done: progress.done, total: progress.total }) : undefined}
       onClick={() => void handleFinalize()}
     >
       {t("page.finalize")}
+    </Button>
+  );
+  // «Faqat bekorlar» — faqat «Bekor» belgisi bo'lsa faol.
+  const hasCancelMarks = orders.some((order) => actions[order.id] === "cancel");
+  const cancelOnlyButton = (
+    <Button
+      variant="secondary"
+      leftIcon={CircleX}
+      fullWidth={isPhone}
+      aria-haspopup="dialog"
+      disabled={!hasCancelMarks || isBusy || managerCannotFinalize}
+      onClick={() => void handleCancelOnly()}
+    >
+      {t("page.cancelOnly")}
     </Button>
   );
 
@@ -587,6 +691,7 @@ const CourierBulkPage = () => {
               <Button variant="ghost" leftIcon={RotateCcw} disabled={!hasMarks || isBusy} onClick={clearActions}>
                 {t("page.clearMarks")}
               </Button>
+              {cancelOnlyButton}
               {finalizeButton}
             </>
           )
@@ -620,7 +725,6 @@ const CourierBulkPage = () => {
         query={ordersQuery}
         orders={orders}
         actions={actions}
-        viewer={viewer}
         rowErrors={rowErrors}
         onSetAction={setOrderAction}
         busy={isBusy}
@@ -634,8 +738,9 @@ const CourierBulkPage = () => {
       {isPhone ? (
         <>
           <div aria-hidden="true" className="h-[72px] shrink-0" />
-          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 border-t border-border bg-surface px-4 py-3">
-            {finalizeButton}
+          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 flex gap-2 border-t border-border bg-surface px-4 py-3">
+            {hasCancelMarks ? <div className="w-2/5 shrink-0">{cancelOnlyButton}</div> : null}
+            <div className="min-w-0 flex-1">{finalizeButton}</div>
           </div>
         </>
       ) : null}

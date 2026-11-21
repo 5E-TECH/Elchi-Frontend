@@ -3,6 +3,7 @@ import {
   extractCourierBulkOrders,
   extractCourierBulkTotal,
   filterCourierBulkOrders,
+  getCourierBulkCancelOnlyTasks,
   getCourierBulkCounts,
   getCourierBulkFinalizeLabelCounts,
   getCourierBulkFinalizeTasks,
@@ -38,69 +39,70 @@ describe("courierBulk model", () => {
     ]).map((order) => order.id)).toEqual(["1", "2", "3"]);
   });
 
-  it("counts explicit and scanned actions; an unmarked order counts only in total (no default «sold»)", () => {
+  it("counts explicit and scanned actions; an unmarked order counts as «sold» (BeePost default)", () => {
     const counts = getCourierBulkCounts(
       [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }],
       { "1": "sold", "2": "cancel", "3": "tomorrow" },
     );
 
-    // Belgilanmagan «4» hech qaysi natijaga kirmaydi — faqat jami (ega 2026-11-05: sukut natija yo'q).
-    expect(counts).toEqual({ cancel: 1, sold: 1, tomorrow: 1, total: 4 });
-    expect(getCourierBulkFinalizeLabelCounts(counts)).toEqual({ changed: 2, sold: 1 });
+    // Belgilanmagan «4» — sukut «sotildi» (ega 2026-11-21, BeePost modeli; 2026-11-05 dagi «sukut yo'q» bekor).
+    expect(counts).toEqual({ cancel: 1, sold: 2, tomorrow: 1, total: 4 });
+    expect(getCourierBulkFinalizeLabelCounts(counts)).toEqual({ changed: 2, sold: 2 });
     expect(getCourierBulkOrderAction("1", { "1": "sold" })).toBe("sold");
-    expect(getCourierBulkOrderAction("4", { "1": "sold" })).toBeNull();
+    expect(getCourierBulkOrderAction("4", { "1": "sold" })).toBe("sold");
+    expect(getCourierBulkOrderAction("4", { "4": "cancel" })).toBe("cancel");
   });
 
-  it("nothing marked — nothing is sold and no finalize request is made", () => {
+  it("nothing marked — every order is sold (one finalize task each), nothing is kept", () => {
     const orders = [{ id: "1" }, { id: "2" }, { id: "3" }];
     const counts = getCourierBulkCounts(orders, {});
 
-    expect(counts).toEqual({ cancel: 0, sold: 0, tomorrow: 0, total: 3 });
-    expect(getCourierBulkFinalizeLabelCounts(counts)).toEqual({ changed: 0, sold: 0 });
-    expect(getCourierBulkFinalizeTasks(orders, {})).toEqual([]);
-    expect(getCourierBulkKept(orders, {})).toEqual({
-      unmarked: orders,
-      tomorrow: [],
-      replacement: [],
-      courierHeld: [],
-    });
+    expect(counts).toEqual({ cancel: 0, sold: 3, tomorrow: 0, total: 3 });
+    expect(getCourierBulkFinalizeLabelCounts(counts)).toEqual({ changed: 0, sold: 3 });
+    expect(getCourierBulkFinalizeTasks(orders, {})).toEqual(orders.map((order) => ({ order, action: "sold" })));
+    expect(getCourierBulkKept(orders, {})).toEqual({ tomorrow: [], replacement: [] });
+    // «Belgilanmagan» — hali ham «qo'lda / skan bilan belgi qo'yilmagan» (ular sotiladi).
     expect(getCourierBulkUnmarkedCount(orders, {})).toBe(3);
   });
 
-  it("owner's case: 20 orders, only 10 marked «Sotildi» — the other 10 are NOT sold", () => {
+  it("owner's case (BeePost): 20 orders, only 5 «Bekor» and 5 «Ertaga» scanned — the other 10 are sold", () => {
     const orders = Array.from({ length: 20 }, (_, index) => ({ id: String(index + 1) }));
     const ids = (list: Array<{ id: string }>) => list.map((order) => order.id);
-    const sold: Record<string, CourierBulkAction> = Object.fromEntries(
-      orders.slice(0, 10).map((order) => [order.id, "sold"]),
-    );
-
-    // Ilgari belgilanmagan 10 tasi ham «sotildi» bo'lib ketardi; endi faqat belgilangan 10 tasiga so'rov ketadi.
-    const soldTasks = getCourierBulkFinalizeTasks(orders, sold);
-    expect(soldTasks).toHaveLength(10);
-    expect(soldTasks.map((task) => task.order.id)).toEqual(ids(orders.slice(0, 10)));
-    expect(soldTasks.every((task) => task.action === "sold")).toBe(true);
-    expect(getCourierBulkCounts(orders, sold)).toEqual({ cancel: 0, sold: 10, tomorrow: 0, total: 20 });
-    expect(getCourierBulkUnmarkedCount(orders, sold)).toBe(10);
-    expect(ids(getCourierBulkKept(orders, sold).unmarked)).toEqual(ids(orders.slice(10)));
-
-    // Qolgan 10 tasidan 5 tasi «Bekor», 5 tasi «Ertaga» belgilansa: 10 sotildi + 5 bekor so'rovi, «ertaga» — so'rovsiz.
-    const marked: Record<string, CourierBulkAction> = {
-      ...sold,
+    const scanned: Record<string, CourierBulkAction> = {
       ...Object.fromEntries(orders.slice(10, 15).map((order) => [order.id, "cancel"])),
       ...Object.fromEntries(orders.slice(15).map((order) => [order.id, "tomorrow"])),
     };
-    const markedTasks = getCourierBulkFinalizeTasks(orders, marked);
-    expect(markedTasks).toHaveLength(15);
-    expect(markedTasks.filter((task) => task.action === "sold").map((task) => task.order.id)).toEqual(
+
+    // Kuryer faqat qaytgan (bekor) va ertaga qoladiganlarni skanerlaydi — belgisiz 10 tasi sukut bo'yicha sotiladi.
+    const tasks = getCourierBulkFinalizeTasks(orders, scanned);
+    expect(tasks).toHaveLength(15);
+    expect(tasks.filter((task) => task.action === "sold").map((task) => task.order.id)).toEqual(
       ids(orders.slice(0, 10)),
     );
-    expect(markedTasks.filter((task) => task.action === "cancel").map((task) => task.order.id)).toEqual(
+    expect(tasks.filter((task) => task.action === "cancel").map((task) => task.order.id)).toEqual(
       ids(orders.slice(10, 15)),
     );
-    expect(getCourierBulkCounts(orders, marked)).toEqual({ cancel: 5, sold: 10, tomorrow: 5, total: 20 });
-    expect(getCourierBulkUnmarkedCount(orders, marked)).toBe(0);
-    expect(getCourierBulkKept(orders, marked).unmarked).toEqual([]);
-    expect(ids(getCourierBulkKept(orders, marked).tomorrow)).toEqual(ids(orders.slice(15)));
+    expect(getCourierBulkCounts(orders, scanned)).toEqual({ cancel: 5, sold: 10, tomorrow: 5, total: 20 });
+    expect(getCourierBulkUnmarkedCount(orders, scanned)).toBe(10);
+    expect(ids(getCourierBulkKept(orders, scanned).tomorrow)).toEqual(ids(orders.slice(15)));
+    expect(getCourierBulkKept(orders, scanned).replacement).toEqual([]);
+
+    // Aniq «Sotildi» belgisi natijani o'zgartirmaydi (belgisiz ham sotiladi) — faqat «belgilanmagan» sonini kamaytiradi.
+    const explicit: Record<string, CourierBulkAction> = {
+      ...scanned,
+      ...Object.fromEntries(orders.slice(0, 10).map((order) => [order.id, "sold"])),
+    };
+    expect(getCourierBulkFinalizeTasks(orders, explicit)).toEqual(tasks);
+    expect(getCourierBulkCounts(orders, explicit)).toEqual(getCourierBulkCounts(orders, scanned));
+    expect(getCourierBulkUnmarkedCount(orders, explicit)).toBe(0);
+  });
+
+  it("«Faqat bekorlar» — only explicit «Bekor» marks become tasks (no sold, no tomorrow)", () => {
+    const orders = [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }];
+    const actions: Record<string, CourierBulkAction> = { "1": "sold", "2": "cancel", "3": "tomorrow" };
+
+    expect(getCourierBulkCancelOnlyTasks(orders, actions)).toEqual([{ order: orders[1], action: "cancel" }]);
+    expect(getCourierBulkCancelOnlyTasks(orders, {})).toEqual([]);
   });
 
   it("counts unmarked orders (explicit «sold» is a mark; sell-blocked and scan-taken rows count too)", () => {
@@ -112,36 +114,31 @@ describe("courierBulk model", () => {
     expect(isCourierBulkOrderMarked("4", actions)).toBe(false);
     expect(getCourierBulkUnmarkedCount([], actions)).toBe(0);
 
-    // Eski mahsulot olinmagan almashtirish (lQjt6sKP) belgilanmagan bo'lsa — endi u ham «belgilanmagan» sanaladi
-    // (sukut «sotildi» yo'q, u ham o'zgarmaydi). COURIER-SCAN: skan bilan olingan (hatto eski «yo'lda») posilka ham
-    // oddiy qator — to'siqsiz, belgilanmagan bo'lsa «belgilanmagan».
+    // Eski mahsulot olinmagan almashtirish (lQjt6sKP) belgilanmagan bo'lsa ham «belgilanmagan» sanaladi, lekin sukut
+    // «sotildi» uni sotmaydi — «Buyurtmalar»dan sotiladi guruhida. COURIER-SCAN: skan bilan olingan (hatto eski
+    // «yo'lda») posilka — oddiy qator: to'siqsiz, belgilanmagan bo'lsa sotiladi.
     const replacement = { id: "5", replacement_of_order_id: "99", replacement_state: "awaiting_old_pickup" };
     const scanTaken = { id: "6", status: "on_the_road" };
     const mixed = [...orders, replacement, scanTaken];
     const ids = (list: Array<{ id: string }>) => list.map((order) => order.id);
 
     expect(getCourierBulkUnmarkedCount(mixed, actions)).toBe(4);
-    expect(getCourierBulkKept(mixed, actions)).toEqual({
-      unmarked: [orders[0], orders[3], replacement, scanTaken],
-      tomorrow: [],
-      replacement: [],
-      courierHeld: [],
-    });
-    expect(getCourierBulkCounts(mixed, actions)).toEqual({ cancel: 1, sold: 1, tomorrow: 0, total: 6 });
-    expect(ids(getCourierBulkFinalizeTasks(mixed, actions).map((task) => task.order))).toEqual(["2", "3"]);
+    expect(getCourierBulkKept(mixed, actions)).toEqual({ tomorrow: [], replacement: [replacement] });
+    expect(getCourierBulkCounts(mixed, actions)).toEqual({ cancel: 1, sold: 4, tomorrow: 0, total: 6 });
+    expect(ids(getCourierBulkFinalizeTasks(mixed, actions).map((task) => task.order))).toEqual(["1", "2", "3", "4", "6"]);
 
-    // Almashtirish aniq «Sotildi» belgilansa — «Buyurtmalar»dan sotiladi guruhiga o'tadi, belgilanmagan emas.
+    // Almashtirish aniq «Sotildi» belgilansa — belgilangan, lekin baribir «Buyurtmalar»dan sotiladi guruhida.
     const replacementSold = { ...actions, "5": "sold" } as const;
     expect(getCourierBulkUnmarkedCount(mixed, replacementSold)).toBe(3);
-    expect(ids(getCourierBulkKept(mixed, replacementSold).unmarked)).toEqual(["1", "4", "6"]);
     expect(ids(getCourierBulkKept(mixed, replacementSold).replacement)).toEqual(["5"]);
+    expect(getCourierBulkFinalizeTasks(mixed, replacementSold)).toEqual(getCourierBulkFinalizeTasks(mixed, actions));
 
-    // Menejerda kuryer qo'lidagi buyurtma (LC-04): belgilanmagan — «unmarked», faqat aniq «Sotildi» — «courierHeld».
-    const courierHeld = { id: "7", courier_id: "41" };
-    expect(ids(getCourierBulkKept([courierHeld], {}, "manager").unmarked)).toEqual(["7"]);
-    expect(getCourierBulkKept([courierHeld], {}, "manager").courierHeld).toEqual([]);
-    expect(ids(getCourierBulkKept([courierHeld], { "7": "sold" }, "manager").courierHeld)).toEqual(["7"]);
-    expect(getCourierBulkFinalizeTasks([courierHeld], {}, "manager")).toEqual([]);
+    // Kuryer qo'lidagi buyurtma endi to'silmaydi (LC-04, 2026-11-21 — menejer kuryer nomidan sotadi): belgisiz ham,
+    // aniq «Sotildi» ham — yuboriladi.
+    const courierHeld = { id: "7", courier_id: "41", holder_type: "COURIER", holder_courier_id: "41" };
+    expect(getCourierBulkKept([courierHeld], {})).toEqual({ tomorrow: [], replacement: [] });
+    expect(getCourierBulkFinalizeTasks([courierHeld], {})).toEqual([{ order: courierHeld, action: "sold" }]);
+    expect(getCourierBulkFinalizeTasks([courierHeld], { "7": "sold" })).toEqual([{ order: courierHeld, action: "sold" }]);
   });
 
   it("filters by search (name, phone digits, id) and result — client-side", () => {
@@ -159,9 +156,9 @@ describe("courierBulk model", () => {
     expect(ids("90 214")).toEqual(["10240"]);
     expect(ids("№10236")).toEqual(["10236"]);
     expect(ids("", "unmarked")).toEqual(["10240"]);
-    // «Sotiladi» — faqat aniq «Sotildi» belgilangani; belgilanmagan «10240» bu yerga kirmaydi (sukut natija yo'q).
-    expect(ids("", "sold")).toEqual(["10236"]);
-    expect(ids("laylo", "sold")).toEqual([]);
+    // «Sotiladi» — aniq «Sotildi» belgilangani VA belgilanmagan «10240» (sukut «sotildi», BeePost modeli).
+    expect(ids("", "sold")).toEqual(["10240", "10236"]);
+    expect(ids("laylo", "sold")).toEqual(["10240"]);
     expect(ids("laylo", "unmarked")).toEqual(["10240"]);
     expect(ids("", "tomorrow")).toEqual(["10238"]);
     expect(ids("", "cancel")).toEqual([]);
@@ -180,10 +177,11 @@ describe("courierBulk model", () => {
     const ids = (result: CourierBulkResultFilter) =>
       filterCourierBulkOrders(orders, actions, { query: "", result }).map((order) => order.id);
 
-    // Belgilanmagan almashtirish «2» ham «Belgilanmagan»da (u ham o'zgarmaydi); COURIER-SCAN: skan bilan olingan «4»
-    // ham oddiy belgilanmagan qator; sotib bo'lmaydigan «Sotildi» belgili «3» — «Sotiladi»ga kirmaydi.
+    // Belgilanmagan almashtirish «2» ham «Belgilanmagan»da; COURIER-SCAN: skan bilan olingan «4» ham oddiy belgilanmagan
+    // qator. «Sotiladi» — belgisizlar ham (sukut), lekin sotib bo'lmaydigan almashtirish («2» belgisiz, «3» aniq
+    // «Sotildi») unga kirmaydi.
     expect(ids("unmarked")).toEqual(["1", "2", "4"]);
-    expect(ids("sold")).toEqual(["5"]);
+    expect(ids("sold")).toEqual(["1", "4", "5"]);
     expect(ids("all")).toEqual(["1", "2", "3", "4", "5"]);
     expect(getCourierBulkUnmarkedCount(orders, actions)).toBe(ids("unmarked").length);
   });

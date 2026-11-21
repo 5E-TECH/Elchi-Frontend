@@ -15,8 +15,6 @@
   "confirmCancelOneHint": "№{{id}} · {{name}} — перейдёт в статус «Отменён»",
   "confirmTomorrow": "Останутся на завтра: {{count}}",
   "confirmTomorrowHint": "Останутся в статусе «Ожидает»",
-  "confirmUnmarked": "Без отметки: {{count}} — не изменятся",
-  "confirmUnmarkedHint": "Останутся в статусе «Ожидает»",
   "confirmAction": "Подтвердить",
   "confirmBack": "Назад",
   "scanMissingTitle": "Заказ не найден",
@@ -36,10 +34,10 @@
   "finalizeErrorTitle": "Ошибка завершения",
   "finalizeNothing": "Нечего завершать — отложенные на завтра заказы остаются в ожидании.",
   "finalizeTomorrowKept": "Заказов отложено на завтра: {{count}}.",
-  "finalizeUnmarkedKept": "Заказы без отметки не изменены: {{count}}.",
   "page": {
     "clearMarks": "Сбросить отметки",
-    "finalize": "Завершить день"
+    "finalize": "Завершить день",
+    "cancelOnly": "Только отмены"
   },
   "stats": {
     "label": "Итоги дня",
@@ -48,7 +46,7 @@
     "pendingCourier": "Назначены вам, не завершены",
     "pendingManager": "У курьеров филиала, не завершены",
     "sold": "Будут проданы",
-    "soldUnmarked": "Без отметки: <strong>{{count}}</strong> — не изменятся",
+    "soldUnmarked": "Из них без отметки: <strong>{{count}}</strong>",
     "cancel": "Будут отменены",
     "cancelHint": "Перейдут в статус «Отменён»",
     "tomorrow": "Останутся на завтра",
@@ -71,7 +69,7 @@
   "list": {
     "title": "Ожидающие заказы",
     "titleShort": "Ожидающие",
-    "description": "Заказы без отметки не изменятся",
+    "description": "Заказы без отметки будут проданы",
     "search": "Имя, телефон или номер",
     "searchLabel": "Поиск заказов по имени, телефону или номеру",
     "filterLabel": "Фильтр по результату",
@@ -98,7 +96,6 @@
     "noMatchTitle": "Заказы не найдены",
     "noMatchHint": "Измените поиск или фильтр результата.",
     "replacementHint": "Замена — продайте в «Заказах» с отметкой «Старый товар забрал»",
-    "courierHeldHint": "У курьера — продаёт сам курьер",
     "lastError": "Не завершён: {{reason}}"
   },
   "states": {
@@ -108,7 +105,9 @@
   "confirm": {
     "soldMarked": "Перейдут в статус «Продан»",
     "irreversibleTitle": "Это действие нельзя отменить",
-    "irreversibleText": "Статус заказов ({{count}}) изменится сразу."
+    "irreversibleText": "Статус заказов ({{count}}) изменится сразу.",
+    "soldUnmarkedHint": "Перейдут в статус «Продан» — без отметки (не сканированы): {{count}}",
+    "managerOnBehalf": "Заказы у курьера ({{count}}) будут проданы от имени курьера — наличные остаются в кассе курьера (как при продаже самим курьером)."
   },
   "orderLabel": "№{{id}} · {{name}}",
   "actionSell": "Продажа",
@@ -129,7 +128,7 @@
   "camera": {
     "context": "Ожидающих заказов: {{value}}",
     "meter": "отсканировано",
-    "unmarked": "Заказы без отметки ({{value}}) не изменятся.",
+    "unmarked": "Заказы без отметки ({{value}}) будут проданы.",
     "listTitle": "Отсканированные",
     "listDescription": "{{done}} / {{total}} · отмена: {{cancel}}, на завтра: {{tomorrow}}",
     "markedCancel": "Отмечен к отмене №{{id}} · {{name}}",
@@ -140,9 +139,15 @@
   "confirmReplacementHint": "Останутся в статусе «Ожидает» — заберите старый товар и продайте в «Заказах» с отметкой «Старый товар забрал»",
   "finalizeReplacementKept": "Заказов на замену к продаже через «Заказы»: {{count}}.",
   "finalizeNothingPlain": "Нечего завершать.",
-  "finalizeCourierHeldKept": "Заказов у курьера: {{count}} — их продаёт сам курьер.",
-  "confirmCourierHeld": "Заказы у курьера не будут проданы: {{count}}",
-  "confirmCourierHeldHint": "Останутся в статусе «Ожидает» — их продаёт сам курьер",
   "noPermissionTitle": "Нет права на продажу и отмену",
-  "noPermissionText": "Чтобы завершить день, суперадмин должен выдать вам право на продажу/отмену."
+  "noPermissionText": "Чтобы завершить день, суперадмин должен выдать вам право на продажу/отмену.",
+  "scanMovedTitle": "Отметка изменена",
+  "bulkCancelCommentManager": "Менеджер отменил через быстрое действие",
+  "bulkSoldCommentManager": "Менеджер завершил как проданный через быстрое действие",
+  "confirmAcknowledge": "Понимаю, что заказы без отметки ({{count}}) будут ПРОДАНЫ",
+  "cancelOnlyTitle": "Выполнить только отмены",
+  "cancelOnlyDescription": "Будут отменены заказы: {{count}}. Остальные не изменятся — закройте их позже через «Завершить день».",
+  "cancelOnlyAction": "Отменить",
+  "cancelOnlyNothing": "Нет заказов, отмеченных к отмене.",
+  "finalizeProgress": "Выполняется: {{done}} / {{total}}"
 }

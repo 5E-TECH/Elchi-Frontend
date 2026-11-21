@@ -458,6 +458,34 @@ export const useOrders = () => {
     onSuccess: invalidateMoney,
   });
 
+  /**
+   * «Tezkor amal» — kunni yakunlash (BE `POST /orders/bulk/sell|cancel`): bitta so'rovda bir nechta buyurtma, server
+   * ularni KETMA-KET bajaradi va har biri natijasini qaytaradi (`{ succeeded, failed }`). `Idempotency-Key` —
+   * yakunlash kaliti (bitta yakunlashning barcha bo'laklariga AYNI): bo'lak qayta yuborilsa amal ikki marta bajarilmaydi.
+   * Server bo'lakni ketma-ket bajaradi — brauzer uzoqroq kutadi (`LONG_REQUEST_TIMEOUT_MS`).
+   */
+  const BulkOrderAction = useMutation({
+    mutationFn: ({
+      action,
+      orderIds,
+      comment,
+      headers,
+    }: {
+      action: "sold" | "cancel";
+      orderIds: readonly string[];
+      comment?: string;
+      headers?: OrderActionHeaders;
+    }) =>
+      api
+        .post(
+          action === "cancel" ? API_ENDPOINTS.ORDERS.BULK_CANCEL : API_ENDPOINTS.ORDERS.BULK_SELL,
+          { order_ids: orderIds, ...(comment ? { comment } : {}) },
+          { ...(headers ? { headers } : {}), timeout: LONG_REQUEST_TIMEOUT_MS },
+        )
+        .then((res) => res.data),
+    onSuccess: invalidateMoney,
+  });
+
   const PartlySellOrder = useMutation({
     mutationFn: ({
       orderId,
@@ -620,6 +648,7 @@ export const useOrders = () => {
     SellOrder,
     PartlySellOrder,
     CancelOrder,
+    BulkOrderAction,
     useExtraCostApprovals,
     useAutoApprovedExtraCostApprovals,
     approveExtraCostApproval,
