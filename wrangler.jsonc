@@ -3,6 +3,13 @@
   // Bu fayl bo'lmasa `wrangler deploy` 0 soniyada xato bilan tugaydi.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "elchi-frontend",
+  // Bir domenli API (same-origin, `.env.production` → VITE_BASE_URL=/api/): FAQAT `/api/*` va `/socket.io/*` Worker
+  // skriptiga (`worker/index.ts`) tushadi va `vars.API_ORIGIN` ga proksi qilinadi (CORS preflight yo'q); qolgan hamma
+  // yo'l avvalgidek statik fayllardan, Worker chaqirilmaydi. API_ORIGIN — kabinet bilan BIR zonada (elchipochta.uz):
+  // boshqa zonada Cloudflare mijoz IP'si o'rniga Worker manzilini yozadi (backend rate-limit hamma uchun bitta).
+  // Har `/api/*` so'rovi — Worker chaqiruvi (tarif cheklovi). Deploy / orqaga qaytish: Elchi-Backend
+  // docs/ops/same-origin-api.md.
+  "main": "worker/index.ts",
   "compatibility_date": "2026-05-19",
   "compatibility_flags": [
     "nodejs_compat"
@@ -15,7 +22,15 @@
     "directory": "./dist",
     // SPA: mavjud bo'lmagan barcha yo'llar index.html ga (200) qaytariladi,
     // shunda react-router sahifalari to'g'ridan-to'g'ri ochilganda ham ishlaydi.
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*",
+      "/socket.io/*"
+    ]
+  },
+  "vars": {
+    "API_ORIGIN": "https://api.elchipochta.uz"
   },
   // ─── TEST muhit (staging) ──────────────────────────────────────────────────────────────────────────────────
   // Faqat `npx wrangler deploy --env staging` (CI: `test` branchi, `vars.STAGING_ENABLED == 'true'`,
@@ -26,9 +41,11 @@
   // belgisi, noindex); deploy oldidan `npm run check:target -- staging` tekshiradi.
   // Hamma kalit ataylab shu yerda qayta yozilgan (meros qoidalariga tayanmaslik uchun). workers.dev / preview
   // manzillari o'chiq — TEST sayt bitta manzilda, backend CORS'i ham faqat shu domen uchun.
+  // Bir domenli API — production bilan bir xil (`main`, `binding`, `run_worker_first`), faqat `vars.API_ORIGIN` — test API.
   "env": {
     "staging": {
       "name": "elchi-frontend-test",
+      "main": "worker/index.ts",
       "compatibility_date": "2026-05-19",
       "compatibility_flags": [
         "nodejs_compat"
@@ -38,7 +55,15 @@
       },
       "assets": {
         "directory": "./dist",
-        "not_found_handling": "single-page-application"
+        "not_found_handling": "single-page-application",
+        "binding": "ASSETS",
+        "run_worker_first": [
+          "/api/*",
+          "/socket.io/*"
+        ]
+      },
+      "vars": {
+        "API_ORIGIN": "https://test-api.elchipochta.uz"
       },
       "routes": [
         {

@@ -37,6 +37,8 @@ const rollbackMutation = vi.hoisted(() => ({ mutate: vi.fn(), mutateAsync: vi.fn
 // hfkhYrGk №6: `DELETE /orders/:id` — superadmin ombor buyurtmasini tafsilotdan o'chiradi.
 const deleteMutation = vi.hoisted(() => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }));
 
+// «AI izi» qatori (superadmin/admin) o'z so'rovini yuboradi — sahifa testida o'chiq, o'zi `aiTrace/OrderAiTrace.test.tsx` da.
+vi.mock("./detail/aiTrace/OrderAiTrace", () => ({ OrderAiTraceRow: () => null }));
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
     useGetOrderById: () =>

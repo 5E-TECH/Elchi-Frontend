@@ -7,8 +7,9 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `region_id` siz), `GET orders/qr-code/:token` (USB skaner → buyurtma; `FOREIGN_TOKEN` — 403 begona QR),
  * `POST orders/assign-to-courier { courier_id, order_ids }`.
  * `/courier-bulk` — kuryer: `GET orders/courier/orders?status=waiting` (100 talik sahifalar), «Kunni yakunlash» →
- * `POST orders/sell/:id` / `POST orders/cancel/:id` (`{ comment, extraCost: 0 }`; isbotli — avval `POST files/upload`,
- * keyin `proofFileKeys`; har biri `X-Request-Source: courier-bulk`); «Ertaga» so'rov yubormaydi.
+ * isbotsizlar `POST orders/bulk/cancel` / `POST orders/bulk/sell` (`{ order_ids, comment }` → `{ succeeded, failed }`),
+ * isbotlilar yakka `POST orders/sell/:id` / `POST orders/cancel/:id` (`{ comment, extraCost: 0 }`; avval
+ * `POST files/upload`, keyin `proofFileKeys`); har biri `X-Request-Source: courier-bulk`; «Ertaga» so'rov yubormaydi.
  * Boshqa yozish so'rovi — `leaked` (403).
  */
 // Worktree serverlari boshqa portda — `E2E_ORIGIN`.
@@ -179,8 +180,10 @@ export const mockCourierBulkApi = async (page: Page, { sellProofIds = [], failWi
   const listQueries: Array<Record<string, string>> = [];
   const sells: Array<{ id: string; body: Body }> = [];
   const cancels: Array<{ id: string; body: Body }> = [];
-  /** Har sotish/bekor so'rovi: `X-Request-Source` sarlavhasi; isbot — avval `files/upload`, keyin `proofFileKeys`. */
+  /** Har sotish/bekor (bulk'da — har buyurtma): `X-Request-Source` sarlavhasi; isbot — avval `files/upload`. */
   const requests: Array<{ action: string; id: string; source: string | null }> = [];
+  /** Bulk so'rovlar (tartibi bilan): amal, buyurtmalar, yakunlash kaliti. */
+  const bulkCalls: Array<{ action: string; orderIds: string[]; key: string | null }> = [];
   const uploads: string[] = [];
   const leaked = await routeApi(
     page,
@@ -194,6 +197,27 @@ export const mockCourierBulkApi = async (page: Page, { sellProofIds = [], failWi
         const key = `proof/e2e-${uploads.length + 1}.jpg`;
         uploads.push(key);
         return reply(route, { statusCode: 201, data: { key } });
+      }
+      const bulk = /^orders\/bulk\/(sell|cancel)$/.exec(path);
+      if (bulk && method === "POST") {
+        const request = route.request();
+        const headers = await request.allHeaders();
+        const body = request.postDataJSON() as Body & { order_ids?: string[] };
+        const orderIds = (body.order_ids ?? []).map(String);
+        bulkCalls.push({ action: bulk[1], orderIds, key: headers["idempotency-key"] ?? null });
+        const succeeded: string[] = [];
+        const failed: Array<{ order_id: string; status_code: number; message: string }> = [];
+        for (const id of orderIds) {
+          requests.push({ action: bulk[1], id, source: headers["x-request-source"] ?? null });
+          if (failWith[id]) {
+            failed.push({ order_id: id, status_code: 400, message: failWith[id] });
+            continue;
+          }
+          (bulk[1] === "sell" ? sells : cancels).push({ id, body: { comment: body.comment } });
+          state.orders = state.orders.filter((item) => item.id !== id);
+          succeeded.push(id);
+        }
+        return reply(route, { statusCode: 200, data: { action: bulk[1], total: orderIds.length, succeeded, failed } });
       }
       const action = /^orders\/(sell|cancel)\/(\w+)$/.exec(path);
       if (action && method === "POST") {
@@ -212,7 +236,7 @@ export const mockCourierBulkApi = async (page: Page, { sellProofIds = [], failWi
       return false;
     },
   );
-  return { state, listQueries, sells, cancels, requests, uploads, leaked };
+  return { state, listQueries, sells, cancels, requests, bulkCalls, uploads, leaked };
 };
 
 export const openCourierBulk = async (page: Page) => {

@@ -1112,12 +1112,11 @@
   "operatorSelect": {
     "none": "Tanlanmagan",
     "pickedHint": "Buyurtma va komissiya shu operatorga yoziladi",
-    "otherLabel": "Ro'yxatda yo'q operator",
     "loadFailed": "Operatorlar ro'yxati yuklanmadi — ismini qo'lda yozing",
-    "textOnly": "Ro'yxatdan tanlanmagan — bu operatorga komissiya yozilmaydi",
     "suggest": "Ro'yxatda «{{name}}» bor — komissiya yozilishi uchun tanlang",
     "suggestPick": "Tanlash",
-    "suggestPickAria": "«{{name}}» ni operator qilib tanlash"
+    "suggestPickAria": "«{{name}}» ni operator qilib tanlash",
+    "aiRead": "Xabarda «{{name}}» deb yozilgan — operatorni ro'yxatdan tanlang"
   },
   "operatorAssign": {
     "open": "Biriktirish",
@@ -1196,5 +1195,67 @@
     "returnTitle": "Almashtirish qaytarmasi",
     "returnCollectedAt": "Olingan: {{date}}.",
     "openOld": "Eski buyurtmani ochish"
+  },
+  "aiTrace": {
+    "methodLabel": "Yaratish usuli:",
+    "methodAi": "AI bilan",
+    "open": "AI izi",
+    "title": "AI izi",
+    "subtitle": "{{order}} · AI bilan yaratilgan buyurtma",
+    "model": "Model",
+    "promptVersion": "Ko'rsatma versiyasi",
+    "analyzedAt": "Tahlil qilindi",
+    "confirmedBy": "Tasdiqladi",
+    "confirmedByValue": "{{name}}, {{role}} · {{time}}",
+    "confirmedByUnknown": "#{{id}} · {{time}}",
+    "sourceTitle": "Manba matn",
+    "sourceImages": "{{count}} ta surat",
+    "sourceIndex": "matndagi {{number}}-buyurtma",
+    "sourceHidden": "Telefon raqamlar yashirilgan. Matn {{days}} kundan keyin o'chiriladi — {{date}}.",
+    "sourceListLabel": "Manba matn (telefonlar yashirilgan)",
+    "purgedTitle": "Manba matn va AI taklifi o'chirilgan",
+    "purgedText": "Saqlash muddati {{date}} da tugadi. Model, kim tasdiqlagani va qaysi maydonlar o'zgargani qoladi.",
+    "purgedTextNoDate": "Saqlash muddati tugadi. Model, kim tasdiqlagani va qaysi maydonlar o'zgargani qoladi.",
+    "editedTitle": "Operator o'zgartirgan maydonlar",
+    "count": "{{count}} ta",
+    "colField": "Maydon",
+    "colAi": "AI taklifi",
+    "colFinal": "Yakuniy",
+    "restSame": "Qolgan {{count}} ta maydon AI taklifidagidek qoldi.",
+    "noEditsTitle": "Operator hech narsani o'zgartirmagan",
+    "noEditsText": "AI taklifi o'zgarishsiz tasdiqlangan.",
+    "checksTitle": "Ishlagan tekshiruvlar",
+    "status": {
+      "fixed": "Tuzatildi",
+      "confirmed": "Tasdiqlandi",
+      "note": "Eslatma"
+    },
+    "check": {
+      "district_low_confidence": "Tuman aniq emas",
+      "price_check": "Narx matnga mos emas",
+      "region_inferred": "Viloyat matnda yo'q — AI taxmin qildi",
+      "qty_check": "Son katta",
+      "duplicate_items": "Bir xil mahsulot qatorlari",
+      "phone_is_market": "Mijoz raqami — marketning o'z raqami",
+      "same_phone_multi": "Shu telefon boshqa buyurtmada ham"
+    },
+    "districtRead": "AI o'qigan: «{{text}}» → {{district}}",
+    "priceAi": "AI: {{amount}}",
+    "regionNote": "{{region}} · o'zgarmadi · faqat eslatma, kartani to'xtatmagan",
+    "field": {
+      "customer_name": "Mijoz ismi",
+      "phone_number": "Telefon",
+      "extra_number": "Qo'shimcha raqam",
+      "region_id": "Viloyat",
+      "district_id": "Tuman",
+      "address": "Manzil",
+      "total_price": "Umumiy summa",
+      "where_deliver": "Yetkazish turi",
+      "comment": "Izoh",
+      "operator": "Operator",
+      "items": "Mahsulotlar"
+    },
+    "itemLine": "{{name}} — {{count}} ta",
+    "close": "Yopish"
   }
 }

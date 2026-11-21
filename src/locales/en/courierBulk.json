@@ -16,9 +16,6 @@
   "confirmCancelOneHint": "No. {{id}} · {{name}} — moved to the cancelled status",
   "confirmTomorrow": "{{count}} kept for tomorrow",
   "confirmTomorrowHint": "Stay in the waiting status",
-  "confirmUnmarked_one": "{{count}} unmarked — stays unchanged",
-  "confirmUnmarked_other": "{{count}} unmarked — stay unchanged",
-  "confirmUnmarkedHint": "Stay in the waiting status",
   "confirmAction": "Confirm",
   "confirmBack": "Back",
   "scanMissingTitle": "Order not found",
@@ -37,11 +34,10 @@
   "finalizeNothing": "Nothing to finalize — orders postponed to tomorrow stay waiting.",
   "finalizeTomorrowKept_one": "{{count}} order postponed to tomorrow.",
   "finalizeTomorrowKept_other": "{{count}} orders postponed to tomorrow.",
-  "finalizeUnmarkedKept_one": "{{count}} unmarked order left unchanged.",
-  "finalizeUnmarkedKept_other": "{{count}} unmarked orders left unchanged.",
   "page": {
     "clearMarks": "Clear marks",
-    "finalize": "Finish the day"
+    "finalize": "Finish the day",
+    "cancelOnly": "Cancellations only"
   },
   "stats": {
     "label": "End of day",
@@ -50,7 +46,7 @@
     "pendingCourier": "Assigned to you, not finished",
     "pendingManager": "With branch couriers, not finished",
     "sold": "Will be sold",
-    "soldUnmarked": "Unmarked: <strong>{{count}}</strong> — stay unchanged",
+    "soldUnmarked": "Unmarked among them: <strong>{{count}}</strong>",
     "cancel": "Will be cancelled",
     "cancelHint": "Moved to the cancelled status",
     "tomorrow": "Kept for tomorrow",
@@ -73,7 +69,7 @@
   "list": {
     "title": "Waiting orders",
     "titleShort": "Waiting",
-    "description": "Unmarked orders stay unchanged",
+    "description": "Unmarked orders will be sold",
     "search": "Name, phone or number",
     "searchLabel": "Search orders by name, phone or number",
     "filterLabel": "Filter by result",
@@ -100,7 +96,6 @@
     "noMatchTitle": "No orders found",
     "noMatchHint": "Change the search or the result filter.",
     "replacementHint": "Replacement — sell from «Orders» with «I took the old item»",
-    "courierHeldHint": "With the courier — the courier sells it",
     "lastError": "Not finalized: {{reason}}"
   },
   "states": {
@@ -111,7 +106,9 @@
     "soldMarked": "Moved to the sold status",
     "irreversibleTitle": "This action cannot be undone",
     "irreversibleText_one": "The status of {{count}} order changes immediately.",
-    "irreversibleText_other": "The status of {{count}} orders changes immediately."
+    "irreversibleText_other": "The status of {{count}} orders changes immediately.",
+    "soldUnmarkedHint": "Moved to the sold status — {{count}} of them unmarked (not scanned)",
+    "managerOnBehalf": "{{count}} order(s) held by couriers will be sold on the courier's behalf — the cash stays in the courier's cashbox (as if the courier sold it)."
   },
   "orderLabel": "No. {{id}} · {{name}}",
   "actionSell": "Sale",
@@ -135,7 +132,7 @@
   "camera": {
     "context": "Waiting orders: {{value}}",
     "meter": "scanned",
-    "unmarked": "Unmarked orders ({{value}}) stay unchanged.",
+    "unmarked": "Unmarked orders ({{value}}) will be sold.",
     "listTitle": "Scanned",
     "listDescription": "{{done}} / {{total}} · cancel: {{cancel}}, tomorrow: {{tomorrow}}",
     "markedCancel": "Marked for cancellation №{{id}} · {{name}}",
@@ -148,11 +145,17 @@
   "finalizeReplacementKept_one": "{{count}} replacement order is sold from «Orders».",
   "finalizeReplacementKept_other": "{{count}} replacement orders are sold from «Orders».",
   "finalizeNothingPlain": "Nothing to finalize.",
-  "finalizeCourierHeldKept_one": "{{count}} order is with a courier — the courier sells it.",
-  "finalizeCourierHeldKept_other": "{{count}} orders are with couriers — the couriers sell them.",
-  "confirmCourierHeld_one": "{{count}} order with a courier is not sold",
-  "confirmCourierHeld_other": "{{count}} orders with couriers are not sold",
-  "confirmCourierHeldHint": "They stay waiting — the courier sells them",
   "noPermissionTitle": "No permission to sell or cancel",
-  "noPermissionText": "To finalize the day, a superadmin must give you the sell/cancel permission."
+  "noPermissionText": "To finalize the day, a superadmin must give you the sell/cancel permission.",
+  "scanMovedTitle": "Mark changed",
+  "bulkCancelCommentManager": "Manager cancelled via quick action",
+  "bulkSoldCommentManager": "Manager finalized as sold via quick action",
+  "confirmAcknowledge_one": "I understand that {{count}} unmarked order will be SOLD",
+  "confirmAcknowledge_other": "I understand that {{count}} unmarked orders will be SOLD",
+  "cancelOnlyTitle": "Run cancellations only",
+  "cancelOnlyDescription_one": "{{count}} order will be cancelled. The rest stay unchanged — close them later with «Finish the day».",
+  "cancelOnlyDescription_other": "{{count}} orders will be cancelled. The rest stay unchanged — close them later with «Finish the day».",
+  "cancelOnlyAction": "Cancel orders",
+  "cancelOnlyNothing": "No orders are marked for cancellation.",
+  "finalizeProgress": "In progress: {{done}} / {{total}}"
 }

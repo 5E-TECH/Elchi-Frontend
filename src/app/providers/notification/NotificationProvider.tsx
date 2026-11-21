@@ -29,6 +29,14 @@ export const NETWORK_RESTORED_DURATION_MS = 3000;
 export const QUERY_ERROR_TOAST_PREFIX = 'query-error:';
 /** Bir xil sababli tarmoq xabari shu oraliqda qayta chiqmaydi (§01 dedupe). */
 const NETWORK_TOAST_THROTTLE_MS = 4000;
+/** Brauzer `offline` hodisasidan keyin «Internet aloqasi yo'q» shuncha kutib chiqadi (qisqa uzilish — xabarsiz). */
+export const OFFLINE_EVENT_GRACE_MS = 2000;
+
+/**
+ * Tarmoq xabari ko'rinishi: `offline` — «Internet aloqasi yo'q»; `server` — javobsiz, lekin internet bor («Server javob
+ * bermadi», aloqa qaytguncha turadi); `timeout` — vaqt tugadi («Server javob bermadi», fon javobidan yopilmaydi).
+ */
+type NetworkToastVariant = 'offline' | 'server' | 'timeout';
 
 /**
  * Ilova darajasidagi xabarlar (dizayn v2, 3-bosqich): tarmoq va so'rov xatolari hamda `apiRequest`
@@ -68,42 +76,48 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const queryClient = useQueryClient();
     const { t } = useTranslation('common');
-    const lastNetworkToastRef = useRef<{ kind: NetworkDownKind | null; at: number }>({ kind: null, at: 0 });
+    const lastNetworkToastRef = useRef<{ variant: NetworkToastVariant | null; at: number }>({ variant: null, at: 0 });
+    /** Shu uzilishda javobsizlik xabari (`offline` / `server`) ko'rsatildimi — «Aloqa tiklandi» faqat shunda chiqadi. */
+    const outageToastShownRef = useRef(false);
 
     /**
      * TARMOQ HOLATI (G6F68ti6, 1/3/8-bandlar; taxta `tizim-feedback` §04, `tizim-errors` 03):
-     *  - javob kelmadi → «Internet aloqasi yo'q», vaqt tugadi (internet bor; GET — oxirgi jim urinishdan keyin,
-     *    `shared/api/readRetry.ts`) → «Server javob bermadi» — bitta `id`; bir xil sabab 4 s ichida qayta
-     *    chiqmaydi, boshqa sabab o'sha xabarni yangilaydi;
-     *  - aloqa holat: «Internet aloqasi yo'q» foydalanuvchi yopguncha emas, aloqa qaytguncha turadi («Qayta urinish»
-     *    uni yopmaydi) va uzilishdan keyingi birinchi javobda o'zi yopiladi + «Aloqa tiklandi» (3 s);
-     *  - «Server javob bermadi» fon javobidan yopilmaydi — yiqilgan amalning yagona xabari bo'lishi mumkin;
+     *  - javob kelmadi → internet yo'q bo'lsa «Internet aloqasi yo'q», ilova sayti ochilsa-yu API javob bermasa
+     *    (`cause: "server"`, 2026-11-20 — Cloudflare/tunnel/server) — «Server javob bermadi»; vaqt tugadi (internet bor;
+     *    GET — oxirgi jim urinishdan keyin, `shared/api/readRetry.ts`) → «Server javob bermadi» — bitta `id`; bir xil
+     *    sabab 4 s ichida qayta chiqmaydi, boshqa sabab o'sha xabarni yangilaydi;
+     *  - aloqa holat: javobsizlik xabari foydalanuvchi yopguncha emas, aloqa qaytguncha turadi («Qayta urinish»
+     *    uni yopmaydi) va uzilishdan keyingi birinchi javobda o'zi yopiladi + «Aloqa tiklandi» (3 s) — faqat xabar
+     *    ko'rsatilgan bo'lsa (faqat fon so'rovi jim yiqilgan bo'lsa — «tiklandi» ham chiqmaydi);
+     *  - vaqt tugashidagi «Server javob bermadi» fon javobidan yopilmaydi — yiqilgan amalning yagona xabari bo'lishi
+     *    mumkin;
      *  - tiklanganda javobsiz yiqilgan faol so'rovlar «Qayta urinish»siz o'zi qayta so'raladi;
      *  - brauzer oflayn bo'lishi bilan (so'rov bo'lmasa ham) xabar darhol chiqadi; `online` da faol so'rovlar
      *    qayta yuboriladi, «tiklandi» esa faqat haqiqiy javobdan (captive portal — `auth/networkError.ts`).
      */
     useEffect(() => {
-        const showNetworkToast = (kind: NetworkDownKind) => {
+        const showNetworkToast = (variant: NetworkToastVariant) => {
             const now = Date.now();
             const last = lastNetworkToastRef.current;
-            if (last.kind === kind && now - last.at < NETWORK_TOAST_THROTTLE_MS) {
+            if (last.variant === variant && now - last.at < NETWORK_TOAST_THROTTLE_MS) {
                 return;
             }
 
-            lastNetworkToastRef.current = { kind, at: now };
+            lastNetworkToastRef.current = { variant, at: now };
+            const internetDown = variant === 'offline';
+            if (variant !== 'timeout') outageToastShownRef.current = true;
             notify.dismiss(NETWORK_RESTORED_TOAST_ID);
-            const timedOut = kind === 'timeout';
-            notify.error(timedOut ? t('toast.timeoutTitle', { ns: 'ui' }) : t('states.error.offline.title', { ns: 'ui' }), {
+            notify.error(internetDown ? t('states.error.offline.title', { ns: 'ui' }) : t('toast.timeoutTitle', { ns: 'ui' }), {
                 id: NETWORK_TOAST_ID,
-                description: timedOut
-                    ? t('states.error.generic.descriptionNoStatus', { ns: 'ui' })
-                    : t('states.error.offline.description', { ns: 'ui' }),
+                description: internetDown
+                    ? t('states.error.offline.description', { ns: 'ui' })
+                    : t('states.error.generic.descriptionNoStatus', { ns: 'ui' }),
                 // ⚠️ `window.location.reload()` EMAS: internet hali qaytmagan bo'lsa
                 // to'liq qayta yuklash sessiyani xavf ostiga qo'yardi (9w5Fq94s).
                 action: {
                     label: t('retry'),
                     onClick: () => void queryClient.refetchQueries({ type: 'active' }),
-                    keepOpen: !timedOut,
+                    keepOpen: variant !== 'timeout',
                 },
             });
         };
@@ -113,12 +127,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             // Eski shakl (`kind` siz) — kod bo'yicha.
             const kind: NetworkDownKind =
                 detail?.kind ?? (getErrorKind({ code: detail?.code }) === 'timeout' ? 'timeout' : 'offline');
-            showNetworkToast(kind);
+            showNetworkToast(kind === 'timeout' ? 'timeout' : detail?.cause === 'server' ? 'server' : 'offline');
         };
 
         const handleNetworkRestored = (event: Event) => {
             const { kind } = (event as CustomEvent<NetworkRestoredDetail>).detail;
-            lastNetworkToastRef.current = { kind: null, at: 0 };
+            lastNetworkToastRef.current = { variant: null, at: 0 };
             void queryClient.refetchQueries({
                 type: 'active',
                 predicate: (query) => query.state.status === 'error' && isNetworkFailure(query.state.error),
@@ -127,7 +141,10 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                 return;
             }
 
+            const outageToastShown = outageToastShownRef.current;
+            outageToastShownRef.current = false;
             notify.dismiss(NETWORK_TOAST_ID);
+            if (!outageToastShown) return;
             notify.success(t('toast.restoredTitle', { ns: 'ui' }), {
                 id: NETWORK_RESTORED_TOAST_ID,
                 description: t('toast.restoredDescription', { ns: 'ui' }),
@@ -135,10 +152,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             });
         };
 
+        // Brauzer `offline` i — holat darhol, xabar `OFFLINE_EVENT_GRACE_MS` dan keyin va faqat hali oflayn bo'lsa
+        // (2026-11-20): Wi-Fi ↔ mobil almashganda `offline`→`online` bir soniya ichida keladi, xabar «miltillamasin».
+        let offlineToastTimer: ReturnType<typeof setTimeout> | undefined;
         const unsubscribeOnline = onlineManager.subscribe((online) => {
+            clearTimeout(offlineToastTimer);
             if (!online) {
                 markNetworkDown('offline');
-                showNetworkToast('offline');
+                offlineToastTimer = setTimeout(() => {
+                    if (!onlineManager.isOnline()) showNetworkToast('offline');
+                }, OFFLINE_EVENT_GRACE_MS);
                 return;
             }
             // `refetchOnReconnect` 30 s `staleTime` ichidagilarni so'ramaydi — ochiq sahifa to'liq yangilansin.
@@ -148,6 +171,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         window.addEventListener(NETWORK_ERROR_EVENT, handleNetworkError);
         window.addEventListener(NETWORK_RESTORED_EVENT, handleNetworkRestored);
         return () => {
+            clearTimeout(offlineToastTimer);
             unsubscribeOnline();
             window.removeEventListener(NETWORK_ERROR_EVENT, handleNetworkError);
             window.removeEventListener(NETWORK_RESTORED_EVENT, handleNetworkRestored);

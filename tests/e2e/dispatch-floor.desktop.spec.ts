@@ -81,7 +81,7 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
   test("⭐ /courier-bulk: Bekor / Ertaga belgilari → «Kunni yakunlash» tasdig'i → faqat sotish va bekor so'rovlari", async ({ page }) => {
     const api = await mockCourierBulkApi(page);
     await openCourierBulk(page);
-    expect(api.listQueries[0]).toMatchObject({ status: "waiting", page: "1", limit: "100" });
+    expect(api.listQueries[0]).toMatchObject({ status: "waiting", page: "1", limit: "100", scope: "actionable" });
 
     await markResult(page, "Feruza Mirzayeva", "Sotildi");
     await markResult(page, "Ali Valiyev", "Bekor");
@@ -100,36 +100,43 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
     await confirm.getByRole("button", { name: "Tasdiqlash" }).click();
 
     await expect(toast(page, "Kun yakunlandi")).toBeVisible();
-    expect(api.sells).toEqual([{ id: "10401", body: { comment: BULK_SOLD_COMMENT, extraCost: 0 } }]);
-    expect(api.cancels).toEqual([{ id: "10402", body: { comment: BULK_CANCEL_COMMENT, extraCost: 0 } }]);
+    expect(api.sells).toEqual([{ id: "10401", body: { comment: BULK_SOLD_COMMENT } }]);
+    expect(api.cancels).toEqual([{ id: "10402", body: { comment: BULK_CANCEL_COMMENT } }]);
     // «Ertaga» — so'rovsiz, ro'yxatda qoladi.
     await expect(page.getByRole("radiogroup", { name: "Dilnoza Rahimova: natija" })).toBeVisible();
     expect(api.leaked).toEqual([]);
   });
 
-  test("⭐ /courier-bulk: sukut natija yo'q — belgilanmagan qator so'rovsiz, «Kutilmoqda»da qoladi", async ({ page }) => {
+  test("⭐ /courier-bulk: sukut «Sotildi» (BeePost) — belgilanmaganlar katak bilan tasdiqlanib bulk bilan sotiladi", async ({ page }) => {
     const api = await mockCourierBulkApi(page);
     await openCourierBulk(page);
 
-    // Hech bir qatorda natija oldindan tanlanmagan (ega 2026-11-05: «default hech nimada turmasligi kerak»).
+    // Hamma qatorda sukut «Sotildi» (ega 2026-11-21: kunni yakunlash BeePost'dagidek).
     for (const name of ["Feruza Mirzayeva", "Ali Valiyev", "Dilnoza Rahimova"]) {
-      await expect(page.getByRole("radiogroup", { name: `${name}: natija` }).getByRole("radio", { checked: true })).toHaveCount(0);
+      await expect(
+        page.getByRole("radiogroup", { name: `${name}: natija` }).getByRole("radio", { name: "Sotildi" }),
+      ).toHaveAttribute("aria-checked", "true");
     }
-    await markResult(page, "Feruza Mirzayeva", "Sotildi");
     await markResult(page, "Ali Valiyev", "Bekor");
 
     await page.getByRole("button", { name: "Kunni yakunlash", exact: true }).click();
     const confirm = page.getByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
-    await expect(confirm).toContainText("1 tasi belgilanmagan — o'zgarmaydi");
-    await confirm.getByRole("button", { name: "Tasdiqlash" }).click();
+    await expect(confirm).toContainText("2 ta sotilgan deb belgilanadi");
+    await expect(confirm).toContainText("2 tasi belgilanmagan (skanerlanmagan)");
+    const submit = confirm.getByRole("button", { name: "Tasdiqlash" });
+    await expect(submit).toBeDisabled();
+    await confirm.getByRole("checkbox", { name: "Belgilanmagan 2 ta buyurtma SOTILISHINI tushunaman" }).check();
+    await submit.click();
 
     await expect(toast(page, "Kun yakunlandi")).toBeVisible();
-    expect(api.sells).toEqual([{ id: "10401", body: { comment: BULK_SOLD_COMMENT, extraCost: 0 } }]);
-    expect(api.cancels).toEqual([{ id: "10402", body: { comment: BULK_CANCEL_COMMENT, extraCost: 0 } }]);
-    // Belgilanmagan qator so'rovsiz ro'yxatda qoladi va hali ham belgisiz.
-    const unmarked = page.getByRole("radiogroup", { name: "Dilnoza Rahimova: natija" });
-    await expect(unmarked).toBeVisible();
-    await expect(unmarked.getByRole("radio", { checked: true })).toHaveCount(0);
+    // Ikki so'rov: avval bekor, keyin sotish — bitta yakunlash kaliti bilan.
+    expect(api.bulkCalls.map(({ action, orderIds }) => ({ action, orderIds }))).toEqual([
+      { action: "cancel", orderIds: ["10402"] },
+      { action: "sell", orderIds: ["10401", "10403"] },
+    ]);
+    expect(api.bulkCalls[0].key).toMatch(/^courier-bulk:/);
+    expect(api.bulkCalls[1].key).toBe(api.bulkCalls[0].key);
+    expect(api.requests.every((request) => request.source === "courier-bulk")).toBe(true);
     expect(api.leaked).toEqual([]);
   });
 

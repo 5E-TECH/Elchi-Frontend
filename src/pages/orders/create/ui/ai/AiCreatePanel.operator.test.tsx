@@ -125,8 +125,8 @@ describe("AiCreatePanel — «Operator» tanlovi", () => {
     await createAll(user, 2);
     const [sent1, sent2] = confirmCalls()[0].orders;
     expect(sent1).toMatchObject({ operator_id: "31", operator: "Sevinch Karimova" });
-    // Ikkinchisi tasdiqlanmadi — AI matni avvalgidek faqat matn.
-    expect(sent2).toMatchObject({ operator: "Sevinch" });
+    // Ikkinchisi tanlanmadi — 2026-11-21: ro'yxat bor bo'lsa AI o'qigan ism ham yuborilmaydi (operatorsiz).
+    expect(sent2).not.toHaveProperty("operator");
     expect(sent2).not.toHaveProperty("operator_id");
   });
 
@@ -145,8 +145,9 @@ describe("AiCreatePanel — «Operator» tanlovi", () => {
     const alert = (await screen.findByText("2 ta buyurtmada operator ismi ro'yxatdagi operatorga mos keladi")).closest(
       "[data-tone]",
     ) as HTMLElement;
-    // Ro'yxatda yo'q ism — ogohlantirish: komissiya yozilmaydi.
-    expect(within(cards()[2]).getByText("Ro'yxatdan tanlanmagan — bu operatorga komissiya yozilmaydi")).toBeInTheDocument();
+    // Ro'yxatda yo'q ism — erkin matn maydoni YO'Q (2026-11-21), faqat AI nima o'qigani izohi.
+    expect(within(cards()[2]).getByText("Xabarda «Shahzoda» deb yozilgan — operatorni ro'yxatdan tanlang")).toBeInTheDocument();
+    expect(within(cards()[2]).queryByLabelText("Ro'yxatda yo'q operator")).not.toBeInTheDocument();
 
     await user.click(within(alert).getByRole("button", { name: "Hammasini tanlash" }));
     expect(screen.queryByText(/ta buyurtmada operator ismi/)).not.toBeInTheDocument();
@@ -154,7 +155,8 @@ describe("AiCreatePanel — «Operator» tanlovi", () => {
     await createAll(user, 3);
     const sent = confirmCalls()[0].orders;
     expect(sent.map((o) => o.operator_id ?? null)).toEqual(["31", "32", null]);
-    expect(sent[2]).toMatchObject({ operator: "Shahzoda" });
+    // Tanlanmagani — operatorsiz: «Shahzoda» matni yuborilmaydi.
+    expect(sent[2]).not.toHaveProperty("operator");
   });
 
   it("xodim: tanlangan market ro'yxati (`market_id` bilan)", async () => {
