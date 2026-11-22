@@ -326,6 +326,8 @@
   "branchOrderReceiveOneDescription": "#{{id}} asosiy filialga qabul qilindi.",
   "receiver": "Qabul qiluvchi",
   "branchBatches": {
+    "scanLoading": "Ro'yxat yuklanmoqda — bir oz kutib qayta skanerlang",
+    "scanWait": "Qabul qilinmoqda — tugashini kuting, keyin qayta skanerlang",
     "list": {
       "searchPlaceholder": "Filial nomi yoki telefon raqami",
       "searchLabel": "Filiallarni qidirish",
@@ -403,6 +405,7 @@
       "cameraMissing": "Bu filial paketlarida yo'q"
     },
     "detail": {
+      "partialReturned": "{{value}} ta tanlanmagan buyurtma jo'natuvchi filialga qaytarildi",
       "title": "Paket {{id}}",
       "regionOrders": "{{region}} buyurtmalari",
       "cardLabel": "Paketdagi buyurtmalar",

@@ -330,6 +330,8 @@
   "branchOrderReceiveOneDescription": "#{{id}} was received by the main branch.",
   "receiver": "Receiver",
   "branchBatches": {
+    "scanLoading": "The list is loading — wait and scan again",
+    "scanWait": "Receiving — wait for it to finish, then scan again",
     "list": {
       "searchPlaceholder": "Branch name or phone number",
       "searchLabel": "Search branches",
@@ -412,6 +414,7 @@
       "cameraMissing": "Not among this branch's packages"
     },
     "detail": {
+      "partialReturned": "{{value}} unselected orders were returned to the sending branch",
       "title": "Batch {{id}}",
       "regionOrders": "{{region}} orders",
       "cardLabel": "Orders in the batch",

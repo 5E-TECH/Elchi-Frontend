@@ -343,6 +343,8 @@
   "branchOrderReceiveOneDescription": "#{{id}} принят главным филиалом.",
   "receiver": "Получатель",
   "branchBatches": {
+    "scanLoading": "Список загружается — подождите и отсканируйте снова",
+    "scanWait": "Идёт приём — дождитесь окончания и отсканируйте снова",
     "list": {
       "searchPlaceholder": "Название филиала или номер телефона",
       "searchLabel": "Поиск филиалов",
@@ -432,6 +434,7 @@
       "cameraMissing": "Нет среди пакетов филиала"
     },
     "detail": {
+      "partialReturned": "Невыбранные заказы ({{value}}) возвращены в филиал-отправитель",
       "title": "Пакет {{id}}",
       "regionOrders": "Заказы: {{region}}",
       "cardLabel": "Заказы в пакете",
