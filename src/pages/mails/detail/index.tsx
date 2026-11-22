@@ -102,12 +102,14 @@ import {
   REFUSED_MAIL_ORDER_STATUSES,
   TODAY_MAIL_ORDER_STATUSES,
   extractOrderItems,
-  getOrderIdentifiers,
-  isSameCustomerMarketOrder,
-  normalizeMatchText,
   toText,
   unwrapScannedOrder,
 } from "./lib/scanMatch";
+import {
+  findExactScannedRow,
+  scanLookupFailureReason,
+  scannedOrderKeys,
+} from "../../../shared/lib/scanner/exactScanMatch";
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
@@ -227,6 +229,13 @@ const EMPTY_SEND_TARGETS: SendTargets = {
 /** Skan-qabul: pochta to'liq qabul qilingach kelingan ro'yxatga shuncha kutib qaytiladi (BeePost kabi). */
 const SCAN_RECEIVE_DONE_BACK_MS = 1500;
 
+/**
+ * Tanlash rejimi (jo'natish va h.k.), pochtada yo'q kod (#47): skan javobida pochta id'si bo'lmasa, sahifadagi pochta
+ * shundan eski bo'lsagina qayta so'raladi — pochtada haqiqatan yo'q kodlar ketma-ket skanerlansa har biri to'liq
+ * pochtani (og'ir `GET post/orders/:id`) qayta so'ramasin.
+ */
+const SCAN_MISS_REFRESH_AGE_MS = 15_000;
+
 /** Skan-qabul jurnalidagi yozuv: buyurtma (ro'yxatdan yashirilgan bo'lsa ham kamera ro'yxati uchun) va holat. */
 type ScanReceiveLogEntry = { order: PostOrder; status: "pending" | "received" | "failed" };
 
@@ -331,6 +340,7 @@ const MailDetailPage = () => {
     isError: regularError,
     error: regularErrorValue,
     refetch: refetchRegularDetail,
+    dataUpdatedAt: regularDataUpdatedAt,
   } = useMailDetail(!isRefusedDetail && !isAllBatchesDetail ? postId ?? "" : "", {
     view: isOldMailView ? undefined : "current",
     // Xato sahifaning o'zida chiziladi (`ErrorState`) — global xabar takrorlanmaydi (anKpzwxk S8: kuryerga
@@ -996,47 +1006,102 @@ const MailDetailPage = () => {
       scanNotify.error(scope.title, { description: scope.description || undefined, duration: 3000 });
       return;
     }
-    const message = getBackendErrorMessage(error) ?? t("mailScanMissing");
-    void playScanFeedback("error", message);
+    // Tarmoq, vaqt, 5xx, 429 — qidiruv bajarilmadi, bu «QR topilmadi» EMAS (skan auditi #48): qayta skan odatda o'tadi,
+    // kod «Bu pochtada yo'q» ro'yxatiga tushmaydi.
+    const reason = scanLookupFailureReason(t, error, { tooMany: t("scanTooManyRequests") });
+    void playScanFeedback("error", t("scanCheckFailed"));
     // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
-    scanNotify.error(t("qrNotFound"), {
-      description: message,
+    scanNotify.error(t("scanCheckFailed"), {
+      description: reason,
       duration: 3000,
     });
   }, [rejectScannedCode, t]);
 
+  /**
+   * Pochtaga sahifa ochilgandan keyin qo'shilgan buyurtma (#47) — qayta so'rovdan keyin ro'yxatda paydo bo'lganda
+   * tanlanadi (tanlov ro'yxatdagi qatorlarga qisqaradi — qator kelmasdan tanlab bo'lmaydi). `after` — shu vaqtdan
+   * keyingi javob: unda ham ro'yxatda yo'q bo'lsa (masalan shu sahifada jo'natilgan) — «Bu pochtada yo'q».
+   */
+  const [pendingScanSelect, setPendingScanSelect] = useState<{ id: string; rawValue: string; after: number } | null>(
+    null,
+  );
+  const regularUpdatedAt = regularDataUpdatedAt ?? 0;
+  useEffect(() => {
+    if (!pendingScanSelect) return;
+    const row = scanOrders.find((order) => String(order.id) === pendingScanSelect.id);
+    if (row) {
+      setPendingScanSelect(null);
+      selectScannedOrder(row);
+      return;
+    }
+    if (regularUpdatedAt < pendingScanSelect.after) return;
+    setPendingScanSelect(null);
+    rejectScannedCode(pendingScanSelect.rawValue);
+    scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
+  }, [pendingScanSelect, regularUpdatedAt, rejectScannedCode, scanOrders, selectScannedOrder, t]);
+
+  /**
+   * Tanlash rejimi (jo'natish, rad etilgan pochta): indeksda yo'q kod. Faqat AYNAN o'sha buyurtma (#46): id / QR token
+   * / skan javobidagi id — ilgari moslik topilmasa bir xil mijoz + market (+ tuman) dagi BOSHQA buyurtma tanlanardi va
+   * uning o'z skani «allaqachon tanlangan» bo'lardi. Pochtaga keyin qo'shilgan buyurtma (#47): javobdagi `post_id` shu
+   * pochta bo'lsa (yoki noma'lum, sahifadagi pochta eskirgan bo'lsa) pochta bir marta qayta so'raladi.
+   */
   const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
     const rawCandidates = normalizeScannerCandidates(rawValue, window.location.origin);
+    const rejectMissing = () => {
+      rejectScannedCode(rawValue);
+      scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
+    };
 
     try {
-      const detail = await fetchScanDetail(rawValue);
+      const detail = await fetchScanDetail(rawValue, { orderOnly: true });
       const scannedOrder = detail.type === "order" ? unwrapScannedOrder(detail.data) : {};
-      const scannedIdentifiers = getOrderIdentifiers(scannedOrder);
-      rawCandidates.forEach((candidate) => {
-        const text = normalizeMatchText(candidate);
-        if (text) scannedIdentifiers.add(text);
-      });
-
-      const matchedByIdentifier = scanOrders.find((order) => {
-        const orderIdentifiers = getOrderIdentifiers(order);
-        return [...scannedIdentifiers].some((identifier) => orderIdentifiers.has(identifier));
-      });
-      const comparableMatches = matchedByIdentifier
-        ? []
-        : scanOrders.filter((order) => isSameCustomerMarketOrder(scannedOrder, order));
-      const matchedOrder = matchedByIdentifier ?? (comparableMatches.length === 1 ? comparableMatches[0] : undefined);
-
+      const matchedOrder = findExactScannedRow(scanOrders, scannedOrderKeys(scannedOrder, rawCandidates));
       if (matchedOrder) {
         selectScannedOrder(matchedOrder);
         return;
       }
 
-      rejectScannedCode(rawValue);
-      scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
+      const scannedId = toText(scannedOrder.id);
+      const scannedPostId = toText(scannedOrder.post_id);
+      const canRefreshPost = !isRefusedDetail && !isAllBatchesDetail && Boolean(postId) && Boolean(scannedId);
+      const mayBeInThisPost =
+        scannedPostId === String(postId) ||
+        (!scannedPostId && Date.now() - regularUpdatedAt > SCAN_MISS_REFRESH_AGE_MS);
+      if (!canRefreshPost || !mayBeInThisPost) {
+        rejectMissing();
+        return;
+      }
+
+      // `cancelRefetch: false` — yo'ldagi so'rov bo'lsa o'shaning javobi kutiladi (ketma-ket skanlarda bitta so'rov).
+      const result = await refetchRegularDetail({ cancelRefetch: false });
+      // Qayta so'rov yiqildi (429, vaqt, 5xx) — eski ro'yxat bo'yicha «Bu pochtada yo'q» deyilmaydi: tekshirib bo'lmadi.
+      if (result?.isError) {
+        reportScanLookupError(rawValue, result.error);
+        return;
+      }
+      const freshRows = result?.data?.data?.allOrdersByPostId ?? [];
+      const inPost = freshRows.some((order) => String(order.id) === scannedId && isInPostNow(order));
+      if (!inPost) {
+        rejectMissing();
+        return;
+      }
+      setPendingScanSelect({ id: scannedId, rawValue, after: result?.dataUpdatedAt ?? 0 });
     } catch (error) {
       reportScanLookupError(rawValue, error);
     }
-  }, [scanOrders, rejectScannedCode, reportScanLookupError, selectScannedOrder, t]);
+  }, [
+    isAllBatchesDetail,
+    isRefusedDetail,
+    postId,
+    refetchRegularDetail,
+    regularUpdatedAt,
+    rejectScannedCode,
+    reportScanLookupError,
+    scanOrders,
+    selectScannedOrder,
+    t,
+  ]);
 
   const handleBack = useCallback(() => {
     navigate(`${getMailTabPath(normalizeMailTab(fromTab))}${fromSearch}`);
@@ -1215,7 +1280,8 @@ const MailDetailPage = () => {
   const handleMissingScanReceive = useCallback(
     async (rawValue: string, source: ScanSource) => {
       try {
-        const detail = await fetchScanDetail(rawValue);
+        // Qop zaxirasisiz (pochtada qop yo'q): 404 — bitta so'rovda. To'liq javob — `post_id` va holat kerak.
+        const detail = await fetchScanDetail(rawValue, { orderOnly: true });
         const scanned = detail.type === "order" ? unwrapScannedOrder(detail.data) : {};
         const scannedId = toText(scanned.id);
         const row = scannedId
@@ -1946,8 +2012,14 @@ const MailDetailPage = () => {
     return <MailDetailSkeleton />;
 
   // ─── Xato ─────────────────────────────────────────────────────────────────
-  if (regularError || refusedError) {
-    const loadError = regularErrorValue ?? refusedQuery.error;
+  // Butun sahifa xatosi — faqat ko'rsatadigan ma'lumot YO'Q bo'lsa (birinchi yuklanish). Fon yangilanishi yiqilsa
+  // (skan-qabul paytida, 429, sekin logistika) jadval / kartalar o'rnida turadi, ustida ogohlantirish (skan auditi #44 —
+  // ilgari skan o'rtasida sahifa «Yuklab bo'lmadi» ga almashardi).
+  const regularLoadFailed = regularError && !regularResponse;
+  const refusedLoadFailed = refusedError && !refusedResponse;
+  const backgroundRefreshFailed = (regularError && !regularLoadFailed) || (refusedError && !refusedLoadFailed);
+  if (regularLoadFailed || refusedLoadFailed) {
+    const loadError = (regularLoadFailed ? regularErrorValue : null) ?? refusedQuery.error;
     const rejection = readBackendRejection(loadError);
     // Kuryer filialga hali qabul qilinmagan o'tkazmani ochdi (#620): kulrang holat, lokal matn, «Qayta urinish»siz.
     const courierHidden =
@@ -1967,8 +2039,8 @@ const MailDetailPage = () => {
           title={courierHidden?.title ?? t("loadError")}
           description={courierHidden?.description}
           onRetry={() => {
-            if (regularError) void refetchRegularDetail();
-            if (refusedError) void refusedQuery.refetch?.();
+            if (regularLoadFailed) void refetchRegularDetail();
+            if (refusedLoadFailed) void refusedQuery.refetch?.();
           }}
         />
       </div>
@@ -2221,6 +2293,30 @@ const MailDetailPage = () => {
         }
         actions={headerActions}
       />
+
+      {backgroundRefreshFailed ? (
+        <DetailAlert
+          tone="warning"
+          icon={TriangleAlert}
+          role="alert"
+          titleBlock
+          title={t("detailPage.refreshFailedTitle")}
+          aside={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (regularError) void refetchRegularDetail();
+                if (refusedError) void refusedQuery.refetch?.();
+              }}
+            >
+              {t("ui:states.retry")}
+            </Button>
+          }
+        >
+          <span className="text-[13px]">{t("detailPage.refreshFailedText")}</span>
+        </DetailAlert>
+      ) : null}
 
       {canManualSelectRefusedOrder ? (
         <DetailAlert tone="info" icon={Info} role="note" title={t("detailPage.refusedAlertTitle")} titleBlock>

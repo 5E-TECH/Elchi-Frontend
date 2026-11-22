@@ -284,3 +284,142 @@ describe("MailDetailPage — universal skanerdan kelish (vNcGDnNh): maqsad id'si
     expect(target().title).toBe("Rad etilgan pochtani qabul qilish");
   });
 });
+
+/**
+ * Skan auditi 2026-11-23: jo'natish rejimida «o'xshash mijoz» bo'yicha BOSHQA buyurtma tanlanmaydi (#46); pochtaga
+ * keyin qo'shilgan buyurtma bitta qayta so'rov bilan topiladi (#47); qidiruv xatosi «QR topilmadi» emas (#48); fon
+ * yangilanishi yiqilsa sahifa xato holatiga almashmaydi (#44).
+ */
+describe("MailDetailPage — skan: faqat aniq buyurtma, kechikkan qo'shilish va xatolar", () => {
+  /** `10199` bilan bir mijoz (id, ism), market va tuman — lekin BOSHQA buyurtma. */
+  const sameCustomerOther = (over: Record<string, unknown> = {}) => ({
+    id: "10500",
+    status: "received",
+    customer: { id: "c-10199", name: "Sanjar Qurbonov" },
+    market: { id: "201", name: "Baraka Shop" },
+    district: { id: "5", name: "Yakkabog' tumani" },
+    ...over,
+  });
+
+  it("bir xil mijoz + tuman, boshqa pochtadagi buyurtma — tanlanmaydi, «Bu pochtada yo'q» (#46)", async () => {
+    mocks.fetchScanDetail.mockResolvedValue({ type: "order", data: { data: sameCustomerOther({ post_id: "7777" }) } });
+    const refetch = vi.fn();
+    const response = {
+      ...detail([{ ...order("10199", "aaaaaaaaaaaaaaaaaaaaaa99", "Sanjar Qurbonov"), market: { id: "201", name: "Baraka Shop" } }]),
+      refetch,
+    };
+    mocks.useMailDetail.mockImplementation((postId: string) => (postId ? response : { data: undefined, isLoading: false, isError: false, refetch: vi.fn() }));
+    renderPage(stateFor("superadmin"));
+    await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
+
+    await act(async () => {
+      await target().onScan("bbbbbbbbbbbbbbbbbbbb0500", "camera");
+    });
+
+    expect(screen.getByTestId("selected")).toHaveTextContent("");
+    await waitFor(() => expect(target().list?.[0]).toMatchObject({ key: "missing:bbbbbbbbbbbbbbbbbbbb0500", tone: "danger" }));
+    // Boshqa pochtaniki — pochta qayta so'ralmaydi.
+    expect(refetch).not.toHaveBeenCalled();
+  });
+
+  it("pochtaga sahifa ochilgandan keyin qo'shilgan buyurtma — bitta qayta so'rov, so'ng tanlanadi (#47)", async () => {
+    mocks.fetchScanDetail.mockResolvedValue({ type: "order", data: { data: { id: "10600", post_id: POST_ID, status: "received" } } });
+    const initialRows = [order("10195", "aaaaaaaaaaaaaaaaaaaaaa95", "Nigora Xoliqova")];
+    const freshRows = [...initialRows, order("10600", "aaaaaaaaaaaaaaaaaaaaa600", "Kechikkan Buyurtma")];
+    let current: ReturnType<typeof detail> & { dataUpdatedAt: number } = { ...detail(initialRows), dataUpdatedAt: Date.now() };
+    const refetch = vi.fn(async () => {
+      current = { ...detail(freshRows), refetch, dataUpdatedAt: Date.now() + 1 };
+      return { data: current.data, dataUpdatedAt: current.dataUpdatedAt };
+    });
+    current = { ...current, refetch };
+    mocks.useMailDetail.mockImplementation((postId: string) => (postId ? current : { data: undefined, isLoading: false, isError: false, refetch: vi.fn() }));
+    renderPage(stateFor("superadmin"));
+    await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaa600", "camera");
+    });
+
+    await waitFor(() => expect(screen.getByTestId("selected")).toHaveTextContent("10600"));
+    expect(refetch).toHaveBeenCalledTimes(1);
+    expect(refetch).toHaveBeenCalledWith({ cancelRefetch: false });
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Buyurtma tanlandi №10600", undefined, { voice: "selected" });
+  });
+
+  it("shu pochtaniki, lekin qayta so'rov yiqildi (429) — «Bu pochtada yo'q» emas, «Tekshirib bo'lmadi» (#47/#48)", async () => {
+    mocks.fetchScanDetail.mockResolvedValue({ type: "order", data: { data: { id: "10600", post_id: POST_ID } } });
+    const base = detail([order("10195", "aaaaaaaaaaaaaaaaaaaaaa95", "Nigora Xoliqova")]);
+    const refetch = vi.fn(async () => ({
+      data: base.data,
+      isError: true,
+      error: Object.assign(new Error("Too Many Requests"), { response: { status: 429, data: {} } }),
+    }));
+    const response = { ...base, refetch, dataUpdatedAt: Date.now() };
+    mocks.useMailDetail.mockImplementation((postId: string) => (postId ? response : { data: undefined, isLoading: false, isError: false, refetch: vi.fn() }));
+    renderPage(stateFor("superadmin"));
+    await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaa600", "camera");
+    });
+
+    expect(await screen.findByText("So'rovlar juda ko'p — bir necha soniya kutib, qayta skanerlang")).toBeInTheDocument();
+    expect(target().list).toEqual([]);
+    expect(screen.getByTestId("selected")).toHaveTextContent("");
+  });
+
+  it("pochta id'si noma'lum, sahifadagi pochta yangi — qayta so'ralmaydi, «Bu pochtada yo'q» (#47, ortiqcha so'rovsiz)", async () => {
+    mocks.fetchScanDetail.mockResolvedValue({ type: "order", data: { data: { id: "10700", status: "received" } } });
+    const refetch = vi.fn();
+    const response = { ...detail([order("10195", "aaaaaaaaaaaaaaaaaaaaaa95", "Nigora Xoliqova")]), refetch, dataUpdatedAt: Date.now() };
+    mocks.useMailDetail.mockImplementation((postId: string) => (postId ? response : { data: undefined, isLoading: false, isError: false, refetch: vi.fn() }));
+    renderPage(stateFor("superadmin"));
+    await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
+
+    await act(async () => {
+      await target().onScan("bbbbbbbbbbbbbbbbbbbb0700", "camera");
+    });
+
+    await waitFor(() => expect(target().list?.[0]).toMatchObject({ key: "missing:bbbbbbbbbbbbbbbbbbbb0700" }));
+    expect(refetch).not.toHaveBeenCalled();
+  });
+
+  it("qidiruv xatosi (502 / tarmoq) — «Tekshirib bo'lmadi — qayta skanerlang», «QR topilmadi» emas (#48)", async () => {
+    mocks.fetchScanDetail.mockRejectedValue(
+      Object.assign(new Error("Bad Gateway"), { response: { status: 502, data: { message: "UPSTREAM_UNAVAILABLE" } } }),
+    );
+    renderPage(stateFor("superadmin"));
+    await waitFor(() => expect(getActiveScanTarget()).not.toBeNull());
+
+    await act(async () => {
+      await target().onScan("bbbbbbbbbbbbbbbbbbbb0388", "camera");
+    });
+
+    expect(await screen.findByText("Server xatosi (502). Birozdan keyin qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(screen.getAllByText("Tekshirib bo'lmadi — qayta skanerlang").length).toBeGreaterThan(0);
+    expect(screen.queryByText("QR topilmadi")).not.toBeInTheDocument();
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("error", "Tekshirib bo'lmadi — qayta skanerlang");
+    // «Bu pochtada yo'q» ro'yxatiga tushmaydi.
+    expect(target().list).toEqual([]);
+  });
+
+  it("fon yangilanishi yiqildi, ma'lumot bor — jadval qoladi, ustida «Pochta yangilanmadi» (#44)", async () => {
+    const refetch = vi.fn();
+    const response = {
+      ...detail([order("10195", "aaaaaaaaaaaaaaaaaaaaaa95", "Nigora Xoliqova")]),
+      isError: true,
+      error: Object.assign(new Error("Too Many Requests"), { response: { status: 429 } }),
+      refetch,
+    };
+    mocks.useMailDetail.mockImplementation((postId: string) => (postId ? response : { data: undefined, isLoading: false, isError: false, refetch: vi.fn() }));
+    renderPage(stateFor("superadmin"));
+
+    expect(await screen.findByTestId("selected")).toBeInTheDocument();
+    expect(screen.getByText("Pochta yangilanmadi")).toBeInTheDocument();
+    expect(screen.queryByText("Ma'lumotlarni yuklab bo'lmadi")).not.toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole("button", { name: "Qayta urinish" }).click();
+    });
+    expect(refetch).toHaveBeenCalled();
+  });
+});

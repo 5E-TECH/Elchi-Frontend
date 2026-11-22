@@ -64,12 +64,21 @@ import { resetFilters, setFilterValue } from "../../shared/model/filterSlice";
 import { clearAllSearch } from "../../shared/model/searchSlice";
 import { getOrderItemName } from "../../shared/lib/orderItemName";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
-import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResource";
+import { fetchScanDetail } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { readQrScopeText } from "../../shared/lib/coverageReasons";
 import { orderByRecent, scanNotify, useRecentScans } from "../../shared/lib/scanner/scanSession";
 import type { ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
 import { extractScannerToken } from "../../shared/lib/scanToken";
+import {
+  findExactScannedRow,
+  isScanLookupNotFound,
+  scanLookupFailureReason,
+  scannedOrderId,
+  scannedOrderKeys,
+  unwrapScannedOrder,
+} from "../../shared/lib/scanner/exactScanMatch";
+import { normalizeOrderStatus, ORDER_STATUS_NS, ORDER_STATUS_REGISTRY } from "../../entities/order";
 import { useActionDialogError } from "../../entities/orders/actionDialogError";
 import { isCourierHeldOrder } from "../../entities/orders/custody";
 import type { CancelOrderPayload } from "../../entities/orders/cancelReason";
@@ -121,119 +130,35 @@ const toText = (value: unknown) => {
   return "";
 };
 
-const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
-
-const unwrapScannedOrder = (payload: unknown) => {
-  const source = asRecord(payload);
-  const data = asRecord(source.data ?? source);
-  const nestedData = asRecord(data.data ?? data);
-  return asRecord(nestedData.order ?? data.order ?? nestedData);
+/**
+ * Skan javobidagi buyurtma HQ'ga yuborishda qanday (skan auditi 2026-11-23, #52/#64): `sendable` — ro'yxatning
+ * tanlash qoidasi bilan aynan (`isUnsentCancelledOrder`: holat `cancelled`); `sent` — bekorlar pochtasiga solingan /
+ * jo'natilgan (`cancelled (sent)`, ro'yxat ko'rinishidagi `transport_status`, `canceled_post_id`); `other` — bekor
+ * qilinmagan. Begona filial buyurtmasini backend qidiruvning o'zida rad etadi (403, `readQrScopeText`).
+ */
+const classifyScannedCancelled = (scanned: Record<string, unknown>): "sendable" | "sent" | "other" => {
+  if (isCancelledSentOrder(scanned) || hasCancelPost(scanned)) return "sent";
+  return normalizeOrderStatus(scanned.status) === "cancelled" ? "sendable" : "other";
 };
 
-const addOrderIdentifiers = (target: Set<string>, value: unknown) => {
-  const record = asRecord(value);
-  [
-    "id",
-    "qr_code_token",
-    "qrCodeToken",
-    "token",
-    "order_token",
-    "orderToken",
-    "parent_order_id",
-    "parentOrderId",
-    "original_order_id",
-    "originalOrderId",
-    "source_order_id",
-    "sourceOrderId",
-    "split_from_order_id",
-    "splitFromOrderId",
-    "cancelled_from_order_id",
-    "cancelledFromOrderId",
-    "partly_sold_order_id",
-    "partlySoldOrderId",
-    "root_order_id",
-    "rootOrderId",
-    "base_order_id",
-    "baseOrderId",
-  ].forEach((key) => {
-    const text = normalizeMatchText(record[key]);
-    if (text) target.add(text);
+/**
+ * Sahifada yo'q (skan bilan topilgan) buyurtma joriy filtrlarga mos keladimi. Faqat skan javobida BOR maydonlar
+ * tekshiriladi (market, tuman, viloyat, yetkazish turi); javobda yo'q filtr (sana, qidiruv, bosqich, filial, kuryer,
+ * manba) — tekshirib bo'lmaydi, to'smaydi. Mos kelmasa — «Filtrga mos emas» (jim tanlanmaydi va «topilmadi» ham emas).
+ */
+const fitsListFilters = (scanned: Record<string, unknown>, params: OrderListParams) => {
+  const district = asRecord(scanned.district);
+  const checks: Array<[unknown, unknown]> = [
+    [params.market_id, scanned.market_id ?? asRecord(scanned.market).id],
+    [params.district_id, scanned.district_id ?? district.id],
+    [params.region_id, scanned.region_id ?? asRecord(scanned.region).id ?? district.region_id ?? asRecord(district.region).id],
+    [params.where_deliver, scanned.where_deliver],
+  ];
+  return checks.every(([filter, value]) => {
+    const expected = toText(filter);
+    const actual = toText(value);
+    return !expected || !actual || expected === actual;
   });
-
-  [
-    "order",
-    "parent_order",
-    "parentOrder",
-    "original_order",
-    "originalOrder",
-    "source_order",
-    "sourceOrder",
-    "split_from_order",
-    "splitFromOrder",
-    "cancelled_from_order",
-    "cancelledFromOrder",
-  ].forEach((key) => {
-    const nested = asRecord(record[key]);
-    ["id", "qr_code_token", "qrCodeToken", "token"].forEach((nestedKey) => {
-      const text = normalizeMatchText(nested[nestedKey]);
-      if (text) target.add(text);
-    });
-  });
-};
-
-const getOrderIdentifiers = (value: unknown) => {
-  const identifiers = new Set<string>();
-  addOrderIdentifiers(identifiers, value);
-  return identifiers;
-};
-
-const getComparableOrderInfo = (value: unknown) => {
-  const order = asRecord(value);
-  const customer = asRecord(order.customer);
-  const market = asRecord(order.market);
-  const district = asRecord(order.district);
-
-  return {
-    customerId: normalizeMatchText(order.customer_id ?? order.customerId ?? customer.id),
-    name: normalizeMatchText(
-      customer.name ??
-        customer.full_name ??
-        customer.fullName ??
-        order.customer_name ??
-        order.customerName ??
-        order.name,
-    ),
-    phone: normalizeMatchText(
-      customer.phone_number ??
-        customer.phoneNumber ??
-        customer.phone ??
-        order.customer_phone ??
-        order.customerPhone ??
-        order.phone_number ??
-        order.phone,
-    ),
-    marketId: normalizeMatchText(order.market_id ?? order.marketId ?? market.id),
-    marketName: normalizeMatchText(market.name),
-    districtId: normalizeMatchText(order.district_id ?? order.districtId ?? district.id),
-    districtName: normalizeMatchText(district.name),
-  };
-};
-
-const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
-  const a = getComparableOrderInfo(left);
-  const b = getComparableOrderInfo(right);
-  const sameCustomer =
-    Boolean(a.customerId && a.customerId === b.customerId) ||
-    Boolean(a.phone && a.phone === b.phone) ||
-    Boolean(a.name && a.name === b.name);
-  const sameMarket = Boolean(a.marketId && a.marketId === b.marketId) || Boolean(a.marketName && a.marketName === b.marketName);
-  const sameDistrict =
-    !a.districtId && !a.districtName && !b.districtId && !b.districtName
-      ? true
-      : Boolean(a.districtId && a.districtId === b.districtId) ||
-        Boolean(a.districtName && a.districtName === b.districtName);
-
-  return sameCustomer && sameMarket && sameDistrict;
 };
 
 /**
@@ -276,7 +201,11 @@ const Orders = () => {
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
   // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
   const [approvalOrderId, setApprovalOrderId] = useState<string | null>(null);
+  // HQ'ga yuborish tanlovi — id bo'yicha, SAHIFAGA BOG'LANMAGAN (skan auditi 2026-11-23, #52/#65): boshqa sahifadagi
+  // (skan bilan topilgan) buyurtma ham tanlanadi, sahifa almashsa yoki 60 s yangilanishda ro'yxat sursa ham qoladi.
   const [selectedCancelledIds, setSelectedCancelledIds] = useState<Set<string>>(new Set());
+  /** Sahifada yo'q, skan bilan tanlangan buyurtmalar (skan javobidan) — kamera ro'yxati va qayta skan uchun. */
+  const [scanPickedRows, setScanPickedRows] = useState<ReadonlyMap<string, OrderListItem>>(new Map());
 
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
@@ -587,20 +516,31 @@ const Orders = () => {
     if (items.length === 0 && total > 0 && page > lastPage) setPage(lastPage);
   }, [isLoading, isOrdersError, isPlaceholderData, items.length, lastPage, page, role, setPage, total]);
 
+  // Yangilanishdan keyin tanlov ro'yxatdan chiqib ketgan buyurtmadan tozalanadi, lekin sahifa surilgani uchun emas
+  // (#65 — ilgari tanlov har yangilanishda joriy sahifaga qisqarardi: ro'yxat surilib tanlangan buyurtma 2-sahifaga
+  // o'tsa, u jim tushib qolardi va «HQ'ga yuborish» uni yubormasdi). Tanlovdan chiqadi: (1) shu sahifada ko'rinib,
+  // endi tanlab bo'lmaydigan (masalan boshqa qurilmadan yuborilgan); (2) javob butun tabni qamrasa (bitta sahifa) —
+  // unda yo'q tanlov (tabdan chiqqan). Ko'p sahifali tabda boshqa sahifadagi (skan bilan topilgan) tanlov qoladi.
+  const wholeCancelledTabShown =
+    canSendCancelledToHq && Boolean(data) && !isPlaceholderData && currentPage === 1 && total <= itemsPerPage;
   useEffect(() => {
     if (!canSendCancelledToHq) {
       setSelectedCancelledIds((previous) => previous.size > 0 ? new Set() : previous);
       return;
     }
 
-    const selectableIds = new Set(
-      items.filter(isUnsentCancelledOrder).map((order) => order.id),
+    const unselectableIds = new Set(
+      items.filter((order) => !isUnsentCancelledOrder(order)).map((order) => order.id),
     );
+    const inTab = wholeCancelledTabShown
+      ? new Set(items.filter(isUnsentCancelledOrder).map((order) => order.id))
+      : null;
     setSelectedCancelledIds((previous) => {
-      const next = new Set([...previous].filter((id) => selectableIds.has(id)));
+      if (previous.size === 0) return previous;
+      const next = new Set([...previous].filter((id) => !unselectableIds.has(id) && (!inTab || inTab.has(id))));
       return next.size === previous.size ? previous : next;
     });
-  }, [canSendCancelledToHq, items]);
+  }, [canSendCancelledToHq, items, wholeCancelledTabShown]);
 
   const canUseOrderActions = useCallback(
     (order: OrderListItem) => canUseManagerTableActions && TABLE_ACTION_STATUSES.has(order.status),
@@ -843,11 +783,39 @@ const Orders = () => {
     void playScanFeedback("missing", message);
   }, [touchRecentScan]);
 
-  const selectScannedCancelledOrder = useCallback((order: OrderListItem) => {
+  /** Holat yorlig'i (`status` nomlar fazosi); noma'lum holat — xom qiymat. */
+  const statusLabel = useCallback(
+    (raw: unknown) => {
+      const status = normalizeOrderStatus(raw);
+      return status ? t(ORDER_STATUS_REGISTRY[status].labelKey, { ns: ORDER_STATUS_NS }) : toText(raw) || "—";
+    },
+    [t],
+  );
+
+  /**
+   * Tanlab bo'lmaydigan skan — aniq sabab, «Buyurtma topilmadi» emas: allaqachon yuborilgan (`cancelled (sent)`,
+   * #64 — qator ro'yxatda ko'rinib turibdi) yoki bekor qilinmagan (holati bilan).
+   */
+  const rejectUnsendableScan = useCallback(
+    (order: Record<string, unknown>, id: string) => {
+      if (classifyScannedCancelled(order) === "sent") {
+        const description = t("scanAlreadySentDescription", { id });
+        scanNotify.warning(t("scanAlreadySentTitle"), { description, duration: 3000 });
+        rejectScannedCode(`№${id}`, t("ordersList.cameraReasonSent"), description);
+        return;
+      }
+      const description = t("scanNotCancelledDescription", { id, status: statusLabel(order.status) });
+      scanNotify.warning(t("scanNotCancelledTitle"), { description, duration: 3000 });
+      rejectScannedCode(`№${id}`, t("ordersList.cameraReasonNotSendable"), description);
+    },
+    [rejectScannedCode, statusLabel, t],
+  );
+
+  /** `picked` — sahifada yo'q, skan javobidan olingan buyurtma (kamera ro'yxati va qayta skan uchun eslab qolinadi). */
+  const selectScannedCancelledOrder = useCallback((order: OrderListItem, picked = false) => {
     const name = order.customer?.name ?? `№${order.id}`;
     if (!isUnsentCancelledOrder(order)) {
-      scanNotify.warning(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription") });
-      rejectScannedCode(`№${order.id}`, t("ordersList.cameraReasonNotSendable"), t("scanNotFoundDescription"));
+      rejectUnsendableScan(order as unknown as Record<string, unknown>, String(order.id));
       return;
     }
 
@@ -862,40 +830,75 @@ const Orders = () => {
       next.add(order.id);
       return next;
     });
+    if (picked) setScanPickedRows((previous) => new Map(previous).set(order.id, order));
     touchRecentScan(`order:${order.id}`);
     scanNotify.success(t("scanSelectedTitle"), {
       description: t("ordersList.scanSelected", { name: order.customer?.name ?? "—", id: order.id }),
     });
     void playScanFeedback("success", t("ordersList.cameraSelected", { id: order.id }), undefined, { voice: "selected" });
-  }, [rejectScannedCode, selectedCancelledIds, t, touchRecentScan]);
+  }, [rejectUnsendableScan, selectedCancelledIds, t, touchRecentScan]);
 
+  /** Server ham tanimagan kod (404, paket / pochta kodi) — haqiqiy «topilmadi». */
+  const rejectUnknownCode = useCallback(
+    (code: string) => {
+      // Skaner oqimi: xato qisqa turadi (kuryer ro'yxatidagi kelishuv — 3 s), keyingi skanni to'smaydi (G6F68ti6, 16).
+      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanUnknownDescription"), duration: 3000 });
+      rejectScannedCode(code, t("ordersList.cameraReasonUnknown"), t("scanUnknownDescription"));
+    },
+    [rejectScannedCode, t],
+  );
+
+  /** Bir kod bo'yicha parallel ikki qidiruv ketmasin (USB skaner bir kodni tez qayta yuborsa). */
+  const scanLookupsRef = useRef(new Set<string>());
+
+  /**
+   * Sahifadagi qatorlarda yo'q kod (skan auditi 2026-11-23). Ro'yxat sahifalangan (sukut 10 ta) — ilgari boshqa
+   * sahifadagi haqiqiy bekor «Buyurtma topilmadi — hozirgi ro'yxatda yo'q» bo'lardi (#52), «o'xshash mijoz» bo'yicha
+   * esa BOSHQA buyurtma tanlanardi (#54). Endi: server topgan buyurtma (`fetchScanDetail`) → sahifada uning AYNAN
+   * o'zi bo'lsa — o'sha qator; aks holda buyurtmaning o'zi tab maqsadiga (jo'natilmagan bekor) va tekshirsa bo'ladigan
+   * filtrlarga mos kelsa — tanlanadi (sahifada bo'lmasa ham), mos kelmasa — aniq sabab.
+   */
   const handleMissingScannedCancelledOrder = useCallback(async (rawValue: string) => {
+    const code = extractScannerToken(rawValue) ?? rawValue.trim();
+    const lookupKey = code.toLowerCase();
+    if (!lookupKey || scanLookupsRef.current.has(lookupKey)) return;
+    scanLookupsRef.current.add(lookupKey);
     try {
-      const detail = await fetchScanDetail(rawValue);
+      // Yengil javob (`?view=light`, bitta o'qish) va qop zaxirasisiz: bu yerga id, token, holat, market / tuman va
+      // ko'rinadigan nomlar yetadi; 404 — bitta so'rovda «topilmadi».
+      const detail = await fetchScanDetail(rawValue, { light: true, orderOnly: true });
       const scannedOrder = detail.type === "order" ? unwrapScannedOrder(detail.data) : {};
-      const scannedIdentifiers = getOrderIdentifiers(scannedOrder);
-      const matchedByIdentifier = items.find((order) => {
-        const orderIdentifiers = getOrderIdentifiers(order);
-        return [...scannedIdentifiers].some((identifier) => orderIdentifiers.has(identifier));
-      });
-      const comparableMatches = matchedByIdentifier
-        ? []
-        : items.filter((order) => isUnsentCancelledOrder(order) && isSameCustomerMarketOrder(scannedOrder, order));
-      const matchedOrder = matchedByIdentifier ?? (comparableMatches.length === 1 ? comparableMatches[0] : undefined);
-
-      if (matchedOrder) {
-        selectScannedCancelledOrder(matchedOrder);
+      const scannedId = scannedOrderId(scannedOrder);
+      if (!scannedId) {
+        rejectUnknownCode(code);
         return;
       }
 
-      // Skaner oqimi: xato qisqa turadi (kuryer ro'yxatidagi kelishuv — 3 s), keyingi skanni to'smaydi (G6F68ti6, 16).
-      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 3000 });
-      rejectScannedCode(
-        extractScannerToken(rawValue) ?? rawValue.trim(),
-        t("ordersList.cameraReasonMissing"),
-        t("scanNotFoundDescription"),
+      const row = findExactScannedRow(items, scannedOrderKeys(scannedOrder));
+      if (row) {
+        selectScannedCancelledOrder(row);
+        return;
+      }
+
+      if (classifyScannedCancelled(scannedOrder) !== "sendable") {
+        rejectUnsendableScan(scannedOrder, scannedId);
+        return;
+      }
+      if (!selectedCancelledIds.has(scannedId) && !fitsListFilters(scannedOrder, apiParams)) {
+        const description = t("scanFilterMismatchDescription", { id: scannedId });
+        scanNotify.warning(t("scanFilterMismatchTitle"), { description, duration: 3000 });
+        rejectScannedCode(`№${scannedId}`, t("ordersList.cameraReasonFilter"), description);
+        return;
+      }
+      selectScannedCancelledOrder(
+        { ...scannedOrder, id: scannedId, status: "cancelled" } as unknown as OrderListItem,
+        true,
       );
     } catch (error) {
+      if (isScanLookupNotFound(error)) {
+        rejectUnknownCode(code);
+        return;
+      }
       // Begona QR (#620, anKpzwxk): boshqa filial buyurtmasi — lokal uz/ru/en sabab, «Buyurtma topilmadi» emas.
       const scope = readQrScopeText(t, error);
       if (scope) {
@@ -903,29 +906,64 @@ const Orders = () => {
         void playScanFeedback("error", scope.line);
         return;
       }
-      const message = getBackendErrorMessage(error) ?? t("scanNotFoundDescription");
-      scanNotify.error(t("scanNotFoundTitle"), { description: message, duration: 3000 });
-      void playScanFeedback("error", message);
+      // Tarmoq, vaqt, 5xx, 429 — «topilmadi» EMAS (#56): qidiruv bajarilmadi, qayta skan odatda o'tadi. Kod rad
+      // etilganlar ro'yxatiga tushmaydi.
+      const reason = scanLookupFailureReason(t, error, { tooMany: t("scanTooManyRequests") });
+      scanNotify.error(t("scanCheckFailedTitle"), { description: reason, duration: 3000 });
+      void playScanFeedback("error", t("scanCheckFailedTitle"));
+    } finally {
+      scanLookupsRef.current.delete(lookupKey);
     }
-  }, [items, rejectScannedCode, selectScannedCancelledOrder, t]);
+  }, [
+    apiParams,
+    items,
+    rejectScannedCode,
+    rejectUnknownCode,
+    rejectUnsendableScan,
+    selectScannedCancelledOrder,
+    selectedCancelledIds,
+    t,
+  ]);
 
   // KAMERA (Trello v1eLN2tV 2-bosqich; maket yo'q — eng yaqini `manager-batches-detail-send-camera`): faqat
   // HYBRID/REGIONAL menejerning «Bekor qilingan» tabida. Sahifada kamera tugmasi yo'q — markaziy «Skaner» /
   // «Skanerlash» shu maqsadni ochadi; kamera skani USB bilan bir yo'l (faqat tanlaydi), yuborish — sahifadagi
   // «HQ'ga yuborish».
   const unsentCancelledCount = useMemo(() => items.filter(isUnsentCancelledOrder).length, [items]);
+  /** Tanlangan, lekin shu sahifada yo'q buyurtmalar (boshqa sahifada yoki skan bilan topilgan). */
+  const offPageSelectedIds = useMemo(() => {
+    const pageIds = new Set(items.map((order) => order.id));
+    return [...selectedCancelledIds].filter((id) => !pageIds.has(id));
+  }, [items, selectedCancelledIds]);
+  /**
+   * Skaner indeksi: sahifa qatorlari + sahifada yo'q, skan bilan tanlanganlar — ularning qayta skani so'rovsiz
+   * «Allaqachon tanlangan» bo'ladi.
+   */
+  const cancelledScanIndex = useMemo(() => {
+    const picked = offPageSelectedIds
+      .map((id) => scanPickedRows.get(id))
+      .filter((order): order is OrderListItem => Boolean(order));
+    return picked.length > 0 ? [...items, ...picked] : items;
+  }, [items, offPageSelectedIds, scanPickedRows]);
   const cancelledCameraList = useMemo<ScanTargetListItem[]>(() => {
-    const selectedItems = items
-      .filter((order) => selectedCancelledIds.has(order.id))
-      .map<ScanTargetListItem>((order) => ({
-        key: `order:${order.id}`,
-        title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
-        subtitle: [order.district?.name?.trim(), formatMoneyLocalized(Number(order.total_price) || 0, { language })]
-          .filter(Boolean)
-          .join(" · "),
+    const pageOrders = new Map(items.map((order) => [order.id, order]));
+    // Hamma tanlov (sahifadagisi va sahifada yo'q) — boshqa sahifadagi buyurtma ham kamera ro'yxatida ko'rinadi.
+    const selectedItems = [...selectedCancelledIds].map<ScanTargetListItem>((id) => {
+      const order = pageOrders.get(id) ?? scanPickedRows.get(id);
+      return {
+        key: `order:${id}`,
+        title: [`№${id}`, order?.customer?.name?.trim()].filter(Boolean).join(" · "),
+        ...(order
+          ? {
+              subtitle: [order.district?.name?.trim(), formatMoneyLocalized(Number(order.total_price) || 0, { language })]
+                .filter(Boolean)
+                .join(" · "),
+            }
+          : {}),
         tone: "success",
-        onUndo: () => handleSelectCancelled(order.id, false),
-      }));
+        onUndo: () => handleSelectCancelled(id, false),
+      };
+    });
     const rejectedItems = rejectedScans.map<ScanTargetListItem>(({ code, reason }) => ({
       key: `missing:${code}`,
       title: code,
@@ -933,13 +971,15 @@ const Orders = () => {
       tone: "danger",
     }));
     return orderByRecent([...selectedItems, ...rejectedItems], (item) => item.key, recentScanKeys);
-  }, [handleSelectCancelled, items, language, recentScanKeys, rejectedScans, selectedCancelledIds, t]);
+  }, [handleSelectCancelled, items, language, recentScanKeys, rejectedScans, scanPickedRows, selectedCancelledIds, t]);
 
   useOrderQrScanner({
-    orders: items,
+    orders: cancelledScanIndex,
     enabled: canSendCancelledToHq,
+    // Sahifa bo'sh bo'lsa ham USB tinglaydi — kod serverdan tekshiriladi (boshqa sahifadagi / yangi bekor).
+    keyboardWhenEmpty: true,
     paused: isLoading || SendToPost.isPending,
-    onMatch: selectScannedCancelledOrder,
+    onMatch: (order) => selectScannedCancelledOrder(order),
     onMissing: (rawValue) => {
       void handleMissingScannedCancelledOrder(rawValue);
     },
@@ -948,19 +988,25 @@ const Orders = () => {
       title: t("ordersList.sendToHq"),
       context: t("ordersList.cameraContext", { value: formatNumberLocalized(unsentCancelledCount, { language }) }),
       note: { title: t("ordersList.cameraNoteTitle"), text: t("ordersList.cameraNoteText") },
-      progress: { done: selectedCancelledIds.size, total: unsentCancelledCount, label: t("ordersList.cameraMeter") },
+      progress: {
+        done: selectedCancelledIds.size,
+        total: unsentCancelledCount + offPageSelectedIds.length,
+        label: t("ordersList.cameraMeter"),
+      },
       list: cancelledCameraList,
       listTitle: t("ordersList.cameraListTitle"),
       finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
     },
   });
 
+  // Sarlavha belgisi — faqat SHU sahifadagilar: boshqa sahifadagi (skan bilan) tanlovga tegilmaydi.
   const handleSelectAllCancelled = useCallback((checked: boolean) => {
-    setSelectedCancelledIds(
-      checked
-        ? new Set(items.filter(isUnsentCancelledOrder).map((order) => order.id))
-        : new Set(),
-    );
+    const pageIds = items.filter(isUnsentCancelledOrder).map((order) => order.id);
+    setSelectedCancelledIds((previous) => {
+      const next = new Set(previous);
+      pageIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
   }, [items]);
 
   const handleSendCancelledToHq = useCallback(() => {
@@ -969,6 +1015,7 @@ const Orders = () => {
     SendToPost.mutate(Array.from(selectedCancelledIds), {
       onSuccess: () => {
         setSelectedCancelledIds(new Set());
+        setScanPickedRows(new Map());
         // Yuborilgandan keyin kamera ro'yxati yangidan (eski «Rad etildi» qatorlari qolmaydi).
         setRejectedScans([]);
         clearRecentScans();

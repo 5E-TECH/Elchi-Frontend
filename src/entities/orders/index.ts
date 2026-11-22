@@ -332,6 +332,9 @@ export const useOrders = () => {
       refreshOrdersAfterReceive(client);
       // HQ qabuli buyurtmani viloyat pochtasiga qo'shadi — «Bugungi» pochtalar va bosh sahifa soni.
       client.invalidateQueries({ queryKey: ["mails", "new"] });
+      // Skan auditi #47: qabul buyurtmani pochtaga qo'shadi — ochiq pochta tafsiloti «eskirgan» (tarmoqsiz; jo'natish
+      // skani topilmasa sahifa o'zi bir marta yangilaydi, qayta ochilsa yangisi so'raladi).
+      client.invalidateQueries({ queryKey: ["mails", "detail"], refetchType: "none" });
       client.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });

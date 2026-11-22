@@ -137,7 +137,7 @@ describe("MailDetailPage — view=current amal rejimlarida, eski pochtada server
     renderApp(`/mails/${POST_ID}`);
 
     await expectOnlyCurrentOrders();
-    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" } }]]);
+    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" }, signal: expect.any(AbortSignal) }]]);
   });
 
   it("buyurtma sahifasidagi «Pochta #78» havolasi — view=current", async () => {
@@ -149,7 +149,7 @@ describe("MailDetailPage — view=current amal rejimlarida, eski pochtada server
     await user.click(link!);
 
     await expectOnlyCurrentOrders();
-    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" } }]]);
+    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" }, signal: expect.any(AbortSignal) }]]);
   });
 
   it("skanerlangan pochta → «Pochtani ochish» — view=current", async () => {
@@ -159,7 +159,7 @@ describe("MailDetailPage — view=current amal rejimlarida, eski pochtada server
     await user.click(screen.getByRole("link", { name: "Pochtani ochish" }));
 
     await expectOnlyCurrentOrders();
-    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" } }]]);
+    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" }, signal: expect.any(AbortSignal) }]]);
   });
 
   it("skaner tanlovi (`mailArrivalState`, jo'natish / qabul) — view=current", async () => {
@@ -169,7 +169,7 @@ describe("MailDetailPage — view=current amal rejimlarida, eski pochtada server
     });
 
     await expectOnlyCurrentOrders();
-    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" } }]]);
+    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" }, signal: expect.any(AbortSignal) }]]);
   });
 
   it("menejer «Pochta #78» havolasi bilan kuryerining qabul qilingan pochtasini ochsa — faqat o'qish, qabul yo'q", async () => {
@@ -198,7 +198,7 @@ describe("MailDetailPage — view=current amal rejimlarida, eski pochtada server
     expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
     expect(screen.queryByRole("checkbox", { name: "№102 ni tanlash" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
-    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" } }]]);
+    expect(detailCalls()).toEqual([[DETAIL_URL, { params: { view: "current" }, signal: expect.any(AbortSignal) }]]);
   });
 
   it("eski pochta (tarix) — view'siz (server sukuti), sobiq a'zo ham ko'rinadi", async () => {
@@ -207,6 +207,6 @@ describe("MailDetailPage — view=current amal rejimlarida, eski pochtada server
     expect(await screen.findByText("Mijoz 102")).toBeInTheDocument();
     expect(screen.getByText("Mijoz 101")).toBeInTheDocument();
     expect(screen.getByTestId("mail-read-only")).toBeInTheDocument();
-    await waitFor(() => expect(detailCalls()).toEqual([[DETAIL_URL]]));
+    await waitFor(() => expect(detailCalls()).toEqual([[DETAIL_URL, { signal: expect.any(AbortSignal) }]]));
   });
 });
