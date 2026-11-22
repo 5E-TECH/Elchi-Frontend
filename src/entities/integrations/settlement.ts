@@ -181,7 +181,10 @@ export interface RemittanceResult {
   advanceApplied: number;
   /** To'lovdan keyingi hamkor avansi; eski backendda yo'q — `null`. */
   advanceBalance: number | null;
-  /** `true` — MAIN kassaga kirim yozildi; `false`/`null` — yozilmadi yoki noma'lum. */
+  /**
+   * `true` — MAIN kassaga kirim yozildi; `false` — yozilmadi; `null` — noma'lum (takroriy javobda birinchi so'rov
+   * hali kassaga yozayotgan bo'lishi mumkin, ZE5zqXxu) — «yozilmadi» deb ko'rsatilmaydi.
+   */
   cashboxPosted: boolean | null;
   /** Takroriy `Idempotency-Key` — to'lov avvalgi urinishda yozilgan, bu so'rov hech narsa yozmadi. */
   replayed: boolean;
