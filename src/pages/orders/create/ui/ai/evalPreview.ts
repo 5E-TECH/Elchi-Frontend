@@ -1,4 +1,5 @@
-import { toLocalPhone, type AiPreviewOrder } from "../../../../../entities/ai-order";
+import { toLocalPhone, type AiBlockingCheckCode, type AiPreviewOrder } from "../../../../../entities/ai-order";
+import { pendingAcks } from "./aiChecks";
 
 /**
  * AI PREVIEW KARTASINING TAYYORLIGI.
@@ -42,11 +43,15 @@ export const needsPriceConfirm = (order: AiDraftOrder) =>
 /**
  * `regionRequired` (sukut `true`) — viloyat ham shartmi. Market operatorida `false` (MO-3): unga viloyatlar ro'yxati
  * yopiq (N11), `ai-confirm` esa viloyatni tumandan o'zi oladi (`region_id` — «qabul qilinadi, lekin ishlatilmaydi»).
+ *
+ * `source` — AI'ning asl chiqishi: berilsa bloklovchi AI tekshiruvlari (`pendingAcks`) ham hisoblanadi — operator
+ * tasdiqlamaguncha karta `ready` emas («Tasdiq kutmoqda»). Kamchilik (`issues`) va tasdiq alohida: ikkinchisi
+ * maydonni to'ldirish emas, ko'rib chiqish.
  */
 export const evalPreview = (
   order: AiDraftOrder,
-  { regionRequired = true }: { regionRequired?: boolean } = {},
-): { ready: boolean; issues: AiIssue[] } => {
+  { regionRequired = true, source }: { regionRequired?: boolean; source?: AiPreviewOrder } = {},
+): { ready: boolean; issues: AiIssue[]; pendingAcks: AiBlockingCheckCode[] } => {
   const issues: AiIssue[] = [];
   const price = order.total_price;
 
@@ -59,5 +64,6 @@ export const evalPreview = (
   if (order.items.length === 0) issues.push("items_missing");
   else if (!order.items.every(isItemResolved)) issues.push("item_unresolved");
 
-  return { ready: issues.length === 0, issues };
+  const acks = source ? pendingAcks(order, source) : [];
+  return { ready: issues.length === 0 && acks.length === 0, issues, pendingAcks: acks };
 };

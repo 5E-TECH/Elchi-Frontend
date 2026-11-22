@@ -335,4 +335,31 @@ test.describe("AI buyurtma — 390px", () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
     expect(leaked).toEqual([]);
   });
+
+  test("tuman aniq emas: «Tasdiq kutmoqda (1)», belgi qatori ≥ 44px, belgilansa karta tayyor", async ({ page }) => {
+    const leaked = await mockApi(page, [
+      aiPreview({
+        customer_name: "Tasdiqli Mijoz",
+        district_match: { method: "fuzzy", ai_text: "Chilanzar", score: 0.8 },
+        checks: [{ code: "district_low_confidence" }, { code: "price_check", kind: "mismatch", mentions: [150000, 20000] }],
+      }),
+    ]);
+    await openAiMode(page, 1);
+
+    const card = page.getByTestId("ai-preview-card");
+    await expect(card).toHaveAttribute("data-awaiting", "ack");
+    await expect(page.getByTestId("ai-confirm-bar").getByRole("button", { name: "Tasdiq kutmoqda (1)" })).toBeVisible();
+    await expect(card.getByTestId("ai-district-match")).toContainText("AI o'qigan: «Chilanzar»");
+
+    for (const name of ["Tuman to'g'ri, tasdiqlayman", "Narx to'g'ri, tasdiqlayman"]) {
+      const row = card.locator("label", { has: page.getByRole("checkbox", { name }) });
+      expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await row.click();
+    }
+    await expect(card).toHaveAttribute("data-ready", "true");
+
+    const { scrollWidth, clientWidth } = await mainOverflow(page);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+    expect(leaked).toEqual([]);
+  });
 });

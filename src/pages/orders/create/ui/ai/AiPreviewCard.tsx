@@ -1,6 +1,19 @@
-// dizayn-v2: superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-preview
+// dizayn-v2: superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-preview, superadmin-neworders-create-ai-preview-checks, admin-neworders-create-ai-checks, manager-new-orders-create-ai-checks, registrator-new-orders-create-ai-checks, market-new-orders-create-ai-preview-checks
 import { memo, useId, useMemo, useState, type ReactNode } from "react";
-import { Building2, ChevronDown, ChevronUp, MapPin, Minus, Package, Plus, Send, Trash2, TriangleAlert, X } from "lucide-react";
+import {
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Minus,
+  Package,
+  Plus,
+  Send,
+  Sparkles,
+  Trash2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
@@ -8,7 +21,7 @@ import { toLocalPhone, type AiPreviewItem, type AiWarningField } from "../../../
 import { suggestOperator, type SelectableMarketOperator } from "../../../../../entities/market-operator";
 import type { DeliveryType } from "../../../../../entities/order/types/order";
 import { cx } from "../../../../../shared/lib/cx";
-import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../../../shared/lib/formatMoney";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../../shared/lib/phone";
 import {
   Badge,
@@ -24,6 +37,7 @@ import {
   type SelectOption,
 } from "../../../../../shared/ui/primitives";
 import { CreateAlert } from "../CreateAlert";
+import { priceCheckOf, requiredAcks, softNotes, withAck } from "./aiChecks";
 import { toDraft, toList, type AiDraft } from "./aiDraft";
 import { chosenOperatorId } from "./aiOperator";
 import { activeAiWarnings, sourceAiWarnings } from "./aiWarnings";
@@ -119,6 +133,11 @@ type AiPreviewCardProps = {
   operators?: readonly SelectableMarketOperator[];
   /** Ro'yxat yuklanmadi — erkin matn ostida izoh. */
   operatorsFailed?: boolean;
+  /**
+   * `same_phone_multi`: shu telefon yana qaysi kartada (tartib raqami, 1..). Panel hisoblaydi — o'sha karta hali
+   * ro'yxatda va telefoni hamon bir xil bo'lsagina; aks holda `null`.
+   */
+  samePhoneCard?: number | null;
   creating: boolean;
   /** Bugungi qabul yopiq — «Bu kartani yaratish» o'chiq (sabab sahifa ogohlantirishida). */
   createBlocked?: boolean;
@@ -144,6 +163,7 @@ const AiPreviewCard = ({
   selfOperator,
   operators,
   operatorsFailed = false,
+  samePhoneCard = null,
   creating,
   createBlocked = false,
   onChange,
@@ -153,7 +173,27 @@ const AiPreviewCard = ({
   const { t, i18n } = useTranslation(["orders", "common"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { order, source } = draft;
-  const { ready, issues } = evalPreview(order, { regionRequired: areaLists });
+  const { ready, issues, pendingAcks } = evalPreview(order, { regionRequired: areaLists, source });
+  // AI tekshiruvlari (P1-7 + AI ack): bloklovchi — tasdiq, yumshoq — eslatma (`aiChecks.ts`).
+  const needAcks = requiredAcks(order, source);
+  const needDistrictAck = needAcks.includes("district_low_confidence");
+  const needPriceAck = needAcks.includes("price_check");
+  const priceCheck = priceCheckOf(order);
+  const notes = softNotes(order, source);
+  const notesCount =
+    notes.qtyByItem.size + notes.duplicateGroups.length + (notes.phoneIsMarket ? 1 : 0) + (samePhoneCard ? 1 : 0);
+  const acked = (code: (typeof needAcks)[number]) => order.acked_checks?.includes(code) === true;
+  const ackChipKey = (code: (typeof needAcks)[number]) =>
+    code === "district_low_confidence"
+      ? "aiAckChipDistrict"
+      : priceCheck?.kind === "too_high"
+        ? "aiAckChipPriceTooHigh"
+        : "aiAckChipPriceMismatch";
+  // Tuman avto-tanlangan va operator uni o'zgartirmagan bo'lsa — «AI o'qigan: «…» → tuman».
+  const districtMatchText =
+    order.district_match?.ai_text && order.district_id && String(order.district_id) === String(source.district_id ?? "")
+      ? order.district_match.ai_text
+      : null;
   const idPrefix = `ai-${draft.key}`;
   const titleId = useId();
   const bodyId = useId();
@@ -276,6 +316,7 @@ const AiPreviewCard = ({
       region_id: value || null,
       region_name: region?.name ?? null,
       region_given: true,
+      region_inferred: false,
       district_id: null,
       district_name: null,
     });
@@ -295,6 +336,7 @@ const AiPreviewCard = ({
         patch.region_id = String(region.id);
         patch.region_name = region.name ?? null;
         patch.region_given = true;
+        patch.region_inferred = false;
       }
     }
     update(patch);
@@ -366,6 +408,7 @@ const AiPreviewCard = ({
       aria-labelledby={titleId}
       data-testid="ai-preview-card"
       data-ready={ready}
+      data-awaiting={!ready && issues.length === 0 && pendingAcks.length > 0 ? "ack" : undefined}
       data-existing={existingOrderId ? "" : undefined}
       // `scroll-mb-48` — klaviatura ochilganda / `scrollIntoView` da maydon pastdagi yopishgan
       // «Yaratishni tasdiqlash» paneli ostida qolib ketmaydi.
@@ -385,11 +428,21 @@ const AiPreviewCard = ({
             <Badge tone="success" dot>
               {t("aiReady")}
             </Badge>
-          ) : (
+          ) : issues.length > 0 ? (
             <Badge tone="warning" dot>
               {t("aiNotReady", { count: issues.length })}
             </Badge>
+          ) : (
+            // Hammasi to'ldirilgan, faqat AI ogohlantirishi tasdiq kutmoqda (maket `*-create-ai-preview-checks`).
+            <Badge tone="warning" dot>
+              {t("aiAwaitingAck")}
+            </Badge>
           )}
+          {notesCount > 0 ? (
+            <Badge tone="warning" data-testid="ai-notes-count">
+              {t("aiNotesCount", { count: notesCount })}
+            </Badge>
+          ) : null}
         </div>
         <div className="flex flex-[1_1_auto] items-center justify-end gap-2">
           <Button
@@ -475,6 +528,13 @@ const AiPreviewCard = ({
                 </Badge>
               </li>
             ))}
+            {pendingAcks.map((code) => (
+              <li key={code} className="min-w-0" data-testid="ai-ack-chip" data-code={code}>
+                <Badge tone="warning" className="max-w-full">
+                  <span className="truncate">{t(ackChipKey(code))}</span>
+                </Badge>
+              </li>
+            ))}
           </ul>
         ) : null}
 
@@ -517,6 +577,8 @@ const AiPreviewCard = ({
             hint={hints(
               phoneUnreadable ? <WarningHint key="read">{t("aiPhoneRead", { value: source.phone_number })}</WarningHint> : null,
               warningFor("phone_number"),
+              notes.phoneIsMarket ? <WarningHint key="market">{t("aiPhoneIsMarket")}</WarningHint> : null,
+              samePhoneCard ? <WarningHint key="same">{t("aiSamePhone", { number: samePhoneCard })}</WarningHint> : null,
             )}
           >
             <TextInput
@@ -541,7 +603,9 @@ const AiPreviewCard = ({
               required
               id={`${idPrefix}-region`}
               hint={hints(
-                order.region_id && !order.region_given ? <WarningHint key="guessed">{t("aiRegionGuessed")}</WarningHint> : null,
+                order.region_id && (order.region_inferred || !order.region_given) ? (
+                  <WarningHint key="guessed">{t("aiRegionGuessed")}</WarningHint>
+                ) : null,
                 warningFor("region_name"),
               )}
             >
@@ -576,6 +640,33 @@ const AiPreviewCard = ({
               loading={districtsLoading}
               disabled={areaLists ? !order.region_id && !hasCandidates : !hasCandidates && !order.district_id}
             />
+            {/* Maket tartibi: «AI o'qigan: «…» → tuman» → «Aniq emas» → tasdiq belgisi. */}
+            {districtMatchText ? (
+              <span data-testid="ai-district-match" className="flex items-start gap-1.5 text-[13px] text-text-muted">
+                <Sparkles size={16} aria-hidden="true" className="mt-px shrink-0" />
+                <span className="min-w-0 [overflow-wrap:anywhere]">
+                  {t("aiDistrictReadAs", { text: districtMatchText })} →{" "}
+                  <span className="font-semibold text-text">{order.district_name}</span>
+                </span>
+              </span>
+            ) : null}
+            {needDistrictAck ? (
+              <Badge tone="warning" className="self-start">
+                <TriangleAlert size={14} aria-hidden="true" />
+                {t("aiDistrictUnsure")}
+              </Badge>
+            ) : null}
+            {needDistrictAck ? (
+              // Bloklovchi `district_low_confidence`: operator tumanni KO'RIB tasdiqlaydi yoki boshqasini tanlaydi
+              // (tuman almashsa tasdiq shart emas — backend `edited_fields` istisnosi bilan bir xil).
+              <ChoiceRow
+                checked={acked("district_low_confidence")}
+                onChange={(checked) => update({ acked_checks: withAck(order, "district_low_confidence", checked) })}
+                className="rounded-[10px] bg-warning-soft px-2.5 py-2"
+              >
+                {t("aiAckDistrict")}
+              </ChoiceRow>
+            ) : null}
           </Field>
 
           <Field label={t("address")} id={`${idPrefix}-address`} hint={hints(warningFor("address"))}>
@@ -594,6 +685,13 @@ const AiPreviewCard = ({
           </h3>
           {order.items.length === 0 ? <WarningHint>{t("aiItemsMissingHint")}</WarningHint> : null}
           {warningFor("items")}
+          {notes.duplicateGroups.map((group) => (
+            <WarningHint key={group.join("-")}>
+              {t("aiDuplicateItems", {
+                items: `${group.slice(0, -1).join(", ")} ${t("aiListAnd")} ${group[group.length - 1]}`,
+              })}
+            </WarningHint>
+          ))}
           {order.items.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {order.items.map((item, itemIndex) => {
@@ -646,6 +744,10 @@ const AiPreviewCard = ({
                         />
                       </div>
                     </div>
+
+                    {notes.qtyByItem.has(itemIndex) ? (
+                      <WarningHint>{t("aiQtyCheck", { count: notes.qtyByItem.get(itemIndex) })}</WarningHint>
+                    ) : null}
 
                     <Field label={t("aiCatalogProduct")} labelAs="span" id={`${idPrefix}-item-${itemIndex}`}>
                       <Select
@@ -731,7 +833,36 @@ const AiPreviewCard = ({
               // Narx o'zgarsa oldingi tasdiq kuchini yo'qotadi.
               onValueChange={(digits) => update({ total_price: digits ? Number(digits) : null, price_confirmed: false })}
             />
-            {needsPriceConfirm(order) ? (
+            {/* Maket tartibi: «Matnda: …» → «Mos emas» / «Juda katta» → tasdiq belgisi. */}
+            {needPriceAck && priceCheck && priceCheck.mentions.length > 0 ? (
+              <span data-testid="ai-price-mentions" className="flex items-start gap-1.5 text-[13px] text-text-muted">
+                <Sparkles size={16} aria-hidden="true" className="mt-px shrink-0" />
+                <span className="min-w-0">
+                  {t("aiPriceMentions")}{" "}
+                  <span className="font-semibold text-text tabular-nums">
+                    {priceCheck.mentions.map((amount) => formatNumberLocalized(amount, { language })).join(" · ")}
+                  </span>
+                </span>
+              </span>
+            ) : null}
+            {needPriceAck ? (
+              <Badge tone="warning" className="self-start">
+                <TriangleAlert size={14} aria-hidden="true" />
+                {t(priceCheck?.kind === "too_high" ? "aiPriceTooHigh" : "aiPriceMismatch")}
+              </Badge>
+            ) : null}
+            {needPriceAck ? (
+              // Bloklovchi `price_check` + (bo'lsa) 10 000 dan kichik narx tasdig'i — BITTA belgi ikkalasini yopadi.
+              <ChoiceRow
+                checked={acked("price_check") && (!needsPriceConfirm(order) || order.price_confirmed === true)}
+                onChange={(checked) =>
+                  update({ acked_checks: withAck(order, "price_check", checked), price_confirmed: checked })
+                }
+                className="rounded-[10px] bg-warning-soft px-2.5 py-2"
+              >
+                {t("aiConfirmPrice")}
+              </ChoiceRow>
+            ) : needsPriceConfirm(order) ? (
               <ChoiceRow
                 checked={order.price_confirmed === true}
                 onChange={(checked) => update({ price_confirmed: checked })}
