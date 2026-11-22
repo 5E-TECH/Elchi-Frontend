@@ -15,6 +15,7 @@ import { useScanTarget, type ScanTargetListItem } from "../../shared/lib/scanner
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { useScannerListening } from "../../shared/lib/useScannerListening";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
+import { getErrorStatus } from "../../shared/lib/errorKind";
 import { cx } from "../../shared/lib/cx";
 import { formatTimeLocalized } from "../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
@@ -87,6 +88,9 @@ const STAT_UNIT = "ml-1 text-sm font-semibold tracking-normal text-text-muted";
 /** Muvaffaqiyatli skan xabarining kulrang davomi: «Rustam Jo'rayev, Olmazor tumani». */
 const orderDetail = (order: IncomingOrder) =>
   [order.customer?.name, districtName(order)].filter((part) => part && part !== "—").join(", ") || undefined;
+
+/** Ochiq skaner sahifasida kiruvchi ro'yxatni yangilash oralig'i (skan auditi #12/#102). */
+const INCOMING_LIST_POLL_MS = 30_000;
 
 /**
  * HAMKORDAN KELGAN BUYURTMALARNI SKANERLAB QABUL QILISH (HQ).
@@ -171,10 +175,14 @@ const IncomingOrdersPage = () => {
    * buyurtmasi bo'ladi. Buyurtma yozuvida "qaysi tashqi tizimdan keldi"
    * degan alohida maydon yo'q, shu bois guruhlash kaliti ham shu.
    */
-  const query = useIncomingExternalOrders({
-    status: "new",
-    market_id: marketId,
-  });
+  const query = useIncomingExternalOrders(
+    {
+      status: "new",
+      market_id: marketId,
+    },
+    // Skan auditi #12/#102: ochiq sahifada ro'yxat o'zi yangilanadi (belgilar `keepScannedInList` bilan saqlanadi).
+    { refetchInterval: allowed ? INCOMING_LIST_POLL_MS : false },
+  );
 
   // Sarlavhada manba nomi ko'rinishi kerak — operator qaysi qopni
   // skanerlayotganini ekrandan tasdiqlab olsin.
@@ -312,12 +320,49 @@ const IncomingOrdersPage = () => {
    * Backend tokenni aniq solishtiradi va qop tokeni katta harfli bo'lishi ham mumkin (`BTB-…`), shuning uchun
    * avval skanerlangan yozuvi, topilmasa kichik harflisi so'raladi.
    */
-  const resolveRemoteBatch = async (token: string) => {
+  /**
+   * Skan tartib raqami (skan auditi #13): kechikkan server javobi keyingi skan natijasini (va ovozini) bosib
+   * ketmasin — faqat hali OXIRGI skan bo'lsa qo'llanadi.
+   */
+  const scanSeqRef = useRef(0);
+  /** Ro'yxat bir vaqtda bir marta qayta so'raladi (ketma-ket topilmagan skanlar bitta so'rovni kutadi). */
+  const missRefetchRef = useRef<ReturnType<typeof query.refetch> | null>(null);
+
+  /**
+   * Ro'yxatda na posilka, na qop topilmadi:
+   *   1) ro'yxat bir marta yangilanadi va kod qayta moslanadi (skan auditi #12/#102 — hamkor sahifa ochilgandan
+   *      keyin yuborgan posilka «topilmadi» bo'lmasin);
+   *   2) so'ng server qop tokenini biladimi (`GET /scan/:token` qop qidiruvi).
+   *
+   * Backend tokenni aniq solishtiradi va qop tokeni katta harfli bo'lishi ham mumkin (`BTB-…`), shuning uchun
+   * avval skanerlangan yozuvi, topilmasa kichik harflisi so'raladi.
+   */
+  const resolveRemoteBatch = async (token: string, raw: string, seq: number) => {
+    missRefetchRef.current ??= query.refetch().finally(() => {
+      missRefetchRef.current = null;
+    });
+    const refreshed = await missRefetchRef.current.catch(() => null);
+    const freshItems = refreshed?.data?.items ?? orders;
+    const keys = scanKeyCandidates(raw, window.location.origin);
+    if (seq !== scanSeqRef.current) return;
+    const freshOrder = findByScanKeys(indexByToken(freshItems), keys);
+    if (freshOrder) {
+      markOrder(freshOrder);
+      return;
+    }
+    const freshBatch = findByScanKeys(indexByBatch(freshItems), keys);
+    if (freshBatch?.length) {
+      const size = Number(freshBatch[0].external_batch_size);
+      markBatch(freshBatch, Number.isFinite(size) && size > 0 ? size : freshBatch.length);
+      return;
+    }
+
     const lookup = (value: string) => fetchExternalBatchScan(value).catch(() => null);
     const lowered = token.toLowerCase();
     const batch = (await lookup(token)) ?? (lowered === token ? null : await lookup(lowered));
+    if (seq !== scanSeqRef.current) return;
     const members = batch
-      ? orders.filter((order) =>
+      ? freshItems.filter((order) =>
           batch.members.some(
             (member) =>
               (member.id && member.id === order.id) ||
@@ -327,16 +372,43 @@ const IncomingOrdersPage = () => {
       : [];
     if (!batch || !members.length) {
       void playScanFeedback("missing", t("incoming.cameraNotInList"));
-      setMessage({ tone: "error", text: t("incomingScanNotFound") });
+      // Qaysi kod — xabarda (kechikkan javob boshqa skan bilan adashtirilmasin).
+      setMessage({ tone: "error", text: t("incomingScanNotFound"), detail: token });
       return;
     }
     markBatch(members, batch.size ?? members.length);
+  };
+
+  /** Bitta posilkani belgilash (ro'yxatdan yoki yangilangan ro'yxatdan topilgan). */
+  const markOrder = (order: IncomingOrder) => {
+    if (scannedIds.has(order.id)) {
+      const text = `${orderLabel(order)} — ${t("incomingScanDuplicate")}`;
+      void playScanFeedback("error", text, undefined, { voice: "duplicate" });
+      setMessage({
+        tone: "warn",
+        text,
+      });
+      return;
+    }
+
+    void playScanFeedback("success", `${orderLabel(order)} — ${t("incomingScanAdded")}`, undefined, { voice: "added" });
+    setScannedIds((prev) => new Set(prev).add(order.id));
+    // Skanerlangan yozuv emas, asl token: backend aniq solishtiradi, KATTA harfli yozuv u yerda topilmaydi.
+    const token = parcelToken(order);
+    setScannedTokens((prev) => (prev.includes(token) ? prev : [...prev, token]));
+    setMessage({
+      tone: "success",
+      text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
+      detail: orderDetail(order),
+      undoIds: [order.id],
+    });
   };
 
   const handleScan = (raw: string) => {
     const latin = latinizeKeyboardLayout(raw);
     const token = extractScannerToken(latin) ?? latin.trim();
     if (!token) return;
+    const seq = (scanSeqRef.current += 1);
 
     // Ro'yxat yuklanmagan bo'lsa "ro'yxatda yo'q" deyish yolg'on bo'lardi —
     // posilkani hali hech narsa bilan solishtirib bo'lmaydi.
@@ -355,29 +427,10 @@ const IncomingOrdersPage = () => {
         markBatch(batchMembers, Number.isFinite(size) && size > 0 ? size : batchMembers.length);
         return;
       }
-      void resolveRemoteBatch(token);
+      void resolveRemoteBatch(token, raw, seq);
       return;
     }
-    if (scannedIds.has(order.id)) {
-      const text = `${orderLabel(order)} — ${t("incomingScanDuplicate")}`;
-      void playScanFeedback("error", text, undefined, { voice: "duplicate" });
-      setMessage({
-        tone: "warn",
-        text,
-      });
-      return;
-    }
-
-    void playScanFeedback("success", `${orderLabel(order)} — ${t("incomingScanAdded")}`, undefined, { voice: "added" });
-    setScannedIds((prev) => new Set(prev).add(order.id));
-    // Skanerlangan yozuv emas, asl token: backend aniq solishtiradi, KATTA harfli yozuv u yerda topilmaydi.
-    setScannedTokens((prev) => [...prev, parcelToken(order)]);
-    setMessage({
-      tone: "success",
-      text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
-      detail: orderDetail(order),
-      undoIds: [order.id],
-    });
+    markOrder(order);
   };
 
   useKeyboardScanner({
@@ -459,8 +512,21 @@ const IncomingOrdersPage = () => {
     }
     // Qop skani belgilagan va hali ro'yxatda turganlar (qopdagi posilka olib tashlangan bo'lsa — sanalmaydi).
     const sentByBag = new Set(scannedTokens.filter((token) => bagTokens.has(token)));
+    // Yuborilganlar (skan auditi #14): so'rov davomida skanerlanganlar natijadan keyin o'chib ketmasin.
+    const sentTokens = [...scannedTokens];
+    const sent = new Set(sentTokens);
+    const clearSent = () => {
+      setScannedTokens((prev) => prev.filter((token) => !sent.has(token)));
+      setScannedIds((prev) => {
+        const next = new Set(prev);
+        for (const order of orders) if (sent.has(parcelToken(order))) next.delete(order.id);
+        return next;
+      });
+      setBagTokens((prev) => new Set([...prev].filter((token) => !sent.has(token))));
+      setLastBag(null);
+    };
 
-    receiveByScan.mutate(scannedTokens, {
+    receiveByScan.mutate(sentTokens, {
       onSuccess: (result) => {
         /**
          * ⚠️ QABUL QILINMAGANLARNI KO'RSATISH SHART. Server tokenni
@@ -483,24 +549,36 @@ const IncomingOrdersPage = () => {
           });
         } else {
           const byBag = countReceivedByBag(sentByBag, result);
+          const already = result.alreadyReceived?.length ?? 0;
           setMessage({
             tone: "success",
             text:
               byBag > 0
                 ? t("incomingReceivedByBag", { count: byBag, received: result.received })
                 : `${result.received} ${t("incomingReceiveSuccess")}`,
+            // Skan auditi #22/#89: allaqachon qabul qilinganlar — xato emas (timeout'dan keyingi qayta bosish).
+            detail: already > 0 ? t("incoming.alreadyReceivedNote", { value: already }) : undefined,
           });
         }
-        setScannedIds(new Set());
-        setScannedTokens([]);
-        setLastBag(null);
-        setBagTokens(new Set());
+        clearSent();
         void query.refetch();
         inputRef.current?.focus();
       },
       onError: (error) => {
         // Qabul shu orada yopildi (409 `ORDER_RECEIVE_CLOSED`) — holat qayta o'qiladi, ogohlantirish chiqadi.
         if (isOrderReceiveClosedError(error)) void refetchIntake();
+        // Skan auditi #22: javob kelmadi / timeout / 5xx — server ishni tugatgan bo'lishi mumkin. Ro'yxat yangilanadi
+        // (qabul qilinganlar undan chiqadi, belgilar `keepScannedInList` bilan tushadi), operatorga aytiladi.
+        const status = getErrorStatus(error);
+        if (!status || status >= 500) {
+          void query.refetch();
+          setMessage({
+            tone: "warn",
+            text: t("incoming.receiveUnknown"),
+            detail: getBackendErrorMessage(error) ?? undefined,
+          });
+          return;
+        }
         // Backend sababini ATAYLAB ko'rsatamiz — umumiy xabar operatorni
         // ko'r qoldirardi.
         setMessage({

@@ -121,6 +121,7 @@ export const fetchAllIncomingOrders = async (
   params?: IncomingOrdersParams,
 ): Promise<IncomingOrdersList> => {
   const items: IncomingOrder[] = [];
+  const seenIds = new Set<string>();
   const batches = new Map<string, IncomingBatch>();
   let total: number | undefined;
 
@@ -129,7 +130,13 @@ export const fetchAllIncomingOrders = async (
       params: { ...params, page, limit: INCOMING_PAGE_LIMIT },
     });
     const pageItems = extractIncomingOrders(res.data);
-    items.push(...pageItems);
+    // Skan auditi #20: sahifalar orasida boshqa xodim qabul qilsa ofset suriladi — takror qator qo'shilmaydi.
+    for (const item of pageItems) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        items.push(item);
+      }
+    }
     for (const batch of extractIncomingBatches(res.data)) batches.set(batch.token, batch);
     total = readTotal(res.data) ?? total;
 
@@ -141,10 +148,15 @@ export const fetchAllIncomingOrders = async (
   return { items, total: total ?? items.length, batches: [...batches.values()] };
 };
 
-export const useIncomingExternalOrders = (params?: IncomingOrdersParams) =>
+export const useIncomingExternalOrders = (
+  params?: IncomingOrdersParams,
+  options?: { refetchInterval?: number | false },
+) =>
   useQuery({
     queryKey: [incomingOrdersKey, params],
     queryFn: () => fetchAllIncomingOrders(params),
+    // Skan auditi #12/#102: ochiq skaner sahifasida ro'yxat o'zi yangilanib tursin (hamkor keyin yuborgan posilka).
+    refetchInterval: options?.refetchInterval,
   });
 
 /**
@@ -242,6 +254,11 @@ export const sourceLabel = (source: IncomingSource): string =>
 export interface ReceiveByScanResult {
   received: number;
   unmatched: Array<{ token: string; reason: string }>;
+  /**
+   * Allaqachon qabul qilingan posilkalar (backend 2026-11-23, skan auditi #22/#89) — xato emas: timeout'dan keyin
+   * qayta bosilganda yoki boshqa xodim qabul qilgan bo'lsa. Ilgari ular `unmatched` da edi («0 qabul qilindi»).
+   */
+  alreadyReceived?: Array<{ token: string; order_id: string }>;
   /** Server qop (batch) tokeni sifatida ochgan tokenlar (`batch_tokens`, r8EGkLrP). */
   batchTokens?: string[];
 }
@@ -261,11 +278,19 @@ const postReceiveByScan = (tokens: string[]): Promise<ReceiveByScanResult> =>
     .then((res) => {
       const raw = res.data as { data?: unknown };
       const inner = (raw?.data as { data?: unknown })?.data ?? raw?.data;
-      const page = inner as (Partial<ReceiveByScanResult> & { batch_tokens?: unknown }) | undefined;
+      const page = inner as
+        | (Partial<ReceiveByScanResult> & { batch_tokens?: unknown; already_received?: unknown })
+        | undefined;
       return {
         received: Number(page?.received ?? 0),
         unmatched: Array.isArray(page?.unmatched) ? page!.unmatched : [],
         batchTokens: Array.isArray(page?.batch_tokens) ? page!.batch_tokens.map(String) : [],
+        alreadyReceived: Array.isArray(page?.already_received)
+          ? (page!.already_received as Array<{ token?: unknown; order_id?: unknown }>).map((item) => ({
+              token: String(item?.token ?? ""),
+              order_id: String(item?.order_id ?? ""),
+            }))
+          : [],
       } satisfies ReceiveByScanResult;
     });
 
@@ -280,7 +305,7 @@ export const receiveTokensInChunks = async (
   tokens: string[],
   send: (chunk: string[]) => Promise<ReceiveByScanResult> = postReceiveByScan,
 ): Promise<ReceiveByScanResult> => {
-  const result: ReceiveByScanResult = { received: 0, unmatched: [], batchTokens: [] };
+  const result: ReceiveByScanResult = { received: 0, unmatched: [], batchTokens: [], alreadyReceived: [] };
 
   for (let start = 0; start < tokens.length; start += RECEIVE_BY_SCAN_MAX_TOKENS) {
     const chunk = tokens.slice(start, start + RECEIVE_BY_SCAN_MAX_TOKENS);
@@ -289,6 +314,7 @@ export const receiveTokensInChunks = async (
       result.received += part.received;
       result.unmatched.push(...part.unmatched);
       result.batchTokens!.push(...(part.batchTokens ?? []));
+      result.alreadyReceived!.push(...(part.alreadyReceived ?? []));
     } catch (error) {
       if (start === 0) throw error;
       const reason = getBackendErrorMessage(error) ?? "yuborib bo'lmadi";

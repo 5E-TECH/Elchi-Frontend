@@ -226,7 +226,9 @@
     "unscanManyLabel_one": "Remove {{value}} parcel from the list",
     "unscanManyLabel_other": "Remove {{value}} parcels from the list",
     "unscanDone": "Removed from the list",
-    "unscanRestore": "Undo"
+    "unscanRestore": "Undo",
+    "alreadyReceivedNote": "Already received: {{value}} (not an error)",
+    "receiveUnknown": "No response — result unknown. The list was refreshed: received parcels left it, receive the rest again."
   },
   "partners": "Partners",
   "partnersTitle": "Partner API partners",

@@ -228,7 +228,9 @@
     "unscanLabel": "Убрать {{order}} из списка",
     "unscanManyLabel": "Убрать из списка посылки: {{value}}",
     "unscanDone": "Убрано из списка",
-    "unscanRestore": "Вернуть"
+    "unscanRestore": "Вернуть",
+    "alreadyReceivedNote": "Уже приняты: {{value}} шт. (не ошибка)",
+    "receiveUnknown": "Ответ не пришёл — результат неизвестен. Список обновлён: принятые исчезли из него, остальные примите ещё раз."
   },
   "partners": "Партнёры",
   "partnersTitle": "Партнёры Partner API",
