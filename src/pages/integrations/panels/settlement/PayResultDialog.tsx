@@ -17,8 +17,12 @@ import { BALANCE_LIST_CLASS, BalanceRow } from "./BalanceRow";
  *   sarlavha «To'lov yozildi» · «<ulanish> · №<id> · <vaqt>» (javobda `created_at` yo'q — vaqt mijoz vaqti);
  *   avansga o'tgan bo'lsa info «N so'm avansga o'tdi»; tafsilot — to'lov raqami, olingan summa, avvalgi avansdan
  *   ishlatilgani, yopilgan qarzlar («23 ta yozuv — hammasi»), avansga o'tgani va hamkor avansi endi; «Asosiy kassa»
- *   qatori `cashbox_posted` bo'yicha («Kirim yozildi · N» yoki «Kassaga yozilmadi» + «Asosiy kassa tarixini
- *   tekshiring»); amallar «Asosiy kassani ochish» va «Tayyor».
+ *   qatori `cashbox_posted` bo'yicha («Kirim yozildi · N», «Kassaga yozilmadi» + «Asosiy kassa tarixini
+ *   tekshiring» yoki `null` da «Kassa holati aniqlanmoqda»); amallar «Asosiy kassani ochish» va «Tayyor».
+ *
+ * ZE5zqXxu — `null` «yozilmadi» EMAS: takroriy `Idempotency-Key` javobida birinchi so'rov hali kassaga yozayotgan
+ * bo'lishi mumkin (backend kassani tranzaksiyadan keyin yozadi). «Kassaga yozilmadi — qo'lda kiriting» desak, operator
+ * qo'lda kiritadi va pul ikki marta kirim bo'ladi — shuning uchun alohida, «qo'lda kiritmang» degan info holat.
  *
  * Qiymatlar faqat backend javobidan (`advance_applied`, `unapplied_amount`, `advance_balance`) — oldindan
  * hisoblangani emas. Backend avvalgi avansni faqat to'lov summasi yetmaganda ishlatadi, shuning uchun ortiqcha
@@ -103,7 +107,8 @@ const ResultBody = ({ context, money }: { context: PayResultContext; money: (val
   /** Barcha yopilmagan qarz yopildi (oldingi qoldiq ma'lum bo'lsa). */
   const allClosed = Boolean(before) && before!.outstandingCount > 0 && result.settledCount >= before!.outstandingCount;
   const records = t("stlPayRecords", { count: result.settledCount });
-  const posted = result.cashboxPosted === true;
+  /** `null` — noma'lum (takroriy javob, kassa yozuvi hali tugamagan bo'lishi mumkin) — «yozilmadi» emas. */
+  const cashbox = result.cashboxPosted === true ? "posted" : result.cashboxPosted === false ? "notPosted" : "unknown";
   const advanceNow = result.advanceBalance;
   /** «Hamkor avansi endi» — jami avans «Avansga o'tdi» dan farq qilsa yoki avansga hech narsa o'tmagan bo'lsa. */
   const showAdvanceNow = advanceNow !== null && (toAdvance === 0 || advanceNow !== toAdvance);
@@ -148,14 +153,22 @@ const ResultBody = ({ context, money }: { context: PayResultContext; money: (val
           <Wallet size={16} aria-hidden="true" className="text-text-muted" />
           {t("settlementPay.cashbox")}
         </span>
-        <Badge tone={posted ? "success" : "warning"} dot>
-          {posted
+        <Badge tone={cashbox === "posted" ? "success" : cashbox === "notPosted" ? "warning" : "info"} dot>
+          {cashbox === "posted"
             ? t("settlementPay.cashboxPosted", { amount: money(result.remitted) })
-            : t("settlementPay.cashboxNotPosted")}
+            : cashbox === "notPosted"
+              ? t("settlementPay.cashboxNotPosted")
+              : t("settlementPay.cashboxUnknown")}
         </Badge>
       </div>
 
-      {posted ? null : (
+      {cashbox === "unknown" ? (
+        <InlineAlert tone="info" title={t("settlementPay.unknownTitle")}>
+          <Trans t={t} i18nKey="settlementPay.unknownDesc" components={{ cashbox: cashboxLink }} />
+        </InlineAlert>
+      ) : null}
+
+      {cashbox === "notPosted" ? (
         <InlineAlert tone="warning" role="alert" title={t("settlementPay.notPostedTitle")}>
           {/* Birorta qarz yopilmagan bo'lsa (summa eng eski yozuvga ham yetmadi) — «Qarzlar yopildi» deyilmaydi. */}
           <Trans
@@ -164,7 +177,7 @@ const ResultBody = ({ context, money }: { context: PayResultContext; money: (val
             components={{ cashbox: cashboxLink }}
           />
         </InlineAlert>
-      )}
+      ) : null}
     </>
   );
 };
