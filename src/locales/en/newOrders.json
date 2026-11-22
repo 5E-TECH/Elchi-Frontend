@@ -79,6 +79,7 @@
     "countValue": "{{value}}",
     "notFound": "The site has no order for this QR code",
     "duplicate": "{{order}} — already in the list",
+    "inProgress": "{{qr}} — searching the site, please wait",
     "added": "{{order}} — added to the list",
     "addedMany": "{{value}} orders added to the list",
     "searchError": "Could not fetch the order from the site",

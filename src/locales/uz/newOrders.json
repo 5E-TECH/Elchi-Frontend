@@ -75,6 +75,7 @@
     "countValue": "{{value}} ta",
     "notFound": "Saytda bu QR bo'yicha buyurtma topilmadi",
     "duplicate": "{{order}} — allaqachon ro'yxatda",
+    "inProgress": "{{qr}} — saytdan qidirilmoqda, kuting",
     "added": "{{order}} — ro'yxatga qo'shildi",
     "addedMany": "{{value}} ta buyurtma ro'yxatga qo'shildi",
     "searchError": "Saytdan buyurtmani olib bo'lmadi",
