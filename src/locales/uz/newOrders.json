@@ -549,7 +549,14 @@
       "pinAccepted": "PIN kod qabul qilindi",
       "handError": "№{{id}} ni marketga topshirib bo'lmadi",
       "qrFirst": "Avval market QR'ini skanerlang",
-      "qrFirstDescription": "Market QR kodini skanerlang yoki PIN kodni kiriting, so'ng buyurtmani qayta skanerlang."
+      "qrFirstDescription": "Market QR kodini skanerlang yoki PIN kodni kiriting, so'ng buyurtmani qayta skanerlang.",
+      "qrRejected": "Market QR rad etildi",
+      "notReady": "№{{id}} hali topshirishga tayyor emas",
+      "notReadyDescription": "Bekor qilingan, lekin hali shu joyga yetib kelmagan (kuryerda, yo'lda yoki pochtada).",
+      "otherMarket": "№{{id}} — boshqa marketning buyurtmasi",
+      "notCancelled": "№{{id}} bekor qilingan buyurtma emas",
+      "checkFailed": "Tekshirib bo'lmadi — qayta skanerlang",
+      "waitAuth": "Market ruxsati tekshirilmoqda — bir oz kutib qayta skanerlang"
     },
     "market": {
       "cardLabel": "Bekor qilingan buyurtmalar",
@@ -751,7 +758,8 @@
       "switcherMeta": "{{value}} ta",
       "receiving": "Qabul qilinmoqda №{{id}}…",
       "receivingShort": "Qabul qilinmoqda…",
-      "alreadyReceived": "Allaqachon qabul qilingan №{{id}}"
+      "alreadyReceived": "Allaqachon qabul qilingan №{{id}}",
+      "waitBulk": "Ommaviy qabul tugashini kuting — keyin qayta skanerlang"
     },
     "duplicateTitle": "Takroriy telefon raqamlar aniqlandi",
     "duplicateBody": "{{value}} ta telefon raqam bir nechta yangi buyurtmada takrorlanmoqda. Qabul qilishdan oldin tekshiring.",

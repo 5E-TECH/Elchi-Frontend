@@ -140,6 +140,12 @@ const NewOrderDetail = () => {
   const receivedIdsRef = useRef<Set<string>>(new Set());
   /** Shu sahifada skan bilan qabulga yuborilganlar — timeout'dan keyingi «allaqachon» aslida o'zimizning qabul. */
   const attemptedScanIdsRef = useRef<Set<string>>(new Set());
+  /**
+   * Ommaviy «Qabul qilish» javobi kutilmoqda (skan auditi #6). Shu payt skan-qabul (`mutateAsync`) ommaviy chaqiruvning
+   * `onSuccess` ini uzib qo'yardi (TanStack: faqat oxirgi chaqiruvniki) — qabul qilinganlar ro'yxatda qolib, keyin
+   * skanerlansa «Topilmadi» chiqardi. Endi skan aniq xabar bilan kutadi.
+   */
+  const bulkReceivingRef = useRef(false);
   // Kamera hisoblagichi va ro'yxati: shu sessiyada qabul qilinganlar (yangisi oxirida) va topilmagan kodlar.
   const [receivedLog, setReceivedLog] = useState<MarketOrder[]>([]);
   const [pendingLog, setPendingLog] = useState<MarketOrder[]>([]);
@@ -234,6 +240,12 @@ const NewOrderDetail = () => {
       if (receivedIdsRef.current.has(orderId)) {
         rememberReceivedScan(order, rawValue);
         showAlreadyReceivedFeedback(orderId);
+        return;
+      }
+      if (bulkReceivingRef.current) {
+        const message = t("marketOrders.camera.waitBulk");
+        void playScanFeedback("error", message);
+        scanNotify.warning(message, { description: `№${orderId}`, duration: 3000 });
         return;
       }
 
@@ -360,7 +372,8 @@ const NewOrderDetail = () => {
       lookupKeysRef.current.add(lookupKey);
 
       try {
-        const detail = await fetchScanDetail(code);
+        // Yengil javob (id/token/holat/market — shu yerga yetarli) va qop zaxirasisiz: «topilmadi» bitta so'rovda.
+        const detail = await fetchScanDetail(code, { light: true, orderOnly: true });
         const scanned = detail.type === "order" ? unwrapScannedMarketOrder(detail.data) : null;
         if (!scanned) {
           markMissingCode(rawValue);
@@ -590,10 +603,12 @@ const NewOrderDetail = () => {
     const accepted = selectedOrders;
     const ids = accepted.map((order) => order.id);
     const isAll = ids.length === orders.length;
+    bulkReceivingRef.current = true;
     receiveMutation.mutate(
       { orderIds: ids },
       {
         onSuccess: () => {
+          bulkReceivingRef.current = false;
           markReceived(ids);
           logReceived(accepted);
           // Ommaviy qabul ham skan kalitlariga yoziladi: keyin skanerlansa — «Topilmadi» emas, takror ogohlantirish.
@@ -609,6 +624,7 @@ const NewOrderDetail = () => {
           }
         },
         onError: (err: unknown) => {
+          bulkReceivingRef.current = false;
           setIsReceiveConfirmOpen(false);
           if (isOrderReceiveClosedError(err)) void refetchIntake();
           const msg = getBackendErrorMessage(err) ?? t("receiveError");

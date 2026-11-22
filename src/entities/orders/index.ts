@@ -59,7 +59,9 @@ export const parseCourierOrderCounts = (body: unknown): CourierOrderCounts | nul
  */
 export const todayMarketsQueryOptions = (params?: unknown) => ({
   queryKey: [orders, params] as const,
-  queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params }).then((res) => res.data),
+  // `signal` (skan auditi #100) — bekor qilingan qayta so'rov tarmoqda ham to'xtaydi.
+  queryFn: ({ signal }: { signal?: AbortSignal }) =>
+    api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params, signal }).then((res) => res.data),
 });
 
 /**
@@ -69,7 +71,8 @@ export const todayMarketsQueryOptions = (params?: unknown) => ({
  */
 export const cancelledMarketsQueryOptions = (params?: { search?: string }) => ({
   queryKey: [orders, "markets", "cancelled", params] as const,
-  queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params }).then((res) => res.data),
+  queryFn: ({ signal }: { signal?: AbortSignal }) =>
+    api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params, signal }).then((res) => res.data),
 });
 
 /**
@@ -442,7 +445,14 @@ export const useOrders = () => {
    */
   const useCancelledOrdersByMarket = (
     marketId: string | number,
-    options?: { enabled?: boolean; stage?: string; start_day?: string; end_day?: string },
+    options?: {
+      enabled?: boolean;
+      stage?: string;
+      start_day?: string;
+      end_day?: string;
+      /** Ochiq topshirish sahifasida ro'yxat o'zi yangilanib tursin (skan auditi #94) — ms yoki `false`. */
+      refetchInterval?: number | false;
+    },
   ) => {
     const params: Record<string, string> = {};
     if (options?.stage) params.stage = options.stage;
@@ -453,12 +463,13 @@ export const useOrders = () => {
       queryKey: hasParams
         ? [orders, "markets", marketId, "cancelled", params]
         : [orders, "markets", marketId, "cancelled"],
-      queryFn: () =>
+      queryFn: ({ signal }) =>
         (hasParams
-          ? api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId), { params })
-          : api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId))
+          ? api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId), { params, signal })
+          : api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId), { signal })
         ).then((res) => res.data),
       enabled: (options?.enabled ?? true) && Boolean(marketId),
+      refetchInterval: options?.refetchInterval,
     });
   };
 

@@ -286,7 +286,7 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     await waitFor(() =>
       expect(mocks.playScanFeedback).toHaveBeenCalledWith("error", "Boshqa market: Baraka Shop — qabul qilinmadi"),
     );
-    expect(mocks.fetchScanDetail).toHaveBeenCalledWith("bbbbbbbbbbbbbbbbbbbbbbb7");
+    expect(mocks.fetchScanDetail).toHaveBeenCalledWith("bbbbbbbbbbbbbbbbbbbbbbb7", { light: true, orderOnly: true });
     expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
     expect(statsOf()).toEqual({ received: 0, left: 2, missing: 0 });
     expect(target().list).toEqual([]);
@@ -497,6 +497,30 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     });
 
     await waitFor(() => expect(mocks.receiveMutateAsync).toHaveBeenCalledWith({ orderIds: ["o3"] }));
+  });
+
+  it("skan auditi #6: ommaviy «Qabul qilish» javobi kutilayotganda skan — aniq xabar, ommaviy natija uzilmaydi", async () => {
+    // Ommaviy qabul javobi hali kelmagan (callbacklar chaqirilmaydi).
+    mocks.receiveMutate.mockImplementation(() => undefined);
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    await user.click(screen.getByRole("checkbox", { name: "№o1 ni tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Qabul qilish — 1 ta buyurtma" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Qo'lda qabul qilish" });
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    expect(mocks.receiveMutate).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa2", "keyboard");
+    });
+
+    expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith(
+      "error",
+      "Ommaviy qabul tugashini kuting — keyin qayta skanerlang",
+    );
   });
 
   it("shu marketning yangi buyurtmasi ro'yxatda hali yo'q — server tasdiqlasa darhol qabul qilinadi", async () => {

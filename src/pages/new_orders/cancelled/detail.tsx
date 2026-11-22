@@ -20,7 +20,8 @@ import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
-import { getBackendErrorMessage } from "../../scan/lib/scanResource";
+import { fetchScanDetail, getBackendErrorMessage } from "../../scan/lib/scanResource";
+import { extractScannerToken, normalizeScannerCandidates } from "../../../shared/lib/scanToken";
 import type { RootState } from "../../../app/config/store";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import {
@@ -72,6 +73,38 @@ import { ManualConfirmDialog } from "./ui/ManualConfirmDialog";
 import { MarketPinDialog } from "./ui/MarketPinDialog";
 import { MarketQrDialog } from "./ui/MarketQrDialog";
 
+/** Ochiq topshirish sahifasida bekorlar ro'yxatini yangilash oralig'i (skan auditi #94). */
+const CANCELLED_LIST_POLL_MS = 20_000;
+
+/** Topshirish javobidagi `already_handed_order_ids` (backend idempotent topshirish, 2026-11-23). */
+const readAlreadyHandedIds = (body: unknown): Set<string> => {
+  const data = body && typeof body === "object" ? (body as { data?: unknown }).data : undefined;
+  const ids =
+    data && typeof data === "object" ? (data as { already_handed_order_ids?: unknown }).already_handed_order_ids : undefined;
+  return new Set(Array.isArray(ids) ? ids.map(String) : []);
+};
+
+type ScannedOrderLight = {
+  id: string;
+  status?: string | null;
+  market_id?: string | number | null;
+  market?: { id?: string | number | null } | null;
+};
+
+/** QR qidiruvi javobidagi buyurtma (`{ data: order }` o'ramlari bilan) — id bo'lmasa `null`. */
+const unwrapScannedOrder = (payload: unknown): ScannedOrderLight | null => {
+  let current: unknown = payload;
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (!current || typeof current !== "object") return null;
+    const record = current as Record<string, unknown>;
+    if (record.id !== undefined && record.id !== null && (record.status !== undefined || record.market_id !== undefined)) {
+      return { ...(record as ScannedOrderLight), id: String(record.id) };
+    }
+    current = record.order ?? record.data;
+  }
+  return null;
+};
+
 /**
  * BEKOR QILINGANLARNI MARKETGA TOPSHIRISH — `/new-orders/cancelled/:marketId`, dizayn v2.
  *
@@ -119,7 +152,12 @@ const CancelledMarketDetail = () => {
     verifyMarketCancelledPin,
     handoverCancelledOrders,
   } = useOrders();
-  const query = useCancelledOrdersByMarket(marketId);
+  // Ochiq topshirish sahifasida ro'yxat o'zi yangilanib turadi (skan auditi #94): sahifa ochilgandan keyin HQ'ga
+  // qaytgan posilka ham skan qilinganda ro'yxatda bo'ladi. Market roli — kerak emas.
+  const query = useCancelledOrdersByMarket(
+    marketId,
+    role === "market" ? undefined : { refetchInterval: CANCELLED_LIST_POLL_MS },
+  );
   const hasTabs = useHasNewOrdersTabs();
   const hintId = useId();
   const cardTitleId = useId();
@@ -161,10 +199,18 @@ const CancelledMarketDetail = () => {
   );
   // Skaner ro'yxati: qolganlar + shu sahifada topshirilganlar — topshirilganni qayta skanerlash «Bu ro'yxatda yo'q»
   // emas, «Allaqachon topshirilgan» bo'lsin (ro'yxat yangilangach u serverdan kelmaydi).
-  const scanOrders = useMemo(
-    () => [...orders, ...handedOver.map((row) => row.order)],
-    [handedOver, orders],
-  );
+  //
+  // Skan auditi #39: indeks — shu sahifada KO'RILGAN barcha buyurtmalar (ro'yxat ∪ topshirilganlar ∪ so'rovi
+  // ketayotganlar). Ilgari 5 s dagi qayta so'rov javobi kelmagan (server allaqachon topshirgan) buyurtmani ro'yxatdan
+  // olib tashlardi — qayta skan «QR topilmadi», keyin «Allaqachon topshirilgan» derdi. Endi qaror `handOver` da
+  // (topshirilmoqda / topshirilgan / server javobi).
+  const knownOrdersRef = useRef(new Map<string, OrderListItem>());
+  const scanOrders = useMemo(() => {
+    const known = knownOrdersRef.current;
+    for (const item of rawOrders) known.set(String(item.id), item);
+    for (const row of handedOver) known.set(String(row.order.id), row.order);
+    return [...known.values()];
+  }, [handedOver, rawOrders]);
   const isMarketRole = role === "market";
   // vOczoOUE 2-bosqich (BG3): market — «Olib ketishga tayyor · Yo'lda · Olganlarim» (`?view=`); «Olganlarim» sukut
   // bo'yicha shu oy (topshirish vaqti).
@@ -294,7 +340,7 @@ const CancelledMarketDetail = () => {
       handingRef.current.add(orderId);
       setHandingIds(new Set(handingRef.current));
       try {
-        await handoverCancelledOrders.mutateAsync({
+        const result = await handoverCancelledOrders.mutateAsync({
           marketId,
           orderIds: [orderId],
           authorizationToken: isCancelledHandoverQrRequired ? token : undefined,
@@ -307,7 +353,14 @@ const CancelledMarketDetail = () => {
           { order, at: Date.now(), handover },
           ...previous.filter((row) => String(row.order.id) !== orderId),
         ]);
-        if (isManual) {
+        // Skan auditi #38: server «allaqachon topshirilgan» dedi (oldingi urinish javobi yo'qolgan/kechikkan, yoki
+        // boshqa xodim topshirgan) — posilka marketda, xato emas.
+        if (readAlreadyHandedIds(result).has(orderId)) {
+          const message = t("cancelled.camera.alreadyHanded", { id: orderId });
+          void playScanFeedback("duplicate", message);
+          if (isManual) notify.warning(message, { duration: 3000 });
+          else scanNotify.warning(message, { duration: 2000 });
+        } else if (isManual) {
           notify.success(t("cancelled.manual.success"), {
             description: `#${orderId} · ${getManualReasonLabel(manualReasonCode)}`,
             duration: 3000,
@@ -425,8 +478,9 @@ const CancelledMarketDetail = () => {
       // Market QR o'qildi, lekin server rad etdi (muddati tugagan, ishlatilgan, boshqa market) — bu «Bu ro'yxatda
       // yo'q» EMAS (2026-11-15: xodim «1-skanda ro'yxatda yo'q deydi» deb ko'rdi), xato ovozi va server matni.
       void playScanFeedback("error", message);
-      // Skaner oqimi: xato qisqa turadi (v1 dagidek 4 s) — keyingi skanerlashda ekran to'silib qolmasin.
-      scanNotify.error(t("cancelled.notify.qrNotFound"), { description: message, duration: 4000 });
+      // Skaner oqimi: xato qisqa turadi (v1 dagidek 4 s) — keyingi skanerlashda ekran to'silib qolmasin. Sarlavha —
+      // «Market QR rad etildi» (skan auditi #40): QR o'qildi, server rad etdi — «QR topilmadi» emas.
+      scanNotify.error(t("cancelled.notify.qrRejected"), { description: message, duration: 4000 });
       return true;
     }
   }, [
@@ -511,16 +565,103 @@ const CancelledMarketDetail = () => {
     setPinError(t("cancelled.pin.scanned"));
   }, [t, verifyHandoverQr, verifyMarketCancelledPin.isPending]);
 
-  const handleMissingOrder = useCallback((rawValue?: string) => {
+  const showScanMissing = useCallback(() => {
+    const message = t("cancelled.notify.scanMissing");
+    void playScanFeedback("missing", t("cancelled.camera.missing"));
+    scanNotify.warning(t("cancelled.notify.qrNotFound"), { description: message, duration: 3000 });
+  }, [t]);
+
+  /** Ro'yxat bir vaqtda bir marta qayta so'raladi (ketma-ket topilmagan skanlar bitta so'rovni kutadi). */
+  const missRefetchRef = useRef<Promise<unknown> | null>(null);
+  const missLookupKeysRef = useRef(new Set<string>());
+  const refetchList = query.refetch;
+
+  /**
+   * Ro'yxatda yo'q kod (skan auditi #37/#94): ilgari darhol «QR topilmadi» edi — sahifa ochilgandan keyin
+   * topshirishga tayyor bo'lgan (HQ'ga qaytgan) posilka ham. Endi:
+   *   1) ro'yxat bir marta yangilanadi va kod qayta moslanadi — topilsa odatdagidek topshiriladi;
+   *   2) aks holda server aytadi: allaqachon topshirilgan / boshqa market / hali tayyor emas / bekor emas;
+   *   3) 404 — «QR topilmadi»; tarmoq/5xx — «Tekshirib bo'lmadi» (hisobga «yo'q» deb yozilmaydi).
+   */
+  const handleMissingOrder = useCallback(async (rawValue?: string) => {
     if (rawValue && extractMarketCancelledQrToken(rawValue)) {
       void verifyHandoverQr(rawValue);
       return;
     }
+    const raw = rawValue ?? "";
+    const code = extractScannerToken(raw) ?? raw.trim();
+    const lookupKey = code.toLowerCase();
+    if (!code) {
+      showScanMissing();
+      return;
+    }
+    if (missLookupKeysRef.current.has(lookupKey)) return;
+    missLookupKeysRef.current.add(lookupKey);
+    try {
+      missRefetchRef.current ??= Promise.resolve(refetchList?.()).finally(() => {
+        missRefetchRef.current = null;
+      });
+      const refetched = (await missRefetchRef.current) as { data?: unknown } | undefined;
+      const candidates = new Set(normalizeScannerCandidates(raw, window.location.origin));
+      const fresh = extractCancelledOrders(refetched?.data).find(
+        (item) =>
+          candidates.has(String(item.id).toLowerCase()) ||
+          candidates.has(String(item.qr_code_token ?? "").trim().toLowerCase()),
+      );
+      if (fresh) {
+        knownOrdersRef.current.set(String(fresh.id), fresh);
+        void handOver(fresh);
+        return;
+      }
 
-    const message = t("cancelled.notify.scanMissing");
-    void playScanFeedback("missing", t("cancelled.camera.missing"));
-    scanNotify.warning(t("cancelled.notify.qrNotFound"), { description: message, duration: 3000 });
-  }, [t, verifyHandoverQr]);
+      const detail = await fetchScanDetail(code, { light: true, orderOnly: true });
+      const scanned = detail.type === "order" ? unwrapScannedOrder(detail.data) : null;
+      if (!scanned) {
+        showScanMissing();
+        return;
+      }
+      const scannedId = String(scanned.id);
+      const scannedMarketId = String(scanned.market_id ?? scanned.market?.id ?? "").trim();
+      const status = String(scanned.status ?? "").trim().toLowerCase();
+      if (scannedMarketId && scannedMarketId !== String(marketId)) {
+        const message = t("cancelled.notify.otherMarket", { id: scannedId });
+        void playScanFeedback("error", message);
+        scanNotify.error(message, { duration: 3000 });
+        return;
+      }
+      if (status === "returned_to_market") {
+        const message = t("cancelled.camera.alreadyHanded", { id: scannedId });
+        void playScanFeedback("duplicate", message);
+        scanNotify.warning(message, { duration: 2000 });
+        return;
+      }
+      const message = status === "cancelled"
+        ? t("cancelled.notify.notReady", { id: scannedId })
+        : t("cancelled.notify.notCancelled", { id: scannedId });
+      void playScanFeedback("error", message);
+      scanNotify.warning(message, {
+        description: status === "cancelled" ? t("cancelled.notify.notReadyDescription") : undefined,
+        duration: 4000,
+      });
+    } catch (error) {
+      if (getErrorStatus(error) === 404) {
+        showScanMissing();
+        return;
+      }
+      const message = t("cancelled.notify.checkFailed");
+      void playScanFeedback("error", message);
+      scanNotify.error(message, { description: code, duration: 3000 });
+    } finally {
+      missLookupKeysRef.current.delete(lookupKey);
+    }
+  }, [handOver, marketId, refetchList, showScanMissing, t, verifyHandoverQr]);
+
+  // Market QR / kod tekshirilayotganda kelgan skan — jim yo'qolmaydi (skan auditi #42).
+  const handlePausedScan = useCallback(() => {
+    const message = t("cancelled.notify.waitAuth");
+    void playScanFeedback("error", message);
+    scanNotify.warning(message, { duration: 2500 });
+  }, [t]);
 
   /** «Qo'lda topshirish»: oyna yopiladi va buyurtma sabab bilan darhol topshiriladi (qator «Topshirilmoqda…»). */
   const confirmManualHandover = useCallback(() => {
@@ -611,8 +752,13 @@ const CancelledMarketDetail = () => {
     // 6 raqam + Enter buyurtma skani deb olinmasin (oyna o'zi ham `data-scanner-ignore`). Topshirish so'rovi
     // ketayotganda esa TO'XTAMAYDI — skan = topshirish, xodim ketma-ket skanerlayveradi.
     paused: scanMarketCancelledQr.isPending || verifyMarketCancelledPin.isPending || isPinOpen,
+    onPausedScan: handlePausedScan,
+    // Ro'yxat bo'sh yoki yuklanayotganda ham USB tinglaydi — kod serverdan tekshiriladi (skan auditi #42).
+    keyboardWhenEmpty: true,
     onMatch: handleOrderScan,
-    onMissing: handleMissingOrder,
+    onMissing: (rawValue: string) => {
+      void handleMissingOrder(rawValue);
+    },
     camera: waitingForMarketQr
       ? {
           id: `cancelled-handover:${marketId}`,

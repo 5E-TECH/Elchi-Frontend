@@ -24,6 +24,12 @@ type UseOrderQrScannerOptions<TOrder extends OrderQrScannerItem> = {
    * qilingandan keyin yoki yangi yaratilgan buyurtma skanerlansa jim yo'qolmasin (skan auditi 2026-11-23).
    */
   keyboardWhenEmpty?: boolean;
+  /**
+   * `paused` paytida kelgan skan (skan auditi #33/#42). Berilmasa — avvalgidek: USB tinglanmaydi, kamera skani jim
+   * tashlanadi. Berilsa — USB ham tinglanadi va skan shu yerga keladi: sahifa «kuting / qayta skanerlang» deb aytadi
+   * (ilgari operator javobsiz qolib, kod kadrda turganda takror deb bostirilardi).
+   */
+  onPausedScan?: (rawValue: string, source: ScanSource) => void;
   onMatch: (order: TOrder, rawValue: string, source: ScanSource) => void;
   onMissing: (rawValue: string, source: ScanSource) => void;
   /**
@@ -43,6 +49,7 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
   minLength = 6,
   captureEditableTargets = true,
   keyboardWhenEmpty = false,
+  onPausedScan,
   onMatch,
   onMissing,
   camera,
@@ -63,7 +70,11 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
   }, [orders]);
 
   const matchScan = useCallback((rawValue: string, source: ScanSource) => {
-    if (paused) return false;
+    if (paused) {
+      if (!onPausedScan) return false;
+      onPausedScan(rawValue, source);
+      return true;
+    }
     const candidates = normalizeScannerCandidates(rawValue, window.location.origin);
     const matchedOrder = candidates
       .map((candidate) => orderScanIndex.get(candidate))
@@ -82,12 +93,12 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
 
     onMissing(rawValue, source);
     return true;
-  }, [minLength, onMatch, onMissing, orderScanIndex, paused]);
+  }, [minLength, onMatch, onMissing, onPausedScan, orderScanIndex, paused]);
 
   const handleKeyboardScan = useCallback((rawValue: string) => matchScan(rawValue, "keyboard"), [matchScan]);
 
   useKeyboardScanner({
-    enabled: enabled && !paused && (keyboardWhenEmpty || orders.length > 0),
+    enabled: enabled && (!paused || Boolean(onPausedScan)) && (keyboardWhenEmpty || orders.length > 0),
     captureEditableTargets,
     // Kursor qidiruv maydonida bo'lsa skan matni maydonga ham yozilardi — ro'yxat «hech narsa topilmadi» bo'lib
     // qolardi va keyingi skan unga qo'shilardi. Skan amalga oshgach maydon skandan oldingi holatiga qaytadi.

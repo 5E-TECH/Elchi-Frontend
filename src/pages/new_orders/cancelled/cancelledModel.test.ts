@@ -93,6 +93,12 @@ describe("market QR va topshirish tokeni", () => {
     expect(relative.authorizationToken).toBe("tok2");
     expect(relative.expiresAt).toBeGreaterThanOrEqual(before + 60_000);
     expect(relative.expiresAt).toBeLessThan(before + 61_000);
+
+    // Skan auditi #41: ikkalasi kelsa — qolgan soniya (qurilma soati 10 daqiqa oldinda bo'lsa ham 5 daqiqa ishlaydi).
+    const both = normalizeCancelledAuthorization({
+      data: { authorization_token: "tok3", expires_at: new Date(Date.now() - 600_000).toISOString(), remaining_seconds: 300 },
+    });
+    expect(both.expiresAt).toBeGreaterThanOrEqual(before + 300_000);
   });
 
   it("QR javobi: rasm (URL / base64 / svg), token va matn", () => {

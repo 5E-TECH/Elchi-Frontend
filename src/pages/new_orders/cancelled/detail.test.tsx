@@ -21,6 +21,7 @@ type ScannerOptions = {
   paused?: boolean;
   onMatch: (order: { id: string }, raw: string) => void;
   onMissing: (raw: string) => void;
+  onPausedScan?: (raw: string, source: string) => void;
   /** Kamera maqsadi (markaziy «Skaner» tugmasi) — `useOrderQrScanner` uni USB bilan bir yo'ldan o'tkazadi. */
   camera?: {
     id: string;
@@ -41,6 +42,7 @@ const mocks = vi.hoisted(() => ({
   pinMutateAsync: vi.fn(),
   generateMutate: vi.fn(),
   playScanFeedback: vi.fn(),
+  fetchScanDetail: vi.fn(),
   scanner: { current: null as ScannerOptions | null },
   qrRequired: { current: true as boolean | undefined },
   emptyList: { current: false },
@@ -160,6 +162,12 @@ vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
   },
 }));
 
+// Ro'yxatda yo'q kod serverdan tekshiriladi (skan auditi #37/#94) — sukut: 404 («QR topilmadi»).
+vi.mock("../../scan/lib/scanResource", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../scan/lib/scanResource")>()),
+  fetchScanDetail: mocks.fetchScanDetail,
+}));
+
 vi.mock("../../../shared/lib/scanner/feedback", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../shared/lib/scanner/feedback")>()),
   playScanFeedback: mocks.playScanFeedback,
@@ -197,6 +205,11 @@ const scan = async (raw: string) => {
 };
 
 const AUTH = { data: { authorization_token: "auth-1", remaining_seconds: 252 } };
+
+beforeEach(() => {
+  mocks.fetchScanDetail.mockReset();
+  mocks.fetchScanDetail.mockRejectedValue({ response: { status: 404, data: { statusCode: 404, message: "topilmadi" } } });
+});
 
 /** Tugashini test o'zi boshqaradigan topshirish javobi («Topshirilmoqda…» holati). */
 const deferred = () => {
@@ -504,7 +517,69 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
     expect(screen.queryByRole("dialog", { name: "QR buzilganini tasdiqlash" })).not.toBeInTheDocument();
   });
 
-  it("market QR rad etilsa — «QR topilmadi», XATO ovozi («Bu ro'yxatda yo'q» emas), token yo'q", async () => {
+  it("⭐ skan auditi #38: server «allaqachon topshirilgan» desa — takror ogohlantirish, qator «Topshirildi» ga", async () => {
+    mocks.scanMutateAsync.mockResolvedValue(AUTH);
+    mocks.handoverMutateAsync.mockResolvedValue({ data: { closed_count: 0, order_ids: [], already_handed_order_ids: ["501"] } });
+    renderDetail();
+    await scan("MCR-baraka-201");
+    await screen.findByText("Market QR skanerlandi");
+
+    await scan("tok-501");
+
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", "Allaqachon topshirilgan №501");
+    await waitFor(() => expect(pendingRow("501")).toBeNull());
+  });
+
+  it("⭐ skan auditi #37/#94: ro'yxatda yo'q kod — server tekshiradi: shu marketga topshirilgan → «Allaqachon topshirilgan», «QR topilmadi» emas", async () => {
+    mocks.fetchScanDetail.mockResolvedValue({
+      type: "order",
+      data: { data: { id: "777", status: "returned_to_market", market_id: "201" } },
+    });
+    renderDetail();
+
+    await scan("tok-777");
+
+    await waitFor(() =>
+      expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", "Allaqachon topshirilgan №777"),
+    );
+    expect(mocks.fetchScanDetail).toHaveBeenCalledWith("tok-777", { light: true, orderOnly: true });
+    expect(screen.queryByText("QR topilmadi")).not.toBeInTheDocument();
+  });
+
+  it("ro'yxatda yo'q, bekor qilingan, lekin hali shu yerda emas — «hali topshirishga tayyor emas»", async () => {
+    mocks.fetchScanDetail.mockResolvedValue({
+      type: "order",
+      data: { data: { id: "778", status: "cancelled", market_id: "201" } },
+    });
+    renderDetail();
+
+    await scan("tok-778");
+
+    expect(await screen.findByText("№778 hali topshirishga tayyor emas")).toBeInTheDocument();
+  });
+
+  it("tekshiruv tarmoq xatosi — «Tekshirib bo'lmadi», «QR topilmadi» emas", async () => {
+    mocks.fetchScanDetail.mockRejectedValue({ code: "ERR_NETWORK" });
+    renderDetail();
+
+    await scan("tok-779");
+
+    expect(await screen.findByText("Tekshirib bo'lmadi — qayta skanerlang")).toBeInTheDocument();
+    expect(screen.queryByText("QR topilmadi")).not.toBeInTheDocument();
+  });
+
+  it("skan auditi #42: market QR tekshirilayotganda kelgan skan jim yo'qolmaydi", () => {
+    renderDetail();
+
+    act(() => mocks.scanner.current!.onPausedScan?.("tok-501", "keyboard"));
+
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith(
+      "error",
+      "Market ruxsati tekshirilmoqda — bir oz kutib qayta skanerlang",
+    );
+  });
+
+  it("market QR rad etilsa — «Market QR rad etildi», XATO ovozi («Bu ro'yxatda yo'q» emas), token yo'q", async () => {
     mocks.scanMutateAsync.mockRejectedValue({
       response: { status: 400, data: { statusCode: 400, message: "QR muddati tugagan" } },
     });
@@ -512,7 +587,7 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
 
     await scan("MCR-boshqa");
 
-    expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
+    expect(await screen.findByText("Market QR rad etildi")).toBeInTheDocument();
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("error", "QR muddati tugagan");
     expect(mocks.playScanFeedback).not.toHaveBeenCalledWith("missing", expect.anything());
     expect(screen.getByText("Market QR kerak")).toBeInTheDocument();
@@ -592,7 +667,7 @@ describe("Bekor qilinganlarni topshirish — kamera (markaziy «Skaner» tugmasi
     expect(after.list?.map((item) => item.key)).toEqual(["502", "501"]);
     expect(after.list?.every((item) => item.onUndo === undefined)).toBe(true);
     // Topshirilganlar skaner ro'yxatida qoladi — takror skan «Bu ro'yxatda yo'q» emas, «Allaqachon topshirilgan».
-    expect(mocks.scanner.current!.orders.map((item) => item.id)).toEqual(["502", "501"]);
+    expect([...mocks.scanner.current!.orders.map((item) => item.id)].sort()).toEqual(["501", "502"]);
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Market QR qabul qilindi", undefined, {
       step: true,
       voice: "received",
@@ -631,7 +706,9 @@ describe("Bekor qilinganlarni topshirish — skaner (QR talab qilinmaydi)", () =
     expect(mocks.playScanFeedback).toHaveBeenCalledWith("duplicate", "Allaqachon topshirilgan №501");
 
     await scan("nomalum-qr-123");
-    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", "Bu marketning bekorlarida yo'q");
+    await waitFor(() =>
+      expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", "Bu marketning bekorlarida yo'q"),
+    );
     expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
   });
 

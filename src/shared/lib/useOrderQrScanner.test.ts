@@ -96,4 +96,19 @@ describe("useOrderQrScanner", () => {
     await getActiveScanTarget()?.onScan("10254", "camera");
     expect(onMatch).toHaveBeenCalledWith(ORDERS[0], "10254", "camera");
   });
+
+  it("skan auditi #33/#42: `onPausedScan` — pauzadagi skan (USB ham, kamera ham) jim yo'qolmaydi", async () => {
+    const onMatch = vi.fn();
+    const onPausedScan = vi.fn();
+    renderHook(() =>
+      useOrderQrScanner({ orders: ORDERS, paused: true, onMatch, onMissing: vi.fn(), onPausedScan, camera: { id: "x", title: "T" } }),
+    );
+
+    scan("65f0c1aa22bb33cc44dd55ee");
+    await getActiveScanTarget()?.onScan("10254", "camera");
+
+    expect(onMatch).not.toHaveBeenCalled();
+    expect(onPausedScan).toHaveBeenNthCalledWith(1, "65f0c1aa22bb33cc44dd55ee", "keyboard");
+    expect(onPausedScan).toHaveBeenNthCalledWith(2, "10254", "camera");
+  });
 });
