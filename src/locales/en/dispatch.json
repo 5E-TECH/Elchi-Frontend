@@ -58,7 +58,9 @@
   "scanErrors": {
     "duplicate": "This order is already in the list",
     "wrongType": "Only order QR codes can be scanned",
-    "lookup": "Failed to fetch order details"
+    "lookup": "Failed to fetch order details",
+    "checking": "This order is still being checked — wait for the result",
+    "tooMany": "Scanning too fast — wait a second and scan again"
   },
   "couriers": {
     "loadError": "Could not load the courier list. You can still scan, but retry before assigning.",

@@ -19,6 +19,13 @@ const mocks = vi.hoisted(() => ({
   cancel: vi.fn(),
   bulk: vi.fn(),
   feedback: vi.fn(() => Promise.resolve()),
+  lookup: vi.fn(),
+}));
+
+// Ro'yxatda topilmagan kod serverdan tekshiriladi (skan auditi #57) — sukut: 404 («topilmadi»).
+vi.mock("../scan/lib/scanResource", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../scan/lib/scanResource")>()),
+  fetchScanDetail: mocks.lookup,
 }));
 
 vi.mock("../../shared/api/api", () => ({ api: { get: mocks.get } }));
@@ -55,9 +62,12 @@ const bulkOk = (failed: Array<{ order_id: string; status_code: number; message: 
 
 const bulkCalls = () => mocks.bulk.mock.calls.map(([call]) => call as BulkCall);
 
+const notFoundError = () => ({ isAxiosError: true, response: { status: 404, data: { message: "Order not found" } } });
+
 beforeEach(() => {
   resetScanTargets();
   localStorage.clear();
+  mocks.lookup.mockReset().mockRejectedValue(notFoundError());
 });
 
 const order = (id: string, name: string, over: Record<string, unknown> = {}) => ({
@@ -560,7 +570,96 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
     await act(async () => {
       await target().onScan("boshqa-kuryer-qr", "camera");
     });
-    expect(mocks.feedback).toHaveBeenLastCalledWith("missing", "Bu QR kod kutilayotgan buyurtmalar ichida topilmadi");
+    await waitFor(() =>
+      expect(mocks.feedback).toHaveBeenLastCalledWith("missing", "Bu QR kod kutilayotgan buyurtmalar ichida topilmadi"),
+    );
+    expect(mocks.lookup).toHaveBeenCalledWith("boshqa-kuryer-qr", { light: true, orderOnly: true });
     expect(target().progress?.done).toBe(0);
+  });
+});
+
+describe("CourierBulkPage — ro'yxatda yo'q kod serverdan tekshiriladi (skan auditi #57)", () => {
+  beforeEach(() => {
+    mocks.get.mockReset();
+    respondWith([order("10", "Ali"), order("11", "Vali")]);
+  });
+
+  it("ro'yxat eskirgan: kod serverda «kutilmoqda» — ro'yxat yangilanadi va belgilanadi («topilmadi» emas)", async () => {
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    // Sahifa ochilgandan keyin kuryer olgan buyurtma.
+    respondWith([order("10", "Ali"), order("11", "Vali"), order("12", "Soli")]);
+    mocks.lookup.mockResolvedValue({ type: "order", data: { statusCode: 200, data: { id: "12", token: "tok-12-qr", status: "waiting" } } });
+
+    await scan("tok-12-qr");
+
+    expect(await screen.findByText("Soli bekor qilishga belgilandi")).toBeInTheDocument();
+    expect(resultOf("Soli", "Bekor")).toBeChecked();
+    expect(mocks.feedback).not.toHaveBeenCalledWith("missing", expect.anything());
+  });
+
+  it("kod serverda bor, lekin kutilayotgan emas — «№… kutilayotgan buyurtmalaringiz ichida emas»", async () => {
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    mocks.lookup.mockResolvedValue({ type: "order", data: { statusCode: 200, data: { id: "77", status: "sold" } } });
+
+    await scan("tok-77-qr");
+
+    expect(await screen.findByTestId("courier-bulk-scan-error")).toHaveTextContent(
+      "№77 kutilayotgan buyurtmalaringiz ichida emas",
+    );
+  });
+
+  it("server / so'rov cheklovi xatosi — «topilmadi» emas, sababi bilan", async () => {
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    mocks.lookup.mockRejectedValue({ isAxiosError: true, response: { status: 429, data: { message: "Too Many" } } });
+
+    await scan("tok-99-qr");
+
+    expect(await screen.findByTestId("courier-bulk-scan-error")).toHaveTextContent(
+      "Juda tez skanerlanmoqda — bir soniya kuting va qayta skanerlang",
+    );
+    expect(mocks.feedback).not.toHaveBeenCalledWith("missing", expect.anything());
+  });
+
+  it("ro'yxat yuklanayotganda skanerlangan kod yo'qolmaydi — yuklanish tugagach belgilanadi", async () => {
+    let release: (value: unknown) => void = () => undefined;
+    mocks.get.mockReset().mockReturnValue(new Promise((done) => (release = done)));
+    renderWithProviders(<CourierBulkPage />);
+
+    // USB ro'yxat bo'sh paytda ham tinglanadi; kod yuklanishni kutadi.
+    await scan("tok-11-qr");
+    await act(async () =>
+      release({ data: { statusCode: 200, data: { data: [order("10", "Ali"), order("11", "Vali")], total: 2 } } }),
+    );
+
+    expect(await screen.findByText("Vali bekor qilishga belgilandi")).toBeInTheDocument();
+    expect(resultOf("Vali", "Bekor")).toBeChecked();
+    expect(mocks.lookup).not.toHaveBeenCalled();
+  });
+});
+
+describe("CourierBulkPage — belgilar faqat bugungi (skan auditi #58, #76)", () => {
+  beforeEach(() => {
+    mocks.get.mockReset();
+    respondWith([order("10", "Ali"), order("11", "Vali")]);
+  });
+
+  it("kechagi «Ertaga» belgisi bugun tiklanmaydi — o'sha rejimdagi skan «Qayta skaner» emas, belgilaydi", async () => {
+    localStorage.setItem(
+      "courier-bulk-marks:v1::",
+      JSON.stringify({ actions: { "10": "tomorrow" }, scanMode: "tomorrow", day: "2000-01-01" }),
+    );
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument();
+
+    act(() => getActiveScanTarget()?.onModeChange?.("tomorrow"));
+    await waitFor(() => expect(getActiveScanTarget()?.mode).toBe("tomorrow"));
+    await scan("tok-10-qr");
+
+    expect(await screen.findByText("Ali ertaga qoldirishga belgilandi")).toBeInTheDocument();
+    expect(screen.queryByText("Bu buyurtma oldin skaner qilingan")).not.toBeInTheDocument();
   });
 });

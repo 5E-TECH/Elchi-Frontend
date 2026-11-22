@@ -171,6 +171,7 @@
     "searching": "Kod tekshirilmoqda",
     "found": "{{title}} topildi",
     "previousOpening": "Oldingi kod ochilmoqda — bu skan qabul qilinmadi. Qayta skanerlang.",
+    "tooMany": "Juda tez skanerlanmoqda — bir soniya kuting va qayta skanerlang",
     "resultTitle": "Natija",
     "readText": "O'qilgan matn",
     "scannedCode": "Skanerlangan kod",
@@ -279,6 +280,7 @@
       "assignedToast": "{{ref}} sizga biriktirildi",
       "alreadyToast": "{{ref}} allaqachon sizda",
       "repeatToast": "{{ref}} allaqachon skanerlangan",
+      "pendingToast": "Bu kod hali yuborilmoqda — natijani kuting",
       "otherCourier": "Boshqa kuryerda: {{name}}",
       "otherCourierUnknown": "Boshqa kuryerga biriktirilgan",
       "otherCourierHint": "Menejerga xabar bering.",
@@ -318,6 +320,7 @@
       "notInPost": "Buyurtma pochtada emas — qabul qilib bo'lmaydi",
       "notOrder": "Bu buyurtma QR kodi emas — uni «Ma'lumot» rejimida oching",
       "failed": "{{ref}} qabul qilinmadi — qayta skanerlang",
+      "queue": "Navbatda {{value}} ta skan",
       "manualSubmit": "Qabul qilish"
     }
   },

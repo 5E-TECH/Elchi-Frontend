@@ -69,4 +69,23 @@ describe("useScannerGate.evaluateScan", () => {
     expect(result.current.evaluateScan("TOKEN-A")).toBe("duplicate");
     expect(result.current.evaluateScan("TOKEN-B")).toBe("accepted");
   });
+
+  it("releaseScan (skan auditi #30/#53): xato bergan kod darhol qayta skanerlansa — takror emas, qayta qabul", () => {
+    const { result } = renderHook(() => useScannerGate({ cooldownMs: 0, duplicateCooldownMs: 1800 }));
+
+    expect(result.current.evaluateScan("TOKEN-A", { ignoreCooldown: true })).toBe("accepted");
+    expect(result.current.evaluateScan("token-a", { ignoreCooldown: true })).toBe("duplicate");
+    // Havola shaklida ham o'sha kalit (`/scan/<token>`).
+    result.current.releaseScan("https://elchi.example/scan/TOKEN-A");
+    expect(result.current.evaluateScan("TOKEN-A", { ignoreCooldown: true })).toBe("accepted");
+  });
+
+  it("releaseScan boshqa kod qabul qilingan bo'lsa unga tegmaydi", () => {
+    const { result } = renderHook(() => useScannerGate({ cooldownMs: 0, duplicateCooldownMs: 1800 }));
+
+    expect(result.current.evaluateScan("TOKEN-A", { ignoreCooldown: true })).toBe("accepted");
+    expect(result.current.evaluateScan("TOKEN-B", { ignoreCooldown: true })).toBe("accepted");
+    result.current.releaseScan("TOKEN-A");
+    expect(result.current.evaluateScan("TOKEN-B", { ignoreCooldown: true })).toBe("duplicate");
+  });
 });

@@ -12,6 +12,7 @@ import { useOrdersCoverage } from "../../../entities/orders/ordersCoverage";
 import { extractHandoverPin, readHandoverPinError } from "../../../entities/orders/handoverPin";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { latinizeKeyboardLayout } from "../../../shared/lib/scanToken";
 import { extractMarketQrToken, readHandoverAuthorization } from "../model/orderReturnRules";
 import { notify } from "../../../shared/lib/notify";
 
@@ -32,6 +33,13 @@ interface Props {
 const AUTHORIZATION_TTL_MS = 5 * 60 * 1000 - 10_000;
 
 /**
+ * Backend `markReturnedToMarket`: buyurtma allaqachon marketga qaytarilgan (`Order allaqachon RETURNED_TO_MARKET
+ * holatida`) — takror yuborish, oldingi urinish o'tgan. Sabab kodi yo'q, matn bo'yicha.
+ */
+const isAlreadyReturnedError = (message: string | undefined) =>
+  Boolean(message && /allaqachon\s+RETURNED_TO_MARKET/i.test(message));
+
+/**
  * Filial: qaytarilgan buyurtmani marketga topshirish. Backend market QR
  * ruxsatini MAJBURIY talab qiladi — market QR (`MCR-...`) skan qilinadi,
  * 5 daqiqalik `authorization_token` olinadi va topshirish tasdiqlanadi. QR o'qilmasa — market QR oynasidagi
@@ -46,6 +54,12 @@ const AUTHORIZATION_TTL_MS = 5 * 60 * 1000 - 10_000;
  * (`layer: "dialog"` — sahifanikidan ustun) v2 `ScannerCamera` oynasida ochadi (`openScanner()`, umumiy
  * `ScannerHost`; v1 `ScannerCameraModal` o'chirildi). Kamera skani qo'lda kiritish / USB bilan bitta yo'l
  * (`submitQr`); ruxsat olingach yoki oyna yopilsa kamera yopiladi.
+ *
+ * Skan auditi #51: USB skaner kodni maydonga TUGMA kodlari bilan yozadi — OS'da kirill tartibi yoqiq bo'lsa
+ * `MCR-…` o'rniga `ЬСК-…` keladi: yuborishdan oldin lotinga qaytariladi (`latinizeKeyboardLayout`, boshqa
+ * skanerlardagidek). Skaner ikkinchi Enter yuborsa yoki kod tez qayta o'qilsa — so'rov yo'lda turgani uchun takror
+ * yuborilmaydi (bir martalik QR ikkinchi so'rovda «ishlatilgan» deb yolg'on xato berardi). Topshirish qayta
+ * yuborilganda backend «allaqachon RETURNED_TO_MARKET» desa — avvalgi urinish o'tgan: muvaffaqiyat.
  */
 const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) => {
   const { t, i18n } = useTranslation(["orders", "newOrders", "common"]);
@@ -59,12 +73,16 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
   const cameraRequestedRef = useRef(false);
   // QR bir martalik: topshirish yiqilsa, ruxsat saqlanadi va qayta skan shart emas.
   const [authorization, setAuthorization] = useState<{ token: string; method: "qr" | "pin" } | null>(null);
+  // So'rov yo'lda (sinxron): `isPending` keyingi renderda yangilanadi — skanerning ikkinchi Enter'i shu oraliqda
+  // ikkinchi so'rovni yuborib, bir martalik QR uchun yolg'on xato olardi (#51).
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
     setQrInput("");
     setError("");
     setAuthorization(null);
+    inFlightRef.current = false;
   }, [open]);
 
   // Ruxsat muddati tugaganda — qayta QR skan talab qilinadi.
@@ -77,20 +95,38 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
   const isPending =
     scanMarketCancelledQr.isPending || verifyMarketCancelledPin.isPending || markReturnedToMarket.isPending;
 
-  const markReturned = (authorizationToken: string) =>
+  /** Yo'ldagi so'rov tugadi (muvaffaqiyat yoki xato) — keyingi yuborish ochiq. */
+  const settle = () => {
+    inFlightRef.current = false;
+  };
+
+  const markReturned = (authorizationToken: string) => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    const succeed = () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      notify.success(t("returnHandoverSuccess"), { duration: 3000 });
+      onDone?.();
+      onClose();
+    };
     markReturnedToMarket.mutate(
       { id: orderId, data: { authorization_token: authorizationToken } },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["orders"] });
-          notify.success(t("returnHandoverSuccess"), { duration: 3000 });
-          onDone?.();
-          onClose();
+        onSuccess: succeed,
+        onError: (mutationError) => {
+          const message = getBackendErrorMessage(mutationError);
+          // Takror yuborish (oldingi urinish o'tgan, javobi yo'qolgan) — xato emas.
+          if (isAlreadyReturnedError(message)) {
+            succeed();
+            return;
+          }
+          // «Qabul qilindi» (QR/PIN) dan keyin topshirish rad etilsa — xato ham eshitilsin.
+          fail(message ?? t("orderActionError"));
         },
-        // «Qabul qilindi» (QR/PIN) dan keyin topshirish rad etilsa — xato ham eshitilsin.
-        onError: (mutationError) => fail(getBackendErrorMessage(mutationError) ?? t("orderActionError")),
+        onSettled: settle,
       },
     );
+  };
 
   /** Xato — oynada va (kamera ochiq bo'lsa) kamera natija qatorida. */
   const fail = (message: string) => {
@@ -102,6 +138,7 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
   const authorize = (response: unknown, method: "qr" | "pin") => {
     const token = readHandoverAuthorization(response);
     if (!token) {
+      settle();
       fail(t("orderActionError"));
       return;
     }
@@ -112,16 +149,20 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
       { voice: "received" },
     );
     setAuthorization({ token, method });
+    // Ruxsat so'rovi hali «yo'lda» (`onSettled` keyin keladi) — topshirish uning davomi.
+    inFlightRef.current = false;
     markReturned(token);
   };
 
   const submitPin = (pin: string) => {
     setError("");
+    inFlightRef.current = true;
     verifyMarketCancelledPin.mutate(
       { marketId: pinMarketId, pin },
       {
         onSuccess: (response) => authorize(response, "pin"),
         onError: (mutationError) => {
+          settle();
           const { kind, remainingAttempts } = readHandoverPinError(mutationError);
           fail(
             kind === "invalid"
@@ -141,8 +182,10 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
     );
   };
 
-  const submitQr = (rawValue: string) => {
-    if (isPending) return;
+  const submitQr = (scannedValue: string) => {
+    if (isPending || inFlightRef.current) return;
+    // Kirill tartibida yozilgan skan (`ЬСК-…`) — lotinga; lotin kod o'zgarmaydi.
+    const rawValue = latinizeKeyboardLayout(scannedValue);
     const pin = pinMarketId ? extractHandoverPin(rawValue) : "";
     if (pin) {
       submitPin(pin);
@@ -154,9 +197,13 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
       return;
     }
     setError("");
+    inFlightRef.current = true;
     scanMarketCancelledQr.mutate(qrToken, {
       onSuccess: (response) => authorize(response, "qr"),
-      onError: (mutationError) => fail(getBackendErrorMessage(mutationError) ?? t("returnHandoverInvalidQr")),
+      onError: (mutationError) => {
+        settle();
+        fail(getBackendErrorMessage(mutationError) ?? t("returnHandoverInvalidQr"));
+      },
     });
   };
 

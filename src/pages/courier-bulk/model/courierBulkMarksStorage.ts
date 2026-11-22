@@ -3,11 +3,34 @@ import type { CourierBulkAction, CourierBulkScanMode } from "./courierBulk";
 /**
  * «Tezkor amal» belgilari brauzerda saqlanadi (BeePost `courier-bulk-scan-state` naqshi): sahifa yangilansa, boshqa
  * bo'limga o'tib qaytilsa yoki telefon brauzeri varaqni qayta yuklasa ham kuryer skanerlagan «bekor» / «ertaga»
- * belgilari yo'qolmaydi. Kalit foydalanuvchi bo'yicha (bitta qurilmada ikki xodim bo'lsa aralashmaydi), 24 soatdan
- * eski belgilar tashlanadi — kechagi «bekor» bugungi yakunlashga o'tib ketmasin.
+ * belgilari yo'qolmaydi. Kalit foydalanuvchi bo'yicha (bitta qurilmada ikki xodim bo'lsa aralashmaydi).
+ *
+ * Belgilar faqat BUGUNGI (Toshkent kuni) — kechagi «bekor» / «ertaga» bugungi yakunlashga o'tib ketmasin va bugungi
+ * skan «Qayta skaner — oldin skaner qilingan» demasin (skan auditi #58, #76). Ilgari 24 soatlik muddat har yozuvda
+ * qayta boshlanardi (`savedAt` har safar yangilanardi, sahifa esa har ochilishda yozadi) — har kuni ochiladigan
+ * sahifada belgilar hech qachon eskirmasdi. Endi yozuvda kun kaliti (`day`); boshqa kun yoki kunsiz (eski) yozuv
+ * tashlanadi.
  */
 const KEY_PREFIX = "courier-bulk-marks:v1:";
-export const COURIER_BULK_MARKS_TTL_MS = 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Toshkent — UTC+5, yozgi vaqt yo'q. */
+const TASHKENT_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+const TASHKENT_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Tashkent",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** Belgilar kuni — Toshkent sanasi `YYYY-MM-DD` (qurilma vaqt mintaqasiga qaramay). */
+export const courierBulkMarksDay = (now = Date.now()) => TASHKENT_DAY.format(new Date(now));
+
+/** Toshkentda keyingi yarim tungacha qolgan vaqt (ms) — ochiq sahifa kun almashganda belgilarni tashlaydi. */
+export const msUntilNextCourierBulkDay = (now = Date.now()) => {
+  const local = now + TASHKENT_OFFSET_MS;
+  return Math.floor(local / DAY_MS) * DAY_MS + DAY_MS - local;
+};
 
 const ACTIONS: ReadonlySet<string> = new Set<CourierBulkAction>(["sold", "cancel", "tomorrow"]);
 
@@ -32,9 +55,8 @@ export const readCourierBulkMarks = (userKey: string, now = Date.now()): Courier
   try {
     const raw = store.getItem(storageKey(userKey));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { actions?: unknown; scanMode?: unknown; savedAt?: unknown };
-    const savedAt = Number(parsed?.savedAt);
-    if (!Number.isFinite(savedAt) || now - savedAt > COURIER_BULK_MARKS_TTL_MS) {
+    const parsed = JSON.parse(raw) as { actions?: unknown; scanMode?: unknown; day?: unknown };
+    if (parsed?.day !== courierBulkMarksDay(now)) {
       store.removeItem(storageKey(userKey));
       return null;
     }
@@ -58,7 +80,7 @@ export const writeCourierBulkMarks = (userKey: string, marks: CourierBulkSavedMa
       store.removeItem(storageKey(userKey));
       return;
     }
-    store.setItem(storageKey(userKey), JSON.stringify({ ...marks, savedAt: now }));
+    store.setItem(storageKey(userKey), JSON.stringify({ ...marks, day: courierBulkMarksDay(now) }));
   } catch {
     // Xotira to'la yoki taqiqlangan (maxfiy rejim) — belgilar faqat sahifa xotirasida qoladi.
   }
