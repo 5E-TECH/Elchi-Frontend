@@ -600,6 +600,22 @@ describe("ConnectionSettlement — «To'lov yozildi» natija oynasi (IS-2)", () 
     expect(norm(result.textContent)).not.toContain("hammasi");
   });
 
+  it("⭐ ZE5zqXxu: takror javobida kassa holati noma'lum (`cashbox_posted: null`) — «Kassaga yozilmadi» EMAS, «qo'lda kiritmang»", async () => {
+    // Birinchi so'rov tranzaksiyani yopgan, lekin kassaga hali yozayotgan — backend takrorga `null` qaytaradi.
+    const { result } = await payAndOpenResult({ ...EXACT, cashbox_posted: null, idempotent_replay: true }, "1500000");
+    expect(await screen.findByText("To'lov avval yozilgan edi")).toBeInTheDocument();
+    // Ogohlantirish (sariq) emas — info badge.
+    expect(within(result).getByText("Kassa holati aniqlanmoqda")).toHaveClass("bg-info-soft");
+    // Operatorni qo'lda kiritishga undovchi matnlar yo'q — aks holda pul ikki marta kirim bo'ladi.
+    expect(within(result).queryByText("Kassaga yozilmadi")).not.toBeInTheDocument();
+    expect(within(result).queryByText("Summa asosiy kassaga tushmadi")).not.toBeInTheDocument();
+    expect(within(result).queryByRole("alert")).not.toBeInTheDocument();
+    const info = within(result).getByText("Kassa yozuvi hali tasdiqlanmadi").closest("[data-tone]") as HTMLElement;
+    expect(info).toHaveAttribute("data-tone", "info");
+    expect(norm(info.textContent)).toContain("Qo'lda kiritmang");
+    expect(within(info).getByRole("link", { name: "Asosiy kassa" })).toHaveAttribute("href", "/payments/main-cashbox");
+  });
+
   it("kassaga yozilmadi va birorta qarz yopilmadi — «Qarzlar yopildi» deyilmaydi", async () => {
     const { result } = await payAndOpenResult(
       { remittance_id: 87, remitted_amount: 100_000, settled_amount: 0, settled_count: 0, unapplied_amount: 100_000, advance_applied: 0, advance_balance: 450_000, cashbox_posted: false },
