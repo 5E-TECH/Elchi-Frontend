@@ -1,18 +1,34 @@
 import type { AiConfirmResult } from "../../../../../entities/ai-order";
-import type { SelectableMarketOperator } from "../../../../../entities/market-operator";
+import { suggestOperator, type SelectableMarketOperator } from "../../../../../entities/market-operator";
+import type { AiDraft } from "./aiDraft";
 import type { AiDraftOrder } from "./evalPreview";
 
 /**
- * AI KARTASIDAGI «OPERATOR» TANLOVI (qo'lda formadagi `OperatorField` bilan AYNI qoida).
+ * AI KARTASIDAGI «OPERATOR» TANLOVI.
  *
  * Muammo (2026-11-20): AI xabardagi `#sevinch` ni faqat MATN qilib yozardi — buyurtmada operator ismi ko'rinardi,
  * lekin `operator_id` yo'q edi, ya'ni sotuvda operatorga komissiya yozilmasdi va u «Operatorlar» sahifasida
  * ko'rinmasdi. Endi kartada ro'yxatdan tanlanadi (`orders[].operator_id`).
  *
- * ⚠️ AI matnidan operator AVTOMATIK tanlanmaydi (backend shartnomasi: `operator_id` — pulga ta'sir qiladi, faqat
- * odam tanlaydi). Matn ro'yxatdagi BITTA operatorga mos kelsa — faqat TAKLIF («Tanlash» tugmasi;
- * `suggestOperator` — `entities/market-operator`, qo'lda forma ham shuni ishlatadi).
+ * Ega (2026-11-23): AI o'qigan ism ro'yxatdagi BITTA operatorga mos kelsa (`suggestOperator`) — operator SO'RAMASDAN
+ * tanlanadi (`autoPickOperators`), avval bu faqat «Tanlash» / «Hammasini tanlash» taklifi edi. Kartada tanlov va
+ * «Xabardagi «…» bo'yicha tanlandi» izohi ko'rinadi — odam yaratishdan oldin o'zgartira yoki olib tashlay oladi.
+ * Mos kelmasa / bir nechta mos (ikki «Sevinch») — tanlanmaydi, odam o'zi tanlaydi.
  */
+
+/**
+ * Kartalarni ro'yxat bilan BIR MARTA solishtiradi (`operatorAutoChecked`): mos kelganiga operator qo'yiladi,
+ * allaqachon tanlangani tegilmaydi. Belgi tufayli odam keyin «Tanlanmagan» yoki boshqa operatorni tanlasa —
+ * qayta tanlanmaydi. Yangi tahlil kartalari (`toDraft`) belgisiz keladi.
+ */
+export const autoPickOperators = (drafts: AiDraft[], operators: readonly SelectableMarketOperator[]): AiDraft[] =>
+  drafts.map((draft) => {
+    if (draft.operatorAutoChecked) return draft;
+    const checked: AiDraft = { ...draft, operatorAutoChecked: true };
+    if (chosenOperatorId(draft.order, operators)) return checked;
+    const operator = suggestOperator(draft.order.operator, operators);
+    return operator ? { ...checked, order: { ...draft.order, operator_id: operator.id, operator: operator.name } } : checked;
+  });
 
 /**
  * Kartadagi tanlov hozir ham yaroqlimi. Ro'yxat yuklangan va unda yo'q (admin marketni almashtirgan, operator

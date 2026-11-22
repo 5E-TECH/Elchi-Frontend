@@ -861,9 +861,6 @@
   "aiHttpForbiddenTitle": "Нет доступа",
   "aiHttpForbiddenDescription": "У вас нет права создавать заказы через AI. Введите заказ вручную.",
   "aiCreateFailedWith": "Заказ не создан: {{detail}}",
-  "aiOperatorSuggestAll": "Совпадений имени оператора со списком: {{count}}",
-  "aiOperatorSuggestAllText": "После выбора заказ и комиссия с продажи запишутся на этого оператора. В каждой карточке можно изменить отдельно.",
-  "aiOperatorSuggestAllPick": "Выбрать для всех",
   "aiConfirmReasonDistrictNotFound": "Район не найден или удалён — выберите район заново.",
   "aiConfirmReasonDistrictMismatch": "Район клиента не совпадает с районом заказа — выберите район заново.",
   "aiConfirmReasonProductNotFound": "Товар не найден в каталоге — выберите товар заново.",
@@ -1145,6 +1142,7 @@
   "operatorSelect": {
     "none": "Не выбран",
     "pickedHint": "Заказ и комиссия записываются на этого оператора",
+    "pickedFromMessageHint": "Выбран по имени «{{name}}» из сообщения — заказ и комиссия запишутся на этого оператора",
     "loadFailed": "Не удалось загрузить список операторов — введите имя вручную",
     "suggest": "В списке есть «{{name}}» — выберите, чтобы начислялась комиссия",
     "suggestPick": "Выбрать",

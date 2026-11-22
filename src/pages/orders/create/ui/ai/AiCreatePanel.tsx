@@ -11,7 +11,7 @@ import {
   type AiPreviewOrder,
 } from "../../../../../entities/ai-order";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
-import { marketOperatorKeys, suggestOperator, useSelectableMarketOperators } from "../../../../../entities/market-operator";
+import { marketOperatorKeys, useSelectableMarketOperators } from "../../../../../entities/market-operator";
 import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../../../entities/product";
 import type { MarketOption } from "../../model/orderCreateForm";
 import { CreateAlert } from "../CreateAlert";
@@ -23,11 +23,11 @@ import AiPreviewCard, { type AiAreaItem, type AiProductOption } from "./AiPrevie
 import { ackChecksToSend } from "./aiChecks";
 import { confirmFailureText, confirmGateError, confirmHttpErrorText, type AiConfirmGate } from "./aiErrorText";
 import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "./aiDraft";
-import { chosenOperatorId, confirmOperatorFields, isOperatorRejectedResult } from "./aiOperator";
+import { autoPickOperators, confirmOperatorFields, isOperatorRejectedResult } from "./aiOperator";
 import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
 import { useKeepFocusedFieldVisible } from "./useKeepFocusedFieldVisible";
-import { Button, Card, useConfirm } from "../../../../../shared/ui/primitives";
+import { Card, useConfirm } from "../../../../../shared/ui/primitives";
 
 /** Katalog to'liq — qo'lda formadagi `Step2Combined` bilan bir xil parametr (bitta so'rov kaliti). */
 const AI_CATALOG_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
@@ -122,6 +122,16 @@ const AiCreatePanel = ({
   const operators = pickOperators ? operatorsQuery.data : undefined;
   const operatorsFailed = pickOperators && operatorsQuery.isError && !operatorsQuery.data;
 
+  /**
+   * Ega (2026-11-23): AI o'qigan ism ro'yxatdagi BITTA operatorga mos kelsa — operator SO'RAMASDAN tanlanadi
+   * (avval «Tanlash» / «Hammasini tanlash» taklifi edi). Ro'yxat kartalardan keyin keladi; har karta bir marta
+   * solishtiriladi (`operatorAutoChecked`). Effect emas, render paytida — kartada «Tanlanmagan» bir lahza ham
+   * ko'rinmaydi (React: oldingi renderdan ma'lumot saqlash naqshi; hamma karta belgilangach shart yolg'on).
+   */
+  if (operators?.length && drafts.some((draft) => !draft.operatorAutoChecked)) {
+    setDrafts(autoPickOperators(drafts, operators));
+  }
+
   const navigate = useNavigate();
   const confirmLeave = useConfirm();
 
@@ -148,29 +158,6 @@ const AiCreatePanel = ({
       (other) => other.key !== draft.key && other.order.index === check.other_index && other.order.phone_number === phone,
     );
     return position >= 0 ? position + 1 : null;
-  };
-
-  /** Operator tanlanmagan, lekin AI o'qigan ism ro'yxatdagi BITTA operatorga mos kartalar — bitta tugma bilan. */
-  const operatorSuggestions = pendingDrafts.flatMap((draft) => {
-    if (chosenOperatorId(draft.order, operators)) return [];
-    const operator = suggestOperator(draft.order.operator, operators);
-    return operator ? [{ key: draft.key, operator }] : [];
-  });
-  const applyOperatorSuggestions = () => {
-    const byKey = new Map(operatorSuggestions.map((suggestion) => [suggestion.key, suggestion.operator]));
-    setDrafts((prev) =>
-      prev.map((draft) => {
-        const operator = byKey.get(draft.key);
-        return operator
-          ? {
-              ...draft,
-              order: { ...draft.order, operator_id: operator.id, operator: operator.name },
-              createError: undefined,
-              existingOrderId: undefined,
-            }
-          : draft;
-      }),
-    );
   };
 
   useKeepFocusedFieldVisible(cardsRef, barRef, active && drafts.length > 0);
@@ -414,20 +401,6 @@ const AiCreatePanel = ({
       {confirmError ? <CreateAlert tone="danger">{confirmError}</CreateAlert> : null}
 
       <AiCreatedList rows={created} />
-
-      {operatorSuggestions.length > 1 ? (
-        <CreateAlert
-          tone="info"
-          title={t("aiOperatorSuggestAll", { count: operatorSuggestions.length })}
-          action={
-            <Button variant="secondary" size="sm" onClick={applyOperatorSuggestions}>
-              {t("aiOperatorSuggestAllPick")}
-            </Button>
-          }
-        >
-          {t("aiOperatorSuggestAllText")}
-        </CreateAlert>
-      ) : null}
 
       {drafts.length > 0 ? (
         <div ref={cardsRef} className="flex min-w-0 flex-col gap-4">

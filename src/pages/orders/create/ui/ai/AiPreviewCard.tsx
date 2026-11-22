@@ -289,14 +289,21 @@ const AiPreviewCard = ({
 
   /**
    * «Operator» (qo'lda formadagi `OperatorField` kabi): ro'yxat bo'lsa — FAQAT tanlov (2026-11-21: erkin matn olib
-   * tashlandi), AI o'qigan ism ro'yxatdagi operatorga mos kelsa — «Tanlash» taklifi (avtomatik EMAS), mos kelmasa —
-   * «Xabarda «…» deb yozilgan» izohi. Tanlansa `operator` — uning ismi; «Tanlanmagan» ga qaytsa — AI o'qigan matn
-   * (faqat taklif uchun; ro'yxat bor bo'lsa yuborilmaydi). Ro'yxat yo'q / xato — avvalgi erkin matn.
+   * tashlandi). AI o'qigan ism ro'yxatdagi BITTA operatorga mos kelsa — panel uni o'zi tanlaydi (2026-11-23,
+   * `autoPickOperators`) va izohda «Xabardagi «…» bo'yicha tanlandi»; odam «Tanlanmagan» ga qaytarsa — «Tanlash»
+   * taklifi qoladi. Mos kelmasa — «Xabarda «…» deb yozilgan» izohi. Tanlansa `operator` — uning ismi; «Tanlanmagan»
+   * ga qaytsa — AI o'qigan matn (faqat taklif uchun; ro'yxat bor bo'lsa yuborilmaydi). Ro'yxat yo'q / xato — erkin matn.
    */
   const operatorList = operators ?? [];
   const hasOperatorList = operatorList.length > 0;
   const pickedOperatorId = chosenOperatorId(order, operators);
   const operatorSuggestion = hasOperatorList && !pickedOperatorId ? suggestOperator(order.operator, operatorList) : null;
+  // Tanlangan operator xabardagi ismga mos — qaysi yozuv bo'yicha ekani izohda ko'rinadi (pulga ta'sir qiladi).
+  const messageOperatorName = source.operator?.trim() ?? "";
+  const pickedFromMessage =
+    pickedOperatorId !== "" &&
+    messageOperatorName !== "" &&
+    suggestOperator(messageOperatorName, operatorList)?.id === pickedOperatorId;
   const operatorOptions: SelectOption[] = [
     { value: "", label: t("operatorSelect.none") },
     ...operatorList.map((operator) => ({ value: operator.id, label: operator.name })),
@@ -978,7 +985,13 @@ const AiPreviewCard = ({
               labelAs="span"
               id={`${idPrefix}-operator-id`}
               hint={hints(
-                pickedOperatorId ? <span key="picked">{t("operatorSelect.pickedHint")}</span> : null,
+                pickedOperatorId ? (
+                  <span key="picked">
+                    {pickedFromMessage
+                      ? t("operatorSelect.pickedFromMessageHint", { name: messageOperatorName })
+                      : t("operatorSelect.pickedHint")}
+                  </span>
+                ) : null,
                 // AI xabarda ism o'qigan, lekin u ro'yxatdagi bitta operatorga mos kelmaydi — odam o'zi tanlaydi.
                 !pickedOperatorId && order.operator?.trim() && !operatorSuggestion ? (
                   <span key="ai-read">{t("operatorSelect.aiRead", { name: order.operator.trim() })}</span>
