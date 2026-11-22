@@ -50,6 +50,30 @@ export const UPSTREAM_UNAVAILABLE = "UPSTREAM_UNAVAILABLE";
 
 const UPSTREAM_UNAVAILABLE_MESSAGE = "Server vaqtincha javob bermayapti. Birozdan keyin qayta urinib ko'ring.";
 
+/** Proksi qilinmaydigan (begona origin'ga olib chiqadigan) yo'l — 400. */
+export const BAD_PROXY_PATH = "BAD_PROXY_PATH";
+
+/**
+ * API target — HAR DOIM `origin` ustida quriladi: yo'l URL sifatida emas, faqat `pathname` sifatida beriladi.
+ *
+ * ⚠️ Xavfsizlik (audit 2026-11-22, critical): ilgari `new URL(path + search, origin)` edi — `/api//evil.tld/x`
+ * dan `//evil.tld/x` qolib, u protokolga nisbiy URL bo'lib o'qilardi va Worker BEGONA saytni kabinet origin'ida
+ * (refresh cookie `/api/auth` shu origin'da) qaytarardi. `/api/\evil.tld` ham shunday (`\` — URL parser uchun `/`).
+ * Endi: `//` bilan boshlanadigan yoki `\` bor yo'l rad etiladi, natija origin'i `origin` ga teng bo'lishi shart.
+ * `null` — proksi qilinmaydi (chaqiruvchi 400 qaytaradi).
+ */
+export const upstreamTarget = (origin: string, path: string, search: string): URL | null => {
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return null;
+  try {
+    const target = new URL(origin);
+    target.pathname = path;
+    target.search = search;
+    return target.origin === origin ? target : null;
+  } catch {
+    return null;
+  }
+};
+
 /** Kabinet yo'li → API yo'li (`null` — proksi qilinmaydi). `/apix` kabi yo'llar `/api` emas. */
 export const upstreamPath = (pathname: string): string | null => {
   if (pathname === API_PREFIX) return "/";
@@ -138,7 +162,8 @@ export const handleRequest = async (request: Request, env: Env): Promise<Respons
   const origin = parseApiOrigin(env.API_ORIGIN);
   if (!origin) return jsonError(500, "API_ORIGIN sozlanmagan (wrangler.jsonc → vars)", "PROXY_MISCONFIGURED");
 
-  const target = new URL(`${path}${url.search}`, origin);
+  const target = upstreamTarget(origin, path, url.search);
+  if (!target) return jsonError(400, "Noto'g'ri API yo'li", BAD_PROXY_PATH);
   // Aniq init (metod, sarlavhalar, tana — oqim): `new Request(url, request)` ning getter'lardan o'qishiga
   // tayanilmaydi. `duplex` — Node/undici oqim tanasi uchun talab qiladi, Workers e'tiborsiz qoldiradi.
   const init: RequestInit & { duplex?: "half" } = {

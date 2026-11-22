@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../../worker";
 import {
+  BAD_PROXY_PATH,
   type Env,
   parseApiOrigin,
   proxiedResponse,
@@ -8,6 +9,7 @@ import {
   UPSTREAM_UNAVAILABLE,
   upstreamHeaders,
   upstreamPath,
+  upstreamTarget,
 } from "../../worker/proxy";
 
 /**
@@ -199,6 +201,34 @@ describe("Worker fetch", () => {
     // Node `Response` 101 statusni qabul qilmaydi — Workers'dagi `fetch` javobining o'rnida oddiy obyekt.
     const upgraded = { status: 101, headers: new Headers() } as Response;
     expect(await proxiedResponse(upgraded)).toBe(upgraded);
+  });
+
+  it("⭐ xavfsizlik: `/api//<host>`, `/api/\\<host>`, `/api//` — begona origin'ga KETMAYDI, 400 BAD_PROXY_PATH", async () => {
+    // Audit 2026-11-22 (critical): ilgari `/api//example.com/` begona sahifani kabinet origin'ida qaytarardi.
+    for (const path of ["/api//evil.tld/x", "/api//evil.tld", "/api/\\evil.tld/x", "/api//"]) {
+      upstreamFetch.mockClear();
+      const response = await worker.fetch(new Request(`${SITE}${path}`), env());
+      expect(response.status, path).toBe(400);
+      expect(await response.json(), path).toEqual(expect.objectContaining({ code: BAD_PROXY_PATH }));
+      expect(upstreamFetch, path).not.toHaveBeenCalled();
+      expect(assets.fetch, path).not.toHaveBeenCalled();
+    }
+  });
+
+  it("socket.io yo'li ham faqat API origin'iga (`/socket.io//…` — yo'l ichida, host emas)", async () => {
+    upstreamFetch.mockResolvedValue(new Response("0{}"));
+    await worker.fetch(new Request(`${SITE}/socket.io//evil.tld/?EIO=4`), env());
+    expect(new URL(sentRequest().url).origin).toBe(API_ORIGIN);
+  });
+
+  it("upstreamTarget: natija har doim API origin'ida; kodlangan `%2F` yo'l ichida qoladi", () => {
+    expect(upstreamTarget(API_ORIGIN, "/orders", "?x=1")?.href).toBe(`${API_ORIGIN}/orders?x=1`);
+    expect(upstreamTarget(API_ORIGIN, "/", "")?.href).toBe(`${API_ORIGIN}/`);
+    expect(upstreamTarget(API_ORIGIN, "/%2F%2Fevil.tld/x", "")?.origin).toBe(API_ORIGIN);
+    expect(upstreamTarget(API_ORIGIN, "/orders//5", "")?.href).toBe(`${API_ORIGIN}/orders//5`);
+    for (const bad of ["//evil.tld", "//evil.tld/x", "/\\evil.tld", "evil.tld", "", "///evil.tld"]) {
+      expect(upstreamTarget(API_ORIGIN, bad, ""), bad).toBeNull();
+    }
   });
 
   it("/api va /socket.io dan tashqari yo'l — statik fayllar (ASSETS), API'ga ketmaydi", async () => {
