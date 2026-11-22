@@ -748,7 +748,10 @@
       "otherMarketFallback": "boshqa market",
       "checkFailed": "Tekshirib bo'lmadi — qayta skanerlang",
       "switcherTitle": "Marketni tanlang",
-      "switcherMeta": "{{value}} ta"
+      "switcherMeta": "{{value}} ta",
+      "receiving": "Qabul qilinmoqda №{{id}}…",
+      "receivingShort": "Qabul qilinmoqda…",
+      "alreadyReceived": "Allaqachon qabul qilingan №{{id}}"
     },
     "duplicateTitle": "Takroriy telefon raqamlar aniqlandi",
     "duplicateBody": "{{value}} ta telefon raqam bir nechta yangi buyurtmada takrorlanmoqda. Qabul qilishdan oldin tekshiring.",

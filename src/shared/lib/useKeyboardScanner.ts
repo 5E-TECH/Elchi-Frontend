@@ -5,8 +5,34 @@ interface UseKeyboardScannerOptions {
   idleMs?: number;
   clearMs?: number;
   captureEditableTargets?: boolean;
+  /**
+   * `captureEditableTargets` bilan: skan matni kursor turgan maydonga (qidiruv) ham yoziladi. `true` bo'lsa, skan
+   * qabul qilinganda (`onScan` → `true`) maydon skan boshlanishidan oldingi qiymatiga qaytariladi (React'ning
+   * `onChange` i ham chaqiriladi). Odam yozgan matn tegilmaydi — u skan deb olinmaydi.
+   */
+  restoreEditableOnScan?: boolean;
   onScan: (value: string) => boolean | void;
 }
+
+type EditableSnapshot = { element: HTMLInputElement | HTMLTextAreaElement; value: string };
+
+const snapshotEditable = (target: EventTarget | null): EditableSnapshot | null =>
+  target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+    ? { element: target, value: target.value }
+    : null;
+
+/**
+ * Boshqariladigan (React) maydon qiymatini tiklash: prototip setter'i orqali yoziladi va `input` hodisasi
+ * yuboriladi — React qiymat o'zgarganini ko'radi va `onChange` ni chaqiradi.
+ */
+const restoreEditableValue = ({ element, value }: EditableSnapshot) => {
+  if (!element.isConnected || element.value === value) return;
+  const prototype = element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
+  if (setter) setter.call(element, value);
+  else element.value = value;
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+};
 
 const DEFAULT_IDLE_MS = 80;
 
@@ -109,10 +135,13 @@ export const useKeyboardScanner = ({
   idleMs = DEFAULT_IDLE_MS,
   clearMs = DEFAULT_CLEAR_MS,
   captureEditableTargets = false,
+  restoreEditableOnScan = false,
   onScan,
 }: UseKeyboardScannerOptions) => {
   const scannerBufferRef = useRef("");
   const scannerLastKeyAtRef = useRef(0);
+  /** Skan oqimi boshlangan paytdagi maydon qiymati (`restoreEditableOnScan`). */
+  const editableSnapshotRef = useRef<EditableSnapshot | null>(null);
   const onScanRef = useRef(onScan);
 
   useEffect(() => {
@@ -125,6 +154,7 @@ export const useKeyboardScanner = ({
     const clearScannerBuffer = () => {
       scannerBufferRef.current = "";
       scannerLastKeyAtRef.current = 0;
+      editableSnapshotRef.current = null;
     };
 
     const handleScannerKeyDown = (event: KeyboardEvent) => {
@@ -142,12 +172,16 @@ export const useKeyboardScanner = ({
         // Oxirgi belgidan `clearMs` dan keyin kelgan Enter — skan emas (bufer eskirgan).
         const stale = scannerKeyTime(event) - scannerLastKeyAtRef.current > clearMs;
         const scannedValue = stale ? "" : scannerBufferRef.current.trim();
+        const snapshot = editableSnapshotRef.current;
         clearScannerBuffer();
 
         if (!scannedValue) return;
 
         if (onScanRef.current(scannedValue)) {
           event.preventDefault();
+          if (restoreEditableOnScan && snapshot && snapshot.element === event.target) {
+            restoreEditableValue(snapshot);
+          }
         }
 
         return;
@@ -159,6 +193,8 @@ export const useKeyboardScanner = ({
       const now = scannerKeyTime(event);
       if (now - scannerLastKeyAtRef.current > idleMs) {
         scannerBufferRef.current = "";
+        // Yangi oqim: `keydown` belgi maydonga yozilishidan OLDIN keladi — qiymat hali skansiz.
+        editableSnapshotRef.current = restoreEditableOnScan ? snapshotEditable(event.target) : null;
       }
 
       scannerBufferRef.current += char;
@@ -170,5 +206,5 @@ export const useKeyboardScanner = ({
     return () => {
       window.removeEventListener("keydown", handleScannerKeyDown, true);
     };
-  }, [captureEditableTargets, clearMs, enabled, idleMs]);
+  }, [captureEditableTargets, clearMs, enabled, idleMs, restoreEditableOnScan]);
 };

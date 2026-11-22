@@ -210,6 +210,53 @@ describe("useKeyboardScanner", () => {
     input.remove();
   });
 
+  it("restoreEditableOnScan — qidiruv maydoniga tushgan skan matni olib tashlanadi (`input` hodisasi bilan), odam yozgani qoladi", () => {
+    const onScan = vi.fn((value: string) => value.length >= 6);
+    renderHook(() => useKeyboardScanner({ onScan, captureEditableTargets: true, restoreEditableOnScan: true }));
+    const input = document.createElement("input");
+    input.value = "Ali";
+    const onInput = vi.fn();
+    input.addEventListener("input", onInput);
+    document.body.append(input);
+    /** Brauzer kabi: `keydown` dan keyin belgi maydonga yoziladi. */
+    const typeInto = (text: string) => {
+      for (const key of text) {
+        press({ key }, input);
+        input.value += key;
+      }
+    };
+
+    vi.advanceTimersByTime(500);
+    typeInto("TOKEN123");
+    const enter = press({ key: "Enter", code: "Enter" }, input);
+
+    expect(onScan).toHaveBeenCalledWith("TOKEN123");
+    expect(enter.defaultPrevented).toBe(true);
+    expect(input.value).toBe("Ali");
+    expect(onInput).toHaveBeenCalledTimes(1);
+
+    // Skan qabul qilinmadi (qisqa — odam yozgan) — maydonga tegilmaydi.
+    vi.advanceTimersByTime(500);
+    typeInto("abc");
+    press({ key: "Enter", code: "Enter" }, input);
+    expect(input.value).toBe("Aliabc");
+    expect(onInput).toHaveBeenCalledTimes(1);
+    input.remove();
+  });
+
+  it("restoreEditableOnScan sukutda o'chiq — maydon qiymati o'zgarmaydi", () => {
+    renderHook(() => useKeyboardScanner({ onScan: () => true, captureEditableTargets: true }));
+    const input = document.createElement("input");
+    document.body.append(input);
+    for (const key of "TOKEN123") {
+      press({ key }, input);
+      input.value += key;
+    }
+    press({ key: "Enter", code: "Enter" }, input);
+    expect(input.value).toBe("TOKEN123");
+    input.remove();
+  });
+
   it("`data-scanner-ignore` ichida (qo'lda kiritish maydoni) — bufer yig'ilmaydi, Enter forma uchun", () => {
     const onScan = vi.fn(() => true);
     renderHook(() => useKeyboardScanner({ onScan, captureEditableTargets: true }));

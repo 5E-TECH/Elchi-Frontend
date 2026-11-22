@@ -18,6 +18,12 @@ type UseOrderQrScannerOptions<TOrder extends OrderQrScannerItem> = {
   paused?: boolean;
   minLength?: number;
   captureEditableTargets?: boolean;
+  /**
+   * USB skaner ro'yxat bo'sh bo'lsa ham tinglaydi (kod `onMissing` ga — serverdan tekshiriladi). Sukut `false`:
+   * bo'sh ro'yxatda USB tinglanmaydi (avvalgidek). Qabul ekrani (`new_orderDetail`) — `true`: hammasi qabul
+   * qilingandan keyin yoki yangi yaratilgan buyurtma skanerlansa jim yo'qolmasin (skan auditi 2026-11-23).
+   */
+  keyboardWhenEmpty?: boolean;
   onMatch: (order: TOrder, rawValue: string, source: ScanSource) => void;
   onMissing: (rawValue: string, source: ScanSource) => void;
   /**
@@ -36,6 +42,7 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
   paused = false,
   minLength = 6,
   captureEditableTargets = true,
+  keyboardWhenEmpty = false,
   onMatch,
   onMissing,
   camera,
@@ -80,8 +87,11 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
   const handleKeyboardScan = useCallback((rawValue: string) => matchScan(rawValue, "keyboard"), [matchScan]);
 
   useKeyboardScanner({
-    enabled: enabled && !paused && orders.length > 0,
+    enabled: enabled && !paused && (keyboardWhenEmpty || orders.length > 0),
     captureEditableTargets,
+    // Kursor qidiruv maydonida bo'lsa skan matni maydonga ham yozilardi — ro'yxat «hech narsa topilmadi» bo'lib
+    // qolardi va keyingi skan unga qo'shilardi. Skan amalga oshgach maydon skandan oldingi holatiga qaytadi.
+    restoreEditableOnScan: true,
     onScan: handleKeyboardScan,
   });
 

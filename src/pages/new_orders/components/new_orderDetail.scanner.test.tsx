@@ -381,6 +381,124 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
   });
 
+  it("⭐ shu marketning QABUL QILINGAN buyurtmasi ro'yxatda yo'q — «Allaqachon qabul qilingan», «Topilmadi» EMAS (skan auditi 2026-11-23)", async () => {
+    mocks.fetchScanDetail.mockResolvedValue({
+      type: "order",
+      data: { data: { id: "o9", qr_code_token: "aaaaaaaaaaaaaaaaaaaaaaa9", status: "received", market_id: "121" } },
+    });
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa9", "keyboard");
+    });
+
+    await waitFor(() =>
+      expect(mocks.playScanFeedback).toHaveBeenCalledWith("duplicate", "Allaqachon qabul qilingan №o9"),
+    );
+    expect(statsOf()).toEqual({ received: 0, left: 2, missing: 0 });
+    expect(mocks.receiveMutateAsync).not.toHaveBeenCalled();
+
+    // Keyingi skan — serverga bormaydi.
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa9", "keyboard");
+    });
+    expect(mocks.fetchScanDetail).toHaveBeenCalledTimes(1);
+  });
+
+  it("⭐ javob kelmasdan qayta skan — «Qabul qilinmoqda» (ro'yxatda ham, kamerada ham), yangi so'rov va «Topilmadi» yo'q", async () => {
+    let finish: (value: unknown) => void = () => {};
+    mocks.receiveMutateAsync.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+    mocks.fetchScanDetail.mockResolvedValue({
+      type: "order",
+      data: { data: { id: "o3", qr_code_token: "aaaaaaaaaaaaaaaaaaaaaaa3", status: "new", market_id: "121" } },
+    });
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    // Ro'yxatda yo'q (keyin yaratilgan) — server tekshiradi va qabulga yuboradi; javob kechikmoqda.
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa3", "keyboard");
+    });
+    await waitFor(() => expect(mocks.receiveMutateAsync).toHaveBeenCalledWith({ orderIds: ["o3"] }));
+    expect(target().list?.[0]).toMatchObject({ key: "pending:o3", subtitle: "Qabul qilinmoqda…", tone: "neutral" });
+
+    // Operator ovoz eshitmadi va qayta skanerladi — serverga qayta bormaydi, «Topilmadi» ham emas.
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa3", "keyboard");
+    });
+    expect(mocks.fetchScanDetail).toHaveBeenCalledTimes(1);
+    expect(mocks.receiveMutateAsync).toHaveBeenCalledTimes(1);
+    expect(statsOf().missing).toBe(0);
+
+    await act(async () => {
+      finish({ data: { received_ids: ["o3"], already_received_ids: [] } });
+    });
+    await waitFor(() => expect(statsOf()).toEqual({ received: 1, left: 2, missing: 0 }));
+    expect(target().list?.map((item) => item.key)).toEqual(["received:o3"]);
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Qabul qilindi №o3", undefined, { voice: "received" });
+  });
+
+  it("server «allaqachon qabul qilingan» qaytardi (boshqa xodim) — takror ogohlantirish, «Qabul qilindi» ga kirmaydi", async () => {
+    mocks.receiveMutateAsync.mockResolvedValueOnce({ data: { received_ids: [], already_received_ids: ["o1"] } });
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa1", "keyboard");
+    });
+
+    await waitFor(() =>
+      expect(mocks.playScanFeedback).toHaveBeenCalledWith("duplicate", "Allaqachon qabul qilingan №o1"),
+    );
+    expect(statsOf()).toEqual({ received: 0, left: 1, missing: 0 });
+  });
+
+  it("⭐ timeout'dan keyin qayta skan — server «allaqachon» desa bu o'zimizning qabul: «Qabul qilindi», hisobga kiradi", async () => {
+    mocks.receiveMutateAsync
+      .mockRejectedValueOnce(
+        Object.assign(new Error("Gateway Timeout"), {
+          response: { status: 504, data: { statusCode: 504, message: "Buyurtma xizmati vaqtida javob bermadi (timeout)" } },
+        }),
+      )
+      .mockResolvedValueOnce({ data: { received_ids: [], already_received_ids: ["o1"] } });
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa1", "keyboard");
+    });
+    await waitFor(() =>
+      expect(mocks.playScanFeedback).toHaveBeenCalledWith("error", "Buyurtma xizmati vaqtida javob bermadi (timeout)"),
+    );
+    expect(statsOf()).toEqual({ received: 0, left: 2, missing: 0 });
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa1", "keyboard");
+    });
+    await waitFor(() => expect(statsOf()).toEqual({ received: 1, left: 1, missing: 0 }));
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", "Qabul qilindi №o1", undefined, { voice: "received" });
+  });
+
+  it("hammasi qabul qilingach (ro'yxat bo'sh) ham USB skaner tinglaydi — kod serverdan tekshiriladi", async () => {
+    mocks.ordersByMarket["121"] = [];
+    mocks.fetchScanDetail.mockResolvedValue({
+      type: "order",
+      data: { data: { id: "o3", qr_code_token: "aaaaaaaaaaaaaaaaaaaaaaa3", status: "new", market_id: "121" } },
+    });
+    renderPage();
+    await screen.findByText("USB skaner tayyor");
+
+    act(() => {
+      for (const key of "aaaaaaaaaaaaaaaaaaaaaaa3") {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+      }
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", code: "Enter", bubbles: true, cancelable: true }));
+    });
+
+    await waitFor(() => expect(mocks.receiveMutateAsync).toHaveBeenCalledWith({ orderIds: ["o3"] }));
+  });
+
   it("shu marketning yangi buyurtmasi ro'yxatda hali yo'q — server tasdiqlasa darhol qabul qilinadi", async () => {
     mocks.fetchScanDetail.mockResolvedValue({
       type: "order",

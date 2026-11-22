@@ -808,7 +808,10 @@
       "otherMarketFallback": "другой маркет",
       "checkFailed": "Не удалось проверить — отсканируйте ещё раз",
       "switcherTitle": "Выберите маркет",
-      "switcherMeta": "{{value}} шт."
+      "switcherMeta": "{{value}} шт.",
+      "receiving": "Принимается №{{id}}…",
+      "receivingShort": "Принимается…",
+      "alreadyReceived": "Уже принят №{{id}}"
     },
     "duplicateTitle": "Обнаружены повторяющиеся номера телефонов",
     "duplicateBody_one": "{{value}} номер телефона повторяется в нескольких новых заказах. Проверьте перед приёмом.",
