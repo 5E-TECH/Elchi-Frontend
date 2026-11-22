@@ -18,10 +18,12 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
 import { toLocalPhone, type AiPreviewItem, type AiWarningField } from "../../../../../entities/ai-order";
+import { useCustomerSuggest, type CustomerSuggestion } from "../../../../../entities/customer";
 import { suggestOperator, type SelectableMarketOperator } from "../../../../../entities/market-operator";
 import type { DeliveryType } from "../../../../../entities/order/types/order";
 import { cx } from "../../../../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../../../shared/lib/formatPhone";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../../shared/lib/phone";
 import {
   Badge,
@@ -138,6 +140,12 @@ type AiPreviewCardProps = {
    * ro'yxatda va telefoni hamon bir xil bo'lsagina; aks holda `null`.
    */
   samePhoneCard?: number | null;
+  /**
+   * Telefon bazada bormi (`GET /customers/suggest`) — mavjud mijozni tanlash taklifi (`orders[].customer_id`). Panel
+   * beradi: market rolida — o'z mijozlari (token), xodimda — tanlangan market (`customerMarketId`).
+   */
+  customerSuggest?: boolean;
+  customerMarketId?: string | null;
   creating: boolean;
   /** Bugungi qabul yopiq — «Bu kartani yaratish» o'chiq (sabab sahifa ogohlantirishida). */
   createBlocked?: boolean;
@@ -164,6 +172,8 @@ const AiPreviewCard = ({
   operators,
   operatorsFailed = false,
   samePhoneCard = null,
+  customerSuggest = false,
+  customerMarketId = null,
   creating,
   createBlocked = false,
   onChange,
@@ -239,6 +249,39 @@ const AiPreviewCard = ({
   );
 
   const update = (patch: Partial<AiDraftOrder>) => onChange({ ...order, ...patch });
+
+  /**
+   * MAVJUD MIJOZ (backend 2026-11-18, `orders[].customer_id`): telefon bazada bo'lsa — taklif («Mijozni tanlash»),
+   * avtomatik EMAS. Tanlansa ism va telefon kartadagidek bo'ladi (buyurtmaga shular yoziladi; AI auditi soxta
+   * tuzatish ko'rsatmasin) va maydonlar faqat o'qish uchun; «Bekor qilish» — avvalgi qiymatlar, yangi mijoz.
+   */
+  const phoneDigits = toLocalPhone(order.phone_number);
+  const linkedCustomerId = order.customer_id?.trim() || null;
+  const customerQuery = useCustomerSuggest(
+    { phone: phoneDigits, marketId: customerMarketId },
+    customerSuggest && phoneDigits.length === 9 && !linkedCustomerId,
+  );
+  const foundCustomer: CustomerSuggestion | null = linkedCustomerId
+    ? null
+    : ((customerQuery.data ?? []).find((customer) =>
+        [customer.phone_number, customer.extra_number].some((phone) => toLocalPhone(phone) === phoneDigits),
+      ) ?? null);
+  const foundCustomerName = foundCustomer?.name?.trim() || t("aiCustomerNoName");
+  const aiPhone = toLocalPhone(source.phone_number);
+  const pickCustomer = (customer: CustomerSuggestion) =>
+    update({
+      customer_id: customer.id,
+      customer_before_link: { name: order.customer_name, phone: order.phone_number },
+      customer_name: customer.name?.trim() || order.customer_name,
+      phone_number: toLocalPhone(customer.phone_number) || order.phone_number,
+    });
+  const unlinkCustomer = () =>
+    update({
+      customer_id: null,
+      customer_before_link: null,
+      customer_name: order.customer_before_link?.name ?? order.customer_name,
+      phone_number: order.customer_before_link?.phone ?? order.phone_number,
+    });
   const updateItem = (itemIndex: number, patch: Partial<AiPreviewItem>) =>
     update({ items: order.items.map((item, i) => (i === itemIndex ? { ...item, ...patch } : item)) });
 
@@ -566,6 +609,7 @@ const AiPreviewCard = ({
               value={order.customer_name}
               onValueChange={(value) => update({ customer_name: value })}
               placeholder={t("enterName")}
+              readOnly={Boolean(linkedCustomerId)}
             />
           </Field>
 
@@ -585,6 +629,7 @@ const AiPreviewCard = ({
               mode="phone"
               value={toUzbekistanPhoneValue(order.phone_number)}
               onValueChange={(value) => update({ phone_number: getUzbekistanPhoneDigits(value) })}
+              readOnly={Boolean(linkedCustomerId)}
             />
           </Field>
 
@@ -595,6 +640,53 @@ const AiPreviewCard = ({
               onValueChange={(value) => update({ extra_number: getUzbekistanPhoneDigits(value) })}
             />
           </Field>
+
+          {/* Uchala maydon (ism, telefon, qo'shimcha) ostida — to'rda bo'sh katak qolmasin. */}
+          {foundCustomer ? (
+            <div
+              data-testid="ai-customer-found"
+              className="col-span-full flex flex-wrap items-center gap-2 rounded-[10px] bg-action-soft px-2.5 py-2 text-[13px] font-semibold text-text"
+            >
+              <span className="flex min-w-0 flex-[1_1_220px] flex-col gap-0.5">
+                <span className="[overflow-wrap:anywhere]">
+                  {foundCustomer.orders_count
+                    ? t("aiCustomerFoundOrders", { name: foundCustomerName, count: foundCustomer.orders_count })
+                    : t("aiCustomerFound", { name: foundCustomerName })}
+                </span>
+                <span className="font-normal text-text-muted">{t("aiCustomerPickHint")}</span>
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                aria-label={t("aiCustomerPickAria", { name: foundCustomerName })}
+                onClick={() => pickCustomer(foundCustomer)}
+              >
+                {t("aiCustomerPick")}
+              </Button>
+              {foundCustomer.new_orders_count ? (
+                <span className="basis-full">
+                  <WarningHint>{t("aiCustomerHasNew", { count: foundCustomer.new_orders_count })}</WarningHint>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
+          {linkedCustomerId ? (
+            <div
+              data-testid="ai-customer-linked"
+              className="col-span-full flex flex-wrap items-center gap-2 rounded-[10px] bg-success-soft px-2.5 py-2 text-[13px] font-semibold text-success-fg"
+            >
+              <span className="min-w-0 flex-[1_1_220px] [overflow-wrap:anywhere]">{t("aiCustomerLinked")}</span>
+              <Button size="sm" variant="secondary" onClick={unlinkCustomer}>
+                {t("aiCustomerUnlink")}
+              </Button>
+              {aiPhone && aiPhone !== order.phone_number ? (
+                <span className="basis-full">
+                  <WarningHint>{t("aiCustomerAiPhone", { phone: formatPhone(`+998${aiPhone}`) })}</WarningHint>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
 
           {areaLists ? (
             <Field

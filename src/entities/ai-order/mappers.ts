@@ -110,6 +110,8 @@ const toConfirmOrder = (preview: AiPreviewOrder): AiConfirmOrder => {
   // Mijoz va operator — shaxs ismi: har so'z bosh harfi katta (AI kichik harf bilan o'qigan bo'lsa ham).
   const operator = normalizePersonName(preview.operator);
   const operatorId = text(preview.operator_id);
+  // Faqat odam tanlagan mavjud mijoz (kartadagi ism/telefon allaqachon karta qiymati — `pickCustomer`).
+  const customerId = text(preview.customer_id);
   // Faqat bloklovchi kodlar, takrorsiz (backend ≤10 ta, ortiqcha/yumshoq kodni e'tiborsiz qoldiradi).
   const ackChecks = [...new Set((preview.acked_checks ?? []).filter(isBlockingCheckCode))];
 
@@ -131,6 +133,7 @@ const toConfirmOrder = (preview: AiPreviewOrder): AiConfirmOrder => {
     ...(operator && { operator }),
     // Faqat odam tanlagani (karta `operator_id` ni o'zi yozadi); AI matnidagi ism hech qachon id ga aylanmaydi.
     ...(operatorId && { operator_id: operatorId }),
+    ...(customerId && { customer_id: customerId }),
     ...(preview.draft_id && { draft_id: preview.draft_id }),
     // vncdmXOy: preview o'rni — faqat `draft_id` bilan ma'noli (backend audit'i va barqaror kaliti).
     ...(preview.draft_id && isAiItemIndex(preview.index) && { ai_item_index: preview.index }),
