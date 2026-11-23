@@ -128,8 +128,21 @@ const NewOrderDetail = () => {
   const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_MARKET_ORDERS_SORT);
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
   const receivedScanKeysRef = useRef<Set<string>>(new Set());
+  /**
+   * Skan kalitlari (id, token, skanerlangan matn) → server javobi kutilayotgan buyurtma. Javob kelmasdan qayta
+   * skanerlangan kod ro'yxatda bo'lmasa ham (ro'yxat shu orada yangilangan) «Topilmadi» emas, «Qabul qilinmoqda».
+   */
+  const pendingScanKeysRef = useRef<Map<string, string>>(new Map());
+  /**
+   * Qabul qilinganlar — holat (`receivedOrderIds`) bilan bir xil, lekin ref: serverdan tekshirish (`await`) tugaganda
+   * eski render closure'idagi holat emas, eng so'nggisi o'qiladi.
+   */
+  const receivedIdsRef = useRef<Set<string>>(new Set());
+  /** Shu sahifada skan bilan qabulga yuborilganlar — timeout'dan keyingi «allaqachon» aslida o'zimizning qabul. */
+  const attemptedScanIdsRef = useRef<Set<string>>(new Set());
   // Kamera hisoblagichi va ro'yxati: shu sessiyada qabul qilinganlar (yangisi oxirida) va topilmagan kodlar.
   const [receivedLog, setReceivedLog] = useState<MarketOrder[]>([]);
+  const [pendingLog, setPendingLog] = useState<MarketOrder[]>([]);
   const [missingCodes, setMissingCodes] = useState<string[]>([]);
   const lookupKeysRef = useRef<Set<string>>(new Set());
 
@@ -143,7 +156,7 @@ const NewOrderDetail = () => {
   const { data: res, refetch } = ordersQuery;
   const rawOrders = useMemo(() => listOf<MarketOrder>(res), [res]);
   const orders = useMemo(
-    () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
+    () => rawOrders.filter((order) => !receivedOrderIds.has(String(order.id))),
     [rawOrders, receivedOrderIds],
   );
   const visibleRows = useMemo(
@@ -169,25 +182,37 @@ const NewOrderDetail = () => {
 
   const rememberReceivedScan = useCallback((order: MarketOrder, rawValue?: string) => {
     const keys = receivedScanKeysRef.current;
-    keys.add(String(order.id).toLowerCase());
+    scanKeysOf(order, rawValue).forEach((key) => keys.add(key));
+  }, []);
 
-    const token = order.qr_code_token?.trim();
-    if (token) keys.add(token.toLowerCase());
-
-    if (rawValue) {
-      normalizeScannerCandidates(rawValue, window.location.origin).forEach((candidate) => {
-        keys.add(candidate);
-      });
-    }
+  const markReceived = useCallback((ids: readonly string[]) => {
+    if (ids.length === 0) return;
+    ids.forEach((id) => receivedIdsRef.current.add(String(id)));
+    setReceivedOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(String(id)));
+      return next;
+    });
   }, []);
 
   const showAlreadyReceivedFeedback = useCallback(
     (orderId?: string | number) => {
-      void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      scanNotify.warning(t("common:scannerFeedbackDuplicate"), {
-        description: orderId ? `№${orderId}` : t("newOrderAlreadyReceivedDescription"),
+      const title = orderId ? t("marketOrders.camera.alreadyReceived", { id: orderId }) : t("common:scannerFeedbackDuplicate");
+      void playScanFeedback("duplicate", title);
+      scanNotify.warning(title, {
+        description: orderId ? undefined : t("newOrderAlreadyReceivedDescription"),
         duration: 2000,
+        ...(orderId ? { id: scanToastId(orderId) } : {}),
       });
+    },
+    [t],
+  );
+
+  // Skan javobi kelguncha: darhol ko'rinadigan belgi (sekin internetda operator «o'tmadi» deb qayta skanerlamasin).
+  // Xabar `id` si bilan — natija (qabul qilindi / xato) shu xabarning o'rnini egallaydi.
+  const showReceivingFeedback = useCallback(
+    (orderId: string) => {
+      scanNotify.info(t("marketOrders.camera.receiving", { id: orderId }), { id: scanToastId(orderId), duration: 0 });
     },
     [t],
   );
@@ -205,18 +230,49 @@ const NewOrderDetail = () => {
 
   const receiveScannedOrder = useCallback(
     (order: MarketOrder, rawValue: string) => {
-      const orderId = order.id;
-      if (receivedOrderIds.has(orderId)) {
+      const orderId = String(order.id);
+      if (receivedIdsRef.current.has(orderId)) {
         rememberReceivedScan(order, rawValue);
         showAlreadyReceivedFeedback(orderId);
         return;
       }
 
+      const pendingKeys = pendingScanKeysRef.current;
+      scanKeysOf(order, rawValue).forEach((key) => pendingKeys.set(key, orderId));
+      // Javob hali kelmagan — yangi so'rov yo'q, lekin jim ham emas: «Qabul qilinmoqda №…».
       if (pendingScanOrderIdsRef.current.has(orderId)) {
+        showReceivingFeedback(orderId);
         return;
       }
 
       pendingScanOrderIdsRef.current.add(orderId);
+      const attemptedBefore = attemptedScanIdsRef.current.has(orderId);
+      attemptedScanIdsRef.current.add(orderId);
+      setPendingLog((prev) => [...prev.filter((item) => String(item.id) !== orderId), order]);
+      showReceivingFeedback(orderId);
+
+      const settleReceived = () => {
+        rememberReceivedScan(order, rawValue);
+        markReceived([orderId]);
+        setSelectedIds((prev) => {
+          if (!prev.has(orderId)) return prev;
+          const next = new Set(prev);
+          next.delete(orderId);
+          return next;
+        });
+      };
+      const showReceived = () => {
+        logReceived([order]);
+        void playScanFeedback("success", t("marketOrders.camera.received", { id: orderId }), undefined, {
+          voice: "received",
+        });
+        scanNotify.success(t("newOrderReceiveSuccess"), {
+          id: scanToastId(orderId),
+          description: t("newOrderReceiveDescription"),
+          duration: 2000,
+        });
+      };
+
       // `mutateAsync` — har skanning O'Z natijasi: `mutate(vars, { onSuccess })` dagi chaqiruv callbacklari keyingi
       // `mutate` boshlanishi bilan uziladi (TanStack: faqat oxirgi chaqiruvniki ishlaydi). Sekin internetda USB
       // skaner bilan B oldingi A javobidan oldin skanerlansa, A ning ovozi, hisobi va xatosi yo'qolar, A esa
@@ -224,29 +280,17 @@ const NewOrderDetail = () => {
       receiveMutation
         .mutateAsync({ orderIds: [orderId] })
         .then(
-          () => {
-            rememberReceivedScan(order, rawValue);
-            logReceived([order]);
-            void playScanFeedback("success", t("marketOrders.camera.received", { id: orderId }), undefined, {
-              voice: "received",
-            });
-            setReceivedOrderIds((prev) => {
-              const next = new Set(prev);
-              next.add(orderId);
-              return next;
-            });
-            setSelectedIds((prev) => {
-              if (!prev.has(orderId)) return prev;
-              const next = new Set(prev);
-              next.delete(orderId);
-              return next;
-            });
+          (result: unknown) => {
+            settleReceived();
+            // Server: «allaqachon qabul qilingan» (idempotent qabul). Shu sahifadan avval yuborilgan bo'lsa (birinchi
+            // urinish timeout bo'lib, server baribir yozgan) — bu o'zimizning qabul: «Qabul qilindi».
+            if (readAlreadyReceivedIds(result).has(orderId) && !attemptedBefore) {
+              showAlreadyReceivedFeedback(orderId);
+              return;
+            }
             // Ro'yxatni qayta so'rash shart emas: qabul hook'i `orders` keshini o'zi yangilaydi (bu sahifa so'rovi ham
             // shu kalit ostida) — qo'shimcha `refetch()` har skanda ro'yxatni ikki marta yuklardi.
-            scanNotify.success(t("newOrderReceiveSuccess"), {
-              description: t("newOrderReceiveDescription"),
-              duration: 2000,
-            });
+            showReceived();
           },
           (err: unknown) => {
             const msg = getBackendErrorMessage(err) ?? t("receiveError");
@@ -255,33 +299,45 @@ const NewOrderDetail = () => {
               lowerMsg.includes("already") || lowerMsg.includes("allaqachon") || lowerMsg.includes("qabul qilingan");
 
             if (isAlreadyReceived) {
-              rememberReceivedScan(order, rawValue);
-              setReceivedOrderIds((prev) => {
-                const next = new Set(prev);
-                next.add(orderId);
-                return next;
-              });
-              showAlreadyReceivedFeedback(orderId);
+              settleReceived();
+              if (attemptedBefore) showReceived();
+              else showAlreadyReceivedFeedback(orderId);
               return;
             }
 
             if (isOrderReceiveClosedError(err)) void refetchIntake();
             void playScanFeedback("error", msg);
-            scanNotify.error(t("receiveError"), { description: msg });
+            scanNotify.error(t("receiveError"), { id: scanToastId(orderId), description: msg });
           },
         )
         .finally(() => {
           pendingScanOrderIdsRef.current.delete(orderId);
+          pendingKeys.forEach((id, key) => {
+            if (id === orderId) pendingKeys.delete(key);
+          });
+          setPendingLog((prev) => prev.filter((item) => String(item.id) !== orderId));
         });
     },
-    [logReceived, receiveMutation, receivedOrderIds, refetchIntake, rememberReceivedScan, showAlreadyReceivedFeedback, t],
+    [
+      logReceived,
+      markReceived,
+      receiveMutation,
+      refetchIntake,
+      rememberReceivedScan,
+      showAlreadyReceivedFeedback,
+      showReceivingFeedback,
+      t,
+    ],
   );
 
   /**
-   * Ro'yxatda yo'q kod: avval shu sahifada qabul qilinganmi (takror), so'ng server — qaysi marketniki?
+   * Ro'yxatda yo'q kod: avval shu sahifada qabul qilinganmi (takror) yoki javobi kutilyaptimi, so'ng server — qaysi
+   * marketniki?
    *   - boshqa market — RAD («Boshqa market: … — qabul qilinmadi»), «Topilmadi» ga kirmaydi;
    *   - shu marketning yangi buyurtmasi (ro'yxat hali yangilanmagan) — odatdagidek darhol qabul;
-   *   - topilmadi (404) yoki shu marketning yangi bo'lmagan buyurtmasi — «Topilmadi», hisoblanadi;
+   *   - shu marketning yangi bo'lmagan (qabul qilingan) buyurtmasi — «Allaqachon qabul qilingan», «Topilmadi» EMAS
+   *     (skan auditi 2026-11-23: sekin javobda ro'yxat yangilanib, real posilka «Topilmadi» chiqardi);
+   *   - topilmadi (404) — «Topilmadi», hisoblanadi;
    *   - tekshirib bo'lmadi (tarmoq, 5xx) — xato, hisobga kirmaydi (qayta skanerlash mumkin).
    */
   const handleMissingScannedOrder = useCallback(
@@ -289,6 +345,11 @@ const NewOrderDetail = () => {
       const candidates = normalizeScannerCandidates(rawValue, window.location.origin);
       if (candidates.some((candidate) => receivedScanKeysRef.current.has(candidate))) {
         showAlreadyReceivedFeedback();
+        return;
+      }
+      const pendingId = candidates.map((candidate) => pendingScanKeysRef.current.get(candidate)).find(Boolean);
+      if (pendingId) {
+        showReceivingFeedback(pendingId);
         return;
       }
 
@@ -306,11 +367,17 @@ const NewOrderDetail = () => {
           return;
         }
 
-        // Shu sahifada (ommaviy «Qabul qilish» yoki skan bilan) qabul qilingan — takror, «Topilmadi» emas.
+        // Shu sahifada (ommaviy «Qabul qilish» yoki skan bilan) qabul qilingan — takror, «Topilmadi» emas. Ref —
+        // tekshiruv davomida tugagan qabul ham ko'rinadi (render closure'idagi eski holat emas).
         const scannedId = String(scanned.id);
-        if (receivedOrderIds.has(scannedId) || receivedLog.some((order) => String(order.id) === scannedId)) {
+        if (receivedIdsRef.current.has(scannedId)) {
           rememberReceivedScan(scanned, rawValue);
           showAlreadyReceivedFeedback(scanned.id);
+          return;
+        }
+        if (pendingScanOrderIdsRef.current.has(scannedId)) {
+          scanKeysOf(scanned, rawValue).forEach((key) => pendingScanKeysRef.current.set(key, scannedId));
+          showReceivingFeedback(scannedId);
           return;
         }
 
@@ -326,8 +393,16 @@ const NewOrderDetail = () => {
           return;
         }
 
-        if (scannedMarketId === String(marketId) && String(scanned.status ?? "").toLowerCase() === "new") {
+        const scannedStatus = String(scanned.status ?? "").trim().toLowerCase();
+        if (scannedMarketId === String(marketId) && scannedStatus === "new") {
           receiveScannedOrder(scanned, rawValue);
+          return;
+        }
+        // Shu marketniki, lekin endi «yangi» emas — qabul bosqichidan o'tgan (boshqa xodim yoki shu sahifa qabul
+        // qilgan, javobi kechikkan). Real posilka — «Topilmadi» emas.
+        if (scannedMarketId === String(marketId) && scannedStatus) {
+          rememberReceivedScan(scanned, rawValue);
+          showAlreadyReceivedFeedback(scanned.id);
           return;
         }
 
@@ -357,15 +432,16 @@ const NewOrderDetail = () => {
       marketsData,
       markMissingCode,
       receiveScannedOrder,
-      receivedLog,
-      receivedOrderIds,
       rememberReceivedScan,
       showAlreadyReceivedFeedback,
+      showReceivingFeedback,
       t,
     ],
   );
 
-  const scannerEnabled = canReceive && !receiveClosed && rawOrders.length > 0;
+  // USB skaner ro'yxat bo'sh bo'lsa ham tinglaydi (hammasi qabul qilingan / keyin yaratilgan buyurtma) — kod
+  // serverdan tekshiriladi. Ilgari bo'sh ro'yxatda USB skan jimgina yo'qolardi.
+  const scannerEnabled = canReceive && !receiveClosed && res !== undefined;
   const remainingCount = orders.length;
   const receivedCount = receivedLog.length;
   const cameraMarketName = marketName ?? t("marketOrders.titleFallback");
@@ -385,14 +461,22 @@ const NewOrderDetail = () => {
       subtitle: t("marketOrders.camera.notFound"),
       tone: "danger",
     }));
+    // Javobi kutilayotganlar — eng tepada (kamera ochiq bo'lsa xabarlar jim: skan «o'tdi»mi shu yerdan ko'rinadi).
+    const pending = pendingLog.map<ScanTargetListItem>((order) => ({
+      key: `pending:${order.id}`,
+      title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
+      subtitle: t("marketOrders.camera.receivingShort"),
+      tone: "neutral",
+    }));
     // Yangisi birinchi: qabul qilinganlar va topilmaganlar alohida tartibda — ikkalasi ham oxirgisi tepada.
-    return [...received.reverse(), ...missing.reverse()];
-  }, [cameraMoney, missingCodes, receivedLog, t]);
+    return [...pending.reverse(), ...received.reverse(), ...missing.reverse()];
+  }, [cameraMoney, missingCodes, pendingLog, receivedLog, t]);
 
   const isTransfer = receiveMode === "transfer";
   useOrderQrScanner({
     orders: rawOrders,
     enabled: canReceive && !receiveClosed,
+    keyboardWhenEmpty: true,
     onMatch: receiveScannedOrder,
     onMissing: (rawValue: string) => {
       void handleMissingScannedOrder(rawValue);
@@ -510,11 +594,7 @@ const NewOrderDetail = () => {
       { orderIds: ids },
       {
         onSuccess: () => {
-          setReceivedOrderIds((prev) => {
-            const next = new Set(prev);
-            ids.forEach((id) => next.add(id));
-            return next;
-          });
+          markReceived(ids);
           logReceived(accepted);
           // Ommaviy qabul ham skan kalitlariga yoziladi: keyin skanerlansa — «Topilmadi» emas, takror ogohlantirish.
           accepted.forEach((order) => rememberReceivedScan(order));
@@ -539,6 +619,7 @@ const NewOrderDetail = () => {
   }, [
     location.key,
     logReceived,
+    markReceived,
     navigate,
     orders.length,
     receiveMutation,
@@ -846,6 +927,28 @@ const NewOrderDetail = () => {
       {deleteDialog}
     </div>
   );
+};
+
+/** Skan natijasi xabarining barqaror kaliti — «Qabul qilinmoqda» xabari natija bilan almashadi. */
+const scanToastId = (orderId: string | number) => `new-orders:scan-receive:${orderId}`;
+
+/** Buyurtmaning skan kalitlari: id, token va skanerlangan matnning variantlari (kichik harfda). */
+const scanKeysOf = (order: { id: string | number; qr_code_token?: string | null }, rawValue?: string): string[] => {
+  const keys = [String(order.id).toLowerCase()];
+  const token = order.qr_code_token?.trim();
+  if (token) keys.push(token.toLowerCase());
+  if (rawValue) keys.push(...normalizeScannerCandidates(rawValue, window.location.origin));
+  return keys;
+};
+
+/**
+ * `POST /orders/receive` javobidagi `data.already_received_ids` (idempotent qabul, backend 2026-11-23). Eski backend
+ * yoki transfer paketi javobida yo'q — bo'sh to'plam.
+ */
+const readAlreadyReceivedIds = (body: unknown): Set<string> => {
+  const data = body && typeof body === "object" ? (body as { data?: unknown }).data : undefined;
+  const ids = data && typeof data === "object" ? (data as { already_received_ids?: unknown }).already_received_ids : undefined;
+  return new Set(Array.isArray(ids) ? ids.map(String) : []);
 };
 
 /** QR javobidagi buyurtma (`{ data: order }` o'ramlari bilan) — id bo'lmasa `null`. */
