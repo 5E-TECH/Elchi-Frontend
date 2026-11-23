@@ -236,7 +236,7 @@
   "viaMqtt": "via MQTT",
   "browserPrint": "Browser print",
   "anyPrinter": "Any printer",
-  "pdfPrint": "PDF (60×100 mm)",
+  "pdfPrint": "PDF (100×60 mm)",
   "gainschaPrinter": "For Gainscha printer",
   "a4Print": "A4 sheet (12 per page)",
   "a4Printer": "Office printer · 12 receipts per sheet",
@@ -724,7 +724,7 @@
     "selectionHintPrintOnly": "Printing applies only to the selected orders",
     "transferHint": "Received orders are added to a new batch to send to HQ — <batches>Batches</batches>",
     "clearSelection": "Clear selection",
-    "printMenuTitle": "Labels: {{value}} · 60×100 mm",
+    "printMenuTitle": "Labels: {{value}} · 100×60 mm",
     "printMenuLabel": "Print method",
     "tableLabel": "New orders",
     "columns": {

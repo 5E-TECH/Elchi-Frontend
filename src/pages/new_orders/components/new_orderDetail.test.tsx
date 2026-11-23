@@ -482,7 +482,7 @@ describe("NewOrderDetail — chek (HJ5sLHiz, features/print-receipts)", () => {
     const menu = screen.getByRole("menu");
     expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
       expect.stringContaining("Brauzer orqali"),
-      expect.stringContaining("PDF (60×100 mm)"),
+      expect.stringContaining("PDF (100×60 mm)"),
       expect.stringContaining("A4 varaq (12 ta)"),
     ]);
     await user.click(within(menu).getByRole("menuitem", { name: /A4 varaq/ }));
