@@ -141,6 +141,14 @@ interface Props {
 const getDisplayStatus = (order: OrderListItem) =>
     (order as { transport_status?: unknown }).transport_status === "cancelled (sent)" ? "cancelled (sent)" : order.status;
 
+/**
+ * FCdwcvEv: fayl darajasidagi barqaror funksiyalar. Sukut qiymati parametrda inline yozilsa (`= (order) => …`) har
+ * renderda yangi funksiya bo'lib, `columns` va `renderCard` (`useMemo` / `useCallback` bog'liqligi) har safar qayta
+ * yaratilardi — `memo(DataTable)` hech qachon ishlamasdi.
+ */
+const defaultOrderHref = (order: OrderListItem) => `edit/${order.id}`;
+const orderRowKey = (order: OrderListItem) => String(order.id);
+
 const OrdersTable = ({
     data,
     isLoading,
@@ -148,7 +156,7 @@ const OrdersTable = ({
     error,
     onRetry,
     onRowClick,
-    getOrderHref = (order) => `edit/${order.id}`,
+    getOrderHref = defaultOrderHref,
     canUseOrderActions,
     canSellOrder,
     onSellOrder,
@@ -635,7 +643,7 @@ const OrdersTable = ({
                 <DataTable
                     rows={rows}
                     columns={columns}
-                    getRowKey={(order) => String(order.id)}
+                    getRowKey={orderRowKey}
                     label={label}
                     sort={onSortChange ? (sortConfig ?? DEFAULT_SORT) : undefined}
                     onSortChange={onSortChange}

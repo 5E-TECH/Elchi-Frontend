@@ -82,6 +82,9 @@ const CALL_LINK =
   "absolute right-4 top-3 inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-action-fg " +
   "transition-[background-color,color] duration-150 motion-reduce:transition-none";
 
+/** FCdwcvEv: barqaror kalit funksiyasi (inline bo'lsa `memo(DataTable)` har renderda qayta chiziladi). */
+const courierOrderRowKey = (order: Order) => order.id;
+
 const deliveryKey = (whereDeliver: unknown) => (whereDeliver === "center" ? "deliveryToCenter" : "deliveryToHome");
 
 const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {
@@ -457,14 +460,14 @@ const CourierOrdersTable = ({
       <DataTable
         rows={rows}
         columns={columns}
-        getRowKey={(order) => order.id}
+        getRowKey={courierOrderRowKey}
         label={label}
         cardsLabel={label}
         sort={sort}
         onSortChange={setSort}
         density="tight"
         busy={busy}
-        onRowClick={onRowClick ? (order) => onRowClick(order) : undefined}
+        onRowClick={onRowClick}
         renderCard={renderCard}
         selection={
           selection

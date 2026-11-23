@@ -439,6 +439,9 @@ const Orders = () => {
     { refetchOnWindowFocus: !refreshPaused, silentErrorWhenCached: true },
   );
   const { data, isLoading, isError: isOrdersError, error: ordersError, refetch: refetchOrders } = ordersQuery;
+  // FCdwcvEv: jadvalga barqaror funksiyalar — inline bo'lsa har renderda `memo(OrdersTable)` / `memo(DataTable)` buziladi.
+  const handleRetryOrders = useCallback(() => void refetchOrders(), [refetchOrders]);
+  const handleOrderRowClick = useCallback((order: OrderListItem) => navigate(`edit/${order.id}`), [navigate]);
 
   // GaBIPi3Z: holat tablari sonlari — ro'yxat bilan BIR XIL filtrlar (holatsiz, sahifasiz), bir xil yangilanish
   // (60 s, ilovaga qaytganda, «Yangilash»; oyna ochiq bo'lsa to'xtaydi). Kuryer o'z ro'yxatini va sonlarini
@@ -1326,10 +1329,10 @@ const Orders = () => {
           pinnedOrderId={pinnedOrderId || undefined}
           isError={isOrdersError}
           error={ordersError}
-          onRetry={() => void refetchOrders()}
+          onRetry={handleRetryOrders}
           isLoading={isLoading}
           busy={Boolean(ordersQuery.isPlaceholderData)}
-          onRowClick={(order) => navigate(`edit/${order.id}`)}
+          onRowClick={handleOrderRowClick}
           canUseOrderActions={canUseOrderActions}
           canSellOrder={canManagerSellOrder}
           onSellOrder={canUseManagerTableActions ? setSellOrder : undefined}
