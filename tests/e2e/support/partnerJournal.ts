@@ -73,6 +73,8 @@ export interface PartnerJournalOptions {
   language?: "uz" | "ru" | "en";
   /** Uzun hamkor nomi va xato matni — jadval kengligini sinash uchun. */
   long?: boolean;
+  /** Profil mavzusi (`themeChosen: true` — server sozlamasi localStorage'dan ustun). */
+  theme?: "light" | "dark";
 }
 
 /** Bajarilgan yozuvchi so'rovlar: `POST admin/partners/1/status` → tanasi. */
@@ -86,7 +88,7 @@ const WRITE_REPLIES: [RegExp, unknown][] = [
   [/^integrations\/\d+\/sync$/, { ok: true }],
 ];
 
-export const mockPartnerJournal = async (page: Page, { role = "superadmin", language = "uz", long = false }: PartnerJournalOptions = {}) => {
+export const mockPartnerJournal = async (page: Page, { role = "superadmin", language = "uz", long = false, theme = "light" }: PartnerJournalOptions = {}) => {
   const leaked: string[] = [];
   const writes: { call: string; body: unknown }[] = [];
   const journal: URLSearchParams[] = [];
@@ -103,7 +105,7 @@ export const mockPartnerJournal = async (page: Page, { role = "superadmin", lang
     if (path === "auth/my-profile") {
       return reply(
         route,
-        wrap({ id: "1", role, name: "E2E", status: "active", settings: { appearance: { theme: "light", themeChosen: true, language } } }),
+        wrap({ id: "1", role, name: "E2E", status: "active", settings: { appearance: { theme, themeChosen: true, language } } }),
       );
     }
     if (path === "admin/partners/webhooks") {

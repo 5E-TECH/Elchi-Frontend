@@ -33,7 +33,7 @@ test.describe("Umumiy webhook jurnali — 1440px", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("⭐ webhook ma'lumoti ochiladi, yetkazilmagani qayta navbatga qo'yiladi", async ({ page }) => {
+  test("⭐ webhook ma'lumoti ochiladi, yetkazilmagani tasdiqdan keyin qayta navbatga qo'yiladi", async ({ page }) => {
     const { leaked, writes } = await mockPartnerJournal(page);
     await page.goto(CONSOLE_LOG);
 
@@ -44,7 +44,13 @@ test.describe("Umumiy webhook jurnali — 1440px", () => {
     await expect(page.locator("#partner-payload-1")).toContainText('"external_order_id": "EX-1"');
 
     await page.getByRole("button", { name: "№101 hodisasini qayta yuborish" }).click();
+    // Ega 2026-11-23: qayta yuborish — tasdiq oynasi bilan; oyna ochilganda hali hech narsa ketmagan.
+    const dialog = page.getByRole("alertdialog", { name: "Hodisani qayta yuborasizmi?" });
+    await expect(dialog).toContainText("№101 hodisasi «BeePost» hamkoriga qayta yuboriladi");
+    expect(writes).toEqual([]);
+    await dialog.getByRole("button", { name: "Qayta yuborish" }).click();
     await expect.poll(() => writes.map(({ call }) => call)).toEqual(["POST admin/partners/webhooks/1/retry"]);
+    await expect(dialog).toHaveCount(0);
     // Yetkazilgan hodisada qayta yuborish yo'q, lekin ma'lumotni ko'rish bor.
     await expect(page.getByRole("button", { name: "№102 hodisasini qayta yuborish" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "№102 — webhook ma'lumotini ko'rish" })).toBeVisible();

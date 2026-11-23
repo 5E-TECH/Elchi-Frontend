@@ -201,6 +201,35 @@ const pinError = (reason: string, remaining?: number) =>
     },
   });
 
+describe("MarkReturnedModal — admin market QR talabini o'chirgan (skan auditi #43)", () => {
+  beforeEach(() => {
+    apiPost.mockReset();
+    resetScanTargets();
+  });
+
+  it("⭐ QR so'ralmaydi: maydon va kamera yo'q, tasdiqlash tokensiz topshiradi", async () => {
+    apiPost.mockResolvedValue({ data: { statusCode: 200, data: { id: "95", status: "returned_to_market" } } });
+    const onClose = vi.fn();
+    renderWithProviders(<MarkReturnedModal open orderId="95" marketId="16" qrRequired={false} onClose={onClose} />);
+
+    expect(screen.getByTestId("mark-returned-no-qr")).toBeInTheDocument();
+    expect(screen.queryByTestId("mark-returned-qr-input")).not.toBeInTheDocument();
+    expect(getActiveScanTarget()).toBeNull();
+    expect(screen.getByTestId("mark-returned-submit")).toBeEnabled();
+
+    fireEvent.click(screen.getByTestId("mark-returned-submit"));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(apiPost.mock.calls).toEqual([["orders/95/mark-returned-to-market", {}]]);
+  });
+
+  it("sukut — QR talab qilinadi (prop berilmasa avvalgidek)", () => {
+    renderWithProviders(<MarkReturnedModal open orderId="95" onClose={vi.fn()} />);
+    expect(screen.queryByTestId("mark-returned-no-qr")).not.toBeInTheDocument();
+    expect(screen.getByTestId("mark-returned-submit")).toBeDisabled();
+  });
+});
+
 describe("MarkReturnedModal — QR o'rniga market PIN kodi (zkRab9M2, BG6)", () => {
   beforeEach(() => {
     apiPost.mockReset();

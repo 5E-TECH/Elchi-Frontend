@@ -1407,15 +1407,6 @@
   },
   {
    "role": "superadmin",
-   "viewId": "integrations-legacy-partners",
-   "menuKey": "integrations",
-   "title": "Partner API hamkorlari (eski sahifa)",
-   "fragment": "superadmin--integrations-legacy-partners",
-   "order": 109,
-   "kind": "page"
-  },
-  {
-   "role": "superadmin",
    "viewId": "integrations-legacy-sources",
    "menuKey": "integrations",
    "title": "Tashqi manbalar (eski: Integratsiyalar ro'yxati)",
@@ -1646,15 +1637,6 @@
    "title": "Ops — Moliya operatorlari",
    "fragment": "superadmin--ops-finance-operators",
    "order": 127,
-   "kind": "page"
-  },
-  {
-   "role": "superadmin",
-   "viewId": "ops-integrations",
-   "menuKey": "ops",
-   "title": "Ops — Integratsiyalar",
-   "fragment": "superadmin--ops-integrations",
-   "order": 128,
    "kind": "page"
   },
   {
@@ -3050,15 +3032,6 @@
    "title": "Ulash ustasi",
    "fragment": "admin--integrations-wizard",
    "order": 219,
-   "kind": "page"
-  },
-  {
-   "role": "admin",
-   "viewId": "integrations-legacy-partners",
-   "menuKey": "integrations",
-   "title": "Partner API hamkorlari (eski)",
-   "fragment": "admin--integrations-legacy-partners",
-   "order": 220,
    "kind": "page"
   },
   {
