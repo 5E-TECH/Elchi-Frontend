@@ -32,7 +32,7 @@ import { useVirtualRows } from "./virtual/useVirtualRows";
  *    `button`); ochilgan qator va uning paneli `bg-sunken`, panel `colSpan` = barcha ustunlar. Ochib
  *    bo'lmaydigan qatorda (`canExpand` → `false`) chevron yo'q, faqat ekran o'quvchi uchun «Tafsilot yo'q».
  *    Telefonda kartaning o'ng tomonida 44 px chevron, panel karta ostida. `toggle: "none"` — tugmani
- *    iste'molchi o'zi chizadi (masalan amallar ustunida, maket `*-integrations-legacy-partners`):
+ *    iste'molchi o'zi chizadi (masalan amallar ustunida, maket `superadmin-integrations-panel-events`):
  *    jadval faqat panelni chiqaradi, `panelId` bilan tugmaga `aria-controls` beriladi.
  *  - Uzun ro'yxat (`virtualizeFrom`, F4RSPBwx): qatorlar shu sondan ko'p bo'lsa faqat ko'rinadiganlari (+ zaxira)
  *    chiziladi, qolgani o'rnida bo'sh joy — skroll uzunligi, qator balandligi, tanlov o'zgarmaydi; ekran o'quvchiga
