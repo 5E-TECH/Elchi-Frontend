@@ -232,7 +232,7 @@
   "viaMqtt": "MQTT orqali",
   "browserPrint": "Brauzer orqali",
   "anyPrinter": "Istalgan printer",
-  "pdfPrint": "PDF (60×100 mm)",
+  "pdfPrint": "PDF (100×60 mm)",
   "gainschaPrinter": "Gainscha printer uchun",
   "a4Print": "A4 varaq (12 ta)",
   "a4Printer": "Ofis printeri · bir varaqda 12 ta chek",
@@ -701,7 +701,7 @@
     "selectionHintPrintOnly": "Chop etish faqat tanlanganlarga qo'llanadi",
     "transferHint": "Qabul qilinganlar HQ'ga jo'natish uchun yangi paketga qo'shiladi — <batches>Paketlar</batches>",
     "clearSelection": "Tanlovni bekor qilish",
-    "printMenuTitle": "{{value}} ta yorliq · 60×100 mm",
+    "printMenuTitle": "{{value}} ta yorliq · 100×60 mm",
     "printMenuLabel": "Chop etish usuli",
     "tableLabel": "Yangi buyurtmalar",
     "columns": {

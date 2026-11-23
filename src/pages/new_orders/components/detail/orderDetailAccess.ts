@@ -13,6 +13,7 @@ import {
   areOrderProductsLocked,
   canRunCourierAction,
   isOrderSentToBranch,
+  isRegionalWarehouseOrder,
   normalizeOrderStatus,
   productsLockReasonOf,
 } from "../newOrderUpdateRules";
@@ -113,6 +114,8 @@ export interface OrderDetailAccess {
    */
   productsLockReason: ProductsLockReason;
   destinationLocked: boolean;
+  /** XnnpmbBO: viloyat ombori buyurtmasi — qulf matnlari «ombordan jo'natilgan» (filialga emas). */
+  regionalWarehouse: boolean;
   isRegionalManager: boolean;
   /** «Bekor qilish» (va «Sotish», agar `canSell`) — WAITING + post_id, `can_sell_cancel` yoqilgan. */
   canUseCourierActions: boolean;
@@ -189,6 +192,7 @@ export const getOrderDetailAccess = ({
     productsLocked: areOrderProductsLocked(order),
     productsLockReason: productsLockReasonOf(order),
     destinationLocked: Boolean(order && isOrderSentToBranch(order)),
+    regionalWarehouse: isRegionalWarehouseOrder(order),
     isRegionalManager,
     canUseCourierActions,
     canSell: canUseCourierActions && !isCourierHeldOrder(order),

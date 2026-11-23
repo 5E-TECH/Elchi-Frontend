@@ -61,6 +61,24 @@ describe("useOrderTracking — so'rovlar va tartib", () => {
     expect(api.getByOrderId).toHaveBeenCalledWith("95", { page: 1, limit: 20 });
   });
 
+  it("XnnpmbBO: vaqti teng yozuvlar — id bo'yicha (keyin yozilgani tepada), javob tartibidan qat'i nazar", async () => {
+    const at = "2026-10-26T09:15:00.000Z";
+    api.getByOrderId.mockResolvedValue(
+      page([
+        { id: "998", action: "status_change", created_at: at },
+        { id: "1000", action: "status_change", created_at: at },
+        { id: "999", action: "status_change", created_at: at },
+        { id: "1001", action: "note", created_at: "2026-10-26T09:16:00.000Z" },
+        { id: "5", action: "created", created_at: "2026-10-25T09:00:00.000Z" },
+      ]),
+    );
+    const { result } = renderHook(() => useOrderTracking("77"), { wrapper: createWrapper() });
+
+    await waitFor(() =>
+      expect(result.current.events.map((event) => event.id)).toEqual(["1001", "1000", "999", "998", "5"]),
+    );
+  });
+
   it("yangidan eskiga; yashirin (custody) yozuvlar chiqmaydi; «Ko'proq yuklash» — keyingi sahifa", async () => {
     api.getByOrderId
       .mockResolvedValueOnce(

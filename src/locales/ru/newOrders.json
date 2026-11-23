@@ -249,7 +249,7 @@
   "viaMqtt": "через MQTT",
   "browserPrint": "Через браузер",
   "anyPrinter": "Любой принтер",
-  "pdfPrint": "PDF (60×100 мм)",
+  "pdfPrint": "PDF (100×60 мм)",
   "gainschaPrinter": "Для принтера Gainscha",
   "a4Print": "Лист A4 (12 шт.)",
   "a4Printer": "Офисный принтер · 12 чеков на листе",
@@ -761,7 +761,7 @@
     "selectionHintPrintOnly": "Печать применяется только к выбранным",
     "transferHint": "Принятые заказы добавляются в новый пакет для отправки в HQ — <batches>Пакеты</batches>",
     "clearSelection": "Снять выбор",
-    "printMenuTitle": "Этикеток: {{value}} · 60×100 мм",
+    "printMenuTitle": "Этикеток: {{value}} · 100×60 мм",
     "printMenuLabel": "Способ печати",
     "tableLabel": "Новые заказы",
     "columns": {

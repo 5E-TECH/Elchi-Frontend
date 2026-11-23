@@ -5,6 +5,14 @@ import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryE
 
 export { extractRegionOptions, useRegionOptions, type RegionOption } from "./api/regionOptions";
 export {
+  parseDistrictRehomeResult,
+  rehomeDistrictOpenOrders,
+  useRehomeDistrictOrders,
+  type DistrictRehomeResult,
+  type DistrictRehomeSkipped,
+  type DistrictRehomeSkipReason,
+} from "./api/districtRehome";
+export {
   pendingOf,
   regionsOfLogist,
   shareOf,

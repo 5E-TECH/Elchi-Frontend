@@ -12,7 +12,7 @@ import { SelectionRegion } from "../../../../shared/ui/SelectionRegion";
  * Tanlangan buyurtmalar paneli (maket: `role="region"` «Tanlangan buyurtmalar», umumiy `SelectionRegion`;
  * hech narsa tanlanmaganda — `idle`, `bg-sunken`):
  * «5 ta buyurtma tanlandi · 908 500 so'm» + izoh, «Barchasini tanlash» / «Tanlovni bekor qilish» va
- * «Chop etish» menyusi (brauzer · PDF 60×100 · A4 varaq — 12 ta; chek — `features/print-receipts`, tayyorlanayotganda
+ * «Chop etish» menyusi (brauzer · PDF 100×60 · A4 varaq — 12 ta; chek — `features/print-receipts`, tayyorlanayotganda
  * tugma `loading`). Transfer rejimida (PICKUP/HYBRID menejer, registrator) izoh —
  * «… yangi paketga qo'shiladi — Paketlar»; «Paketlar» havola faqat `/batches` ga ruxsat bo'lsa.
  */

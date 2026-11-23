@@ -5,7 +5,8 @@ import { api } from "../../shared/api/api";
 /**
  * BEKOR QILISH SABABLARI HISOBOTI (GNWDKvmZ) — `GET /orders/cancel-reasons/stats?startDate&endDate` (Toshkent kuni,
  * `endDate` kuni kiradi) `[&market_id|branch_id — faqat superadmin/admin]`. Javob:
- * `{ total, by_reason: [{ reason, label, count }], applied_range }`. `group_by` qatorlari ishlatilmaydi.
+ * `{ total, by_reason: [{ reason, label, count }], applied_range: { from, to, timezone } }` (`from`/`to` — UTC ISO,
+ * Toshkent kuniga o'giriladi). `group_by` qatorlari ishlatilmaydi.
  */
 export interface CancelReasonStatsParams {
   startDate?: string;
@@ -27,7 +28,7 @@ export interface CancelReasonStats {
   total: number;
   /** Ko'pi birinchi; soni 0 sabab chiqarilmaydi. */
   reasons: CancelReasonStat[];
-  /** Backend haqiqatda hisoblagan oraliq; kelmasa — `null` (so'ralgan oraliq ko'rsatiladi). */
+  /** Backend haqiqatda hisoblagan oraliq (Toshkent kunlari, `YYYY-MM-DD`); kelmasa — `null` (so'ralgan oraliq). */
   appliedRange: { from: string; to: string } | null;
 }
 
@@ -43,10 +44,31 @@ const count = (value: unknown): number => {
 
 const text = (value: unknown): string | null => (typeof value === "string" && value.trim() ? value.trim() : null);
 
+const tashkentDay = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Tashkent",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * Kun (`YYYY-MM-DD`). Backend `applied_range` da `{ from, to }` — Toshkent kuni chegarasining UTC vaqti
+ * (`"2026-10-31T19:00:00.000Z"` = 1-noyabr 00:00, `to` — kun oxiri 23:59:59): UTC sana olinsa bir kun oldingi kun
+ * chiqardi, shuning uchun Toshkent kuniga o'giriladi. `YYYY-MM-DD` o'zicha qoladi; tushunarsiz — `null`.
+ */
+const toTashkentDay = (value: unknown): string | null => {
+  const raw = text(value);
+  if (!raw) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(raw)) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : tashkentDay.format(date);
+};
+
 const readRange = (value: unknown): CancelReasonStats["appliedRange"] => {
   const range = asRecord(value);
-  const from = text(range?.startDate ?? range?.start_date ?? range?.from);
-  const to = text(range?.endDate ?? range?.end_date ?? range?.to);
+  const from = toTashkentDay(range?.startDate ?? range?.start_date ?? range?.from);
+  const to = toTashkentDay(range?.endDate ?? range?.end_date ?? range?.to);
   return from && to ? { from, to } : null;
 };
 

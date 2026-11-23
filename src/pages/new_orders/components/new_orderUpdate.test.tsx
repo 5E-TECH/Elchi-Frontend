@@ -1105,6 +1105,54 @@ describe("NewOrderUpdate — ombor buyurtmasi: qulf matnlari va o'chirish (hfkhY
     );
   });
 
+  it("XnnpmbBO: viloyat ombori (received) — «ombordan jo'natilgunga qadar», «filialga jo'natilgunga qadar» emas", () => {
+    orderState.status = "received";
+    orderState.extra = { ...WAREHOUSE };
+    const superadmin = renderPage("superadmin");
+    expect(document.getElementById("products-lock")).toHaveTextContent(
+      "Mijoz va manzilni buyurtma ombordan jo'natilgunga qadar tahrirlash mumkin.",
+    );
+    expect(screen.queryByText(/filialga jo'natilgunga qadar/)).toBeNull();
+    superadmin.unmount();
+
+    renderPage("manager");
+    expect(document.getElementById("products-lock")).toHaveTextContent(
+      "Manzilni buyurtma ombordan jo'natilgunga qadar tahrirlash mumkin.",
+    );
+    expect(screen.queryByText(/filialga jo'natilgunga qadar/)).toBeNull();
+  });
+
+  it.each(["on the road", "waiting"])(
+    "XnnpmbBO: viloyat ombori (%s) — «Buyurtma ombordan jo'natilgan», «filialga jo'natilgan» emas",
+    (status) => {
+      orderState.status = status;
+      orderState.extra = { ...WAREHOUSE };
+      renderPage("superadmin");
+      const lock = document.getElementById("edit-lock")!;
+      expect(lock).toHaveTextContent("Tahrirlash yopiq.");
+      expect(lock).toHaveTextContent(
+        "Buyurtma ombordan jo'natilgan — mijoz, manzil, summa va mahsulotlarni endi o'zgartirib bo'lmaydi.",
+      );
+      expect(screen.queryByText(/Buyurtma filialga jo'natilgan/)).toBeNull();
+    },
+  );
+
+  it("XnnpmbBO: Markaziy ombor (kind HQ) va HQ buyurtmasi — «filialga jo'natilgan» matnlari o'zgarmaydi", () => {
+    orderState.status = "on the road";
+    orderState.extra = { ...WAREHOUSE, warehouse: { id: "1", name: "Markaziy ombor", kind: "HQ" } };
+    const central = renderPage("superadmin");
+    expect(document.getElementById("edit-lock")).toHaveTextContent("Buyurtma filialga jo'natilgan — mijoz, manzil");
+    central.unmount();
+
+    orderState.status = "received";
+    orderState.extra = { fulfillment_source: "HQ" };
+    renderPage("superadmin");
+    expect(document.getElementById("products-lock")).toHaveTextContent(
+      "Mijoz va manzilni filialga jo'natilgunga qadar tahrirlash mumkin.",
+    );
+    expect(screen.queryByText(/ombordan jo'natil/)).toBeNull();
+  });
+
   it("№4: Markaziy ombor (warehouse.kind HQ) va HQ buyurtmasi — «HQ qabul qilgandan keyin» qoladi", () => {
     orderState.status = "received";
     orderState.extra = { ...WAREHOUSE, warehouse: { id: "1", name: "Markaziy ombor", kind: "HQ" } };

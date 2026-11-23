@@ -149,15 +149,15 @@ export const getTileAccessibleName = (compact: string, full: string): string | u
  *   - Ops vositalarining eski manzillari (`pages/ops/tabs.ts` → `legacyPath`, maketda `menuKey: "ops"`; LIuf0DcD da
  *     olib tashlangan tablarning eski yo'llari — `/logs`, `/identity-ops`, `/investors-ops` — boshqa bo'limga
  *     yo'naltiradi, ro'yxatda yo'q);
- *   - superadminning shaxsiy qutisi `/inbox` (maket `superadmin-notifications-inbox`, `menuKey: "notifications"`);
  *   - «Almashtirishlar» `/replacement-returns` — ega 2026-11-16 dan yon menyuda yo'q, /orders sarlavhasidagi tugma
  *     orqali ochiladi → «Buyurtmalar» faol.
- * Faqat to'g'ridan-to'g'ri mos band bo'lmasa qo'llanadi: suriluvchi menyudagi «Shaxsiy → Bildirishnomalar»
- * (`/inbox`) o'zi mos keladi va faol qoladi.
+ * Faqat to'g'ridan-to'g'ri mos band bo'lmasa qo'llanadi.
+ * 17HWafL7: `/inbox` (shaxsiy quti) «Bildirishnoma sozlamalari» (`/notifications`, Telegram sozlamasi) ga bog'lanmaydi —
+ * ikkisi boshqa-boshqa sahifa; bog'langanda `/inbox` ochilsa yon menyuda «sozlamalar» faol bo'lib, tester «ikki xil
+ * Bell to'qnashuvi» deb yozgan. Suriluvchi menyudagi «Shaxsiy → Bildirishnomalar» (`/inbox`) o'zi mos keladi.
  */
 const ACTIVE_ALIASES_BY_PATH: Record<string, readonly string[]> = {
   "/ops": ["/finance-operators", "/logistics-ops", "/branch-ops", "/system-ops"],
-  "/notifications": ["/inbox"],
   "/orders": ["/replacement-returns"],
 };
 
