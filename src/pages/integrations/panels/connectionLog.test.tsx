@@ -302,7 +302,7 @@ describe("Biz yuborgan hodisalar — umumiy jurnal (Dj70iDbD)", () => {
     expect(screen.queryByText("Webhook ma'lumoti")).toBeNull();
   });
 
-  it("yetkazilmagan hodisani qayta navbatga qo'yadi", async () => {
+  it("⭐ yetkazilmagan hodisa faqat tasdiqdan keyin qayta yuboriladi (ega 2026-11-23)", async () => {
     const user = userEvent.setup();
     mockApi(() => Promise.resolve(journal([row("1", "1")])));
     renderWithProviders(<ConnectionLog connection={beePost} />);
@@ -310,7 +310,25 @@ describe("Biz yuborgan hodisalar — umumiy jurnal (Dj70iDbD)", () => {
     // Matnli va ikonka tugma ikkalasi DOM'da, kenglikka qarab bittasi ko'rinadi (jsdom'da CSS yo'q).
     const [retry] = await screen.findAllByRole("button", { name: "№101 hodisasini qayta yuborish" });
     await user.click(retry);
+    const dialog = await screen.findByRole("alertdialog", { name: "Hodisani qayta yuborasizmi?" });
+    expect(within(dialog).getByText(/№101 hodisasi «BeePost» hamkoriga qayta yuboriladi/)).toBeInTheDocument();
+    expect(apiGetMock).not.toHaveBeenCalledWith("admin/partners/webhooks/1/retry");
+
+    await user.click(within(dialog).getByRole("button", { name: "Qayta yuborish" }));
     await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("admin/partners/webhooks/1/retry"));
+  });
+
+  it("⭐ tasdiq oynasida «Bekor qilish» — hamkorga hech narsa yuborilmaydi", async () => {
+    const user = userEvent.setup();
+    mockApi(() => Promise.resolve(journal([row("1", "1")])));
+    renderWithProviders(<ConnectionLog connection={beePost} />);
+
+    const [retry] = await screen.findAllByRole("button", { name: "№101 hodisasini qayta yuborish" });
+    await user.click(retry);
+    const dialog = await screen.findByRole("alertdialog", { name: "Hodisani qayta yuborasizmi?" });
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(apiGetMock).not.toHaveBeenCalledWith("admin/partners/webhooks/1/retry");
   });
 
   it("sahifalash ko'p yozuvda chiqadi", async () => {

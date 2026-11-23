@@ -465,9 +465,8 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/branches": 'directory',
   "/regions": 'directory',
   "/market-operators": 'directory',
-  // Integratsiyalar — barcha tashqi ulanishlar bir uyda (B3).
-  // Eski `/partners` marshruti redirect bilan saqlanadi, lekin menyuda
-  // ko'rinmaydi: bir tushuncha ikki joyda turmasligi kerak.
+  // Integratsiyalar — barcha tashqi ulanishlar bir uyda (B3). Eski `/partners`, `/integrations/partners`
+  // sahifalari olindi (Dj70iDbD): hamkor amallari va webhook jurnali `/integrations` konsolida.
   "/integrations": 'integrations',
   // Tizim
   "/notifications": 'system',
