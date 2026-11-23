@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { chosenOperatorId, confirmOperatorFields, isOperatorRejectedResult } from "./aiOperator";
+import type { AiDraft } from "./aiDraft";
+import { autoPickOperators, chosenOperatorId, confirmOperatorFields, isOperatorRejectedResult } from "./aiOperator";
 
 /**
- * AI kartasidagi «Operator» tanlovi — eskirgan tanlov va rad etilgan natija (taklif — `operatorMatch.test.ts`).
+ * AI kartasidagi «Operator» tanlovi — avto-tanlov, eskirgan tanlov va rad etilgan natija (moslik — `operatorMatch.test.ts`).
  */
 
 const OPERATORS = [
@@ -69,5 +70,31 @@ describe("confirmOperatorFields (2026-11-21: ro'yxat bor — erkin matn yo'q)", 
       operator: "Kamola",
     });
     expect(confirmOperatorFields({ operator_id: null, operator: "Kamola" }, [])).toEqual({ operator_id: null, operator: "Kamola" });
+  });
+});
+
+describe("autoPickOperators (ega, 2026-11-23: mos operator so'ramasdan tanlanadi)", () => {
+  const draft = (key: string, order: { operator?: string; operator_id?: string | null }, extra: Partial<AiDraft> = {}) =>
+    ({ key, order: { operator: "", operator_id: null, ...order }, source: {}, ...extra }) as unknown as AiDraft;
+
+  it("yagona mos — id va ro'yxatdagi ismi qo'yiladi; hamma karta belgilanadi", () => {
+    const [a, b, c] = autoPickOperators(
+      [draft("a", { operator: "sevinch" }), draft("b", { operator: "Shahzoda" }), draft("c", { operator: "bekzod" })],
+      OPERATORS,
+    );
+    expect(a.order).toMatchObject({ operator_id: "31", operator: "Sevinch Karimova" });
+    // Ro'yxatda yo'q va noaniq («bekzod» — ikkita Bekzod) — tegilmaydi.
+    expect(b.order).toMatchObject({ operator_id: null, operator: "Shahzoda" });
+    expect(c.order).toMatchObject({ operator_id: null, operator: "bekzod" });
+    expect([a, b, c].every((item) => item.operatorAutoChecked)).toBe(true);
+  });
+
+  it("allaqachon tanlangan yoki solishtirilgan karta tegilmaydi (odam «Tanlanmagan» qilgan bo'lsa ham)", () => {
+    const picked = draft("p", { operator: "Bekzod Aliyev", operator_id: "33" });
+    const cleared = draft("x", { operator: "sevinch", operator_id: null }, { operatorAutoChecked: true });
+    const [p, x] = autoPickOperators([picked, cleared], OPERATORS);
+    expect(p.order.operator_id).toBe("33");
+    expect(p.operatorAutoChecked).toBe(true);
+    expect(x).toBe(cleared);
   });
 });

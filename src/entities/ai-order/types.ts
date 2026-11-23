@@ -128,9 +128,10 @@ export type AiPreviewOrder = {
   comment?: string | null;
   operator?: string | null;
   /**
-   * Kartada ODAM ro'yxatdan tanlagan market operatori (`GET /market-operators/selectable`). Backend emas — FRONTEND
-   * yozadi: ai-parse uni hech qachon bermaydi (`toDraft` AI qiymatini e'tiborsiz qoldiradi), AI matnidagi ism ham
-   * avtomatik bog'lanmaydi. Tasdiqlashda `orders[].operator_id` — buyurtma va sotuvdagi komissiya shu operatorga.
+   * Kartadagi market operatori (`GET /market-operators/selectable`). Backend emas — FRONTEND yozadi: ai-parse uni
+   * hech qachon bermaydi (`toDraft` AI qiymatini e'tiborsiz qoldiradi). AI o'qigan ism ro'yxatdagi YAGONA operatorga
+   * mos kelsa — panel o'zi tanlaydi (2026-11-23, `autoPickOperators`), aks holda odam tanlaydi. Tasdiqlashda
+   * `orders[].operator_id` — buyurtma va sotuvdagi komissiya shu operatorga.
    */
   operator_id?: string | null;
   /**

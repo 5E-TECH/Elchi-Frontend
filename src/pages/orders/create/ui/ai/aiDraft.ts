@@ -26,6 +26,11 @@ export type AiDraft = {
    * qayta yuborilmaydi; kartadagi ma'lumot o'zgartirilsa — tozalanadi (yangi urinish).
    */
   existingOrderId?: string;
+  /**
+   * AI o'qigan operator ismi ro'yxat bilan solishtirilganmi (`autoPickOperators`, bir marta). FRONTEND holati —
+   * odamning keyingi «Tanlanmagan» / boshqa tanlovi qayta avto-tanlov bilan bosib ketilmasligi uchun.
+   */
+  operatorAutoChecked?: boolean;
 };
 
 export type AiCreatedRow = {
@@ -58,7 +63,8 @@ export const toDraft = (source: AiPreviewOrder, key: string, draftId?: string, p
     address: source.address ?? "",
     comment: source.comment ?? "",
     operator: source.operator ?? "",
-    // Operator faqat ODAM ro'yxatdan tanlaganda bog'lanadi — AI chiqishida bo'lsa ham e'tiborsiz.
+    // AI chiqishidagi `operator_id` e'tiborsiz: operator ro'yxat kelgach AI o'qigan ism bo'yicha avtomatik
+    // tanlanadi (`autoPickOperators`, faqat yagona mos kelsa) yoki odam kartada o'zi tanlaydi.
     operator_id: null,
     // Mavjud mijoz faqat ODAM kartada tanlaganda bog'lanadi (`customers/suggest`).
     customer_id: null,

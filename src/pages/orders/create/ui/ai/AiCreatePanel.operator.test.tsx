@@ -14,7 +14,8 @@ import AiCreatePanel from "./AiCreatePanel";
 /**
  * AI KARTASIDA «OPERATOR» TANLOVI (2026-11-20): AI xabardagi `#sevinch` ni faqat matn qilib yozardi — buyurtma
  * `operator_id` siz yaratilib, sotuvda operatorga komissiya yozilmasdi. Endi kartada ro'yxatdan tanlanadi
- * (`orders[].operator_id`); AI o'qigan ism mos kelsa — faqat TAKLIF (avtomatik tanlanmaydi).
+ * (`orders[].operator_id`). Ega (2026-11-23): AI o'qigan ism ro'yxatdagi YAGONA operatorga mos kelsa — so'ramasdan
+ * tanlanadi (avval «Tanlash» / «Hammasini tanlash» taklifi edi).
  */
 
 const SELECTABLE = "market-operators/selectable";
@@ -107,33 +108,61 @@ describe("AiCreatePanel — «Operator» tanlovi", () => {
     expect(confirmCalls()[0].orders[0]).toMatchObject({ operator_id: "32", operator: "Bekzod Aliyev" });
   });
 
-  it("AI o'qigan ism mos kelsa — faqat TAKLIF: tanlanmaguncha `operator_id` yuborilmaydi, «Tanlash» bilan bog'lanadi", async () => {
+  it("AI o'qigan ism mos kelsa — so'ramasdan tanlanadi va `operator_id` bilan ketadi", async () => {
     const user = userEvent.setup();
-    parseOrders = [order(1, { operator: "#sevinch" }), order(2, { operator: "Sevinch" })];
+    parseOrders = [order(1, { operator: "sevinch" }), order(2, { operator: "Sevinch" })];
     renderWithProviders(<AiCreatePanel active isMarketRole market={null} onSwitchToManual={vi.fn()} />, {
       preloadedState: marketState,
     });
     await parse(user, 2);
 
-    const [first] = cards();
-    expect(await within(first).findByText("Ro'yxatda «Sevinch Karimova» bor — komissiya yozilishi uchun tanlang")).toBeInTheDocument();
-    expect(await operatorSelect(first)).toHaveTextContent("Tanlanmagan");
-
-    await user.click(within(first).getByRole("button", { name: "«Sevinch Karimova» ni operator qilib tanlash" }));
-    expect(await operatorSelect(first)).toHaveTextContent("Sevinch Karimova");
+    const [first, second] = cards();
+    await waitFor(async () => expect(await operatorSelect(first)).toHaveTextContent("Sevinch Karimova"));
+    expect(await operatorSelect(second)).toHaveTextContent("Sevinch Karimova");
+    expect(
+      within(first).getByText("Xabardagi «sevinch» bo'yicha tanlandi — buyurtma va komissiya shu operatorga yoziladi"),
+    ).toBeInTheDocument();
+    // So'rov / taklif yo'q: na kartada «Tanlash», na tepada «Hammasini tanlash».
+    expect(screen.queryByRole("button", { name: /ni operator qilib tanlash/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hammasini tanlash" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/komissiya yozilishi uchun tanlang/)).not.toBeInTheDocument();
 
     await createAll(user, 2);
     const [sent1, sent2] = confirmCalls()[0].orders;
     expect(sent1).toMatchObject({ operator_id: "31", operator: "Sevinch Karimova" });
-    // Ikkinchisi tanlanmadi — 2026-11-21: ro'yxat bor bo'lsa AI o'qigan ism ham yuborilmaydi (operatorsiz).
-    expect(sent2).not.toHaveProperty("operator");
-    expect(sent2).not.toHaveProperty("operator_id");
+    expect(sent2).toMatchObject({ operator_id: "31", operator: "Sevinch Karimova" });
   });
 
-  it("bir nechta kartada mos ism — «Hammasini tanlash» bitta bosishda bog'laydi (mos kelmagani tegilmaydi)", async () => {
+  it("odam avto-tanlovni olib tashlasa yoki almashtirsa — qayta tanlanmaydi", async () => {
+    const user = userEvent.setup();
+    parseOrders = [order(1, { operator: "sevinch" }), order(2, { operator: "sevinch" })];
+    renderWithProviders(<AiCreatePanel active isMarketRole market={null} onSwitchToManual={vi.fn()} />, {
+      preloadedState: marketState,
+    });
+    await parse(user, 2);
+
+    const [first, second] = cards();
+    await waitFor(async () => expect(await operatorSelect(first)).toHaveTextContent("Sevinch Karimova"));
+    await pickOperator(user, first, "Tanlanmagan");
+    await pickOperator(user, second, "Bekzod Aliyev");
+
+    expect(await operatorSelect(first)).toHaveTextContent("Tanlanmagan");
+    expect(await operatorSelect(second)).toHaveTextContent("Bekzod Aliyev");
+    // Olib tashlangan kartada eslatma qoladi (komissiya yozilmasligi uchun ongli tanlov).
+    expect(within(first).getByText("Ro'yxatda «Sevinch Karimova» bor — komissiya yozilishi uchun tanlang")).toBeInTheDocument();
+    expect(within(second).getByText("Buyurtma va komissiya shu operatorga yoziladi")).toBeInTheDocument();
+
+    await createAll(user, 2);
+    const [sent1, sent2] = confirmCalls()[0].orders;
+    expect(sent1).not.toHaveProperty("operator_id");
+    expect(sent1).not.toHaveProperty("operator");
+    expect(sent2).toMatchObject({ operator_id: "32", operator: "Bekzod Aliyev" });
+  });
+
+  it("bir nechta karta: mos kelgani tanlanadi, ro'yxatda yo'q ism tegilmaydi (operatorsiz)", async () => {
     const user = userEvent.setup();
     parseOrders = [
-      order(1, { operator: "#sevinch" }),
+      order(1, { operator: "sevinch" }),
       order(2, { operator: "bekzod aliyev" }),
       order(3, { operator: "Shahzoda" }),
     ];
@@ -142,21 +171,38 @@ describe("AiCreatePanel — «Operator» tanlovi", () => {
     });
     await parse(user, 3);
 
-    const alert = (await screen.findByText("2 ta buyurtmada operator ismi ro'yxatdagi operatorga mos keladi")).closest(
-      "[data-tone]",
-    ) as HTMLElement;
+    await waitFor(async () => expect(await operatorSelect(cards()[1])).toHaveTextContent("Bekzod Aliyev"));
+    expect(await operatorSelect(cards()[0])).toHaveTextContent("Sevinch Karimova");
+    expect(await operatorSelect(cards()[2])).toHaveTextContent("Tanlanmagan");
     // Ro'yxatda yo'q ism — erkin matn maydoni YO'Q (2026-11-21), faqat AI nima o'qigani izohi.
     expect(within(cards()[2]).getByText("Xabarda «Shahzoda» deb yozilgan — operatorni ro'yxatdan tanlang")).toBeInTheDocument();
     expect(within(cards()[2]).queryByLabelText("Ro'yxatda yo'q operator")).not.toBeInTheDocument();
-
-    await user.click(within(alert).getByRole("button", { name: "Hammasini tanlash" }));
-    expect(screen.queryByText(/ta buyurtmada operator ismi/)).not.toBeInTheDocument();
 
     await createAll(user, 3);
     const sent = confirmCalls()[0].orders;
     expect(sent.map((o) => o.operator_id ?? null)).toEqual(["31", "32", null]);
     // Tanlanmagani — operatorsiz: «Shahzoda» matni yuborilmaydi.
     expect(sent[2]).not.toHaveProperty("operator");
+  });
+
+  it("ism ikki operatorga mos (ikki «Sevinch») — avtomatik tanlanmaydi, odam o'zi tanlaydi", async () => {
+    const user = userEvent.setup();
+    operatorsByMarket.own = [
+      { id: "31", name: "Sevinch Karimova" },
+      { id: "35", name: "Sevinch Aliyeva" },
+    ];
+    parseOrders = [order(1, { operator: "sevinch" })];
+    renderWithProviders(<AiCreatePanel active isMarketRole market={null} onSwitchToManual={vi.fn()} />, {
+      preloadedState: marketState,
+    });
+    await parse(user, 1);
+
+    const [card] = cards();
+    expect(await within(card).findByText("Xabarda «sevinch» deb yozilgan — operatorni ro'yxatdan tanlang")).toBeInTheDocument();
+    expect(await operatorSelect(card)).toHaveTextContent("Tanlanmagan");
+
+    await createAll(user, 1);
+    expect(confirmCalls()[0].orders[0]).not.toHaveProperty("operator_id");
   });
 
   it("xodim: tanlangan market ro'yxati (`market_id` bilan)", async () => {
