@@ -1,8 +1,10 @@
-// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-tab-select, superadmin-ai-assistant-alerts, superadmin-ai-assistant-alerts-filters-mobile, superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-dialog-courier-debt, superadmin-ai-assistant-alert-dialog-expense, superadmin-ai-assistant-alert-dialog-market-payout, superadmin-ai-assistant-alert-dialog-hq-transfer, superadmin-ai-assistant-alert-dialog-loss, superadmin-ai-assistant-alert-dialog-corrections, superadmin-ai-assistant-alert-resolve-confirm, superadmin-ai-assistant-settings-rules-dialog, superadmin-ai-assistant-settings-confirm, superadmin-ai-assistant-conversations-sheet, superadmin-ai-assistant-daily-cap
+// dizayn-v2: superadmin-ai-assistant, superadmin-ai-assistant-access-dialog, superadmin-ai-assistant-empty, superadmin-ai-assistant-answering, superadmin-ai-assistant-limit-reached, superadmin-ai-assistant-unavailable, superadmin-ai-assistant-offline, superadmin-ai-assistant-tab-select, superadmin-ai-assistant-alerts, superadmin-ai-assistant-alerts-filters-mobile, superadmin-ai-assistant-alert-dialog, superadmin-ai-assistant-alert-dialog-receipt, superadmin-ai-assistant-alert-dialog-courier-debt, superadmin-ai-assistant-alert-dialog-expense, superadmin-ai-assistant-alert-dialog-market-payout, superadmin-ai-assistant-alert-dialog-hq-transfer, superadmin-ai-assistant-alert-dialog-loss, superadmin-ai-assistant-alert-dialog-corrections, superadmin-ai-assistant-alert-resolve-confirm, superadmin-ai-assistant-settings-rules-dialog, superadmin-ai-assistant-settings-confirm, superadmin-ai-assistant-conversations-sheet, superadmin-ai-assistant-daily-cap
 import { lazy, Suspense, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import { MessageSquarePlus, Settings } from "lucide-react";
+import { KeyRound, MessageSquarePlus, Settings } from "lucide-react";
+import type { RootState } from "../../app/config/store";
 import { useAdvisorAvailability, useAdvisorSettings } from "../../entities/ai-advisor";
 import { Button, Card, PageHeader, SkeletonLines } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
@@ -19,13 +21,17 @@ const AlertDialog = lazy(() => import("./ui/alerts/AlertDialog"));
 const RulesSettingsDialog = lazy(() =>
   import("../../features/ai-alerts").then((module) => ({ default: module.RulesSettingsDialog })),
 );
+/** «Kirish huquqi» (faqat superadmin) — birinchi bosilganda yuklanadi, keyin o'rnatilgan qoladi (yopilish harakati). */
+const AccessDialog = lazy(() => import("./ui/access/AccessDialog"));
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
  *  AI MOLIYAVIY YORDAMCHI — `/ai-assistant` qobig'i (F7PWp6cK suhbat; T2 6gKt64FN; 60PWUbgC ogohlantirishlar)
  * ────────────────────────────────────────────────────────────────────────────
  *
- *  Faqat superadmin (`canViewAiAdvisor`). Sarlavha + (backend bo'lsa) tablar + panellar.
+ *  Superadmin va ruxsat berilgan admin (`canViewAiAdvisor`; ruxsatsiz admin — `ChatPanel` dagi «ruxsat berilmagan»).
+ *  Sarlavha + (backend bo'lsa) tablar + panellar. Maslahatchi (`ai/advisor/*`) va «Kirish huquqi» — faqat superadmin:
+ *  adminda zond yuborilmaydi (backend 403), sahifa faqat suhbat.
  *
  *  Mavjudlik (D2): bitta zond — `GET ai/advisor/overview` (`useAdvisorAvailability`, natija keshlanadi). Faqat 2xx va
  *  to'g'ri shakl — `available`; 404/405/501, boshqa shakl, 401/403, tarmoq / 5xx / 429 — `unavailable`. Unda sahifa
@@ -52,16 +58,24 @@ const AiAssistantPage = () => {
   const { t } = useTranslation("aiAdvisor");
   const [searchParams, setSearchParams] = useSearchParams();
   const isPhone = useIsPhone();
-  const availability = useAdvisorAvailability();
-  const probe = availability.data;
+  // Marshrut faqat superadmin va adminga ochiq (`canViewAiAdvisor`) — admin bo'lmasa superadmin.
+  const isSuperadmin = useSelector((state: RootState) => state.role.role !== "admin");
+  const availability = useAdvisorAvailability({ enabled: isSuperadmin });
+  const probe = isSuperadmin ? availability.data : undefined;
   const available = probe?.kind === "available";
-  const probing = probe === undefined;
+  const probing = isSuperadmin && probe === undefined;
   const overview = probe?.kind === "available" ? probe.data : null;
   // D3: sozlamalar zondi — faqat maslahatchi mavjud bo'lsa; «Sozlamalar» tugmasi faqat u ham muvaffaqiyatli bo'lsa.
   const settingsProbe = useAdvisorSettings({ enabled: available });
   const settingsAvailable = available && settingsProbe.data?.kind === "available";
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsMounted, setSettingsMounted] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
+  const [accessMounted, setAccessMounted] = useState(false);
+  const openAccess = () => {
+    setAccessMounted(true);
+    setAccessOpen(true);
+  };
   const openSettings = () => {
     setSettingsMounted(true);
     setSettingsOpen(true);
@@ -99,8 +113,13 @@ const AiAssistantPage = () => {
         title={t("title")}
         description={available ? t("subtitleAdvisor") : t("subtitle")}
         actions={
-          settingsAvailable || (tab === "chat" && newChat) ? (
+          isSuperadmin || settingsAvailable || (tab === "chat" && newChat) ? (
             <>
+              {isSuperadmin ? (
+                <Button variant="secondary" leftIcon={KeyRound} aria-haspopup="dialog" onClick={openAccess}>
+                  {t("accessButton")}
+                </Button>
+              ) : null}
               {settingsAvailable ? (
                 <Button variant="secondary" leftIcon={Settings} aria-haspopup="dialog" onClick={openSettings}>
                   {t("settingsButton")}
@@ -146,6 +165,12 @@ const AiAssistantPage = () => {
       {settingsAvailable && settingsMounted ? (
         <Suspense fallback={null}>
           <RulesSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        </Suspense>
+      ) : null}
+
+      {isSuperadmin && accessMounted ? (
+        <Suspense fallback={null}>
+          <AccessDialog open={accessOpen} onClose={() => setAccessOpen(false)} />
         </Suspense>
       ) : null}
     </div>

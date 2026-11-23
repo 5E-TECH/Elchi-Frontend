@@ -1,4 +1,6 @@
 import type {
+  AiAccessGrant,
+  AiAccessList,
   AiAccessReason,
   AiAccessState,
   AiAssistantEvent,
@@ -57,6 +59,40 @@ export const normalizeAccessState = (payload: unknown): AiAccessState => {
     usedToday,
     remainingToday: Math.max(0, numberOf(raw.remaining_today, dailyLimit - usedToday)),
     resetAt: dateOf(raw.reset_at),
+  };
+};
+
+/** `null` / bo'sh / son bo'lmagan — `null` (sukut limit); aks holda butun, manfiy emas. */
+const limitOf = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const num = numberOf(value, NaN);
+  return Number.isFinite(num) ? Math.max(0, Math.trunc(num)) : null;
+};
+
+export const normalizeAccessGrant = (value: unknown): AiAccessGrant | null => {
+  const raw = asRecord(value);
+  const userId = idOf(raw?.user_id);
+  if (!raw || !userId) return null;
+  const dailyLimit = limitOf(raw.daily_limit);
+  return {
+    userId,
+    enabled: raw.enabled === true,
+    dailyLimit,
+    effectiveDailyLimit: Math.max(0, numberOf(raw.effective_daily_limit, dailyLimit ?? 0)),
+    updatedAt: dateOf(raw.updated_at),
+  };
+};
+
+/** `GET ai/assistant/access` (o'ramli yoki o'ramsiz). Sukut limit kelmasa — 100 (backend sukuti). */
+export const normalizeAccessList = (payload: unknown): AiAccessList => {
+  const raw = asRecord(unwrapData(payload)) ?? {};
+  const items = Array.isArray(raw.items)
+    ? raw.items.map(normalizeAccessGrant).filter((item): item is AiAccessGrant => item !== null)
+    : [];
+  return {
+    featureEnabled: raw.feature_enabled === true,
+    defaultDailyLimit: limitOf(raw.default_daily_limit) ?? 100,
+    items,
   };
 };
 

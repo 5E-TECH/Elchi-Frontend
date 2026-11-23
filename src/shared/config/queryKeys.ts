@@ -135,6 +135,8 @@ export const queryKeys = {
   /** AI moliyaviy yordamchi (`/ai-assistant`, F7PWp6cK) — o'z holati (limit), suhbatlar ro'yxati va suhbat. */
   aiAssistant: {
     accessMe: ["ai-assistant", "access-me"] as const,
+    /** Adminlar ruxsatlari (faqat superadmin, «Kirish huquqi» oynasi). */
+    access: ["ai-assistant", "access"] as const,
     conversations: ["ai-assistant", "conversations"] as const,
     conversation: (id: string) => ["ai-assistant", "conversation", id] as const,
   },

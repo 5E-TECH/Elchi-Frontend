@@ -36,6 +36,32 @@ export interface AiAccessState {
   resetAt: string | null;
 }
 
+/** `GET ai/assistant/access` → `items[]` qatori: bitta admin ruxsati. */
+export interface AiAccessGrant {
+  userId: string;
+  enabled: boolean;
+  /** Alohida limit; `null` — sukut (`defaultDailyLimit`). */
+  dailyLimit: number | null;
+  /** Amaldagi limit (alohida yoki sukut). */
+  effectiveDailyLimit: number;
+  updatedAt: string | null;
+}
+
+/** `GET ai/assistant/access` → `data` (faqat superadmin). */
+export interface AiAccessList {
+  featureEnabled: boolean;
+  defaultDailyLimit: number;
+  items: AiAccessGrant[];
+}
+
+/** `PATCH ai/assistant/access` tanasi (camelCase — API qatlami snake_case qiladi). */
+export interface AiAccessUpdate {
+  userId: string;
+  enabled: boolean;
+  /** `null` — sukut limit. */
+  dailyLimit: number | null;
+}
+
 /** Davr — Toshkent sanalari (`YYYY-MM-DD`); `null` — joriy holat (davrsiz tool). */
 export interface AiSourcePeriod {
   from: string;
