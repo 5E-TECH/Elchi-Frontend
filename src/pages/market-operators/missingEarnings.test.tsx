@@ -100,6 +100,22 @@ describe("«O'tgan sotuvlarga hisoblash»", () => {
     expect(await within(dialog).findByText("Hisoblanadigan buyurtma yo'q — barcha sotuvlarga komissiya yozilgan.")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Hisoblash" })).toBeDisabled();
   });
+
+  it("audit #9: `truncated` — «barcha sotuvlarga yozilgan» deyilmaydi, faqat «hammasi ko'rib chiqilmadi»", async () => {
+    preview = { ...PREVIEW, missing: 0, to_record: 0, amount: 0, already_recorded: 57, truncated: true };
+    const user = userEvent.setup();
+    renderPage();
+    const menu = await openMenu(user, "Madina Xoliqova");
+    await user.click(within(menu).getByRole("menuitem", { name: "O'tgan sotuvlarga hisoblash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Madina Xoliqova — o'tgan sotuvlar" });
+    expect(
+      await within(dialog).findByText(
+        "Sotuvlar juda ko'p (100 000 dan ortiq) — hammasi ko'rib chiqilmadi. Qolganini hisoblash uchun Elchi bilan bog'laning.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/barcha sotuvlarga komissiya yozilgan/)).toBeNull();
+    expect(within(dialog).getByRole("button", { name: "Hisoblash" })).toBeDisabled();
+  });
 });
 
 describe("normalizeMissingEarnings", () => {
