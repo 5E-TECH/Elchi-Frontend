@@ -20,6 +20,12 @@ export const LONG_REQUEST_TIMEOUT_MS = 120_000;
  */
 export const MERGE_REQUEST_TIMEOUT_MS = 125_000;
 /**
+ * Tuman buyurtmalarini xizmat viloyati pochtasiga ko'chirish (`POST district/:id/rehome-open-orders`, PlIPwpQY):
+ * gateway 30 s kutadi (buyurtmalarni topish, pochta tanlash, ko'chirish — ketma-ket RPC), brauzer 5 s ko'proq.
+ * Sukutdagi 20 s da javob yo'lda qolib, operator «ko'chmadi» deb qayta bosardi.
+ */
+export const REHOME_REQUEST_TIMEOUT_MS = 35_000;
+/**
  * Paket amallari — gateway `BATCH_RPC_TIMEOUT_MS` = 120 s kutadi (logistics har buyurtmani alohida yozadi): masalan,
  * pochtani HQ kuryeriga berish (`POST branches/posts/:id/dispatch-to-courier`, qaytarib bo'lmaydi). Brauzer gatewaydan
  * 5 s ko'proq kutadi — aks holda katta pochtada 20 s da «So'rov vaqti tugadi» chiqib, buyurtmalar baribir kuryerga
