@@ -553,6 +553,7 @@ const NewOrderUpdate = () => {
           productsLocked={access.productsLocked}
           productsLockReason={access.productsLockReason}
           destinationLocked={access.destinationLocked}
+          regionalWarehouse={access.regionalWarehouse}
           canEditCustomer={access.canEditCustomer}
           parentOrderId={parentOrderId}
           editOpen={editOpen}

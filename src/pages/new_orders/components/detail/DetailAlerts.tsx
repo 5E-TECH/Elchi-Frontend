@@ -29,6 +29,11 @@ type DetailAlertsProps = {
    */
   productsLockReason?: ProductsLockReason;
   destinationLocked: boolean;
+  /**
+   * XnnpmbBO: viloyat ombori buyurtmasi (HQ'dan o'tmaydi) — «filialga jo'natilgunga qadar / jo'natilgan» o'rniga
+   * «ombordan jo'natilgunga qadar / jo'natilgan».
+   */
+  regionalWarehouse?: boolean;
   /** Superadmin / admin — qulf matnida «Mijoz va manzilni …», boshqalarda «Manzilni …». */
   canEditCustomer: boolean;
   parentOrderId: string | null;
@@ -74,6 +79,7 @@ export const DetailAlerts = ({
   productsLocked,
   productsLockReason = "hq",
   destinationLocked,
+  regionalWarehouse = false,
   canEditCustomer,
   parentOrderId,
   editOpen = null,
@@ -151,7 +157,9 @@ export const DetailAlerts = ({
               ? t("orderDetail.editClosedReturnedBody")
               : lockReason === "cancelled"
                 ? t("orderDetail.editClosedCancelledBody")
-                : t("orderDetail.editClosedBody")}
+                : regionalWarehouse
+                  ? t("orderDetail.editClosedWarehouseSentBody")
+                  : t("orderDetail.editClosedBody")}
         </DetailAlert>
       );
     }
@@ -167,7 +175,13 @@ export const DetailAlerts = ({
           {productsLockReason === "warehouse"
             ? t("orderDetail.productsLockedWarehouseBody")
             : t("orderDetail.productsLockedBody")}{" "}
-          {canEditCustomer ? t("orderDetail.productsLockedCustomerAddress") : t("orderDetail.productsLockedAddress")}
+          {regionalWarehouse
+            ? canEditCustomer
+              ? t("orderDetail.productsLockedWarehouseCustomerAddress")
+              : t("orderDetail.productsLockedWarehouseAddress")
+            : canEditCustomer
+              ? t("orderDetail.productsLockedCustomerAddress")
+              : t("orderDetail.productsLockedAddress")}
         </DetailAlert>
       );
     }

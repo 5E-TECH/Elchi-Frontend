@@ -113,6 +113,16 @@ export const productsLockReasonOf = (order: LockableOrder | null | undefined): "
   return warehouseKind !== "HQ" || !isOrderReceivedOrLater(order?.status ?? "") ? "warehouse" : "hq";
 };
 
+/**
+ * XnnpmbBO: viloyat ombori buyurtmasi — HQ'dan o'tmaydi, filialga «jo'natilmaydi» (ombordan to'g'ridan-to'g'ri
+ * pochtaga chiqadi). Qulf matnlari «filialga jo'natilgunga qadar / jo'natilgan» o'rniga «ombordan …». `warehouse.kind`
+ * yo'q bo'lsa ham viloyat deb olinadi (Markaziy ombor faqat `kind: HQ` bilan — u HQ orqali, eski matn to'g'ri).
+ */
+export const isRegionalWarehouseOrder = (order: LockableOrder | null | undefined) => {
+  const { fromWarehouse, warehouseKind } = readFulfillmentSource(order);
+  return fromWarehouse && warehouseKind !== "HQ";
+};
+
 export const isOrderSentToBranch = (order: EditableOrderSnapshot) => {
   if (SENT_TO_BRANCH_STATUSES.has(normalizeOrderStatus(order.status))) return true;
 
