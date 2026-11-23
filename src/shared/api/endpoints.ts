@@ -148,6 +148,9 @@ export const API_ENDPOINTS = {
     MERGE: (districtId: string | number) => `district/${districtId}/merge`,
     // GET — tumanga bog'langan tirik {orders, users, branches} (admin/superadmin; Is1zvHN7, DM-2)
     USAGE: (districtId: string | number) => `district/${districtId}/usage`,
+    // POST (tana yo'q) — HQ'ning eski viloyat YANGI pochtasidagi tuman buyurtmalari xizmat viloyati pochtasiga
+    // (admin/superadmin; PlIPwpQY, BE #617). `REHOME_REQUEST_TIMEOUT_MS` bilan.
+    REHOME_OPEN_ORDERS: (districtId: string | number) => `district/${districtId}/rehome-open-orders`,
   },
 
   // ── Customers — buyurtma yaratishda mijoz taklifi (hiqRNhkI, CS-A) ─────────
