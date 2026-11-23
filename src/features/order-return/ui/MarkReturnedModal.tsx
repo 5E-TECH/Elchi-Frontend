@@ -1,7 +1,7 @@
 // dizayn-v2: (maket yo'q) admin-neworders-cancelled-scanner-dialog
 import { memo, useEffect, useRef, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleCheck, PackageCheck, ScanQrCode } from "lucide-react";
+import { CircleCheck, Info, PackageCheck, ScanQrCode } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { closeScanner, openScanner } from "../../../shared/lib/scanner/scannerHost";
@@ -24,6 +24,12 @@ interface Props {
    * qilinadi (zkRab9M2, BG6: `POST scan/market-cancelled { market_id, pin }`).
    */
   marketId?: string | null;
+  /**
+   * Market QR talab qilinadimi (`order.market.cancelled_handover_qr_required !== false`, sukut — ha). Superadmin/admin
+   * market uchun o'chirgan bo'lsa (`false`) — QR/kod so'ralmaydi, topshirish tasdiqlash bilan (backend usuli `no_qr`;
+   * ega qarori 2026-11-23, skan auditi #43).
+   */
+  qrRequired?: boolean;
   onClose: () => void;
   /** Muvaffaqiyatdan keyin — sahifa buyurtma tarixini yangilaydi. */
   onDone?: () => void;
@@ -61,7 +67,7 @@ const isAlreadyReturnedError = (message: string | undefined) =>
  * yuborilmaydi (bir martalik QR ikkinchi so'rovda «ishlatilgan» deb yolg'on xato berardi). Topshirish qayta
  * yuborilganda backend «allaqachon RETURNED_TO_MARKET» desa — avvalgi urinish o'tgan: muvaffaqiyat.
  */
-const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) => {
+const MarkReturnedModal = ({ open, orderId, marketId, qrRequired = true, onClose, onDone }: Props) => {
   const { t, i18n } = useTranslation(["orders", "newOrders", "common"]);
   const queryClient = useQueryClient();
   const { scanMarketCancelledQr, verifyMarketCancelledPin } = useOrders();
@@ -100,7 +106,7 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
     inFlightRef.current = false;
   };
 
-  const markReturned = (authorizationToken: string) => {
+  const markReturned = (authorizationToken?: string) => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
     const succeed = () => {
@@ -110,7 +116,7 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
       onClose();
     };
     markReturnedToMarket.mutate(
-      { id: orderId, data: { authorization_token: authorizationToken } },
+      { id: orderId, data: authorizationToken ? { authorization_token: authorizationToken } : {} },
       {
         onSuccess: succeed,
         onError: (mutationError) => {
@@ -209,8 +215,8 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
 
   const hasLiveAuthorization = authorization !== null;
 
-  // Oyna maqsadi — faqat market QR kutilayotganda (ruxsat olingach skan kerak emas).
-  const cameraActive = open && !hasLiveAuthorization;
+  // Oyna maqsadi — faqat market QR kutilayotganda (ruxsat olingach yoki QR talab qilinmasa skan kerak emas).
+  const cameraActive = open && qrRequired && !hasLiveAuthorization;
   useScanTarget(
     cameraActive
       ? {
@@ -241,6 +247,11 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
+    if (!qrRequired) {
+      setError("");
+      markReturned();
+      return;
+    }
     if (authorization) {
       setError("");
       markReturned(authorization.token);
@@ -257,7 +268,9 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
       size="sm"
       className="md:max-w-[460px]"
       title={t("returnHandoverTitle", { id: orderId })}
-      description={t(pinMarketId ? "returnHandoverHintPin" : "returnHandoverHint")}
+      description={
+        qrRequired ? t(pinMarketId ? "returnHandoverHintPin" : "returnHandoverHint") : t("returnHandoverNoQrHint")
+      }
       icon={PackageCheck}
       iconTone="success"
       onSubmit={handleSubmit}
@@ -272,15 +285,27 @@ const MarkReturnedModal = ({ open, orderId, marketId, onClose, onDone }: Props) 
             type="submit"
             leftIcon={PackageCheck}
             loading={isPending}
-            disabled={!hasLiveAuthorization && !qrInput.trim()}
+            disabled={qrRequired && !hasLiveAuthorization && !qrInput.trim()}
             data-testid="mark-returned-submit"
           >
-            {hasLiveAuthorization ? t("returnHandoverRetry") : t("returnHandoverSubmit")}
+            {!qrRequired
+              ? t("returnHandoverConfirm")
+              : hasLiveAuthorization
+                ? t("returnHandoverRetry")
+                : t("returnHandoverSubmit")}
           </Button>
         </>
       }
     >
-      {hasLiveAuthorization ? (
+      {!qrRequired ? (
+        <p
+          data-testid="mark-returned-no-qr"
+          className="m-0 flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text"
+        >
+          <Info size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-text-muted" />
+          <span>{t("returnHandoverNoQr")}</span>
+        </p>
+      ) : hasLiveAuthorization ? (
         <p
           data-testid="mark-returned-authorized"
           className="m-0 flex items-start gap-2 rounded-xl bg-success-soft px-3 py-2.5 text-[13px] text-success-fg"

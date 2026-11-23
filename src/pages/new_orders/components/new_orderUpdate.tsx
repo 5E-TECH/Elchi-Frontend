@@ -632,6 +632,11 @@ const NewOrderUpdate = () => {
           open
           orderId={order.id}
           marketId={order.market_id != null ? String(order.market_id) : null}
+          // Skan auditi #43: admin market uchun QR talabini o'chirgan bo'lsa — QR so'ralmaydi.
+          qrRequired={
+            (order.market as { cancelled_handover_qr_required?: boolean | null } | null | undefined)
+              ?.cancelled_handover_qr_required !== false
+          }
           onClose={() => setIsMarkReturnedOpen(false)}
           onDone={refreshTracking}
         />

@@ -368,7 +368,7 @@
       "addOrder": "Buyurtma qo'shish",
       "addOrderHint": "Market o'z kabinetidan buyurtma yarata oladi",
       "handoverQr": "Bekor qilinganlarni QR bilan topshirish",
-      "handoverQrHint": "Bekor qilingan buyurtmalar marketga faqat market QR kodi skanerlanib topshiriladi",
+      "handoverQrHint": "Yoqiq (sukut): bekor qilingan buyurtmalar marketga faqat market QR kodi yoki PIN bilan topshiriladi. O'chirilsa — QR so'ralmaydi. Faqat admin va superadmin o'zgartiradi.",
       "marketExtraCost": "Qo'shimcha xarajat",
       "marketExtraCostHint": "Kuryer va menejer shu market buyurtmalariga qo'shimcha xarajat yoza oladi",
       "marketExtraCostApproval": "Market tasdig'i",

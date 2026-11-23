@@ -368,7 +368,7 @@
       "addOrder": "Add orders",
       "addOrderHint": "The market can create orders from its account",
       "handoverQr": "Hand over cancelled orders by QR",
-      "handoverQrHint": "Cancelled orders are handed to the market only after its QR code is scanned",
+      "handoverQrHint": "On (default): cancelled orders are handed to the market only with its QR code or PIN. If turned off, no QR is asked. Only admins and superadmins can change it.",
       "marketExtraCost": "Extra cost",
       "marketExtraCostHint": "The courier and manager can add an extra cost to this market's orders",
       "marketExtraCostApproval": "Market approval",
