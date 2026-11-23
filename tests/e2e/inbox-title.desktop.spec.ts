@@ -23,6 +23,14 @@ for (const { role, title } of CASES) {
       .locator("[data-shell-slot=content]")
       .getByRole("heading", { level: 1, name: title, exact: true });
     await expect(heading).toBeVisible({ timeout: 60_000 });
+    if (role === "superadmin" || role === "admin") {
+      // 17HWafL7: /inbox ochilganda yon menyudagi «Bildirishnoma sozlamalari» (/notifications) faol EMAS.
+      const settingsLink = page
+        .getByRole("navigation", { name: "Asosiy bo'limlar" })
+        .getByRole("link", { name: "Bildirishnoma sozlamalari" });
+      await expect(settingsLink).toBeVisible();
+      await expect(settingsLink).not.toHaveAttribute("aria-current", /.+/);
+    }
     expect(leaked).toEqual([]);
   });
 }

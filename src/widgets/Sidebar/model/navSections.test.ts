@@ -207,12 +207,13 @@ describe("getActiveNavTo — faol band (maketdagi menuKey)", () => {
     expect(getActiveNavTo(itemsOf("superadmin"), pathname)).toBeNull();
   });
 
-  it("superadmin /inbox → «Bildirishnomalar» (maket superadmin-notifications-inbox); admin ham (NG-A); boshqa rolda hech biri", () => {
-    expect(getActiveNavTo(itemsOf("superadmin"), "/inbox")).toBe("/notifications");
-    // NG-A: admin menyusida ham «Bildirishnomalar» — alias shu xulq bilan qabul qilindi (17HWafL7, ega savoli ochiq).
-    expect(getActiveNavTo(itemsOf("admin"), "/inbox")).toBe("/notifications");
+  it("17HWafL7: /inbox «Bildirishnoma sozlamalari» (/notifications) ni faol qilmaydi — hech bir rolda", () => {
+    for (const role of ["superadmin", "admin", "manager"]) {
+      expect(getActiveNavTo(itemsOf(role), "/inbox"), role).toBeNull();
+    }
     expect(getActiveNavTo(itemsOf("admin"), "/logs")).toBeNull();
-    expect(getActiveNavTo(itemsOf("manager"), "/inbox")).toBeNull();
+    // O'z sahifasida «Bildirishnoma sozlamalari» faol qoladi.
+    expect(getActiveNavTo(itemsOf("superadmin"), "/notifications")).toBe("/notifications");
   });
 
   it("/replacement-returns → «Buyurtmalar» (ega 2026-11-16: yon menyuda yo'q, /orders tugmasi orqali)", () => {
