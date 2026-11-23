@@ -1,11 +1,12 @@
 import type { SelectableMarketOperator } from "../model/types";
 
 /**
- * YOZILGAN ISM → RO'YXATDAGI OPERATOR (faqat TAKLIF uchun).
+ * YOZILGAN ISM → RO'YXATDAGI OPERATOR.
  *
  * Buyurtmada operator ismi faqat matn bo'lsa (`operator`), `operator_id` bo'sh qoladi va sotuvda operatorga komissiya
- * yozilmaydi (2026-11-20). Formalar yozilgan / AI o'qigan ism ro'yxatdagi operatorga mos kelsa «Tanlash» taklifini
- * ko'rsatadi. ⚠️ Avtomatik tanlanmaydi: `operator_id` pulga ta'sir qiladi — faqat odam tanlaydi (backend shartnomasi).
+ * yozilmaydi (2026-11-20). AI kartasi mos operatorni o'zi tanlaydi (ega, 2026-11-23 — `autoPickOperators`), odam
+ * «Tanlanmagan» ga qaytarsa «Tanlash» taklifi qoladi; «Bog'lanmagan buyurtmalar» kartasi ham shu bilan oldindan
+ * tanlaydi. Shu sabab moslik QAT'IY: faqat yagona aniq mos — bir nechta yoki noaniq bo'lsa `null`.
  */
 
 /** Taqqoslash uchun: katta-kichik harf, `#` boshi, tutuq belgisi turlari (ʻ ʼ ’ ‘ `) va bo'shliqlar farq qilmaydi. */

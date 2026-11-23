@@ -861,9 +861,6 @@
   "aiHttpForbiddenTitle": "Ruxsat yo'q",
   "aiHttpForbiddenDescription": "Sizda AI bilan buyurtma yaratishga ruxsat yo'q. Buyurtmani qo'lda kiriting.",
   "aiCreateFailedWith": "Buyurtma yaratilmadi: {{detail}}",
-  "aiOperatorSuggestAll": "{{count}} ta buyurtmada operator ismi ro'yxatdagi operatorga mos keladi",
-  "aiOperatorSuggestAllText": "Tanlansa, buyurtma va sotuvdagi komissiya shu operatorga yoziladi. Har kartada alohida ham o'zgartirish mumkin.",
-  "aiOperatorSuggestAllPick": "Hammasini tanlash",
   "aiConfirmReasonDistrictNotFound": "Tuman topilmadi yoki o'chirilgan — tumanni qayta tanlang.",
   "aiConfirmReasonDistrictMismatch": "Mijoz tumani buyurtma tumani bilan bir xil emas — tumanni qayta tanlang.",
   "aiConfirmReasonProductNotFound": "Mahsulot katalogda topilmadi — mahsulotni qayta tanlang.",
@@ -1122,6 +1119,7 @@
   "operatorSelect": {
     "none": "Tanlanmagan",
     "pickedHint": "Buyurtma va komissiya shu operatorga yoziladi",
+    "pickedFromMessageHint": "Xabardagi «{{name}}» bo'yicha tanlandi — buyurtma va komissiya shu operatorga yoziladi",
     "loadFailed": "Operatorlar ro'yxati yuklanmadi — ismini qo'lda yozing",
     "suggest": "Ro'yxatda «{{name}}» bor — komissiya yozilishi uchun tanlang",
     "suggestPick": "Tanlash",

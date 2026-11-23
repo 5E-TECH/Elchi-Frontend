@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeOperatorName, suggestOperator } from "./operatorMatch";
 
 /**
- * Yozilgan / AI o'qigan ism → ro'yxatdagi operator TAKLIFI (avtomatik tanlanmaydi). AI kartasi va qo'lda forma.
+ * Yozilgan / AI o'qigan ism → ro'yxatdagi operator (AI kartasi uni 2026-11-23 dan o'zi tanlaydi — faqat yagona mos).
  */
 
 const OPERATORS = [
