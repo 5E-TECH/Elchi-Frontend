@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
+import { formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import CancelReasonsPage from "./index";
 
 const mocks = vi.hoisted(() => ({ get: vi.fn() }));
@@ -51,6 +52,27 @@ describe("«Bekor qilish sabablari» hisoboti (GNWDKvmZ)", () => {
     expect(params.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(params.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(params).not.toHaveProperty("market_id");
+  });
+
+  it("⭐ haqiqiy backend applied_range (UTC ISO): bir kunlik davr — «15.10.2026», «15.10 – 15.10.2026» emas", async () => {
+    // Backend Toshkent kuni chegarasini UTC vaqt bilan beradi: from — 00:00, to — 23:59:59 (satrlari har xil).
+    mockApi(() =>
+      Promise.resolve({
+        data: {
+          ...STATS,
+          data: {
+            ...STATS.data,
+            applied_range: { from: "2026-10-14T19:00:00.000Z", to: "2026-10-15T18:59:59.999Z", timezone: "Asia/Tashkent" },
+          },
+        },
+      }),
+    );
+    renderWithProviders(<CancelReasonsPage />, { preloadedState: stateOf("superadmin") });
+
+    await screen.findByRole("list", { name: "Sabablar bo'yicha" });
+    const day = formatRangeShort({ from: "2026-10-15", to: "2026-10-15" })!;
+    expect(screen.getByText(day, { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText(/15\.10\s*–\s*15\.10/)).toBeNull();
   });
 
   it("⭐ superadmin market tanlasa — `market_id` ketadi", async () => {

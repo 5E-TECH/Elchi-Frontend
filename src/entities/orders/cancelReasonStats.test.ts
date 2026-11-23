@@ -24,6 +24,32 @@ describe("normalizeCancelReasonStats (GNWDKvmZ)", () => {
     expect(stats.appliedRange).toEqual({ from: "2026-10-01", to: "2026-10-31" });
   });
 
+  it("⭐ haqiqiy backend javobi: applied_range {from, to} UTC ISO — Toshkent kuniga o'giriladi (UTC sanasi emas)", () => {
+    // order-analytics.service `getCancelReasonStats`: startDate=2026-11-01, endDate=2026-11-23 so'rovi uchun.
+    const stats = normalizeCancelReasonStats({
+      statusCode: 200,
+      data: {
+        total: 1,
+        by_reason: [{ reason: "OTHER", label: "Boshqa", count: 1 }],
+        applied_range: {
+          from: "2026-10-31T19:00:00.000Z",
+          to: "2026-11-23T18:59:59.999Z",
+          timezone: "Asia/Tashkent",
+        },
+      },
+    });
+
+    expect(stats.appliedRange).toEqual({ from: "2026-11-01", to: "2026-11-23" });
+  });
+
+  it("sanasiz so'rov (Barcha vaqt): applied_range {from: null, to: null} — `null` (so'ralgan oraliq ko'rsatiladi)", () => {
+    expect(
+      normalizeCancelReasonStats({ data: { by_reason: [], applied_range: { from: null, to: null, timezone: "Asia/Tashkent" } } })
+        .appliedRange,
+    ).toBeNull();
+    expect(normalizeCancelReasonStats({ data: { applied_range: { from: "kecha", to: "bugun" } } }).appliedRange).toBeNull();
+  });
+
   it("`total` kelmasa — qatorlar yig'indisi", () => {
     expect(normalizeCancelReasonStats({ by_reason: [{ reason: "OTHER", count: 3 }] }).total).toBe(3);
   });
