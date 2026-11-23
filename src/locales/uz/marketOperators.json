@@ -260,6 +260,7 @@
       "amount": "Summa",
       "amountHint": "Qoldiq: {{amount}}",
       "amountHintOverpaid": "Ortiqcha to'langan: {{amount}}",
+      "amountHintDeleted": "Operator o'chirilgan — faqat qoldiqni yopish mumkin: ko'pi bilan {{amount}}",
       "amountOver": "Qoldiqdan {{amount}} ko'p — ortiqcha to'lov sifatida yoziladi",
       "date": "To'lov sanasi",
       "note": "Izoh",
@@ -274,7 +275,8 @@
         "amountTooBig": "Summa juda katta",
         "date": "Sanani tanlang",
         "dateFuture": "Kelajak sanasini tanlab bo'lmaydi",
-        "dateTooOld": "2020-yildan oldingi sanani tanlab bo'lmaydi"
+        "dateTooOld": "2020-yildan oldingi sanani tanlab bo'lmaydi",
+        "amountOverDeleted": "O'chirilgan operatorga qoldiqdan ko'p yozib bo'lmaydi"
       }
     },
     "confirm": {
@@ -344,7 +346,7 @@
     "willRecord": "«Hisoblash» bosilsa {{value}} ta buyurtmaga jami {{amount}} yoziladi. Avval yozilgan komissiyalar o'zgarmaydi.",
     "nothing": "Hisoblanadigan buyurtma yo'q — barcha sotuvlarga komissiya yozilgan.",
     "setRateFirst": "Avval operatorga komissiya belgilang — keyin o'tgan sotuvlarni hisoblash mumkin.",
-    "truncated": "Juda ko'p sotuv: bu safar oxirgi 5000 tasi hisoblanadi, qolgani — keyingi bosishda.",
+    "truncated": "Sotuvlar juda ko'p (100 000 dan ortiq) — hammasi ko'rib chiqilmadi. Qolganini hisoblash uchun Elchi bilan bog'laning.",
     "record": "Hisoblash",
     "cancel": "Yopish",
     "done": "{{name}}: {{value}} ta buyurtmaga komissiya yozildi",
