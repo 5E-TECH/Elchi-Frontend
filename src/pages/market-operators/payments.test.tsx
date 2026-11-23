@@ -319,8 +319,21 @@ describe("«To'lovlar» — buyurtmalar soni, o'chirilgan operator, daromadlar",
         orders_sold: 3,
         orders_pending: 0,
       },
+      {
+        operator_id: "48",
+        operator_name: "Kamola Rahimova",
+        status: "deleted",
+        earned: 20000,
+        paid: 20000,
+        balance: 0,
+        payments_count: 2,
+        last_paid_at: "2026-10-05",
+        orders_total: 1,
+        orders_sold: 1,
+        orders_pending: 0,
+      },
     ],
-    totals: { earned: 1766500, paid: 1560000, balance: 206500 },
+    totals: { earned: 1786500, paid: 1580000, balance: 206500 },
   };
   const EARNINGS = {
     items: [
@@ -339,7 +352,7 @@ describe("«To'lovlar» — buyurtmalar soni, o'chirilgan operator, daromadlar",
     });
   });
 
-  it("qatorda «41 sotilgan · 9 yo'lda»; o'chirilgan operator — «O'chirilgan», unga «To'lov yozish» yo'q", async () => {
+  it("qatorda «41 sotilgan · 9 yo'lda»; o'chirilgan operator — «O'chirilgan», «To'lov yozish» faqat qoldig'i bo'lsa (audit #10)", async () => {
     renderAt("/market-operators?view=payments");
     const table = await screen.findByRole("table", { name: "Operatorlar hisobi" });
     const madina = (await within(table).findByText("Madina Xoliqova")).closest("tr") as HTMLElement;
@@ -347,8 +360,12 @@ describe("«To'lovlar» — buyurtmalar soni, o'chirilgan operator, daromadlar",
 
     const deleted = within(table).getByText("Nodira Aliyeva").closest("tr") as HTMLElement;
     expect(deleted).toHaveTextContent("O'chirilgan");
-    expect(within(deleted).queryByRole("button", { name: "Nodira Aliyeva uchun to'lov yozish" })).toBeNull();
+    expect(within(deleted).getByRole("button", { name: "Nodira Aliyeva uchun to'lov yozish" })).toBeInTheDocument();
     expect(within(deleted).getByRole("button", { name: "Nodira Aliyeva daromadlari" })).toBeInTheDocument();
+
+    // Qoldig'i yo'q o'chirilgan operator — yozadigan narsa yo'q.
+    const settled = within(table).getByText("Kamola Rahimova").closest("tr") as HTMLElement;
+    expect(within(settled).queryByRole("button", { name: "Kamola Rahimova uchun to'lov yozish" })).toBeNull();
   });
 
   it("«Daromadlar» — oynada qaysi buyurtmadan qancha; komissiya sotuvda yozilishi va yo'ldagi buyurtmalar aytiladi", async () => {
@@ -371,7 +388,7 @@ describe("«To'lovlar» — buyurtmalar soni, o'chirilgan operator, daromadlar",
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Madina Xoliqova — daromadlar" })).toBeNull());
   });
 
-  it("«To'lov yozish» oynasida o'chirilgan operator tanlovda yo'q", async () => {
+  it("«To'lov yozish» oynasida o'chirilgan operator — faqat qoldig'i bo'lsa, «O'chirilgan» izohi bilan", async () => {
     const user = userEvent.setup();
     renderAt("/market-operators?view=payments");
     await screen.findByRole("table", { name: "Operatorlar hisobi" });
@@ -380,8 +397,58 @@ describe("«To'lovlar» — buyurtmalar soni, o'chirilgan operator, daromadlar",
     const dialog = await screen.findByRole("dialog", { name: "To'lov yozish" });
     await user.click(within(dialog).getByRole("combobox", { name: "Operator" }));
     const listbox = await screen.findByRole("listbox");
-    expect(within(listbox).queryByText("Nodira Aliyeva")).toBeNull();
+    expect(within(listbox).getByRole("option", { name: /Nodira Aliyeva/ })).toHaveTextContent("O'chirilgan");
+    expect(within(listbox).queryByText("Kamola Rahimova")).toBeNull();
     expect(within(listbox).getByText("Madina Xoliqova")).toBeInTheDocument();
+  });
+
+  it("audit #10: o'chirilgan operatorga — faqat qoldiqni yopish: oshgan summa formada to'xtaydi, qoldiq doirasida yoziladi", async () => {
+    const user = userEvent.setup();
+    api.post.mockReset().mockImplementation(() => ok(payment({ operator_id: "47", amount: 50000 })));
+    renderAt("/market-operators?view=payments");
+    await user.click(await screen.findByRole("button", { name: "Nodira Aliyeva uchun to'lov yozish" }));
+    const dialog = await screen.findByRole("dialog", { name: "To'lov yozish" });
+    expect(
+      await within(dialog).findByText("Operator o'chirilgan — faqat qoldiqni yopish mumkin: ko'pi bilan 50 000 so'm"),
+    ).toBeInTheDocument();
+
+    const amount = within(dialog).getByRole("textbox", { name: "Summa" });
+    await user.type(amount, "60000");
+    await user.click(within(dialog).getByRole("button", { name: "To'lov yozish" }));
+    expect(await within(dialog).findByText("O'chirilgan operatorga qoldiqdan ko'p yozib bo'lmaydi")).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+
+    await user.clear(amount);
+    await user.type(amount, "50000");
+    await user.click(within(dialog).getByRole("button", { name: "To'lov yozish" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" });
+    expect(confirm).toHaveTextContent("Nodira Aliyeva");
+    expect(confirm).toHaveTextContent("Yozuvdan keyingi qoldiq0 so'm");
+    await user.click(within(confirm).getByRole("button", { name: "To'lovni yozish" }));
+    expect(await screen.findByText("To'lov yozildi")).toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.post.mock.calls[0][1]).toEqual({ operator_id: "47", amount: 50000, paid_at: todayIso() });
+  });
+
+  it("audit #10: o'chirilgan operatorda 409 — backend xabari (ko'pi bilan qancha), «kalit band» matni emas", async () => {
+    const user = userEvent.setup();
+    api.post
+      .mockReset()
+      .mockRejectedValueOnce(
+        axiosError(409, "Operator o'chirilgan: faqat to'lanmagan qoldiqni yopish mumkin — ko'pi bilan 30000 so'm"),
+      );
+    renderAt("/market-operators?view=payments");
+    await user.click(await screen.findByRole("button", { name: "Nodira Aliyeva uchun to'lov yozish" }));
+    const dialog = await screen.findByRole("dialog", { name: "To'lov yozish" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Summa" }), "40000");
+    await user.click(within(dialog).getByRole("button", { name: "To'lov yozish" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "To'lovni tasdiqlang" });
+    await user.click(within(confirm).getByRole("button", { name: "To'lovni yozish" }));
+    expect(
+      await within(confirm).findByText(
+        "Operator o'chirilgan: faqat to'lanmagan qoldiqni yopish mumkin — ko'pi bilan 30000 so'm",
+      ),
+    ).toBeInTheDocument();
   });
 });
 
@@ -396,6 +463,11 @@ describe("forma tekshiruvi", () => {
     expect(validatePaymentForm({ operatorId: "41", amount: 1e13, paidAt: "2026-11-18" }, "2026-11-18")).toEqual({ amount: "amountTooBig" });
     expect(validatePaymentForm({ operatorId: "41", amount: 1, paidAt: "2026-11-01" }, "2026-11-18")).toEqual({});
     expect(validatePaymentForm({ operatorId: "41", amount: 1, paidAt: "2019-12-31" }, "2026-11-18")).toEqual({ date: "dateTooOld" });
+    // Audit #10: o'chirilgan operator — qoldiqdan oshmaydi.
+    expect(validatePaymentForm({ operatorId: "47", amount: 50001, paidAt: "2026-11-18", maxAmount: 50000 }, "2026-11-18")).toEqual({
+      amount: "amountOverDeleted",
+    });
+    expect(validatePaymentForm({ operatorId: "47", amount: 50000, paidAt: "2026-11-18", maxAmount: 50000 }, "2026-11-18")).toEqual({});
   });
 
   it("uz/ru/en — `payments` kalitlari bir xil", () => {

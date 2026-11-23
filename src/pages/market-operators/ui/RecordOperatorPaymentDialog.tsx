@@ -49,7 +49,9 @@ type Props = {
  * («Hisob», «To'lovlar») va `superadmin-ops-finance-operators` («To'lov qayd qilish» formasi + tasdiq).
  *
  * Maydonlar: Operator* (qoldig'i bilan), Summa* (so'm), To'lov sanasi* (sukut — bugun, kelajak — yo'q), Izoh (≤ 500).
- * Summa qoldiqdan oshsa — ogohlantirish (bloklamaydi: avans mumkin, qoldiq manfiy bo'ladi). «To'lov yozish» → tasdiq
+ * Summa qoldiqdan oshsa — ogohlantirish (bloklamaydi: avans mumkin, qoldiq manfiy bo'ladi). O'chirilgan operator
+ * (qoldig'i bo'lsa; audit 2026-11-22 #10) — faqat qoldiqni yopish: oshgan summa formada to'xtatiladi.
+ * «To'lov yozish» → tasdiq
  * (`useConfirm`: summa, operator, sana, izoh, «yozuvdan keyingi qoldiq») → `POST finance/operator-payments` +
  * `Idempotency-Key` (oyna ochilganda bitta kalit — natija noma'lum bo'lib qayta bosilsa ikkinchi yozuv bo'lmaydi;
  * takror — «allaqachon yozilgan», 409 — kalit boshqa summada ishlatilgan). Xato — tasdiq oynasi ichida.
@@ -73,12 +75,14 @@ export const RecordOperatorPaymentDialog = ({ open, onClose, operator }: Props) 
   const [errors, setErrors] = useState<PaymentFormErrors>({});
   const busy = record.isPending;
 
-  // O'chirilgan operator hisobda ko'rinadi (2026-11-20), lekin unga to'lov yozilmaydi (backend ham 404 beradi).
+  // O'chirilgan operator hisobda ko'rinadi (2026-11-20). Audit 2026-11-22 #10: unga faqat to'lanmagan qoldig'i bo'lsa
+  // va faqat qoldiq doirasida yoziladi (backend oshgan summani 409 bilan rad etadi) — qoldiqsizi ro'yxatda yo'q.
   const items = useMemo(
-    () => (balances.data?.items ?? []).filter((item) => item.status !== "deleted"),
+    () => (balances.data?.items ?? []).filter((item) => item.status !== "deleted" || item.balance > 0),
     [balances.data?.items],
   );
   const selected = items.find((item) => item.operatorId === operatorId) ?? null;
+  const selectedDeleted = selected?.status === "deleted";
   const operatorName = selected?.operatorName || (operator?.id === operatorId ? operator.name : "") || "";
   const amount = parseAmountDigits(amountInput);
 
@@ -90,7 +94,11 @@ export const RecordOperatorPaymentDialog = ({ open, onClose, operator }: Props) 
         (item.balance < 0
           ? t("payments.form.operatorOverpaid", { amount: formatMoneyLocalized(-item.balance, { language }) })
           : t("payments.form.operatorBalance", { amount: formatMoneyLocalized(item.balance, { language }) })) +
-        (item.status === "inactive" ? ` · ${t("status.inactive")}` : ""),
+        (item.status === "inactive"
+          ? ` · ${t("status.inactive")}`
+          : item.status === "deleted"
+            ? ` · ${t("status.deleted")}`
+            : ""),
     }));
     if (operator && !list.some((option) => option.value === operator.id)) {
       list.unshift({ value: operator.id, label: operator.name });
@@ -108,6 +116,7 @@ export const RecordOperatorPaymentDialog = ({ open, onClose, operator }: Props) 
 
   const amountHint = (() => {
     if (!selected) return undefined;
+    if (selectedDeleted) return t("payments.form.amountHintDeleted", { amount: money(selected.balance) });
     if (amount > 0 && amount > selected.balance && selected.balance >= 0) {
       return t("payments.form.amountOver", { amount: money(amount - selected.balance) });
     }
@@ -124,7 +133,10 @@ export const RecordOperatorPaymentDialog = ({ open, onClose, operator }: Props) 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submittingRef.current || busy) return;
-    const nextErrors = validatePaymentForm({ operatorId, amount, paidAt }, today);
+    const nextErrors = validatePaymentForm(
+      { operatorId, amount, paidAt, ...(selectedDeleted && selected ? { maxAmount: selected.balance } : {}) },
+      today,
+    );
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) return;
     submittingRef.current = true;
@@ -151,6 +163,10 @@ export const RecordOperatorPaymentDialog = ({ open, onClose, operator }: Props) 
         loadingLabel: t("payments.confirm.loading"),
         errorMessage: (error) => {
           const status = paymentHttpStatus(error);
+          // O'chirilgan operator: 409 — qoldiqdan oshdi / qoldiq yo'q (backend xabarida ko'pi bilan qancha).
+          if (status === 409 && selectedDeleted) {
+            return getBackendErrorMessage(error) ?? t("payments.confirm.conflict");
+          }
           if (status === 409) return t("payments.confirm.conflict");
           if (status === 404) return t("payments.confirm.notFound");
           // Javob yo'q yoki 5xx — yozuv yaratilgan bo'lishi mumkin: oynani yopmasdan qayta bosish (o'sha

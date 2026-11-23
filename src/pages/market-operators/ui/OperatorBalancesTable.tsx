@@ -81,7 +81,10 @@ export const OperatorBalancesTable = memo(({ rows, onRecord, onEarnings }: Props
     [nameOf, onRecord, t],
   );
 
-  /** «Daromadlar» va (o'chirilmagan operatorga) «To'lov yozish». */
+  /**
+   * «Daromadlar» va «To'lov yozish». O'chirilgan operatorga — faqat to'lanmagan qoldig'i bo'lsa (audit 2026-11-22
+   * #10: backend uni qoldiq doirasida yozadi; avval tugma yo'q edi va qarz «Qoldiq»da abadiy qolardi).
+   */
   const actions = useCallback(
     (row: OperatorBalance, className?: string) => (
       <span className={cx("inline-flex flex-wrap justify-end gap-2", className)}>
@@ -96,7 +99,9 @@ export const OperatorBalancesTable = memo(({ rows, onRecord, onEarnings }: Props
         >
           {t("payments.balances.earnings")}
         </Button>
-        {row.status === "deleted" ? null : recordButton(row, className ? "flex-1" : undefined)}
+        {row.status === "deleted" && !(row.balance > 0)
+          ? null
+          : recordButton(row, className ? "flex-1" : undefined)}
       </span>
     ),
     [nameOf, onEarnings, recordButton, t],

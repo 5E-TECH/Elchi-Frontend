@@ -35,6 +35,20 @@ export const MissingEarningsDialog = memo(({ operator, onClose }: Props) => {
     data?.commissionType && data.commissionValue > 0
       ? formatCommissionValue(data.commissionType, data.commissionValue, language)
       : null;
+  /**
+   * Xulosa qatori. Audit 2026-11-22 #9: backend endi barcha sotuvlarni ko'radi; `truncated` — faqat 100 000 dan ortiq
+   * sotuvda (hammasi ko'rilmagan). O'shanda «barcha sotuvlarga komissiya yozilgan» deyish yolg'on — faqat
+   * `truncated` izohi qoladi.
+   */
+  const summary = !data
+    ? null
+    : data.toRecord > 0
+      ? t("missingEarnings.willRecord", { value: count(data.toRecord), amount: money(data.amount) })
+      : !rate
+        ? t("missingEarnings.setRateFirst")
+        : data.truncated
+          ? null
+          : t("missingEarnings.nothing");
 
   const submit = async () => {
     if (!operator || !canRecord) return;
@@ -97,13 +111,7 @@ export const MissingEarningsDialog = memo(({ operator, onClose }: Props) => {
             {row(t("missingEarnings.rate"), rate ?? t("missingEarnings.noRate"))}
             {row(t("missingEarnings.amount"), money(data.amount), true)}
           </dl>
-          <p className="m-0 text-[13px] text-text-muted">
-            {data.toRecord > 0
-              ? t("missingEarnings.willRecord", { value: count(data.toRecord), amount: money(data.amount) })
-              : rate
-                ? t("missingEarnings.nothing")
-                : t("missingEarnings.setRateFirst")}
-          </p>
+          {summary ? <p className="m-0 text-[13px] text-text-muted">{summary}</p> : null}
           {data.truncated ? <p className="m-0 text-[13px] text-text-muted">{t("missingEarnings.truncated")}</p> : null}
         </div>
       )}

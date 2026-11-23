@@ -37,18 +37,26 @@ export const parseAmountDigits = (value: string): number => {
 };
 
 export type PaymentFormErrors = Partial<
-  Record<"operator" | "amount" | "date", "operator" | "amount" | "amountTooBig" | "date" | "dateFuture" | "dateTooOld">
+  Record<
+    "operator" | "amount" | "date",
+    "operator" | "amount" | "amountTooBig" | "amountOverDeleted" | "date" | "dateFuture" | "dateTooOld"
+  >
 >;
 
-/** Forma tekshiruvi (backend bilan bir xil qoidalar): operator, summa > 0 va chegarada, sana — bugundan keyin emas. */
+/**
+ * Forma tekshiruvi (backend bilan bir xil qoidalar): operator, summa > 0 va chegarada, sana — bugundan keyin emas.
+ * `maxAmount` — o'chirilgan operatorning qoldig'i (audit 2026-11-22 #10: unga faqat qoldiqni yopish uchun yoziladi;
+ * oshsa backend 409 beradi).
+ */
 export const validatePaymentForm = (
-  input: { operatorId: string; amount: number; paidAt: string },
+  input: { operatorId: string; amount: number; paidAt: string; maxAmount?: number },
   today: string = todayIso(),
 ): PaymentFormErrors => {
   const errors: PaymentFormErrors = {};
   if (!input.operatorId) errors.operator = "operator";
   if (!(input.amount > 0)) errors.amount = "amount";
   else if (input.amount > PAYMENT_AMOUNT_MAX) errors.amount = "amountTooBig";
+  else if (input.maxAmount !== undefined && input.amount > input.maxAmount) errors.amount = "amountOverDeleted";
   if (!input.paidAt) errors.date = "date";
   else if (input.paidAt > today) errors.date = "dateFuture";
   else if (input.paidAt < PAYMENT_DATE_MIN) errors.date = "dateTooOld";
