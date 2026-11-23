@@ -79,6 +79,7 @@
     "countValue": "{{value}}",
     "notFound": "The site has no order for this QR code",
     "duplicate": "{{order}} — already in the list",
+    "inProgress": "{{qr}} — searching the site, please wait",
     "added": "{{order}} — added to the list",
     "addedMany": "{{value}} orders added to the list",
     "searchError": "Could not fetch the order from the site",
@@ -330,6 +331,8 @@
   "branchOrderReceiveOneDescription": "#{{id}} was received by the main branch.",
   "receiver": "Receiver",
   "branchBatches": {
+    "scanLoading": "The list is loading — wait and scan again",
+    "scanWait": "Receiving — wait for it to finish, then scan again",
     "list": {
       "searchPlaceholder": "Branch name or phone number",
       "searchLabel": "Search branches",
@@ -412,6 +415,7 @@
       "cameraMissing": "Not among this branch's packages"
     },
     "detail": {
+      "partialReturned": "{{value}} unselected orders were returned to the sending branch",
       "title": "Batch {{id}}",
       "regionOrders": "{{region}} orders",
       "cardLabel": "Orders in the batch",
@@ -567,7 +571,14 @@
       "pinAccepted": "PIN code accepted",
       "handError": "Could not hand over №{{id}} to the market",
       "qrFirst": "Scan the market QR first",
-      "qrFirstDescription": "Scan the market QR code or enter the PIN code, then scan the order again."
+      "qrFirstDescription": "Scan the market QR code or enter the PIN code, then scan the order again.",
+      "qrRejected": "Market QR rejected",
+      "notReady": "№{{id}} is not ready for handover yet",
+      "notReadyDescription": "Cancelled, but not here yet (with a courier, in transit or in a mail).",
+      "otherMarket": "№{{id}} belongs to another market",
+      "notCancelled": "№{{id}} is not a cancelled order",
+      "checkFailed": "Could not check — scan again",
+      "waitAuth": "Market authorization is being checked — wait and scan again"
     },
     "market": {
       "cardLabel": "Cancelled orders",
@@ -774,7 +785,8 @@
       "switcherMeta": "{{value}}",
       "receiving": "Receiving №{{id}}…",
       "receivingShort": "Receiving…",
-      "alreadyReceived": "Already received №{{id}}"
+      "alreadyReceived": "Already received №{{id}}",
+      "waitBulk": "Wait for the bulk receive to finish, then scan again"
     },
     "duplicateTitle": "Duplicate phone numbers found",
     "duplicateBody_one": "{{value}} phone number repeats in several new orders. Check before receiving.",

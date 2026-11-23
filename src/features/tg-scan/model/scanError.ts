@@ -24,6 +24,14 @@ export const describeTgScanError = (error: unknown): TgScanErrorInfo => {
   return { kind: "unknown", message: null };
 };
 
+/**
+ * `POST orders/scan-assign`: gateway 504 yoki javob kutish vaqti tugadi — logistika ishni davom ettiradi va amal
+ * serverda bajarilgan bo'lishi mumkin (skan auditi #59): o'sha so'rov bir marta qayta yuboriladi (backend idempotent).
+ * Javobsiz tarmoq xatosi (oflayn), 5xx va 4xx qayta yuborilmaydi.
+ */
+export const isAssignRetryable = (error: unknown) =>
+  getErrorStatus(error) === 504 || getErrorKind(error) === "timeout";
+
 /** BOT-2: Mini App kirishi faqat kuryerga — boshqa rol `POST /auth/telegram` da 403 `TELEGRAM_COURIER_ONLY`. */
 export const TELEGRAM_COURIER_ONLY_CODE = "TELEGRAM_COURIER_ONLY";
 

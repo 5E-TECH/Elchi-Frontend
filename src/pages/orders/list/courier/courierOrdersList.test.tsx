@@ -565,6 +565,116 @@ describe("Kuryer buyurtmalari — bekor qilinganlarni pochtaga yuborish (v2)", (
     get.mockRestore();
   });
 
+  /**
+   * Skan auditi 2026-11-23: sahifada yo'q kod (#52) — server topgan buyurtmaning o'zi, kuryerniki ekani ro'yxat
+   * so'rovi («EL-N») bilan tekshiriladi; «o'xshash mijoz» (bir xil ism) bo'yicha boshqa qator tanlanmaydi (#54);
+   * qidiruv xatosi «topilmadi» emas (#56); yuborilgani — «Allaqachon yuborilgan» (#64); ro'yxat sursa tanlov qoladi (#65).
+   */
+  describe("sahifada yo'q kod", () => {
+    const TOKEN = "d1d1d1d1d1d1d1d1d1d1d1d1";
+    const scanned = (over: Record<string, unknown> = {}) => ({
+      id: "2050",
+      status: "cancelled",
+      customer: { id: "c-77", name: "Malika Yusupova" },
+      market: { id: "201", name: "Baraka Shop" },
+      ...over,
+    });
+    const mockApi = (qr: { data?: unknown; error?: unknown }, courierRows: Row[] = []) =>
+      vi.spyOn(api, "get").mockImplementation((url: string) => {
+        if (url.includes("qr-code")) {
+          return qr.error ? Promise.reject(qr.error) : Promise.resolve({ data: { statusCode: 200, data: qr.data } });
+        }
+        if (url === "orders/courier/orders") {
+          return Promise.resolve({ data: { statusCode: 200, data: { data: courierRows, total: courierRows.length } } });
+        }
+        return Promise.reject(Object.assign(new Error("Not found"), { response: { status: 404 } }));
+      });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("boshqa sahifadagi o'z bekori — o'zi tanlanadi (bir xil ismli qator emas), yuboriladi", async () => {
+      const user = userEvent.setup();
+      state.rows = cancelledRows();
+      const get = mockApi({ data: scanned() }, [order("2050", "Malika Yusupova", { status: "cancelled" })]);
+      renderPage("/orders?status=cancelled");
+
+      act(() => {
+        void getActiveScanTarget()!.onScan(TOKEN, "camera");
+      });
+
+      const bar = await screen.findByRole("region", { name: "Tanlangan buyurtmalar" });
+      expect(bar).toHaveTextContent("1 / 3 ta buyurtma tanlandi");
+      expect(screen.getByRole("checkbox", { name: "№2001 ni tanlash" })).not.toBeChecked();
+      expect(get).toHaveBeenCalledWith("orders/courier/orders", {
+        params: { status: "cancelled", search: "EL-102050", page: 1, limit: 10 },
+        failFast: true,
+      });
+      expect(getActiveScanTarget()?.list?.[0]).toMatchObject({ key: "order:2050", title: "№2050 · Malika Yusupova" });
+
+      await user.click(within(bar).getByRole("button", { name: "1 ta buyurtmani pochtaga yuborish" }));
+      expect(sendToPost).toHaveBeenCalledWith(["2050"], expect.any(Object));
+    });
+
+    it("bekor, lekin kuryerning ro'yxatida yo'q (boshqa kuryer / filialda) — «Sizning ro'yxatingizda yo'q»", async () => {
+      state.rows = cancelledRows();
+      mockApi({ data: scanned() }, []);
+      renderPage("/orders?status=cancelled");
+
+      act(() => {
+        void getActiveScanTarget()!.onScan(TOKEN, "manual");
+      });
+
+      expect(await screen.findByText("Sizning ro'yxatingizda yo'q")).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Tanlangan buyurtmalar" })).toBeNull();
+      expect(screen.getByRole("checkbox", { name: "№2001 ni tanlash" })).not.toBeChecked();
+    });
+
+    it("allaqachon yuborilgan — «Allaqachon yuborilgan», ro'yxat so'ralmaydi", async () => {
+      state.rows = cancelledRows();
+      const get = mockApi({ data: scanned({ status: "cancelled (sent)" }) });
+      renderPage("/orders?status=cancelled");
+
+      act(() => {
+        void getActiveScanTarget()!.onScan(TOKEN, "manual");
+      });
+
+      expect(await screen.findByText("Allaqachon yuborilgan")).toBeInTheDocument();
+      expect(get.mock.calls.map(([url]) => url)).not.toContain("orders/courier/orders");
+    });
+
+    it("tarmoq xatosi — «Tekshirib bo'lmadi — qayta skanerlang», «Buyurtma topilmadi» emas", async () => {
+      state.rows = cancelledRows();
+      mockApi({ error: { isAxiosError: true, code: "ERR_NETWORK", request: {}, message: "Network Error" } });
+      renderPage("/orders?status=cancelled");
+
+      act(() => {
+        void getActiveScanTarget()!.onScan(TOKEN, "manual");
+      });
+
+      expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      expect(screen.queryByText("Buyurtma topilmadi")).toBeNull();
+      expect(getActiveScanTarget()?.list).toEqual([]);
+    });
+
+    it("ro'yxat surilsa (yangilanish / sahifa) — tanlangan buyurtma tanlovdan jim tushmaydi", async () => {
+      const user = userEvent.setup();
+      state.rows = cancelledRows();
+      state.total = 12;
+      renderPage("/orders?status=cancelled");
+
+      act(() => {
+        void getActiveScanTarget()!.onScan("2001", "camera");
+      });
+      expect(screen.getByRole("region", { name: "Tanlangan buyurtmalar" })).toHaveTextContent("1 / 2 ta buyurtma tanlandi");
+
+      state.rows = [order("2009", "Yangi Mijoz", { status: "cancelled" }), order("2002", "Bekzod Aliyev", { status: "cancelled" })];
+      await user.click(screen.getByRole("button", { name: "Keyingi sahifa" }));
+
+      expect(await screen.findByRole("checkbox", { name: "№2009 ni tanlash" })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "Tanlangan buyurtmalar" })).toHaveTextContent("1 / 3 ta buyurtma tanlandi");
+    });
+  });
+
   it("boshqa tabda kamera maqsadi yo'q (markaziy tugma universal skanerni ochadi)", () => {
     state.rows = [order("1001", "Laylo Hasanova")];
     renderPage("/orders?status=waiting");

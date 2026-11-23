@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-neworders-market-orders, admin-neworders-market-detail, manager-new-orders-market-detail, registrator-new-orders-market-detail, market-new-orders-list
-import { useCallback, useMemo, type ComponentProps, type ReactNode } from "react";
+import { memo, type ComponentProps, type ReactNode, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Pencil, Trash2, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -77,7 +77,14 @@ const RowIconLink = ({
   </Link>
 );
 
-export const MarketOrdersTable = ({
+/** Qator kaliti — modul darajasida (har renderda yangi funksiya `DataTable` ni qayta chizdirmasin). */
+const marketOrderRowKey = (order: MarketOrder) => String(order.id);
+
+/**
+ * `memo` (skan auditi #9/#96): skan har marta sahifa holatini (kutilayotganlar, kamera ro'yxati, hisob) o'zgartiradi —
+ * jadval faqat o'z props'lari o'zgarganda qayta chiziladi.
+ */
+export const MarketOrdersTable = memo(function MarketOrdersTable({
   variant,
   rows,
   marketId,
@@ -90,7 +97,7 @@ export const MarketOrdersTable = ({
   label,
   busy,
   duplicateIds,
-}: MarketOrdersTableProps) => {
+}: MarketOrdersTableProps) {
   const { t, i18n } = useTranslation(["newOrders", "orders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const isStaff = variant === "staff";
@@ -313,7 +320,7 @@ export const MarketOrdersTable = ({
     <DataTable
       rows={rows}
       columns={columns}
-      getRowKey={(order) => String(order.id)}
+      getRowKey={marketOrderRowKey}
       label={label}
       sort={sort}
       onSortChange={onSortChange}
@@ -324,4 +331,4 @@ export const MarketOrdersTable = ({
       busy={busy}
     />
   );
-};
+});

@@ -9,6 +9,7 @@ import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import { normalizeScannerCandidates } from "../../../shared/lib/scanToken";
 import {
   Badge,
   Button,
@@ -45,6 +46,9 @@ const ICON_LINK =
 
 type ScannableBatch = Batch & { qr_code_token: string | null };
 
+/** Ochiq skaner sahifasida jo'natilgan paketlar ro'yxatini yangilash oralig'i (skan auditi #19). */
+const BATCHES_POLL_MS = 30_000;
+
 /**
  * FILIAL PAKETLARI — `/new-orders/branches/:branchId` (superadmin/admin; qobiq `bare`), dizayn v2.
  *
@@ -74,13 +78,16 @@ const BranchSentBatchesPage = () => {
   const receiveTransferBatch = useReceiveTransferBatch();
   const branchQuery = useBranchDetail(branchId);
 
-  const batchesQuery = useBatches({
-    sourceBranchId: branchId,
-    statusRaw: "SENT",
-    directionRaw: "FORWARD",
-    page: 1,
-    limit: 100,
-  });
+  const batchesQuery = useBatches(
+    {
+      sourceBranchId: branchId,
+      statusRaw: "SENT",
+      directionRaw: "FORWARD",
+      page: 1,
+      limit: 100,
+    },
+    { refetchInterval: BATCHES_POLL_MS },
+  );
   const { data, isLoading, isError } = batchesQuery;
 
   const rows = useMemo(
@@ -153,9 +160,47 @@ const BranchSentBatchesPage = () => {
     }
   };
 
-  const handleMissingScannedBatch = useCallback(() => {
+  const showBatchMissing = useCallback(() => {
     void playScanFeedback("missing", t("branchBatches.batches.cameraMissing"));
     scanNotify.warning(t("qrNotFound"), { description: t("branchBatches.batches.scanMissing"), duration: 3000 });
+  }, [t]);
+
+  const refetchBatches = batchesQuery.refetch;
+  const missRefetchRef = useRef<Promise<unknown> | null>(null);
+  const selectScannedBatchRef = useRef<(batch: ScannableBatch) => void>(() => undefined);
+  /**
+   * Skan auditi #19: ro'yxatda yo'q paket — ro'yxat bir marta yangilanib qayta moslanadi (sahifa ochilgandan
+   * keyin jo'natilgan paket «QR topilmadi» bo'lmasin); topilmasa — «QR topilmadi».
+   */
+  const handleMissingScannedBatch = useCallback(
+    async (rawValue: string) => {
+      if (isLoading) {
+        void playScanFeedback("error", t("branchBatches.scanLoading"));
+        scanNotify.warning(t("branchBatches.scanLoading"), { duration: 2500 });
+        return;
+      }
+      missRefetchRef.current ??= Promise.resolve(refetchBatches()).finally(() => {
+        missRefetchRef.current = null;
+      });
+      const result = (await missRefetchRef.current.catch(() => null)) as { data?: { data?: Batch[] } } | null;
+      const candidates = new Set(normalizeScannerCandidates(rawValue, window.location.origin));
+      const match = toScannableBatches(result?.data?.data ?? []).find(
+        (batch) =>
+          candidates.has(String(batch.id).toLowerCase()) ||
+          candidates.has(String(batch.qr_code_token ?? "").trim().toLowerCase()),
+      );
+      if (match) {
+        selectScannedBatchRef.current(match);
+        return;
+      }
+      showBatchMissing();
+    },
+    [isLoading, refetchBatches, showBatchMissing, t],
+  );
+
+  const handlePausedScan = useCallback(() => {
+    void playScanFeedback("error", t("branchBatches.scanWait"));
+    scanNotify.warning(t("branchBatches.scanWait"), { duration: 2500 });
   }, [t]);
 
   const selectScannedBatch = useCallback(
@@ -181,6 +226,7 @@ const BranchSentBatchesPage = () => {
     },
     [t, touchRecentScan],
   );
+  selectScannedBatchRef.current = selectScannedBatch;
 
   const deselectBatch = useCallback((id: string) => {
     selectedRef.current = new Set([...selectedRef.current].filter((item) => item !== id));
@@ -222,8 +268,12 @@ const BranchSentBatchesPage = () => {
     orders: scannableRows,
     // Qabul so'rovi ketayotganda skan e'tiborsiz (avvalgidek), lekin ochiq kamera yopilmaydi.
     paused: receiveTransferBatch.isPending,
+    onPausedScan: handlePausedScan,
+    keyboardWhenEmpty: true,
     onMatch: selectScannedBatch,
-    onMissing: handleMissingScannedBatch,
+    onMissing: (rawValue: string) => {
+      void handleMissingScannedBatch(rawValue);
+    },
     camera: {
       id: `branch-batches:${branchId}`,
       title: t("branchBatches.batches.cameraTitle"),

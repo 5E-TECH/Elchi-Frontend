@@ -49,7 +49,9 @@
     "repeatTitle": "Allaqachon qabul qilingan",
     "failedText": "Skanerlash davom etmoqda — keyingi posilkani skanerlang",
     "invalidTitle": "Bu QR kod skaner uchun yaroqsiz",
-    "invalidText": "Elchi yorlig'idagi QR kodni skanerlang"
+    "invalidText": "Elchi yorlig'idagi QR kodni skanerlang",
+    "pendingTitle": "Yuborilmoqda",
+    "pendingText": "Bu kod hali yuborilmoqda — natijani kuting"
   },
   "error": {
     "offline": "Internet aloqasi yo'q — qayta skanerlang",

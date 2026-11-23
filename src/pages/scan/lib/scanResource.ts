@@ -103,7 +103,17 @@ export const isExternalBagPayload = (data: unknown) => unwrapRecord(data)?.is_ex
  */
 const SCAN_LOOKUP = { failFast: true } as const;
 
-export const fetchScanDetail = async (token: string): Promise<ScanDetailResponse> => {
+/**
+ * Qidiruv sozlamalari (skan auditi 2026-11-23, #8/#60/#61) — berilmasa avvalgidek (to'liq javob + qop zaxirasi).
+ *   - `light` — buyurtma `?view=light` bilan: backend og'ir boyitishsiz (~10 RPC o'rniga bitta o'qish) javob beradi.
+ *     Faqat skaner ishlatadigan maydonlar bor (id, token, holat, summa, manzil, mijoz, market, tuman, mahsulot
+ *     nomlari) — `post_id`, kuryer, ushlovchi YO'Q: ularga tayanadigan ekran `light` ni bermasin.
+ *   - `orderOnly` — 404 da `GET scan/:token` (BeePost qop) zaxirasi so'ralmaydi: qop skanerlanmaydigan ekranda
+ *     «topilmadi» bitta so'rovda chiqadi (ikkinchi ketma-ket so'rov yo'q).
+ */
+export type ScanLookupOptions = { light?: boolean; orderOnly?: boolean };
+
+export const fetchScanDetail = async (token: string, options: ScanLookupOptions = {}): Promise<ScanDetailResponse> => {
   const normalizedToken = normalizeScanToken(token);
   const resourceType = getScanResourceType(normalizedToken);
   const encoded = encodeURIComponent(normalizedToken);
@@ -121,10 +131,12 @@ export const fetchScanDetail = async (token: string): Promise<ScanDetailResponse
   }
 
   try {
-    const response = await api.get(API_ENDPOINTS.ORDERS.QR_CODE(encoded), SCAN_LOOKUP).then((res) => res.data);
+    const response = await api
+      .get(API_ENDPOINTS.ORDERS.QR_CODE(encoded), options.light ? { ...SCAN_LOOKUP, params: { view: "light" } } : SCAN_LOOKUP)
+      .then((res) => res.data);
     return { type: "order", data: response };
   } catch (error) {
-    if (getErrorStatus(error) !== 404) throw error;
+    if (getErrorStatus(error) !== 404 || options.orderOnly) throw error;
     let fallback: unknown;
     try {
       fallback = await api.get(API_ENDPOINTS.SCAN.BY_TOKEN(encoded), SCAN_LOOKUP).then((res) => res.data);

@@ -283,7 +283,8 @@ describe("Filial paketlari — USB skaner", () => {
     await waitFor(() => expect(bodyRows()).toHaveLength(3));
 
     act(() => mocks.scanner!.onMissing("BTB-BOSHQAFILIAL"));
-    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", expect.any(String));
+    // Skan auditi #19: avval ro'yxat bir marta yangilanadi, so'ng «topilmadi».
+    await waitFor(() => expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", expect.any(String)));
     expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
     expect(screen.getByText("Bu QR kod shu filial paketlariga mos kelmadi.")).toBeInTheDocument();
   });

@@ -49,7 +49,9 @@
     "repeatTitle": "Already accepted",
     "failedText": "Scanning continues — scan the next parcel",
     "invalidTitle": "This QR code is not valid for the scanner",
-    "invalidText": "Scan the QR code on the Elchi label"
+    "invalidText": "Scan the QR code on the Elchi label",
+    "pendingTitle": "Sending",
+    "pendingText": "This code is still being sent — wait for the result"
   },
   "error": {
     "offline": "No internet connection — scan again",

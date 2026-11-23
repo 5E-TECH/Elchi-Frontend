@@ -119,6 +119,15 @@ describe("fetchScanDetail — yo'naltirish", () => {
     await expect(fetchScanDetail("NOPE-1")).rejects.toBe(original);
   });
 
+  it("skan auditi #8/#60/#61: `light` — `?view=light`, `orderOnly` — 404 da qop zaxirasi so'ralmaydi", async () => {
+    const original = httpError(404);
+    apiMock.get.mockReturnValue(Promise.reject(original));
+
+    await expect(fetchScanDetail("a1b2c3", { light: true, orderOnly: true })).rejects.toBe(original);
+    expect(apiMock.get).toHaveBeenCalledTimes(1);
+    expect(apiMock.get).toHaveBeenCalledWith("orders/qr-code/a1b2c3", { failFast: true, params: { view: "light" } });
+  });
+
   it("does not hide other errors behind the fallback (403, 5xx, timeout)", async () => {
     const forbidden = httpError(403);
     apiMock.get.mockReturnValue(Promise.reject(forbidden));

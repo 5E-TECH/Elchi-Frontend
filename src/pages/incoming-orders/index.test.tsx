@@ -605,6 +605,77 @@ describe("IncomingOrdersPage — dizayn v2", () => {
     await waitFor(() => expect(screen.getByPlaceholderText("QR kodni skanerlang yoki kiriting...")).toHaveFocus());
   });
 
+  it("⭐ skan auditi #14: «Qabul qilish» ketayotganda skanerlangan posilka natijadan keyin o'chib ketmaydi", async () => {
+    mockApi();
+    let finish!: (value: unknown) => void;
+    apiPostMock.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+    renderPage();
+    await screen.findByText("Rustam Jo'rayev");
+
+    scan("tok-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(1));
+    // So'rov ketayotganda ikkinchi posilka skanerlandi.
+    scan("tok-2");
+    expect(await screen.findByText("№10264 — ro'yxatga qo'shildi")).toBeInTheDocument();
+
+    await act(async () => {
+      finish({ data: { data: { received: 1, unmatched: [] } } });
+    });
+
+    expect(await screen.findByText("1 buyurtma qabul qilindi")).toBeInTheDocument();
+    // Faqat yuborilgani tushdi — ikkinchisi belgilangan qoladi va keyingi qabulga ketadi.
+    expect(screen.getByRole("button", { name: "Qabul qilish — 1 ta posilka" })).toBeEnabled();
+  });
+
+  it("⭐ skan auditi #12/#102: ro'yxatda yo'q kod — ro'yxat yangilanadi va keyin kelgan posilka topiladi", async () => {
+    let withNew = false;
+    apiGetMock.mockImplementation((url: string) => {
+      if (url === "orders/external") {
+        const list = withNew
+          ? [...items, { id: "o-3", order_number: 10265, qr_code_token: "tok-3", total_price: 1000, customer: { name: "Yangi mijoz" } }]
+          : items;
+        return Promise.resolve({ data: { data: list, total: list.length } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+    renderPage();
+    await screen.findByText("Rustam Jo'rayev");
+
+    withNew = true;
+    scan("tok-3");
+
+    expect(await screen.findByText("№10265 — ro'yxatga qo'shildi")).toBeInTheDocument();
+  });
+
+  it("skan auditi #22: «Qabul qilish» javobsiz qolsa — «natija noma'lum», ro'yxat yangilanadi", async () => {
+    mockApi();
+    apiPostMock.mockRejectedValue(Object.assign(new Error("timeout"), { code: "ECONNABORTED" }));
+    renderPage();
+    await screen.findByText("Rustam Jo'rayev");
+    const listCalls = ordersCalls().length;
+
+    scan("tok-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+
+    expect(await screen.findByText(/Javob kelmadi — natija noma'lum/)).toBeInTheDocument();
+    await waitFor(() => expect(ordersCalls().length).toBeGreaterThan(listCalls));
+  });
+
+  it("server «allaqachon qabul qilingan» desa — xato emas, izohda soni", async () => {
+    mockApi();
+    apiPostMock.mockResolvedValue({
+      data: { data: { received: 0, unmatched: [], already_received: [{ token: "tok-1", order_id: "o-1" }] } },
+    });
+    renderPage();
+    await screen.findByText("Rustam Jo'rayev");
+
+    scan("tok-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Qabul qilish — 1 ta posilka" }));
+
+    expect(await screen.findByText(/Allaqachon qabul qilingan: 1 ta \(xato emas\)/)).toBeInTheDocument();
+  });
+
   it("boshqa manbaga o'tilsa (`:marketId` almashdi) oldingi manbaning posilkalari ko'rsatilmaydi", async () => {
     const user = userEvent.setup();
     apiGetMock.mockImplementation((url: string, config?: { params?: { market_id?: string } }) => {

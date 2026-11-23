@@ -7,10 +7,11 @@ import { Trans, useTranslation } from "react-i18next";
 import { useDispatchBasket, useDispatchBasketScope } from "../../features/dispatch-basket";
 import { readQrScopeText } from "../../shared/lib/coverageReasons";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
-import { useScannerGate } from "../../shared/lib/useScannerGate";
 import { extractScannerToken } from "../../shared/lib/scanToken";
+import { getErrorKind, getErrorStatus } from "../../shared/lib/errorKind";
 import { fetchScanDetail, getScanResourceType, getBackendErrorMessage } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../../shared/lib/scanner/feedback";
+import { scanLookupFailureReason } from "../../shared/lib/scanner/exactScanMatch";
 import { useScanTarget, type ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { useOrders } from "../../entities/order/api/orderApi";
@@ -62,9 +63,17 @@ const REJECTED_LIMIT = 10;
  * kamera har skandan keyin yopilmaydi («Biriktirish · <filial> · savatda N ta», ro'yxatda «Bekor qilish» —
  * savatdan olish, server amali hali yo'q). «Tugatish» kamerani yopadi, kuryer sahifadagi tugma bilan tanlanadi.
  *
- * Saqlangan xatti-harakat: skan darvozasi (150 / 2600 ms), takror va noto'g'ri turdagi QR, parallel tekshiruvlar
- * soni va «sekin» izohi (1,2 s), filialda bitta kuryer bo'lsa — oynasiz to'g'ridan-to'g'ri biriktirish,
- * biriktirilganlar ro'yxatdan olinadi (tanlanmaganlari qoladi), so'rov tanasi o'zgarmagan.
+ * Saqlangan xatti-harakat: takror va noto'g'ri turdagi QR, parallel tekshiruvlar soni va «sekin» izohi (1,2 s),
+ * filialda bitta kuryer bo'lsa — oynasiz to'g'ridan-to'g'ri biriktirish, biriktirilganlar ro'yxatdan olinadi
+ * (tanlanmaganlari qoladi), so'rov tanasi o'zgarmagan.
+ *
+ * SKAN JIM YO'QOLMAYDI (skan auditi #31, #63): ilgari sahifa darvozasi (150 / 2600 ms) va natijadan keyingi
+ * pauzalar (`blockScans` 250 / 600 ms) skanni ovozsiz, xabarsiz tashlardi — xato bergan kodni qayta skanerlash
+ * ham, xatodan keyin 0,6 s ichidagi BOSHQA posilka ham. Endi sahifa darvozasi yo'q: kamera skanlari kamera
+ * sessiyasida allaqachon saralangan, USB esa har skanni Enter bilan o'zi chegaralaydi; takror savat va
+ * yo'ldagi tekshiruvlar bo'yicha aniqlanadi va har doim signal bilan bildiriladi. Xato bergan kod hech qayerda
+ * eslab qolinmaydi — qayta skan qayta so'raydi. Qidiruv xatosi turi bo'yicha (#55): 5xx / 429 / tarmoq —
+ * «topilmadi» emas, sababi bilan.
  */
 const DispatchPage = () => {
   const { t, i18n } = useTranslation(["dispatch", "orders"]);
@@ -108,10 +117,6 @@ const DispatchPage = () => {
   const isLookingUpOrder = activeLookupCount > 0;
 
   const lookupTokensRef = useRef<Set<string>>(new Set());
-  const { canAcceptScan, blockScans, resetScannerGate } = useScannerGate({
-    cooldownMs: 150,
-    duplicateCooldownMs: 2600,
-  });
 
   useEffect(() => {
     if (!isLookingUpOrder) {
@@ -150,8 +155,6 @@ const DispatchPage = () => {
 
   const handleScanValue = useCallback(
     async (rawValue: string) => {
-      if (!canAcceptScan(rawValue)) return true;
-
       const normalizedToken = extractScannerToken(rawValue, window.location.origin) ?? rawValue.trim();
       if (!normalizedToken) return false;
 
@@ -176,10 +179,15 @@ const DispatchPage = () => {
         return true;
       }
 
-      if (isInBasket(tokenKey) || lookupTokensRef.current.has(tokenKey)) {
+      // Shu kod hali tekshirilmoqda (USB qo'shaloq o'qishi yoki tez qayta skan) — «allaqachon ro'yxatda» emas: natija
+      // hali yo'q, u kelgach o'z signali bilan bildiriladi.
+      if (lookupTokensRef.current.has(tokenKey)) {
+        void playScanFeedback("duplicate", t("scanErrors.checking"), undefined, { voice: false });
+        return true;
+      }
+      if (isInBasket(tokenKey)) {
         setScanNotice({ tone: "warning", text: t("scanErrors.duplicate") });
         void playScanFeedback("duplicate", t("scanErrors.duplicate"));
-        blockScans(250);
         return true;
       }
 
@@ -201,24 +209,29 @@ const DispatchPage = () => {
         } else {
           void playScanFeedback("success", t("camera.added", { id: nextOrder.id }), undefined, { voice: "selected" });
         }
-        blockScans(250);
         return true;
       } catch (error) {
         // Begona QR (#620, anKpzwxk): lokal uz/ru/en matn («Bu buyurtma sizning filialingizda emas»), backend matni
-        // faqat noma'lum sabab uchun.
+        // faqat noma'lum sabab uchun (404 va boshqa 4xx). 5xx / 504 / 429 / tarmoq — sababi bilan (#55).
+        const status = getErrorStatus(error);
+        const kind = getErrorKind(error);
+        const transient =
+          status === 429 || (status ?? 0) >= 500 || (status === undefined && (kind === "offline" || kind === "timeout"));
         const message =
-          readQrScopeText(t, error)?.line ?? getBackendErrorMessage(error) ?? t("scanErrors.lookup");
+          readQrScopeText(t, error)?.line ??
+          (transient
+            ? scanLookupFailureReason(t, error, { tooMany: t("scanErrors.tooMany") })
+            : (getBackendErrorMessage(error) ?? t("scanErrors.lookup")));
         setScanNotice({ tone: "danger", text: message });
         rejectScan(normalizedToken, normalizedToken, message);
         void playScanFeedback("error", message);
-        blockScans(600);
         return true;
       } finally {
         lookupTokensRef.current.delete(tokenKey);
         setActiveLookupCount((count) => Math.max(0, count - 1));
       }
     },
-    [addToBasket, blockScans, canAcceptScan, isInBasket, rejectScan, t],
+    [addToBasket, isInBasket, rejectScan, t],
   );
 
   useKeyboardScanner({
@@ -303,7 +316,6 @@ const DispatchPage = () => {
       setScanNotice(null);
       setRejectedScans([]);
       lookupTokensRef.current.clear();
-      resetScannerGate();
     } catch (error) {
       notify.error(t("assign.errorTitle"), { description: getDispatchErrorMessage(error, t("scanErrors.lookup")) });
     }

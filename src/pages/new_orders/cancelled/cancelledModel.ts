@@ -133,10 +133,18 @@ export const normalizeCancelledAuthorization = (
   );
   const expiresAtText = firstText(data.expires_at, data.expiresAt);
   const expiresAtFromResponse = expiresAtText ? new Date(expiresAtText).getTime() : NaN;
-  const remainingSeconds = Number(data.remaining_seconds ?? data.remainingSeconds ?? 300);
-  const expiresAt = Number.isFinite(expiresAtFromResponse)
-    ? expiresAtFromResponse
-    : Date.now() + Math.max(1, remainingSeconds) * 1000;
+  const remainingRaw = data.remaining_seconds ?? data.remainingSeconds;
+  const remainingSeconds = remainingRaw === undefined || remainingRaw === null ? NaN : Number(remainingRaw);
+  /**
+   * Skan auditi #41: qolgan soniya (server nisbiy muddati) birinchi — qurilma soati oldinda bo'lsa server
+   * `expires_at` (mutlaq vaqt) bilan ruxsat darhol «tugardi» va har skan «Avval market QR'ini skanerlang» derdi.
+   * `expires_at` — faqat soniya kelmasa.
+   */
+  const expiresAt = Number.isFinite(remainingSeconds) && remainingSeconds > 0
+    ? Date.now() + remainingSeconds * 1000
+    : Number.isFinite(expiresAtFromResponse)
+      ? expiresAtFromResponse
+      : Date.now() + 300 * 1000;
 
   if (!authorizationToken) {
     throw new Error("Authorization token is missing");

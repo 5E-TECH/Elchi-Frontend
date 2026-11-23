@@ -78,3 +78,93 @@ describe("useScanAssign", () => {
     expect(assign).toHaveBeenCalledTimes(1);
   });
 });
+
+const httpError = (status: number, message = "Xato") =>
+  Object.assign(new Error(message), { isAxiosError: true, response: { status, data: { message } } });
+const timeoutError = () =>
+  Object.assign(new Error("timeout of 20000ms exceeded"), { isAxiosError: true, code: "ECONNABORTED", request: {} });
+
+describe("useScanAssign — skan auditi #32, #59, #63", () => {
+  it("#32: xato bergan kod USB bilan darhol qayta skanerlansa — jim emas, qayta yuboriladi", async () => {
+    const onFeedback = vi.fn();
+    const assign = vi
+      .fn<(token: string) => Promise<ScanAssignResult>>()
+      .mockRejectedValueOnce(httpError(500))
+      .mockResolvedValueOnce(ok("1"));
+    const { result } = renderHook(() =>
+      useScanAssign({ webApp: null, enabled: true, onSessionExpired: vi.fn(), assign, onFeedback, haptics: false }),
+    );
+
+    act(() => result.current.handleScan(TOKEN_A, "keyboard"));
+    await waitFor(() => expect(onFeedback).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "failed" })));
+    act(() => result.current.handleScan(TOKEN_A, "keyboard"));
+    await waitFor(() => expect(onFeedback).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "assigned" })));
+    expect(assign).toHaveBeenCalledTimes(2);
+  });
+
+  it("#63: yo'ldagi kod qayta o'qilsa — «pending» signali (jim emas), ikkinchi so'rov yo'q", async () => {
+    const onFeedback = vi.fn();
+    let resolve: (value: ScanAssignResult) => void = () => undefined;
+    const assign = vi.fn(() => new Promise<ScanAssignResult>((done) => (resolve = done)));
+    const { result } = renderHook(() =>
+      useScanAssign({ webApp: null, enabled: true, onSessionExpired: vi.fn(), assign, onFeedback, haptics: false }),
+    );
+
+    act(() => result.current.handleScan(TOKEN_A, "keyboard"));
+    act(() => result.current.handleScan(TOKEN_A, "keyboard"));
+    expect(onFeedback).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "pending", token: TOKEN_A }));
+    expect(assign).toHaveBeenCalledTimes(1);
+    await act(async () => resolve(ok("1")));
+    await waitFor(() => expect(onFeedback).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "assigned" })));
+  });
+
+  it("#59: gateway 504 — o'sha so'rov bir marta qayta yuboriladi; qayta yuborishdagi `idempotent` — «Biriktirildi»", async () => {
+    const onFeedback = vi.fn();
+    const assign = vi
+      .fn<(token: string) => Promise<ScanAssignResult>>()
+      .mockRejectedValueOnce(httpError(504, "Buyurtma xizmati vaqtida javob bermadi"))
+      .mockResolvedValueOnce({ ...ok("1"), idempotent: true });
+    const { result } = renderHook(() =>
+      useScanAssign({ webApp: null, enabled: true, onSessionExpired: vi.fn(), assign, onFeedback, haptics: false }),
+    );
+
+    act(() => result.current.handleScan(TOKEN_A, "keyboard"));
+    await waitFor(() => expect(result.current.acceptedOrderIds).toEqual(["1"]));
+    expect(assign).toHaveBeenCalledTimes(2);
+    expect(assign).toHaveBeenNthCalledWith(2, TOKEN_A);
+    expect(onFeedback).toHaveBeenCalledTimes(1);
+    expect(onFeedback).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "assigned" }));
+    expect(result.current.entries[0]).toMatchObject({ status: "assigned", orderId: "1" });
+  });
+
+  it("#59: vaqt tugashi ikki marta — bitta qayta urinishdan keyin xato; 500 / oflayn qayta yuborilmaydi", async () => {
+    const onFeedback = vi.fn();
+    const assign = vi
+      .fn<(token: string) => Promise<ScanAssignResult>>()
+      .mockRejectedValueOnce(timeoutError())
+      .mockRejectedValueOnce(timeoutError())
+      .mockRejectedValueOnce(httpError(500));
+    const { result } = renderHook(() =>
+      useScanAssign({ webApp: null, enabled: true, onSessionExpired: vi.fn(), assign, onFeedback, haptics: false }),
+    );
+
+    act(() => result.current.handleScan(TOKEN_A, "keyboard"));
+    await waitFor(() => expect(onFeedback).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "failed" })));
+    expect(assign).toHaveBeenCalledTimes(2);
+
+    act(() => result.current.handleScan(TOKEN_B, "keyboard"));
+    await waitFor(() => expect(onFeedback).toHaveBeenCalledTimes(2));
+    expect(assign).toHaveBeenCalledTimes(3);
+  });
+
+  it("birinchi urinishdagi `idempotent` (qayta yuborishsiz) — avvalgidek «Allaqachon sizda»", async () => {
+    const onFeedback = vi.fn();
+    const assign = vi.fn(async () => ({ ...ok("1"), idempotent: true }));
+    const { result } = renderHook(() =>
+      useScanAssign({ webApp: null, enabled: true, onSessionExpired: vi.fn(), assign, onFeedback, haptics: false }),
+    );
+
+    act(() => result.current.handleScan(TOKEN_A, "keyboard"));
+    await waitFor(() => expect(onFeedback).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "already" })));
+  });
+});

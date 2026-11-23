@@ -101,7 +101,7 @@ const orderDetail = (id: string, name: string, over: Record<string, unknown> = {
 
 /**
  * USB (HID) skaner: tez ketma-ket tugmalar + Enter (`useKeyboardScanner` oynada tinglaydi). Har skandan oldin
- * soat 1 s oldinga suriladi — skan darvozasining pauzasi (`blockScans(250)`) keyingi skanni yutmasin.
+ * soat 1 s oldinga suriladi (sahifa darvozasi olib tashlangan — skan auditi #31; soat boshqa testlar uchun).
  */
 let clock = 1_000_000;
 const scan = async (value: string) => {
@@ -288,6 +288,66 @@ describe("DispatchPage — skanerlash va biriktirish", () => {
     await scan("ORD-77032");
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Buyurtma bekor qilingan");
+  });
+
+  it("skan auditi #31/#63: xato bergan kod darhol qayta skanerlansa — jim emas, qayta so'raladi", async () => {
+    mocks.fetchScanDetail
+      .mockRejectedValueOnce({ isAxiosError: true, code: "ERR_NETWORK", request: {} })
+      .mockResolvedValueOnce(orderDetail("10285", "Zarina Mirzayeva"));
+    renderWithProviders(<DispatchPage />, { preloadedState: hqRegistrator });
+
+    await scan("tok-10285");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Internet aloqasi yo'q");
+    // Soat surilmaydi — avval 2,6 s takror oynasi va 600 ms pauza skanni ovozsiz yutardi.
+    clock -= 1000;
+    await scan("tok-10285");
+
+    expect(await screen.findByText("№10285")).toBeInTheDocument();
+    expect(mocks.fetchScanDetail).toHaveBeenCalledTimes(2);
+  });
+
+  it("xatodan darhol keyin skanerlangan BOSHQA posilka ham qabul qilinadi (600 ms pauza yo'q)", async () => {
+    mocks.fetchScanDetail
+      .mockRejectedValueOnce({ isAxiosError: true, response: { status: 404, data: { message: "Buyurtma topilmadi" } } })
+      .mockResolvedValueOnce(orderDetail("10286", "Ali Valiyev"));
+    renderWithProviders(<DispatchPage />, { preloadedState: hqRegistrator });
+
+    await scan("tok-404");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Buyurtma topilmadi");
+    clock -= 1000;
+    await scan("tok-10286");
+
+    expect(await screen.findByText("№10286")).toBeInTheDocument();
+  });
+
+  it("#55: 5xx / 429 — backend matni yoki «topilmadi» emas, sababi bilan", async () => {
+    mocks.fetchScanDetail
+      .mockRejectedValueOnce({ isAxiosError: true, response: { status: 504, data: { message: "Gateway Timeout" } } })
+      .mockRejectedValueOnce({ isAxiosError: true, response: { status: 429, data: { message: "ThrottlerException" } } });
+    renderWithProviders(<DispatchPage />, { preloadedState: hqRegistrator });
+
+    await scan("tok-504");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Server xatosi (504)");
+    await scan("tok-429");
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("Juda tez skanerlanmoqda — bir soniya kuting va qayta skanerlang"),
+    );
+  });
+
+  it("tekshirilayotgan kodning qayta o'qilishi — «tekshirilmoqda» signali, ikkinchi so'rov yo'q", async () => {
+    let resolve: (value: unknown) => void = () => undefined;
+    mocks.fetchScanDetail.mockReturnValue(new Promise((done) => (resolve = done)));
+    renderWithProviders(<DispatchPage />, { preloadedState: hqRegistrator });
+
+    await scan("tok-10285");
+    await scan("tok-10285");
+
+    expect(mocks.feedback).toHaveBeenCalledWith("duplicate", "Bu buyurtma hali tekshirilmoqda — natijani kuting", undefined, {
+      voice: false,
+    });
+    expect(mocks.fetchScanDetail).toHaveBeenCalledTimes(1);
+    await act(async () => resolve(orderDetail("10285", "Zarina Mirzayeva")));
+    expect(await screen.findByText("№10285")).toBeInTheDocument();
   });
 
   it("tekshiruv ketayotganda «N ta buyurtma tekshirilmoqda...» va biriktirish o'chiq", async () => {

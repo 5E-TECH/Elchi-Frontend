@@ -1,11 +1,12 @@
 // dizayn-v2: courier-scan-active, courier-scan-starting, courier-scan-permission-denied, courier-scan-success-flash, courier-scan-other-courier, courier-scan-invalid
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Ban,
   CameraOff,
   Check,
   Flashlight,
   History,
+  Hourglass,
   Info,
   List,
   RefreshCw,
@@ -73,6 +74,7 @@ const FEEDBACK_TONE: Record<ScanFeedback["kind"], CameraTone> = {
   repeat: "info",
   failed: "error",
   invalid: "error",
+  pending: "info",
 };
 
 const FEEDBACK_ICON: Record<ScanFeedback["kind"], LucideIcon> = {
@@ -81,6 +83,7 @@ const FEEDBACK_ICON: Record<ScanFeedback["kind"], LucideIcon> = {
   repeat: Info,
   failed: X,
   invalid: Ban,
+  pending: Hourglass,
 };
 
 type TgScannerProps = {
@@ -103,15 +106,26 @@ export const TgScanner = ({ webApp, accessToken, onSessionExpired }: TgScannerPr
   const { entries, acceptedOrderIds, pendingCount, feedback, flash, handleScan, settle } = useScanAssign({
     accessToken,
     webApp,
-    // Ro'yxat varag'i ochiq bo'lsa skanlar e'tiborsiz (natija varaq ortida ko'rinmay qolmasin); kamera ishlayveradi.
-    enabled: !finishing && !listOpen,
+    enabled: !finishing,
     onSessionExpired,
     onFeedback: playSound,
   });
 
-  const handleCameraDecode = useCallback((value: string) => handleScan(value, "camera"), [handleScan]);
+  const listOpenRef = useRef(listOpen);
+  useEffect(() => {
+    listOpenRef.current = listOpen;
+  }, [listOpen]);
+  // Ro'yxat varag'i ochiq: kamera kodlari e'tiborsiz (kamera varaq ortida — ataylab skan emas, natija ko'rinmay qolardi).
+  const handleCameraDecode = useCallback((value: string) => {
+    if (!listOpenRef.current) handleScan(value, "camera");
+  }, [handleScan]);
+  // USB skani esa ataylab — jim yo'qolmaydi (skan auditi #63): varaq yopiladi va skan odatdagidek natija beradi.
   const handleKeyboardScan = useCallback(
     (value: string) => {
+      if (listOpenRef.current) {
+        listOpenRef.current = false;
+        setListOpen(false);
+      }
       handleScan(value, "keyboard");
       return true;
     },
@@ -126,7 +140,7 @@ export const TgScanner = ({ webApp, accessToken, onSessionExpired }: TgScannerPr
   });
 
   // Bluetooth/USB skaner (klaviatura sifatida) — kamera bilan bir xil oqim.
-  useKeyboardScanner({ enabled: !finishing && !listOpen, onScan: handleKeyboardScan });
+  useKeyboardScanner({ enabled: !finishing, onScan: handleKeyboardScan });
 
   const cameraFailed = Boolean(camera.cameraError) || camera.cameraUnavailable;
   const starting = !cameraFailed && (camera.isStarting || !feedLive);
@@ -201,6 +215,9 @@ export const TgScanner = ({ webApp, accessToken, onSessionExpired }: TgScannerPr
       return (
         <CameraToast key={item.key} tone={tone} icon={icon} title={errorText(item.entry.error)} text={t("toast.failedText")} />
       );
+    }
+    if (item.kind === "pending") {
+      return <CameraToast key={item.key} tone={tone} icon={icon} title={t("toast.pendingTitle")} text={t("toast.pendingText")} />;
     }
     return <CameraToast key={item.key} tone={tone} icon={icon} title={t("toast.invalidTitle")} text={t("toast.invalidText")} />;
   };

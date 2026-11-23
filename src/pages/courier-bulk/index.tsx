@@ -1,5 +1,5 @@
 // dizayn-v2: courier-courier-bulk-main, manager-courier-bulk-main, courier-courier-bulk-confirm-dialog
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useSelector } from "react-redux";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,15 @@ import { getUserCanSellCancel } from "../new_orders/components/detail/orderDetai
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
+import { getErrorStatus } from "../../shared/lib/errorKind";
+import { extractScannerToken, normalizeScannerCandidates } from "../../shared/lib/scanToken";
+import {
+  findExactScannedRow,
+  scanLookupFailureReason,
+  scannedOrderKeys,
+  unwrapScannedOrder,
+} from "../../shared/lib/scanner/exactScanMatch";
+import { fetchScanDetail, getScanResourceType, normalizeScanToken } from "../scan/lib/scanResource";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { notify } from "../../shared/lib/notify";
 import { cx } from "../../shared/lib/cx";
@@ -57,6 +66,8 @@ import {
   type CourierBulkScanMode,
 } from "./model/courierBulk";
 import {
+  courierBulkMarksDay,
+  msUntilNextCourierBulkDay,
   pruneCourierBulkActions,
   readCourierBulkMarks,
   writeCourierBulkMarks,
@@ -117,6 +128,29 @@ const fetchAllCourierWaitingOrders = async () => {
   }
 
   return mergeCourierBulkOrders(pages);
+};
+
+/**
+ * Toshkent kuni (`YYYY-MM-DD`) — yarim tunda o'zi yangilanadi: sahifa kechadan ochiq qolsa ham kechagi belgilar
+ * bugungi yakunlashga o'tmaydi (skan auditi #58, #76).
+ */
+const useCourierBulkDay = () => {
+  const [day, setDay] = useState(() => courierBulkMarksDay());
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDay(courierBulkMarksDay()), msUntilNextCourierBulkDay() + 1000);
+    return () => window.clearTimeout(timer);
+  }, [day]);
+  return day;
+};
+
+/** Ro'yxatdagi buyurtma — skan kodi (id yoki QR token) bo'yicha, `useOrderQrScanner` bilan bir xil moslik. */
+const findListedOrder = (orders: readonly CourierBulkOrder[], rawValue: string) => {
+  const candidates = new Set(normalizeScannerCandidates(rawValue, window.location.origin));
+  return orders.find(
+    (order) =>
+      candidates.has(String(order.id).toLowerCase()) ||
+      (order.qr_code_token ? candidates.has(order.qr_code_token.trim().toLowerCase()) : false),
+  );
 };
 
 /**
@@ -184,6 +218,13 @@ const CourierBulkPage = () => {
   const [actions, setActions] = useState<Record<string, CourierBulkAction>>(
     () => readCourierBulkMarks(marksKey)?.actions ?? {},
   );
+  // Kun almashdi (sahifa yarim tundan beri ochiq) — kechagi belgilar tashlanadi (#58, #76).
+  const marksDay = useCourierBulkDay();
+  const [loadedMarksDay, setLoadedMarksDay] = useState(marksDay);
+  if (loadedMarksDay !== marksDay) {
+    setLoadedMarksDay(marksDay);
+    setActions({});
+  }
   // Profil keyinroq yuklansa (kalit o'zgardi) — shu foydalanuvchining belgilari (holat render paytida — effektsiz).
   if (loadedMarksKey !== marksKey) {
     setLoadedMarksKey(marksKey);
@@ -277,12 +318,88 @@ const CourierBulkPage = () => {
     [actions, forgetRowError, scanMode, t, touchRecentScan],
   );
 
-  const handleScanMissing = useCallback(() => {
-    setScanError(t("scanMissing"));
-    // Qisqa (3 s) — keyingi to'g'ri skandan keyin «Topilmadi» qaytib chiqmasin (G6F68ti6, 16-band).
-    scanNotify.error(t("scanMissingTitle"), { description: t("scanMissing"), duration: 3000 });
-    void playScanFeedback("missing", t("scanMissing"));
-  }, [t]);
+  /** Skan natijasi xatosi — sahifa ostida (keyingi to'g'ri skangacha), qisqa xabar va ovoz. */
+  const reportScanProblem = useCallback(
+    (title: string, description: string, type: "missing" | "error" = "error") => {
+      setScanError(description);
+      // Qisqa (3 s) — keyingi to'g'ri skandan keyin «Topilmadi» qaytib chiqmasin (G6F68ti6, 16-band).
+      scanNotify.error(title, { description, duration: 3000 });
+      void playScanFeedback(type, description);
+    },
+    [],
+  );
+
+  // Kech kelgan (server tekshiruvidan keyingi) natija eskirgan `actions` bilan belgilamasin — doim oxirgi handler.
+  const handleScanMatchRef = useRef(handleScanMatch);
+  const scanBlockedRef = useRef(false);
+  useEffect(() => {
+    handleScanMatchRef.current = handleScanMatch;
+    scanBlockedRef.current = isBusy || isConfirming || Boolean(proofStep?.open) || isResultOpen;
+  });
+  /** Server tekshiruvidagi kodlar — bitta kod parallel ikki marta so'ralmaydi. */
+  const missLookupsRef = useRef(new Set<string>());
+
+  /**
+   * Ro'yxatda topilmagan kod (skan auditi #57): ilgari so'rovsiz darhol «Buyurtma topilmadi» edi — ro'yxat hali
+   * yuklanayotgan (100 tadan sahifalar ketma-ket) yoki eskirgan (sahifa ochilgandan keyin olingan buyurtma) bo'lsa ham.
+   * Endi: 1) ro'yxat yuklanayotgan bo'lsa — o'sha so'rov kutiladi va qayta moslanadi; 2) yo'q bo'lsa — kod serverdan
+   * (`?view=light`, qop zaxirasisiz) so'raladi: kutilayotgan buyurtma bo'lsa ro'yxat yangilanadi va belgilanadi;
+   * boshqa holatda — «kutilayotganlar ichida emas»; faqat 404 — «topilmadi». Tarmoq / server / 429 — «topilmadi»
+   * emas, sababi bilan.
+   */
+  const handleScanMissing = useCallback(
+    async (rawValue: string) => {
+      const extracted = extractScannerToken(rawValue, window.location.origin);
+      const token = extracted ? normalizeScanToken(extracted) : null;
+      if (!token || getScanResourceType(token) !== "order") {
+        reportScanProblem(t("scanMissingTitle"), t("scanMissing"), "missing");
+        return;
+      }
+      const lookupKey = token.toLowerCase();
+      if (missLookupsRef.current.has(lookupKey)) return;
+      missLookupsRef.current.add(lookupKey);
+      const loadList = (staleTime: number) =>
+        queryClient.fetchQuery({ queryKey: COURIER_BULK_QUERY_KEY, queryFn: fetchAllCourierWaitingOrders, staleTime });
+      try {
+        // 1) Yuklanayotgan ro'yxat (yo'ldagi so'rovga qo'shiladi) yoki yangi kesh.
+        let found = findListedOrder(await loadList(15_000), rawValue);
+        if (!found) {
+          // 2) Serverdan shu kod: id va holat yetarli (`light`), qop emas (`orderOnly`).
+          const detail = await fetchScanDetail(token, { light: true, orderOnly: true });
+          const scanned = unwrapScannedOrder(detail.data);
+          const keys = scannedOrderKeys(scanned, normalizeScannerCandidates(rawValue, window.location.origin));
+          const waiting = String(scanned.status ?? "").trim().toLowerCase() === "waiting";
+          found = findExactScannedRow(queryClient.getQueryData<CourierBulkOrder[]>(COURIER_BULK_QUERY_KEY) ?? [], keys);
+          // Kutilayotgan, lekin ro'yxatda yo'q — ro'yxat eskirgan: yangisi olinadi (yakunlash paytida emas — u
+          // tugagach ro'yxat o'zi bir marta yangilanadi).
+          if (!found && waiting && !scanBlockedRef.current) found = findExactScannedRow(await loadList(0), keys);
+          if (!found) {
+            const id = typeof scanned.id === "string" || typeof scanned.id === "number" ? String(scanned.id) : "";
+            reportScanProblem(
+              t("scanNotWaitingTitle"),
+              id ? t("scanNotWaiting", { id }) : t("scanMissing"),
+              "missing",
+            );
+            return;
+          }
+        }
+        if (scanBlockedRef.current) {
+          reportScanProblem(t("scanBusyTitle"), t("scanBusy"));
+          return;
+        }
+        handleScanMatchRef.current(found);
+      } catch (error) {
+        if (getErrorStatus(error) === 404) {
+          reportScanProblem(t("scanMissingTitle"), t("scanMissing"), "missing");
+          return;
+        }
+        reportScanProblem(t("scanCheckFailedTitle"), scanLookupFailureReason(t, error, { tooMany: t("scanTooMany") }));
+      } finally {
+        missLookupsRef.current.delete(lookupKey);
+      }
+    },
+    [queryClient, reportScanProblem, t],
+  );
 
   /** Kamera «Bekor qilish»: belgi olinadi (server amali yo'q) — buyurtma yana sukut «sotildi»ga qaytadi. */
   const unmarkScannedOrder = useCallback(
@@ -342,8 +459,10 @@ const CourierBulkPage = () => {
     // e'tiborsiz, lekin ochiq kamera yopilmaydi.
     enabled: !proofStep?.open && !isResultOpen,
     paused: isBusy || isConfirming,
+    // Ro'yxat yuklanguncha ham USB tinglanadi — kod `onMissing` da yuklanishni kutadi (skan auditi #57).
+    keyboardWhenEmpty: true,
     onMatch: handleScanMatch,
-    onMissing: handleScanMissing,
+    onMissing: (rawValue) => void handleScanMissing(rawValue),
     camera: {
       id: "courier-bulk",
       title: t("page.finalize"),

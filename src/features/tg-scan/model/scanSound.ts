@@ -20,11 +20,15 @@ const SOUND_OF: Record<ScanFeedback["kind"], ScanFeedbackType> = {
   repeat: "duplicate",
   failed: "error",
   invalid: "error",
+  // Yo'ldagi kod qayta o'qildi — qisqa «takror» ohangi, ibora yo'q (natija kelgach o'zi aytiladi).
+  pending: "duplicate",
 };
 
 /** «Ovozli xabar»: kuryer buyurtmani o'ziga oldi — «Biriktirildi» (qolganlari tur bo'yicha). */
-const VOICE_OF: Partial<Record<ScanFeedback["kind"], ScanVoicePhrase>> = {
+const VOICE_OF: Partial<Record<ScanFeedback["kind"], ScanVoicePhrase | false>> = {
   assigned: "assigned",
+  // «Allaqachon skanerlangan» iborasi yo'ldagi kodga to'g'ri emas — natija hali yo'q.
+  pending: false,
 };
 
 /**
@@ -56,7 +60,7 @@ export const useTgScanSound = (accessToken: string) => {
   return useCallback(
     (feedback: ScanFeedback) => {
       const voice = VOICE_OF[feedback.kind];
-      playScanSignal(SOUND_OF[feedback.kind], voice ? { vibrate: false, voice } : { vibrate: false });
+      playScanSignal(SOUND_OF[feedback.kind], voice !== undefined ? { vibrate: false, voice } : { vibrate: false });
     },
     [],
   );

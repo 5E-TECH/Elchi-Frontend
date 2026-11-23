@@ -14,6 +14,9 @@ import { API_ENDPOINTS } from "../shared/api/endpoints";
 import { getLoginEpoch, isRefreshSuperseded } from "./loginEpoch";
 import i18n from "../i18n";
 
+/** Skaner qidiruvi (`failFast`) javobsiz qolganda sayt tekshiruvini kutish chegarasi (skan auditi #10/#73). */
+export const SCAN_PROBE_BUDGET_MS = 1_000;
+
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
   /** So'rov qaysi kirish davrida yuborildi (`loginEpoch.ts`). */
@@ -213,7 +216,15 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
       // Javob kelgan xato (4xx/5xx) ham aloqa borligini bildiradi.
       if (error.response) emitNetworkRestored();
       // Javobsiz xato: internetmi yoki servermi — xatoning o'ziga yoziladi (xabar, sahifa holati, `onError` uchun).
-      await classifyNetworkFailure(error);
+      // Skaner qidiruvi (`failFast`) sayt tekshiruvini ko'pi bilan `SCAN_PROBE_BUDGET_MS` kutadi (skan auditi #10/#73):
+      // aks holda har javobsiz skan xatosi 3 s kechikardi va operator qayta skanerlardi. Tekshiruv natijasi 5 s
+      // keshlanadi — keyingi skanlar kutmaydi; tekshiruv sekin bo'lsa, bu o'zi internet muammosining belgisi.
+      const classification = classifyNetworkFailure(error);
+      if (error.config?.failFast === true) {
+        await Promise.race([classification, new Promise<void>((resolve) => setTimeout(resolve, SCAN_PROBE_BUDGET_MS))]);
+      } else {
+        await classification;
+      }
       // Fon so'rovi (`silentNetworkError`, masalan har daqiqadagi o'qilmaganlar soni) — holat belgilanadi, lekin
       // foydalanuvchi yopgan tarmoq xabari qayta ochilmaydi (9-band).
       emitNetworkError(error, { silent: error.config?.silentNetworkError === true });

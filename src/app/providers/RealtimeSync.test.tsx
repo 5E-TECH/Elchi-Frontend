@@ -277,6 +277,23 @@ describe("RealtimeSync — jonli bildirishnomalar (uRkw6lk0)", () => {
     expect(invalidate).toHaveBeenCalledTimes(2);
   });
 
+  it("skan auditi #106: HQ skanlari ketma-ket — buyurtma ro'yxati har hodisada emas, oraliqda bir marta yangilanadi", async () => {
+    const { queryClient } = renderSync();
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    await waitFor(() => expect(socketMock.state.sockets).toHaveLength(1));
+    invalidate.mockClear();
+    const ordersRefreshes = () =>
+      invalidate.mock.calls.filter(([filters]) => JSON.stringify(filters?.queryKey) === JSON.stringify(["orders"])).length;
+
+    act(() => lastSocket().fire("notification:new", { type: "order.received", category: "order" }));
+    await waitFor(() => expect(ordersRefreshes()).toBe(1));
+
+    // Keyingi skan hodisasi oraliq ichida — darhol qayta yuklanmaydi (400 ms yig'ish oynasidan keyin ham).
+    act(() => lastSocket().fire("notification:new", { type: "order.received", category: "order" }));
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(ordersRefreshes()).toBe(1);
+  });
+
   describe("AI maslahatchi: jiddiy ogohlantirish `ai.advisor_alert` (60PWUbgC, maket tizim-ai-advisor-messages)", () => {
     /** Shartnoma v0.3 §9.3: `recipient_ids` ga to'liq qator (`data` — qisqa nom va joy uchun). */
     const ADVISOR_ROW = {

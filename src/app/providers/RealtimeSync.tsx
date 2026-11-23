@@ -67,6 +67,13 @@ const ORDERS_QUERY_PREFIX = "orders";
 /** Bir vaqtda kelgan hodisalarni yig'ish oynasi — bitta so'rov va bitta xabar. */
 const BATCH_MS = 400;
 
+/**
+ * Buyurtma hodisasidan keyin ochiq ro'yxatlarni yangilash — ko'pi bilan shu oraliqda BIR marta (skan auditi #106).
+ * HQ skanerlab qabul qilganda har skan market va logist qurilmalariga hodisa yuboradi; ilgari har biri (400 ms
+ * yig'ishdan keyin) butun `orders` so'rovlarini qayta yuklardi — 1 skan/s da market ekrani to'xtovsiz yuklanardi.
+ */
+export const REALTIME_ORDERS_REFRESH_MS = 3_000;
+
 /** «N ta yangi bildirishnoma» xabarining kaliti — ochiq bo'lsa yangi partiya shu xabarga qo'shiladi. */
 const BATCH_TOAST_ID = "elchi-realtime-batch";
 
@@ -104,6 +111,8 @@ const RealtimeSync = () => {
   const advisorChangeIdsRef = useRef(new Set<string>());
   const advisorChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ordersRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ordersRefreshPendingRef = useRef(false);
   /**
    * Ochiq «N ta yangi bildirishnoma» xabarida sanalgan qatorlar (`id`): keyingi partiya shu songa qo'shiladi, bir xil
    * `id` ikki marta sanalmaydi. Xabar yopilgan (yoki yopilayotgan) bo'lsa — keyingi partiyada boshidan.
@@ -120,7 +129,23 @@ const RealtimeSync = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsInbox.all });
       if (ordersChangedRef.current) {
         ordersChangedRef.current = false;
-        void queryClient.invalidateQueries({ queryKey: [ORDERS_QUERY_PREFIX], refetchType: "active" });
+        const refreshOrders = () =>
+          void queryClient.invalidateQueries({ queryKey: [ORDERS_QUERY_PREFIX], refetchType: "active" });
+        if (ordersRefreshTimerRef.current) {
+          // Oraliq ichida — oxirida bitta yangilash (uzluksiz skanda ham har oraliqda bir marta).
+          ordersRefreshPendingRef.current = true;
+        } else {
+          // Birinchi hodisa — darhol (avvalgidek); keyingilari shu oraliqda yig'iladi.
+          refreshOrders();
+          const closeWindow = () => {
+            ordersRefreshTimerRef.current = null;
+            if (!ordersRefreshPendingRef.current) return;
+            ordersRefreshPendingRef.current = false;
+            refreshOrders();
+            ordersRefreshTimerRef.current = setTimeout(closeWindow, REALTIME_ORDERS_REFRESH_MS);
+          };
+          ordersRefreshTimerRef.current = setTimeout(closeWindow, REALTIME_ORDERS_REFRESH_MS);
+        }
       }
       const advisor = advisorRef.current;
       if (advisorChangedRef.current) {
@@ -208,6 +233,10 @@ const RealtimeSync = () => {
   useEffect(
     () => () => {
       if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+      if (ordersRefreshTimerRef.current) {
+        clearTimeout(ordersRefreshTimerRef.current);
+        ordersRefreshTimerRef.current = null;
+      }
       if (advisorChangeTimerRef.current) clearTimeout(advisorChangeTimerRef.current);
     },
     [],

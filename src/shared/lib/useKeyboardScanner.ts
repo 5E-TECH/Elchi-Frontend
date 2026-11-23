@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 interface UseKeyboardScannerOptions {
   enabled?: boolean;
@@ -144,7 +144,10 @@ export const useKeyboardScanner = ({
   const editableSnapshotRef = useRef<EditableSnapshot | null>(null);
   const onScanRef = useRef(onScan);
 
-  useEffect(() => {
+  // Skan auditi #11/#34: commit bilan BIR vaqtda (layout) yangilanadi — passiv effektda yangilansa, commit va effekt
+  // orasida kelgan Enter eski renderning buyurtma indeksini va eski holatini ishlatardi (masalan, muvaffaqiyatdan
+  // keyingi tez takror skan ikkinchi so'rov yuborardi).
+  useLayoutEffect(() => {
     onScanRef.current = onScan;
   }, [onScan]);
 

@@ -321,8 +321,10 @@ describe("Paket tafsiloti — qabul", () => {
     expect(mocks.post).toHaveBeenCalledWith("transfer-batches/140/receive-orders", { orderIds: ["10173", "10171"] });
     expect(await screen.findByText("Buyurtmalar qabul qilindi")).toBeInTheDocument();
     expect(screen.getByText("2 ta buyurtma qabul qilindi.")).toBeInTheDocument();
-    await waitFor(() => expect(bodyRows()).toHaveLength(1));
-    expect(rowOf("10172")).toBeDefined();
+    // Skan auditi #16: qisman qabulda backend paketni yopadi va tanlanmaganini jo'natuvchiga qaytaradi — u ekranda
+    // qolmaydi (aks holda keyingi qabul «Bu paket allaqachon qabul qilingan» xatosini berardi), nima bo'lgani aytiladi.
+    expect(await screen.findByText("1 ta tanlanmagan buyurtma jo'natuvchi filialga qaytarildi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("table", { name: "Buyurtmalar" })).toBeNull());
   });
 
   it("buyurtma boyitilmagan band (`order: null`) — qabulga band id'si emas, `order_id` ketadi", async () => {

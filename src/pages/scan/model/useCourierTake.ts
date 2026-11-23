@@ -37,6 +37,8 @@ import {
  *   - buyurtma emas (paket, pochta, market QR) — so'rovsiz rad (`scan-assign` faqat buyurtma oladi);
  *   - ovoz va tebranish faqat `playScanFeedback` (Sozlamalar «Ovoz» / «Tebranish» kalitlari bilan) — oqimning
  *     o'z tebranishi o'chiq (`haptics: false`); kamera skanlari sessiyada pauzadan o'tgan (`cameraGated`);
+ *   - gateway 504 / vaqt tugashi — oqim o'sha so'rovni bir marta qayta yuboradi (skan auditi #59, `useScanAssign`):
+ *     qayta yuborishdagi «allaqachon sizda» — «Sizga biriktirildi»;
  *   - «Tugatish» → yo'ldagi so'rovlar kutiladi, buyurtmalar/pochta keshi yangilanadi (6qypMFeT), xulosa.
  *     Sahifa yopilsa (hook o'chsa) va oxirgi yangilanishdan keyin yangi biriktirilgan bo'lsa — kesh yana
  *     yangilanadi. Rejim almashganda hook o'chmaydi (`enabled: false`) — kesh «Tugatish» yoki chiqishda.
@@ -114,6 +116,11 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
       }
       if (feedback.kind === "invalid") {
         void playScanFeedback("error", t("scanner.invalid.title"));
+        return;
+      }
+      if (feedback.kind === "pending") {
+        // Shu kod hali yuborilmoqda (skan auditi #63: avval jim tashlanardi) — «Allaqachon …» iborasi emas.
+        void playScanFeedback("duplicate", t("scanner.take.pendingToast"), undefined, { voice: false });
         return;
       }
       if (feedback.kind === "failed") {
