@@ -196,7 +196,7 @@ describe("ScanPage — universal skaner (desktop)", () => {
     expect(feedbackMock).toHaveBeenCalledWith("success", "№10226 · Buyurtma topildi", "keyboard", { voice: false });
   });
 
-  it("signals a second code scanned while the first one is still opening (not silently lost)", async () => {
+  it("skan auditi #97: birinchi kod ochilayotganda kelgan BOSHQA kod rad etilmaydi — oxirgi skan ochiladi", async () => {
     let resolve: (value: unknown) => void = () => undefined;
     fetchMock.mockReturnValueOnce(new Promise((done) => (resolve = done)));
     renderScan();
@@ -204,15 +204,25 @@ describe("ScanPage — universal skaner (desktop)", () => {
     hidScan("PARCEL-A");
     hidScan("PARCEL-B");
 
-    expect(feedbackMock).toHaveBeenCalledWith(
-      "error",
-      "Oldingi kod ochilmoqda — bu skan qabul qilinmadi. Qayta skanerlang.",
-      "keyboard",
-    );
+    expect(feedbackMock).not.toHaveBeenCalledWith("error", expect.anything(), "keyboard");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenLastCalledWith("PARCEL-B");
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan/PARCEL-B"));
+    // Almashtirilgan A ning kech javobi hech narsa ochmaydi.
     await act(async () => resolve({ type: "order", data: ORDER }));
-    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan/PARCEL-A"));
+    await new Promise((done) => setTimeout(done, 400));
     expect(navigateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("ochilayotgan kodning qo'shaloq o'qishi e'tiborsiz — bitta so'rov, bitta ochilish", async () => {
+    renderScan();
+
+    hidScan("PARCEL-A");
+    hidScan("PARCEL-A");
+
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan/PARCEL-A"));
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(feedbackMock).not.toHaveBeenCalledWith("duplicate", undefined, "keyboard");
   });
 
   it("keeps the scanner open on a not-found code and explains it in the result card", async () => {
@@ -315,8 +325,8 @@ describe("ScanPage — universal skaner (desktop)", () => {
     expect(feedbackMock).toHaveBeenCalledWith("error", "Bu market QR kodi", "keyboard");
   });
 
-  it("acknowledges a deliberate repeated HID scan instead of resolving it twice", async () => {
-    fetchMock.mockRejectedValue(notFound());
+  it("skan auditi #30/#53: «topilmadi»dan keyin darhol qayta skan — «Allaqachon» emas, qayta so'raladi", async () => {
+    fetchMock.mockRejectedValueOnce(notFound());
     renderScan();
 
     hidScan("PARCEL-404");
@@ -324,8 +334,57 @@ describe("ScanPage — universal skaner (desktop)", () => {
     feedbackMock.mockClear();
     hidScan("PARCEL-404");
 
-    expect(feedbackMock).toHaveBeenCalledWith("duplicate", undefined, "keyboard");
+    expect(feedbackMock).not.toHaveBeenCalledWith("duplicate", undefined, "keyboard");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan/PARCEL-404"));
+  });
+
+  it("tarmoq xatosidan keyin qayta skan ham qayta so'raydi; xato «topilmadi» deb ko'rsatilmaydi", async () => {
+    fetchMock.mockRejectedValueOnce(
+      Object.assign(new Error("Network Error"), { isAxiosError: true, code: "ERR_NETWORK", request: {} }),
+    );
+    renderScan();
+
+    hidScan("PARCEL-NET");
+    const card = await screen.findByRole("region", { name: "Natija" });
+    expect(within(card).getByText("Kodni tekshirib bo'lmadi")).toBeInTheDocument();
+    expect(within(card).queryByText("Buyurtma topilmadi")).not.toBeInTheDocument();
+    hidScan("PARCEL-NET");
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan/PARCEL-NET"));
+  });
+
+  it("429 (so'rov cheklovi) — «Juda tez skanerlanmoqda», «topilmadi» emas", async () => {
+    fetchMock.mockRejectedValueOnce(
+      Object.assign(new Error("Too Many Requests"), {
+        isAxiosError: true,
+        response: { status: 429, data: { message: "ThrottlerException: Too Many Requests" } },
+      }),
+    );
+    renderScan();
+
+    hidScan("PARCEL-429");
+
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith(
+        "error",
+        "Juda tez skanerlanmoqda — bir soniya kuting va qayta skanerlang",
+        "keyboard",
+      ),
+    );
+    expect(feedbackMock).not.toHaveBeenCalledWith("missing", expect.anything(), "keyboard");
+  });
+
+  it("muvaffaqiyatli ochilgan kodning qo'shaloq o'qishi (ochilish oldidan) — takror so'rov yo'q", async () => {
+    renderScan();
+
+    hidScan("PARCEL-OK");
+    await waitFor(() => expect(feedbackMock).toHaveBeenCalledWith("success", "№10226 · Buyurtma topildi", "keyboard", { voice: false }));
+    hidScan("PARCEL-OK");
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
   });
 
   it("ignores a 1–3 character Enter in the manual field (human typing, not a scan)", () => {
@@ -716,6 +775,12 @@ describe("ScanPage — «Pochtani jo'natish», «Rad etilgan pochta», «Marketg
     hidScan(MAIL_TOKEN);
     await waitFor(() => expect(feedbackMock).toHaveBeenCalledWith("missing", "Pochta topilmadi", "keyboard"));
     expect(navigateMock).not.toHaveBeenCalled();
+
+    // Skan auditi #30: topilmagan pochtaning darhol qayta skani — «takror» emas, qayta so'raladi.
+    feedbackMock.mockClear();
+    hidScan(MAIL_TOKEN);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(feedbackMock).not.toHaveBeenCalledWith("duplicate", undefined, "keyboard");
   });
 
   it("menejer HQ: segmentda «Rad etilgan» → rad etilgan pochtalar (kuryer bilan) → /mails/:id `type: refused`", async () => {
@@ -1056,7 +1121,8 @@ describe("ScanPage — skan-qabul sikli («Pochtadan qabul», telefon)", () => {
     await enterManual(user, TOKEN, "Qabul qilish");
 
     await waitFor(() => expect(patchSpy).toHaveBeenCalledWith("post/receive/p-7", { order_ids: ["10191"], scan: true }));
-    expect(fetchMock).toHaveBeenCalledWith(TOKEN);
+    // Faqat buyurtma (#68): 404 da qop zaxirasi so'ralmaydi.
+    expect(fetchMock).toHaveBeenCalledWith(TOKEN, { orderOnly: true });
     expect(await screen.findByText("№10191 · Lobar Yusupova")).toBeInTheDocument();
     expect(screen.getByText("Qabul qilindi · Yunusobod tumani")).toBeInTheDocument();
     expect(feedbackMock).toHaveBeenCalledWith("success", "№10191 qabul qilindi", "manual", { voice: "received" });
@@ -1247,6 +1313,42 @@ describe("ScanPage — skan-qabul sikli («Pochtadan qabul», telefon)", () => {
     await enterManual(user, TOKEN, "Qabul qilish");
     await waitFor(() => expect(patchSpy).toHaveBeenCalledTimes(2));
     expect(await screen.findByText("Qabul qilindi · Yunusobod tumani")).toBeInTheDocument();
+  });
+
+  it("skan auditi #68: qabul so'rovi vaqti tugasa, server esa qabul qilgan bo'lsa — «Qabul qilindi», xato emas", async () => {
+    const user = userEvent.setup();
+    patchSpy.mockRejectedValueOnce(
+      Object.assign(new Error("timeout of 20000ms exceeded"), { isAxiosError: true, code: "ECONNABORTED", request: {} }),
+    );
+    // Qayta o'qishda buyurtma allaqachon «kutilmoqda» (kuryersiz) — qabul bo'lgan.
+    fetchMock.mockResolvedValueOnce({ type: "order", data: ROAD }).mockResolvedValueOnce({
+      type: "order",
+      data: { ...ROAD, status: "waiting" },
+    });
+    renderReceive();
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+
+    expect(await screen.findByText("Qabul qilindi · Yunusobod tumani")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(feedbackMock).toHaveBeenCalledWith("success", "№10191 qabul qilindi", "manual", { voice: "received" });
+    expect(feedbackMock).not.toHaveBeenCalledWith("error", expect.anything(), "manual");
+  });
+
+  it("qabul so'rovi 5xx va buyurtma hali yo'lda — xato (qabul bo'lmagan)", async () => {
+    const user = userEvent.setup();
+    patchSpy.mockRejectedValueOnce(
+      Object.assign(new Error("Server"), { isAxiosError: true, response: { status: 502, data: {} } }),
+    );
+    renderReceive();
+
+    await enterManual(user, TOKEN, "Qabul qilish");
+
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith("error", "№10191 qabul qilinmadi — qayta skanerlang", "manual"),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText("Qabul qilindi · Yunusobod tumani")).not.toBeInTheDocument();
   });
 
   it("paket kodi so'rovsiz rad etiladi", async () => {

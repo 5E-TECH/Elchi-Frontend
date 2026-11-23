@@ -4,8 +4,9 @@ import { UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useReceivePost } from "../../../entities/mails";
 import { coverageErrorLine, readQrScopeText } from "../../../shared/lib/coverageReasons";
-import { getErrorStatus } from "../../../shared/lib/errorKind";
+import { getErrorKind, getErrorStatus } from "../../../shared/lib/errorKind";
 import { playScanFeedback, type ScanSource, type ScanTargetListItem } from "../../../shared/lib/scanner";
+import { scanLookupFailureReason } from "../../../shared/lib/scanner/exactScanMatch";
 import { extractScannerToken } from "../../../shared/lib/scanToken";
 import { normalizeOrderDetail, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
 import {
@@ -40,6 +41,13 @@ import { getBranchReceiveDecision, isScanReceivableStatus, readOrderPostId, read
  *   - begona QR (#620, anKpzwxk: 403 `order_not_in_your_branch` …) va qabul rad javobi (`post_receive_manager_only`)
  *     — lokal uz/ru/en matn (`common:coverage.*`), backend matni faqat noma'lum sabab uchun.
  * Bitta token parallel ikki marta ketmaydi (yo'ldagi tokenlar to'plami).
+ *
+ * Skan auditi #68: qidiruv faqat buyurtma (`orderOnly` — 404 da qop zaxirasi so'ralmaydi, «topilmadi» bitta
+ * so'rovda); `?view=light` ishlatilmaydi — qaror `post_id`, kuryer va ushlovchiga tayanadi, light javobda ular yo'q.
+ * Qidiruvning 5xx / 429 / tarmoq xatosi — «topilmadi» emas, sababi bilan (#55). Qabul so'rovi (PATCH) vaqt tugashi /
+ * 5xx / javobsiz yiqilsa — server uni bajargan bo'lishi mumkin: buyurtma qayta o'qiladi va «kutilmoqda»ga o'tgan
+ * bo'lsa — «qabul qilindi» deb yoziladi (ilgari xato yozilib, keyingi skan natija sahifasini ochardi — operator buni
+ * «allaqachon qabul qilingan» deb ko'rardi). Navbatdagi skanlar soni kamera izohida (`pendingCount`).
  */
 
 /** Kamerada turib qolgan kod shu vaqtdan keyin qayta tekshiriladi (`useScanAssign` bilan bir xil). */
@@ -96,6 +104,23 @@ const placeOf = (order: OrderDetail) => {
 
 /** Skan paytidagi qoidalar — javob kelguncha filial ma'lumoti o'zgarsa ham skan o'z qoidasi bo'yicha tugaydi. */
 type ScanContext = { branchId: string | null };
+
+/** Buyurtma qidiruvi: faqat buyurtma (qop zaxirasisiz), keshsiz — har skan yangi holat. */
+const lookupOrder = async (token: string) => {
+  const response = await fetchScanDetail(token, { orderOnly: true });
+  return { response, order: response.type === "order" ? normalizeOrderDetail(response.data) : null };
+};
+
+/**
+ * Javobsiz / vaqt tugagan / 5xx amal — server uni bajargan bo'lishi mumkin (javob yo'lda yo'qoldi). 4xx — aniq rad
+ * javobi (sabab bilan), qayta tekshirilmaydi.
+ */
+const isUncertainFailure = (error: unknown) => {
+  const status = getErrorStatus(error);
+  if (status !== undefined) return status >= 500;
+  const kind = getErrorKind(error);
+  return kind === "timeout" || kind === "offline";
+};
 
 export const useBranchReceive = ({
   enabled,
@@ -171,8 +196,7 @@ export const useBranchReceive = ({
       let response: Awaited<ReturnType<typeof fetchScanDetail>>;
       try {
         // Keshsiz: qabul / sotish holati tez o'zgaradi (boshqa qurilma, menejer) — har skan yangi javob.
-        response = await fetchScanDetail(token);
-        order = response.type === "order" ? normalizeOrderDetail(response.data) : null;
+        ({ response, order } = await lookupOrder(token));
       } catch (error) {
         if (getErrorStatus(error) === 404) {
           addEntry({
@@ -186,8 +210,14 @@ export const useBranchReceive = ({
           void playScanFeedback("missing", t("order.notFoundTitle"), source);
           return;
         }
-        // Begona QR (#620): lokal matn («Bu buyurtma sizning filialingizda emas»), ma'lumotsiz.
-        fail(token, null, readQrScopeText(t, error)?.line ?? getBackendErrorMessage(error) ?? t("scanner.error.title"), source);
+        // Begona QR (#620): lokal matn («Bu buyurtma sizning filialingizda emas»), ma'lumotsiz. 5xx / 429 / tarmoq —
+        // sababi bilan (#55).
+        fail(
+          token,
+          null,
+          readQrScopeText(t, error)?.line ?? scanLookupFailureReason(t, error, { tooMany: t("scanner.tooMany") }),
+          source,
+        );
         return;
       }
       if (!order) {
@@ -233,28 +263,37 @@ export const useBranchReceive = ({
       }
 
       const postId = readOrderPostId(order) as string;
+      const receivingOrder = order;
       try {
-        const result = readScanReceiveResult(
-          await receivePost({ postId, payload: { order_ids: [order.id], scan: true } }),
-          order.id,
-        );
-        if (!result.ok) {
-          fail(token, order, result.error ?? t("scanner.branchReceive.failed", { ref }), source);
-          return;
+        try {
+          const result = readScanReceiveResult(
+            await receivePost({ postId, payload: { order_ids: [receivingOrder.id], scan: true } }),
+            receivingOrder.id,
+          );
+          if (!result.ok) {
+            fail(token, receivingOrder, result.error ?? t("scanner.branchReceive.failed", { ref }), source);
+            return;
+          }
+        } catch (error) {
+          if (!isUncertainFailure(error)) throw error;
+          // Javob kelmadi, lekin server qabul qilgan bo'lishi mumkin — holat qayta o'qiladi (#68): «kutilmoqda»da
+          // (kuryersiz) bo'lsa — qabul bo'lgan.
+          const fresh = await lookupOrder(token).catch(() => null);
+          if (!fresh?.order || getBranchReceiveDecision(fresh.order, context.branchId) !== "open") throw error;
         }
         const receivedAt = Date.now();
         receivedRef.current.set(token, { ref, at: receivedAt });
         cameraSeenRef.current.set(token, receivedAt);
-        receivedOrderIdsRef.current.add(order.id);
+        receivedOrderIdsRef.current.add(receivingOrder.id);
         if (mountedRef.current) setReceived(receivedOrderIdsRef.current.size);
         addEntry({
           key: `${Date.now()}-${token}-received`,
           status: "received",
           token,
-          orderId: order.id,
+          orderId: receivingOrder.id,
           ref,
-          name: textOf(order.customer.name),
-          place: placeOf(order),
+          name: textOf(receivingOrder.customer.name),
+          place: placeOf(receivingOrder),
         });
         // Natija sahifasi (`/scan/:token`) keyingi ochilishda yangi holatni oladi.
         void queryClient.invalidateQueries({ queryKey: getScanDetailQueryKey(token), refetchType: "none" });
@@ -267,7 +306,7 @@ export const useBranchReceive = ({
           coverageErrorLine(t, error, "receive") ??
           getBackendErrorMessage(error) ??
           t("scanner.branchReceive.failed", { ref });
-        fail(token, order, reason, source);
+        fail(token, receivingOrder, reason, source);
       }
     },
     [addEntry, fail, queryClient, receivePost, t],
@@ -342,5 +381,5 @@ export const useBranchReceive = ({
     [entries, t],
   );
 
-  return { handleScan, list, received, pending: pendingCount > 0 };
+  return { handleScan, list, received, pending: pendingCount > 0, pendingCount };
 };

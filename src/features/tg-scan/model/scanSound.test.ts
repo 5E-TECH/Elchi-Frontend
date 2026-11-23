@@ -101,11 +101,13 @@ describe("useTgScanSound", () => {
       [{ key: 3, kind: "repeat", entry }, "duplicate", { vibrate: false }],
       [{ key: 4, kind: "failed", entry }, "error", { vibrate: false }],
       [{ key: 5, kind: "invalid" }, "error", { vibrate: false }],
+      // Yo'ldagi kod qayta o'qildi (skan auditi #63) — «takror» ohangi, «Allaqachon skanerlangan» iborasisiz.
+      [{ key: 6, kind: "pending", token: "a1" }, "duplicate", { vibrate: false, voice: false }],
     ];
     for (const [feedback, type, options] of cases) {
       result.current(feedback);
       expect(playScanSignal).toHaveBeenLastCalledWith(type, options);
     }
-    expect(playScanSignal).toHaveBeenCalledTimes(5);
+    expect(playScanSignal).toHaveBeenCalledTimes(6);
   });
 });

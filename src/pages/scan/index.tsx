@@ -457,6 +457,16 @@ const UniversalScanner = () => {
         hint: t(`scanner.${mode}.hint`),
         icon: Inbox,
         progress: { done: branchReceive.received, label: t(`scanner.${mode}.meter`) },
+        // Skan auditi #68: tez USB skanlarda qabul so'rovlari navbat kutadi — navbat uzunligi ko'rinsin.
+        note:
+          branchReceive.pendingCount > 1
+            ? {
+                title: t("scanner.branchReceive.queue", {
+                  count: branchReceive.pendingCount,
+                  value: formatNumberLocalized(branchReceive.pendingCount, { language }),
+                }),
+              }
+            : undefined,
         list: branchReceive.list,
         listTitle: t(`scanner.${mode}.listTitle`),
         listDescription: `${formatNumberLocalized(branchReceive.received, { language })} ${t(
@@ -470,6 +480,7 @@ const UniversalScanner = () => {
     return { ...base, title: t("scanner.title"), context: t("scanner.context") };
   }, [
     branchReceive.list,
+    branchReceive.pendingCount,
     branchReceive.received,
     finishTake,
     goToHandover,

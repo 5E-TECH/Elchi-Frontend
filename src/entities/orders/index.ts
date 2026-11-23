@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import type { CancelOrderPayload } from "./cancelReason";
@@ -59,7 +59,9 @@ export const parseCourierOrderCounts = (body: unknown): CourierOrderCounts | nul
  */
 export const todayMarketsQueryOptions = (params?: unknown) => ({
   queryKey: [orders, params] as const,
-  queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params }).then((res) => res.data),
+  // `signal` (skan auditi #100) — bekor qilingan qayta so'rov tarmoqda ham to'xtaydi.
+  queryFn: ({ signal }: { signal?: AbortSignal }) =>
+    api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params, signal }).then((res) => res.data),
 });
 
 /**
@@ -69,7 +71,8 @@ export const todayMarketsQueryOptions = (params?: unknown) => ({
  */
 export const cancelledMarketsQueryOptions = (params?: { search?: string }) => ({
   queryKey: [orders, "markets", "cancelled", params] as const,
-  queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params }).then((res) => res.data),
+  queryFn: ({ signal }: { signal?: AbortSignal }) =>
+    api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params, signal }).then((res) => res.data),
 });
 
 /**
@@ -173,6 +176,35 @@ export type UpdateNewOrderPayload = Partial<{
  */
 const HANDOVER_REFRESH_INTERVAL_MS = 5000;
 let handoverRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Skan-qabuldan keyin ochiq buyurtma ro'yxatlarini qayta so'rash kechikishi (oxirgi qabuldan keyin).
+ *
+ * ⚠️ Skan auditi 2026-11-23: har bir skan-qabul butun `orders` prefiksini darhol qayta so'rardi — marketning to'liq
+ * (boyitilgan, ≤5000 qator) ro'yxati, status sonlari va h.k. Ketma-ket skanlarda bu so'rovlar bir-birini quvlar,
+ * sahifa har skanda 4–5 marta qayta chizilar, server yuklamasi va 60/daq limiti oshardi. Qabul ekrani qabul
+ * qilinganlarni o'zi ro'yxatdan chiqaradi (`receivedOrderIds`), shuning uchun yangilash skanlar to'xtagach BIR marta.
+ */
+export const RECEIVE_LIST_REFRESH_DELAY_MS = 2_000;
+
+const receiveRefreshTimers = new WeakMap<QueryClient, ReturnType<typeof setTimeout>>();
+
+/**
+ * Qabuldan keyin: barcha `orders` so'rovlari darhol ESKIRGAN deb belgilanadi (boshqa sahifaga o'tilsa — yangidan
+ * so'raladi), ochiq ro'yxatlar esa skanlar tingach bitta so'rov bilan yangilanadi.
+ */
+const refreshOrdersAfterReceive = (client: QueryClient) => {
+  void client.invalidateQueries({ queryKey: [orders], refetchType: "none" });
+  const previous = receiveRefreshTimers.get(client);
+  if (previous) clearTimeout(previous);
+  receiveRefreshTimers.set(
+    client,
+    setTimeout(() => {
+      receiveRefreshTimers.delete(client);
+      void client.invalidateQueries({ queryKey: [orders] });
+    }, RECEIVE_LIST_REFRESH_DELAY_MS),
+  );
+};
 
 export const useOrders = () => {
   const client = useQueryClient();
@@ -296,10 +328,13 @@ export const useOrders = () => {
         .then((res) => res.data);
     },
     onSuccess: () => {
-      // Barcha orders cache ni yangilash
-      client.invalidateQueries({ queryKey: [orders] });
+      // Barcha orders keshi — eskirgan, ochiq ro'yxatlar skanlar tingach bir marta (yuqoriga qarang).
+      refreshOrdersAfterReceive(client);
       // HQ qabuli buyurtmani viloyat pochtasiga qo'shadi — «Bugungi» pochtalar va bosh sahifa soni.
       client.invalidateQueries({ queryKey: ["mails", "new"] });
+      // Skan auditi #47: qabul buyurtmani pochtaga qo'shadi — ochiq pochta tafsiloti «eskirgan» (tarmoqsiz; jo'natish
+      // skani topilmasa sahifa o'zi bir marta yangilaydi, qayta ochilsa yangisi so'raladi).
+      client.invalidateQueries({ queryKey: ["mails", "detail"], refetchType: "none" });
       client.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
@@ -308,7 +343,7 @@ export const useOrders = () => {
     mutationFn: (data: { orderIds: string[] }) =>
       api.post(API_ENDPOINTS.BRANCHES.TRANSFER_BATCHES, data).then((res) => res.data),
     onSuccess: () => {
-      client.invalidateQueries({ queryKey: [orders] });
+      refreshOrdersAfterReceive(client);
       // Yangi (yoki kattalashgan) o'tkazma paketi — `/batches` «Yangi» ro'yxati va tab sonlari.
       client.invalidateQueries({ queryKey: ["batches"] });
     },
@@ -324,8 +359,9 @@ export const useOrders = () => {
   ) =>
     useQuery({
       queryKey: [...todayOrdersByMarketKey(marketId), params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId), { params }).then((res) => res.data),
+      // `signal` — yangi so'rov eskisini bekor qilsa (qayta so'rash), eski HTTP so'rov ham to'xtaydi.
+      queryFn: ({ signal }) =>
+        api.get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId), { params, signal }).then((res) => res.data),
       enabled: enabled && Boolean(marketId),
     });
 
@@ -412,7 +448,14 @@ export const useOrders = () => {
    */
   const useCancelledOrdersByMarket = (
     marketId: string | number,
-    options?: { enabled?: boolean; stage?: string; start_day?: string; end_day?: string },
+    options?: {
+      enabled?: boolean;
+      stage?: string;
+      start_day?: string;
+      end_day?: string;
+      /** Ochiq topshirish sahifasida ro'yxat o'zi yangilanib tursin (skan auditi #94) — ms yoki `false`. */
+      refetchInterval?: number | false;
+    },
   ) => {
     const params: Record<string, string> = {};
     if (options?.stage) params.stage = options.stage;
@@ -423,12 +466,13 @@ export const useOrders = () => {
       queryKey: hasParams
         ? [orders, "markets", marketId, "cancelled", params]
         : [orders, "markets", marketId, "cancelled"],
-      queryFn: () =>
+      queryFn: ({ signal }) =>
         (hasParams
-          ? api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId), { params })
-          : api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId))
+          ? api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId), { params, signal })
+          : api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId), { signal })
         ).then((res) => res.data),
       enabled: (options?.enabled ?? true) && Boolean(marketId),
+      refetchInterval: options?.refetchInterval,
     });
   };
 

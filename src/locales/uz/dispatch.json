@@ -55,7 +55,9 @@
   "scanErrors": {
     "duplicate": "Bu buyurtma allaqachon ro'yxatga qo'shilgan",
     "wrongType": "Faqat buyurtma QR kodlarini skanerlash mumkin",
-    "lookup": "Buyurtma ma'lumotini olib bo'lmadi"
+    "lookup": "Buyurtma ma'lumotini olib bo'lmadi",
+    "checking": "Bu buyurtma hali tekshirilmoqda — natijani kuting",
+    "tooMany": "Juda tez skanerlanmoqda — bir soniya kuting va qayta skanerlang"
   },
   "couriers": {
     "loadError": "Kuryerlar ro'yxatini yuklab bo'lmadi. Skanerlash mumkin, lekin biriktirish uchun qayta urinib ko'ring.",

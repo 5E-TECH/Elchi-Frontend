@@ -21,6 +21,15 @@ type ScannerGateOptions = {
  */
 export type ScanGateVerdict = "accepted" | "cooldown" | "duplicate";
 
+/** Darvoza kaliti: skaner havolasidan ajratilgan token (yoki xom qiymat), kichik harfda. */
+const gateTokenKey = (rawValue: string) =>
+  (
+    extractScannerToken(rawValue, typeof window !== "undefined" ? window.location.origin : undefined) ??
+    rawValue.trim()
+  )
+    .trim()
+    .toLowerCase();
+
 export const useScannerGate = ({
   cooldownMs = 900,
   duplicateCooldownMs = 2200,
@@ -37,10 +46,7 @@ export const useScannerGate = ({
    */
   const evaluateScan = useCallback((rawValue: string, { ignoreCooldown = false } = {}): ScanGateVerdict => {
     const now = Date.now();
-    const normalizedToken =
-      extractScannerToken(rawValue, typeof window !== "undefined" ? window.location.origin : undefined) ??
-      rawValue.trim();
-    const tokenKey = normalizedToken.trim().toLowerCase();
+    const tokenKey = gateTokenKey(rawValue);
 
     // Takror pauzadan OLDIN tekshiriladi: kamera bir QR'ni har kadrda qayta
     // o'qiydi — bu "juda tez" xatosi emas, jim o'tkazib yuboriladigan takror.
@@ -77,10 +83,25 @@ export const useScannerGate = ({
     lastTokenAtRef.current = 0;
   }, []);
 
+  /**
+   * Skan muvaffaqiyatsiz tugadi (topilmadi, tarmoq / server xatosi, yaroqsiz kod) — token takror himoyasidan
+   * chiqariladi (skan auditi #30, #31, #32, #53). `evaluateScan` tokenni natijani bilmasdan, qabul paytida yozadi:
+   * xatodan keyin darhol qayta skan «Allaqachon skanerlangan» deb javob olardi yoki jim yo'qolardi, qayta so'rov
+   * ketmasdi. Endi qayta skan — qayta urinish. Faqat oxirgi token shu bo'lsa (orada boshqa kod qabul qilingan bo'lsa
+   * — tegilmaydi); pauza o'zgarmaydi.
+   */
+  const releaseScan = useCallback((rawValue: string) => {
+    const tokenKey = gateTokenKey(rawValue);
+    if (!tokenKey || tokenKey !== lastTokenRef.current) return;
+    lastTokenRef.current = "";
+    lastTokenAtRef.current = 0;
+  }, []);
+
   return {
     evaluateScan,
     canAcceptScan,
     blockScans,
     resetScannerGate,
+    releaseScan,
   };
 };

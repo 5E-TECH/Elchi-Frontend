@@ -621,9 +621,11 @@ export const useMailDetail = (postId: string, options?: { view?: MailDetailView 
   const view = options?.view;
   return useQuery<MailDetailResponse>({
     queryKey: view ? [MAILS_KEY, "detail", postId, view] : [MAILS_KEY, "detail", postId],
-    queryFn: () => {
+    // `signal` (skan auditi #44): bekor qilingan / o'rni bosilgan qayta so'rov tarmoqda ham to'xtaydi — og'ir
+    // `GET post/orders/:id` (8 s RPC) serverga behuda yetib bormaydi.
+    queryFn: ({ signal }) => {
       const url = API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(postId);
-      return (view ? api.get(url, { params: { view } }) : api.get(url)).then((res) => res.data);
+      return (view ? api.get(url, { params: { view }, signal }) : api.get(url, { signal })).then((res) => res.data);
     },
     enabled: !!postId,
     retry: false,
@@ -915,6 +917,36 @@ const enqueueReceive = <T,>(key: string, run: () => Promise<T>): Promise<T> => {
   return next;
 };
 
+/**
+ * Skan-qabul navbatidan keyingi yangilash (skan auditi 2026-11-23, #44). Ilgari HAR skan (`PATCH post/receive/:id`)
+ * muvaffaqiyatida pochta tafsiloti, «Bugungi» / «Eski» va buyurtmalar ro'yxatlari darhol qayta so'ralardi: tez USB
+ * skanda (~1/s) og'ir `GET post/orders/:id` har skanda ketardi (8 s RPC, umumiy 60/daq cheklovi → 429, sahifa
+ * «Yuklab bo'lmadi»). Endi skanda faqat «eskirgan» belgisi (tarmoqsiz: boshqa sahifa ochilsa yangisini so'raydi);
+ * ochiq ekranlar navbat bo'shagach va skanlar `SCAN_RECEIVE_REFRESH_DELAY_MS` to'xtagach BIR marta yangilanadi.
+ * Ochiq sahifa qabul qilinganlarni o'zi yashiradi (optimistik), shuning uchun har skanda yangi ro'yxat kerak emas.
+ */
+const SCAN_RECEIVE_REFRESH_DELAY_MS = 2000;
+const scanReceiveRefresh = new Map<string, { postIds: Set<string>; timer?: ReturnType<typeof setTimeout> }>();
+
+const markScanReceived = (scope: string, postId: string) => {
+  const entry = scanReceiveRefresh.get(scope) ?? { postIds: new Set<string>() };
+  entry.postIds.add(postId);
+  scanReceiveRefresh.set(scope, entry);
+};
+
+const scheduleScanReceiveRefresh = (scope: string, refresh: (postIds: string[]) => void) => {
+  const entry = scanReceiveRefresh.get(scope);
+  if (!entry || entry.postIds.size === 0) return;
+  if (entry.timer !== undefined) clearTimeout(entry.timer);
+  entry.timer = setTimeout(() => {
+    entry.timer = undefined;
+    // Navbatda hali so'rov bor — uning o'zi tugaganda qayta rejalashtiradi.
+    if (receiveChains.has(scope)) return;
+    scanReceiveRefresh.delete(scope);
+    refresh([...entry.postIds]);
+  }, SCAN_RECEIVE_REFRESH_DELAY_MS);
+};
+
 // ─── PATCH: Courier tomonidan pochtani qabul qilish ──────────────────────────
 export const useReceivePost = (options?: {
   /**
@@ -943,17 +975,34 @@ export const useReceivePost = (options?: {
       return scope ? enqueueReceive(scope, send) : send();
     },
     onSuccess: (_data, { postId }) => {
+      // Skan navbati: faqat «eskirgan» belgisi, yangilash — navbat bo'shagach bir marta (`onSettled`).
+      const refetchType = scope ? "none" : "active";
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],
+        refetchType,
       });
       // Qabul qilingan pochta «Bugungi»dan chiqib «Eski»ga o'tadi — orqaga qaytganda eski kesh (30 s) ko'rinmasin:
       // kuryer / menejer «Bugungi»si (`post/on-the-road`, `post?status=sent`), menejer zaxirasi (yo'ldagi buyurtmalar)
       // va eski pochtalar.
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "today-fallback-orders"] });
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"], refetchType });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "today-fallback-orders"], refetchType });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"], refetchType });
       // Qabul qilingan buyurtmalar «kutilmoqda»ga o'tadi — buyurtmalar ro'yxati va sonlari.
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"], refetchType });
+      if (scope) markScanReceived(scope, postId);
+    },
+    onSettled: () => {
+      if (!scope) return;
+      // Xato bilan tugagan oxirgi skan ham navbatni yopadi — oldingi muvaffaqiyatlar uchun yangilash shu yerda.
+      scheduleScanReceiveRefresh(scope, (postIds) => {
+        postIds.forEach((id) => {
+          void queryClient.refetchQueries({ queryKey: [MAILS_KEY, "detail", id], type: "active" });
+        });
+        void queryClient.refetchQueries({ queryKey: [MAILS_KEY, "new"], type: "active" });
+        void queryClient.refetchQueries({ queryKey: [MAILS_KEY, "today-fallback-orders"], type: "active" });
+        void queryClient.refetchQueries({ queryKey: [MAILS_KEY, "old"], type: "active" });
+        void queryClient.refetchQueries({ queryKey: ["orders"], type: "active" });
+      });
     },
   });
 };

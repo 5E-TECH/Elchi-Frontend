@@ -8,6 +8,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
 import { readBackendRejection } from "../../shared/lib/backendReason";
 import { coverageRejectionText, readQrScopeText } from "../../shared/lib/coverageReasons";
+import { getErrorStatus } from "../../shared/lib/errorKind";
+import { scanLookupFailureReason } from "../../shared/lib/scanner/exactScanMatch";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { QueryBoundary } from "../../shared/ui/primitives";
 import { normalizeOrderDetail, type OrderDetail } from "../new_orders/components/detail/orderDetailModel";
@@ -70,12 +72,15 @@ const resolveScan = (response: { type: ScanResourceType; data: unknown } | undef
  * kuryerda pochta QR'i 403 `post_not_visible_to_courier` (va har qanday 403) — javobda ma'lumot yo'q: kulrang
  * «Bu buyurtma sizning filialingizda emas» kartasi (`ScanForbiddenCard`), faqat «Skanerga qaytish», «Qayta
  * urinish»siz; matn — `common:coverage.*` (backend matniga tarmoqlanmaymiz). 503 `branch_scope_unavailable` —
- * «Filialingizni aniqlab bo'lmadi» + «Qayta urinish». 404 va boshqa xato — avvalgidek «… topilmadi».
+ * «Filialingizni aniqlab bo'lmadi» + «Qayta urinish». FAQAT 404 — «… topilmadi»; boshqa xato (5xx, gateway 504,
+ * 429 so'rov cheklovi, tarmoq) — «Kodni tekshirib bo'lmadi» + sababi va «Qayta urinish» (skan auditi #55: ilgari
+ * ular ham «Buyurtma topilmadi» derdi, «Qayta urinish» esa odatda topardi).
  *
  * USB (HID) skaner sahifa ochiq turganda ham ishlaydi: yangi token — o'sha posilka ochiladi; shu token —
- * «takror» ovozi; yaroqsiz QR — xato ovozi va tepada ogohlantirish (keyingi to'g'ri skangacha); biror amal
- * so'rovi ketayotgan bo'lsa — «kuting» va o'tilmaydi (natija operatorga ko'rinmay qolmasin). Sotish/bekor
- * oynasi ochiq turganda skaner to'xtaydi. Natija bloki token bilan qayta o'rnatiladi (`key`) — eski
+ * «takror» ovozi, LEKIN «topilmadi» / xato kartasi turgan bo'lsa — qayta so'raladi (skan auditi #53: ilgari
+ * «Allaqachon skanerlangan» deb so'ramasdi); yaroqsiz QR — xato ovozi va tepada ogohlantirish (keyingi to'g'ri
+ * skangacha); biror amal so'rovi ketayotgan bo'lsa — «kuting» va o'tilmaydi (natija operatorga ko'rinmay
+ * qolmasin). Sotish/bekor oynasi ochiq turganda skaner to'xtaydi. Natija bloki token bilan qayta o'rnatiladi (`key`) — eski
  * sahifaning «skanerga qaytish» taymeri yangi posilkada ishlab ketmaydi.
  */
 const ScanDetailPage = () => {
@@ -116,6 +121,10 @@ const ScanDetailPage = () => {
     setInvalidScan(false);
   }
 
+  const { refetch: refetchScan, isError: scanFailed, isFetching: scanFetching } = query;
+  // Javob keldi, lekin ichida ma'lumot yo'q — «… topilmadi» kartasi.
+  const scanEmpty = query.isSuccess && resolved === null;
+
   /**
    * Detal ochiq turganda HID skaneri bilan keyingi posilka skanerlansa, u JIMGINA yo'qolmasin (ilgari bu
    * sahifa skanerni umuman tinglamasdi — /scan'dan tez ketma-ket kelgan ikkinchi skan shu yerda izsiz
@@ -131,8 +140,15 @@ const ScanDetailPage = () => {
         return true;
       }
       if (nextToken === normalizedToken) {
-        void playScanFeedback("duplicate");
         setInvalidScan(false);
+        // skan auditi #53: «topilmadi» / xato kartasi turibdi — o'sha yorliqning qayta skani qayta urinish
+        // («Qayta urinish» tugmasi bilan bir xil), «Allaqachon skanerlangan» emas.
+        if ((scanFailed || scanEmpty) && !scanFetching) {
+          void playScanFeedback("success", undefined, undefined, { voice: false });
+          void refetchScan();
+          return true;
+        }
+        void playScanFeedback("duplicate");
         return true;
       }
       if (pendingMutations > 0) {
@@ -147,21 +163,23 @@ const ScanDetailPage = () => {
       navigate(`/scan/${encodeURIComponent(nextToken)}`);
       return true;
     },
-    [navigate, normalizedToken, pendingMutations, t],
+    [navigate, normalizedToken, pendingMutations, refetchScan, scanEmpty, scanFailed, scanFetching, t],
   );
 
   useKeyboardScanner({ enabled: !dialogOpen, onScan: handleNextScan });
 
   const queryError = query.error;
+  // Har yangi xato javobida (qayta skan yoki «Qayta urinish» ham) signal — `isError` o'zgarmasa ham (#53).
+  const errorUpdatedAt = query.errorUpdatedAt;
   useEffect(() => {
-    if (!query.isError) return;
+    if (!scanFailed) return;
     // Begona QR (#620): signal matnida sabab («Bu buyurtma sizning filialingizda emas»), umumiy «Xatolik» emas.
     const scope = readQrScopeText(t, queryError);
     if (scope) void playScanFeedback("error", scope.title);
-    else void playScanFeedback("error");
-  }, [query.isError, queryError, t]);
+    else if (getErrorStatus(queryError) === 404) void playScanFeedback("missing", t(`${textKey}.notFoundTitle`));
+    else void playScanFeedback("error", scanLookupFailureReason(t, queryError, { tooMany: t("scanner.tooMany") }));
+  }, [errorUpdatedAt, queryError, scanFailed, t, textKey]);
 
-  const { refetch: refetchScan } = query;
   const refetch = useCallback(() => {
     void refetchScan();
   }, [refetchScan]);
@@ -200,7 +218,12 @@ const ScanDetailPage = () => {
         </div>
       );
     }
-    return notFound(retry);
+    if (getErrorStatus(error) === 404) return notFound(retry);
+    // skan auditi #55: 5xx / 504 / 429 / tarmoq — buyurtma bor bo'lishi mumkin, «topilmadi» emas.
+    return notFound(retry, {
+      title: t("scanner.error.title"),
+      text: scanLookupFailureReason(t, error, { tooMany: t("scanner.tooMany") }),
+    });
   };
 
   return (

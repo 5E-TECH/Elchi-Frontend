@@ -24,7 +24,7 @@ describe("receiveTokensInChunks", () => {
 
     expect(send.mock.calls.map(([chunk]) => chunk.length)).toEqual([200, 50]);
     expect(send.mock.calls[1][0][49]).toBe("token-250");
-    expect(result).toEqual({ received: 250, unmatched: [], batchTokens: [] });
+    expect(result).toEqual({ received: 250, unmatched: [], batchTokens: [], alreadyReceived: [] });
   });
 
   it("r8EGkLrP: bo'laklardagi `batchTokens` jamlanadi (bo'lakda yo'q bo'lsa — bo'sh)", async () => {

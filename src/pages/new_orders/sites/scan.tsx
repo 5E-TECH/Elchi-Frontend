@@ -57,6 +57,9 @@ const httpStatus = (error: unknown) => (error as { response?: { status?: number 
 /** Skan xabarining kulrang davomi: «Rustam Jo'rayev, +998 90 …». */
 const previewDetail = (row: SiteOrderPreview) => [row.name, row.address].filter(Boolean).join(", ") || undefined;
 
+/** Saytdan QR qidiruvi — bir vaqtda ko'pi bilan shuncha so'rov (skan auditi #23). */
+const SITE_SEARCH_CONCURRENCY = 2;
+
 /**
  * «TASHQI SAYTLAR» → SAYT SKANI (BeePost «Tashqi buyurtmalar» naqshi).
  *
@@ -109,7 +112,6 @@ const SiteScanPage = () => {
   /** Saytga ketishi kerak bo'lgan QR'lar (navbat) va hozir so'ralayotgani — takror skanni ushlash uchun. */
   const queueRef = useRef<string[]>([]);
   const inFlightRef = useRef(new Set<string>());
-  const drainingRef = useRef(false);
   const [searching, setSearching] = useState(0);
 
   /** Navbatdagi so'rovlar eng so'nggi ulanish sozlamasi bilan (sahifa ochilgach ulanish qayta o'qilsa ham). */
@@ -166,23 +168,20 @@ const SiteScanPage = () => {
     }
   };
 
-  const drain = async () => {
-    if (drainingRef.current) return;
-    drainingRef.current = true;
-    try {
-      while (queueRef.current.length) {
-        const qr = queueRef.current.shift() as string;
-        setSearching(queueRef.current.length + 1);
-        inFlightRef.current.add(qr);
-        try {
-          await searchOne(qr);
-        } finally {
-          inFlightRef.current.delete(qr);
-        }
-      }
-    } finally {
-      drainingRef.current = false;
-      setSearching(0);
+  /**
+   * Navbat — bir vaqtda `SITE_SEARCH_CONCURRENCY` ta so'rov (skan auditi #23). Ilgari qat'iy birma-bir edi: sekin
+   * saytda har natija bir necha posilka orqada kelar, operator qayta skanerlab «allaqachon ro'yxatda» olardi.
+   */
+  const pump = () => {
+    while (inFlightRef.current.size < SITE_SEARCH_CONCURRENCY && queueRef.current.length) {
+      const qr = queueRef.current.shift() as string;
+      inFlightRef.current.add(qr);
+      setSearching(queueRef.current.length + inFlightRef.current.size);
+      void searchOne(qr).finally(() => {
+        inFlightRef.current.delete(qr);
+        setSearching(queueRef.current.length + inFlightRef.current.size);
+        pump();
+      });
     }
   };
 
@@ -196,15 +195,22 @@ const SiteScanPage = () => {
       return;
     }
     const queued = queueRef.current.includes(qr) || inFlightRef.current.has(qr);
+    if (queued) {
+      // Hali saytdan javob kelmagan — «allaqachon ro'yxatda» emas (u yolg'on bo'lardi), «qidirilmoqda».
+      const text = t("sites.inProgress", { qr });
+      void playScanFeedback("duplicate", text, undefined, { silent: true, step: true });
+      setMessage({ tone: "warn", text });
+      return;
+    }
     const existing = rowsRef.current.find((row) => row.key === qr);
-    if (queued || existing) {
-      const text = t("sites.duplicate", { order: existing ? siteOrderLabel(existing) : qr });
+    if (existing) {
+      const text = t("sites.duplicate", { order: siteOrderLabel(existing) });
       void playScanFeedback("error", text, undefined, { voice: "duplicate" });
       setMessage({ tone: "warn", text });
       return;
     }
     queueRef.current.push(qr);
-    void drain();
+    pump();
   };
 
   useKeyboardScanner({

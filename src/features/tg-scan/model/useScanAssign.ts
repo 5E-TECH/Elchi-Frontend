@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { extractScannerToken } from "../../../shared/lib/scanToken";
 import { useScannerGate } from "../../../shared/lib/useScannerGate";
 import { scanAssignOrder, type ScanAssignResult, type ScanOrderSummary } from "../api/tgScanApi";
-import { describeTgScanError, type TgScanErrorInfo } from "./scanError";
+import { describeTgScanError, isAssignRetryable, type TgScanErrorInfo } from "./scanError";
 import { scanHaptic, type TelegramWebApp } from "./telegramWebApp";
 
 /**
@@ -21,6 +21,12 @@ import { scanHaptic, type TelegramWebApp } from "./telegramWebApp";
  *   ko'rsatiladi, kamera ishlayveradi. 401 — `onSessionExpired` (token yangilanmaydi).
  * - Hisoblagich — muvaffaqiyatli javobdagi noyob `order_id` lar (`idempotent` ham: buyurtma hozir shu
  *   kuryerda, bot xulosasi ham uni sanaydi). «Tayyor» aynan shu ro'yxatni yuboradi.
+ * - USB / Telegram skaneri hech qachon JIM qolmaydi (skan auditi #32, #63): har o'qish ataylab — takror darvozasi
+ *   faqat kamerada ishlaydi; USB'da takror natija bo'yicha aytiladi («Allaqachon qabul qilingan» yoki yo'ldagi kod
+ *   uchun «Tekshirilmoqda»). Xato bergan kod darvozadan chiqariladi — darhol qayta skan qayta yuboriladi.
+ * - Gateway 504 / vaqt tugashi (skan auditi #59): logistika ishni davom ettiradi va odatda biriktirib bo'ladi —
+ *   o'sha so'rov BIR MARTA avtomatik qayta yuboriladi (backend idempotent: o'z kutilmoqdasi → `idempotent: true`).
+ *   Qayta yuborishdagi «allaqachon sizda» — aslida birinchi urinishning natijasi, shuning uchun «Biriktirildi».
  */
 
 export type ScanSource = "camera" | "telegram" | "keyboard";
@@ -47,7 +53,9 @@ export type ScanEntry = ScanSuccessEntry | ScanFailedEntry;
 export type ScanFeedback =
   | { key: number; kind: "assigned" | "already" | "repeat"; entry: ScanSuccessEntry }
   | { key: number; kind: "failed"; entry: ScanFailedEntry }
-  | { key: number; kind: "invalid" };
+  | { key: number; kind: "invalid" }
+  /** Shu kod hali yuborilmoqda (USB qo'shaloq o'qishi / tez qayta skan) — natija kelgach o'zi aytiladi. */
+  | { key: number; kind: "pending"; token: string };
 
 export type ScanFlashTone = "success" | "info" | "warning" | "error";
 
@@ -66,7 +74,8 @@ const MAX_ENTRIES = 100;
 type FeedbackInput =
   | { kind: "assigned" | "already" | "repeat"; entry: ScanSuccessEntry }
   | { kind: "failed"; entry: ScanFailedEntry }
-  | { kind: "invalid" };
+  | { kind: "invalid" }
+  | { kind: "pending"; token: string };
 
 const FLASH_OF: Record<FeedbackInput["kind"], ScanFlashTone> = {
   assigned: "success",
@@ -74,6 +83,7 @@ const FLASH_OF: Record<FeedbackInput["kind"], ScanFlashTone> = {
   repeat: "info",
   failed: "error",
   invalid: "error",
+  pending: "info",
 };
 
 type UseScanAssignOptions = {
@@ -114,7 +124,7 @@ export const useScanAssign = ({
   haptics = true,
   cameraGated = false,
 }: UseScanAssignOptions) => {
-  const { evaluateScan, resetScannerGate } = useScannerGate({
+  const { evaluateScan, resetScannerGate, releaseScan } = useScannerGate({
     cooldownMs: CAMERA_COOLDOWN_MS,
     duplicateCooldownMs: DUPLICATE_COOLDOWN_MS,
   });
@@ -176,12 +186,22 @@ export const useScanAssign = ({
       const { accessToken: jwt, assign: request } = optionsRef.current;
       pendingRef.current.add(token);
       setPendingCount((count) => count + 1);
+      const send = () => (request ? request(token) : scanAssignOrder(jwt, token));
       try {
-        const result = await (request ? request(token) : scanAssignOrder(jwt, token));
+        let retried = false;
+        let result: ScanAssignResult;
+        try {
+          result = await send();
+        } catch (error) {
+          if (!isAssignRetryable(error) || !mountedRef.current) throw error;
+          retried = true;
+          result = await send();
+        }
         if (!mountedRef.current) return;
         const entry: ScanSuccessEntry = {
           key: `${Date.now()}-${sequenceRef.current}-${token}`,
-          status: result.idempotent ? "already" : "assigned",
+          // Qayta yuborishdagi `idempotent` — birinchi (vaqti tugagan) urinish biriktirgan: «Biriktirildi» (#59).
+          status: result.idempotent && !retried ? "already" : "assigned",
           token,
           orderId: result.order_id,
           order: result.order,
@@ -194,9 +214,13 @@ export const useScanAssign = ({
           setAcceptedOrderIds(acceptedRef.current);
         }
         show({ kind: entry.status, entry });
-        vibrate(result.idempotent ? "light" : "success");
+        vibrate(entry.status === "already" ? "light" : "success");
       } catch (error) {
         if (!mountedRef.current) return;
+        // Xato bergan kod takror himoyasida qolmasin: darhol qayta skan — qayta urinish (#32). Kamera sessiyasi o'zi
+        // saralagan bo'lsa (kadrda turgan kod u yerda surma jimlikda) — 6 s jimlik ham kerak emas.
+        releaseScan(token);
+        if (optionsRef.current.cameraGated && lastCameraCodeRef.current?.code === token) lastCameraCodeRef.current = null;
         const info = describeTgScanError(error);
         if (info.kind === "session") {
           optionsRef.current.onSessionExpired();
@@ -217,7 +241,7 @@ export const useScanAssign = ({
         if (mountedRef.current) setPendingCount((count) => Math.max(0, count - 1));
       }
     },
-    [show, vibrate],
+    [releaseScan, show, vibrate],
   );
 
   /** Kamera, Telegram skaneri yoki USB skaner o'qigan xom qiymat. */
@@ -225,8 +249,11 @@ export const useScanAssign = ({
     (rawValue: string, source: ScanSource) => {
       const { enabled: isEnabled, cameraGated: gatedUpstream } = optionsRef.current;
       if (!isEnabled) return;
-      const verdict = evaluateScan(rawValue, { ignoreCooldown: source !== "camera" || gatedUpstream });
-      if (verdict !== "accepted") return;
+      const fromCamera = source === "camera";
+      const verdict = evaluateScan(rawValue, { ignoreCooldown: !fromCamera || gatedUpstream });
+      // Kamera: kod kadrda turgan ekan har kadrda qayta o'qiladi — rad etilgani jim (pauza o'tgach o'zi qabul
+      // qilinadi). USB / Telegram skaneri: har o'qish ataylab — takror natijasi quyida signal bilan aytiladi (#32, #63).
+      if (fromCamera && verdict !== "accepted") return;
       const token = extractScannerToken(rawValue, window.location.origin);
       if (source === "camera") {
         const code = token ?? rawValue.trim();
@@ -236,6 +263,7 @@ export const useScanAssign = ({
         lastCameraCodeRef.current = { code, at: now };
       }
       if (!token) {
+        releaseScan(rawValue);
         show({ kind: "invalid" });
         vibrate("error");
         return;
@@ -246,12 +274,15 @@ export const useScanAssign = ({
         vibrate("light");
         return;
       }
-      if (pendingRef.current.has(token)) return;
+      if (pendingRef.current.has(token)) {
+        show({ kind: "pending", token });
+        return;
+      }
       const request = submit(token);
       inflightRef.current.add(request);
       void request.finally(() => inflightRef.current.delete(request));
     },
-    [evaluateScan, show, submit, vibrate],
+    [evaluateScan, releaseScan, show, submit, vibrate],
   );
 
   /**

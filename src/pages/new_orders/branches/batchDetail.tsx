@@ -138,15 +138,27 @@ const BranchBatchDetailPage = () => {
     receiveBatchOrders.mutate(
       { batchId, orderIds: ids },
       {
-        onSuccess: async () => {
-          markOrdersReceived(ids);
+        onSuccess: () => {
+          /**
+           * Skan auditi #16: qisman qabulda backend paketni YOPADI va tanlanmaganlarni jo'natuvchi filialga «yangi»
+           * holatda qaytaradi. Ilgari ular ekranda qolib, keyingi skan va «Qabul qilish» «Bu paket allaqachon qabul
+           * qilingan» xatosini berardi — endi darhol olib tashlanadi va nima bo'lgani aytiladi.
+           */
+          const returned = orders.filter((order) => !ids.includes(order.id)).map((order) => order.id);
+          markOrdersReceived([...ids, ...returned]);
           notify.success(t("branchBatches.detail.receiveSuccess"), {
             description: t("branchBatches.detail.receiveSuccessDescription", {
               count: ids.length,
               value: formatNumberLocalized(ids.length, { language }),
             }),
           });
-          await refetchBatchData();
+          if (returned.length) {
+            notify.info(t("branchBatches.detail.partialReturned", { value: formatNumberLocalized(returned.length, { language }) }), {
+              duration: 6000,
+            });
+          }
+          // Skan auditi #17: qayta so'rash — mutatsiya hook'ining `[BATCH_KEY]` yangilanishi (ikkinchi refetch
+          // birinchisini bekor qilib, og'ir so'rovlarni ikki baravar qilardi).
         },
         onError: (error: unknown) => {
           const msg = getBackendErrorMessage(error) ?? t("receiveError");
@@ -157,8 +169,20 @@ const BranchBatchDetailPage = () => {
   };
 
   const handleMissingScannedOrder = useCallback(() => {
+    // Ro'yxat hali yuklanmoqda — «Bu paketda yo'q» yolg'on bo'lardi (skan auditi #18).
+    if (isLoading) {
+      void playScanFeedback("error", t("branchBatches.scanLoading"));
+      scanNotify.warning(t("branchBatches.scanLoading"), { duration: 2500 });
+      return;
+    }
     void playScanFeedback("missing", t("branchBatches.detail.cameraMissing"));
     scanNotify.warning(t("qrNotFound"), { description: t("branchBatches.detail.scanMissing"), duration: 3000 });
+  }, [isLoading, t]);
+
+  // Qabul so'rovi ketayotganda kelgan skan — jim yo'qolmaydi (skan auditi #18).
+  const handlePausedScan = useCallback(() => {
+    void playScanFeedback("error", t("branchBatches.scanWait"));
+    scanNotify.warning(t("branchBatches.scanWait"), { duration: 2500 });
   }, [t]);
 
   // Skaner chaqiruvlari joriy tanlovni o'qiydi: yon ta'sir (ovoz, xabar) `setState` ichida emas.
@@ -222,6 +246,8 @@ const BranchBatchDetailPage = () => {
     orders,
     // Qabul so'rovi ketayotganda skan e'tiborsiz (avvalgidek), lekin ochiq kamera yopilmaydi.
     paused: receiveBatchOrders.isPending,
+    onPausedScan: handlePausedScan,
+    keyboardWhenEmpty: true,
     onMatch: selectScannedOrder,
     onMissing: handleMissingScannedOrder,
     camera: {

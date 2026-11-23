@@ -777,5 +777,49 @@ describe("ScanDetailPage — begona QR (anKpzwxk, backend #620)", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Buyurtma topilmadi" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
     expect(screen.queryByTestId("scan-forbidden")).not.toBeInTheDocument();
+    await waitFor(() => expect(feedbackMock).toHaveBeenCalledWith("missing", "Buyurtma topilmadi"));
+  });
+});
+
+describe("ScanDetailPage — skan auditi #53, #55", () => {
+  it("#55: gateway 504 — «Buyurtma topilmadi» EMAS: «Kodni tekshirib bo'lmadi» + sababi va «Qayta urinish»", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockRejectedValue(scopeError(504, null, "Buyurtma xizmati vaqtida javob bermadi"));
+    renderDetail();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Kodni tekshirib bo'lmadi" })).toBeInTheDocument();
+    expect(screen.getByText(/Server xatosi \(504\)/)).toBeInTheDocument();
+    expect(screen.queryByText("Buyurtma topilmadi")).not.toBeInTheDocument();
+    fetchMock.mockResolvedValue({ type: "order", data: ORDER });
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(await orderHeading()).toBeInTheDocument();
+  });
+
+  it("#55: 429 — «Juda tez skanerlanmoqda»; tarmoq xatosi — «Internet aloqasi yo'q»", async () => {
+    fetchMock.mockRejectedValue(scopeError(429, null, "ThrottlerException: Too Many Requests"));
+    const first = renderDetail();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Kodni tekshirib bo'lmadi" })).toBeInTheDocument();
+    expect(screen.getByText("Juda tez skanerlanmoqda — bir soniya kuting va qayta skanerlang")).toBeInTheDocument();
+    first.unmount();
+
+    fetchMock.mockRejectedValue(Object.assign(new Error("Network Error"), { isAxiosError: true, code: "ERR_NETWORK", request: {} }));
+    renderDetail("admin", { route: "/scan/PARCEL-NET" });
+    expect(await screen.findByRole("heading", { level: 1, name: "Kodni tekshirib bo'lmadi" })).toBeInTheDocument();
+    expect(screen.getByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(screen.queryByText("Buyurtma topilmadi")).not.toBeInTheDocument();
+  });
+
+  it("#53: «topilmadi» kartasi turganda o'sha yorliq qayta skanerlansa — «Allaqachon» emas, qayta so'raladi", async () => {
+    fetchMock.mockRejectedValueOnce(scopeError(404, null, "Not found"));
+    renderDetail();
+    expect(await screen.findByRole("heading", { level: 1, name: "Buyurtma topilmadi" })).toBeInTheDocument();
+
+    hidScan("PARCEL-A");
+
+    expect(feedbackMock).not.toHaveBeenCalledWith("duplicate");
+    expect(await orderHeading()).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });

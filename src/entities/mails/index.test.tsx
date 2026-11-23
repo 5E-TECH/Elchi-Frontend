@@ -408,7 +408,8 @@ describe("useMailDetail — ko'rinish (backend #618)", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(apiMock.get).toHaveBeenCalledTimes(1);
-    expect(apiMock.get).toHaveBeenCalledWith(DETAIL_URL);
+    // `signal` — bekor qilingan qayta so'rov tarmoqda ham to'xtaydi (skan auditi #44).
+    expect(apiMock.get).toHaveBeenCalledWith(DETAIL_URL, { signal: expect.any(AbortSignal) });
     expect(client.getQueryCache().getAll().map((query) => query.queryKey)).toEqual([["mails", "detail", "78"]]);
   });
 
@@ -416,7 +417,7 @@ describe("useMailDetail — ko'rinish (backend #618)", () => {
     const { client, result } = renderDetail("current");
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(apiMock.get).toHaveBeenCalledWith(DETAIL_URL, { params: { view: "current" } });
+    expect(apiMock.get).toHaveBeenCalledWith(DETAIL_URL, { params: { view: "current" }, signal: expect.any(AbortSignal) });
     expect(client.getQueryCache().getAll().map((query) => query.queryKey)).toEqual([
       ["mails", "detail", "78", "current"],
     ]);
@@ -530,6 +531,46 @@ describe("useReceivePost — «Bugungi» ro'yxati yangilanadi", () => {
       ["mails", "old"],
       ["orders"],
     ]);
+  });
+
+  it("skan navbati (`scope`): har skanda faqat «eskirgan» belgisi, navbat bo'shagach BIR marta yangilanadi (skan auditi #44)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      apiMock.patch.mockResolvedValue({ data: { statusCode: 200, data: [], received_order_ids: ["3101"] } });
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+      const invalidate = vi.spyOn(client, "invalidateQueries");
+      const refetch = vi.spyOn(client, "refetchQueries");
+      const Wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      );
+      const { result } = renderHook(() => useReceivePost({ scope: "post-receive:test-44" }), { wrapper: Wrapper });
+
+      await act(async () => {
+        await Promise.all([
+          result.current.mutateAsync({ postId: "99", payload: { order_ids: ["3101"], scan: true } }),
+          result.current.mutateAsync({ postId: "99", payload: { order_ids: ["3102"], scan: true } }),
+        ]);
+      });
+
+      expect(apiMock.patch).toHaveBeenCalledTimes(2);
+      // Skanda tarmoq so'rovi yo'q — faqat «eskirgan» belgisi.
+      expect(invalidate.mock.calls.length).toBeGreaterThan(0);
+      expect(invalidate.mock.calls.every(([filters]) => (filters as { refetchType?: string }).refetchType === "none")).toBe(true);
+      expect(refetch).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+      expect(refetch.mock.calls.map(([filters]) => (filters as { queryKey: unknown[] }).queryKey)).toEqual([
+        ["mails", "detail", "99"],
+        ["mails", "new"],
+        ["mails", "today-fallback-orders"],
+        ["mails", "old"],
+        ["orders"],
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("xato bo'lsa ro'yxatlar yangilanmaydi (qabul bo'lmadi)", async () => {

@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next";
 import { readQrScopeText } from "../../../shared/lib/coverageReasons";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { playScanFeedback, type ScanSource } from "../../../shared/lib/scanner";
+import { scanLookupFailureReason } from "../../../shared/lib/scanner/exactScanMatch";
 import { extractScannerToken, isForeignScanUrl } from "../../../shared/lib/scanToken";
 import { useScannerGate } from "../../../shared/lib/useScannerGate";
 import {
   fetchScanDetail,
-  getBackendErrorMessage,
   getScanDetailQueryKey,
   getScanResourceType,
   normalizeScanToken,
@@ -29,13 +29,15 @@ export type MailModeOpening = { token: string; title: string | null };
  *   - holat rejimga mos emas (jo'natishda yangi emas, qabulda rad etilgan emas) — sababi bilan, sahifa ochilmaydi;
  *   - topildi — «Pochta №… topildi» va `SCAN_OPEN_DELAY_MS` dan keyin `onOpen`.
  *
- * Holat eskirmasin — so'rov har safar yangidan (`staleTime: 0`). Kod aniqlanguncha keyingi skan «Oldingi kod
- * ochilmoqda» bilan rad etiladi; USB'da bir xil kod takrori «takror» signali bilan ushlanadi (universal skanerdagidek).
+ * Holat eskirmasin — so'rov har safar yangidan (`staleTime: 0`). Kod aniqlanguncha BOSHQA pochta kodi kelsa — rad
+ * etilmaydi, oxirgi skan ustun (skan auditi #97, universal skanerdagidek); o'sha kodning qo'shaloq o'qishi e'tiborsiz.
+ * USB'da bir xil kod takrori «takror» signali bilan ushlanadi — faqat ochilgan pochtaga: topilmadi / xato / mos emas
+ * bo'lsa token darvozadan chiqariladi (#30), darhol qayta skan qayta so'raydi.
  */
 export const useMailModeScan = ({ onOpen }: { onOpen: (mail: ScannedMail, kind: ScanMailKind) => void }) => {
   const { t } = useTranslation("scan");
   const queryClient = useQueryClient();
-  const { evaluateScan } = useScannerGate({ cooldownMs: 0, duplicateCooldownMs: 1800 });
+  const { evaluateScan, releaseScan } = useScannerGate({ cooldownMs: 0, duplicateCooldownMs: 1800 });
   const openingRef = useRef<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const [opening, setOpening] = useState<MailModeOpening | null>(null);
@@ -56,27 +58,47 @@ export const useMailModeScan = ({ onOpen }: { onOpen: (mail: ScannedMail, kind: 
       const foreign = isForeignScanUrl(raw, window.location.origin);
       const extracted = foreign ? null : extractScannerToken(raw, window.location.origin);
       const token = extracted ? normalizeScanToken(extracted) : null;
+      const isMail = token !== null && getScanResourceType(token) === "post";
 
       if (openingRef.current) {
-        if (token !== openingRef.current) void playScanFeedback("error", t("scanner.previousOpening"), source);
-        return;
+        if (token === openingRef.current) return;
+        // Pochta kodi bo'lmagan skan ochilayotgan pochtani to'xtatmaydi — faqat signal.
+        if (!isMail) {
+          void playScanFeedback("error", t(token ? "scanner.mail.notMail" : "scanner.invalid.title"), source);
+          return;
+        }
+        // skan auditi #97: boshqa pochta kodi — oxirgi skan ustun.
+        // Almashtirilgan kod takror himoyasida qolmasin (uning natijasi tashlanadi — qayta skan qayta so'raydi).
+        if (timerRef.current) window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+        releaseScan(openingRef.current);
+        openingRef.current = null;
+        setOpening(null);
       }
       if (source === "keyboard" && evaluateScan(raw, { ignoreCooldown: true }) === "duplicate") {
         void playScanFeedback("duplicate", undefined, source);
         return;
       }
       if (!token) {
+        releaseScan(raw);
         void playScanFeedback("error", t("scanner.invalid.title"), source);
         return;
       }
-      if (getScanResourceType(token) !== "post") {
+      if (!isMail) {
+        releaseScan(raw);
         void playScanFeedback("error", t("scanner.mail.notMail"), source);
         return;
       }
 
+      const isCurrent = () => openingRef.current === token;
       const reset = () => {
         openingRef.current = null;
         setOpening(null);
+      };
+      /** Ochilmadi — takror himoyasi olinadi: darhol qayta skan qayta so'raydi (#30). */
+      const fail = () => {
+        reset();
+        releaseScan(raw);
       };
       openingRef.current = token;
       setOpening({ token, title: null });
@@ -88,14 +110,15 @@ export const useMailModeScan = ({ onOpen }: { onOpen: (mail: ScannedMail, kind: 
           retry: false,
           meta: { silentError: true },
         });
+        if (!isCurrent()) return;
         const mail = response.type === "post" ? readScannedMail(response.data) : null;
         if (!mail) {
-          reset();
+          fail();
           void playScanFeedback("missing", t("post.notFoundTitle"), source);
           return;
         }
         if (!isMailReadyFor(kind, mail.status)) {
-          reset();
+          fail();
           void playScanFeedback("error", t(kind === "send" ? "scanner.sendMail.notReady" : "scanner.refusedMail.notReady"), source);
           return;
         }
@@ -109,20 +132,22 @@ export const useMailModeScan = ({ onOpen }: { onOpen: (mail: ScannedMail, kind: 
           onOpenRef.current(mail, kind);
         }, SCAN_OPEN_DELAY_MS);
       } catch (error) {
-        reset();
+        if (!isCurrent()) return;
+        fail();
         if (getErrorStatus(error) === 404) {
           void playScanFeedback("missing", t("post.notFoundTitle"), source);
           return;
         }
-        // Begona pochta QR'i (#620: kuryerga 403 `post_not_visible_to_courier` …) — lokal matn.
+        // Begona pochta QR'i (#620: kuryerga 403 `post_not_visible_to_courier` …) — lokal matn; 5xx / 429 / tarmoq —
+        // «topilmadi» emas, sababi bilan (#55).
         void playScanFeedback(
           "error",
-          readQrScopeText(t, error)?.line ?? getBackendErrorMessage(error) ?? t("scanner.error.title"),
+          readQrScopeText(t, error)?.line ?? scanLookupFailureReason(t, error, { tooMany: t("scanner.tooMany") }),
           source,
         );
       }
     },
-    [evaluateScan, queryClient, t],
+    [evaluateScan, queryClient, releaseScan, t],
   );
 
   return { handleScan, opening };

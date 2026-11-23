@@ -219,7 +219,9 @@
     "unscanLabel": "{{order}} ni ro'yxatdan olib tashlash",
     "unscanManyLabel": "{{value}} ta posilkani ro'yxatdan olib tashlash",
     "unscanDone": "Olib tashlandi",
-    "unscanRestore": "Qaytarish"
+    "unscanRestore": "Qaytarish",
+    "alreadyReceivedNote": "Allaqachon qabul qilingan: {{value}} ta (xato emas)",
+    "receiveUnknown": "Javob kelmadi — natija noma'lum. Ro'yxat yangilandi: qabul qilinganlari undan chiqdi, qolganini qayta qabul qiling."
   },
   "partners": "Hamkorlar",
   "partnersTitle": "Partner API hamkorlari",

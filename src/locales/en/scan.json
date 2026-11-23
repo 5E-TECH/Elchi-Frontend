@@ -173,6 +173,7 @@
     "searching": "Checking the code",
     "found": "{{title}} found",
     "previousOpening": "The previous code is still opening — this scan was not accepted. Scan again.",
+    "tooMany": "Scanning too fast — wait a second and scan again",
     "resultTitle": "Result",
     "readText": "Text read",
     "scannedCode": "Scanned code",
@@ -285,6 +286,7 @@
       "assignedToast": "{{ref}} assigned to you",
       "alreadyToast": "{{ref}} is already yours",
       "repeatToast": "{{ref}} already scanned",
+      "pendingToast": "This code is still being sent — wait for the result",
       "otherCourier": "With another courier: {{name}}",
       "otherCourierUnknown": "Assigned to another courier",
       "otherCourierHint": "Tell your manager.",
@@ -325,6 +327,8 @@
       "notInPost": "The order is not in a mail — it can't be received",
       "notOrder": "This is not an order QR code — open it in «Info» mode",
       "failed": "{{ref}} was not received — scan again",
+      "queue_one": "{{value}} scan in the queue",
+      "queue_other": "{{value}} scans in the queue",
       "manualSubmit": "Receive"
     }
   },

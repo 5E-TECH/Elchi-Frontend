@@ -54,6 +54,8 @@ import {
 } from "../../../shared/ui/primitives";
 import { buildTrackingContext, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
 import { getBackendErrorMessage, invalidateAfterScanAction, scanAssignOrder } from "../lib/scanResource";
+// Modul yo'li bilan: `features/tg-scan` indeksi Mini App UI'sini ham olib keladi.
+import { isAssignRetryable } from "../../../features/tg-scan/model/scanError";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { getCourierScanAction } from "../model/courierReceive";
 import { DISPATCH_ROUTE, orderDetailRoute, SCANNER_ROUTE } from "../model/routes";
@@ -143,6 +145,10 @@ const useCourierAssign = (token: string, onAssigned: () => void) => {
   const [result, setResult] = useState<ResultMessage | null>(null);
   const mutation = useMutation({
     mutationFn: () => scanAssignOrder(token),
+    // skan auditi #59: gateway 504 / vaqt tugashi — logistika odatda biriktirib bo'lgan; o'sha so'rov darhol bir marta
+    // qayta yuboriladi (backend idempotent — «allaqachon sizda» ham muvaffaqiyat: «Biriktirildi»).
+    retry: (failureCount, error) => failureCount < 1 && isAssignRetryable(error),
+    retryDelay: 0,
     onSuccess: () => {
       // Buyurtma kuryerga o'tdi (filial qabuli ham) — ro'yxatlar, pochta va paketlar eskirmasin (6qypMFeT).
       void invalidateAfterScanAction(queryClient);

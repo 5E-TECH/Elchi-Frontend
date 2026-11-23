@@ -122,6 +122,63 @@ describe("MarkReturnedModal — market QR → ruxsat → mark-returned-to-market
     expect(apiPost.mock.calls[2][1]).toEqual({ authorization_token: "MHA-1" });
   });
 
+  it("skan auditi #51: USB kirill tartibida yozgan kod (`ЬСК-…`) lotinga qaytariladi", async () => {
+    apiPost.mockImplementation((url: string) =>
+      url === "scan/market-cancelled"
+        ? Promise.resolve({ data: { data: { authorization_token: "MHA-1" } } })
+        : Promise.resolve({ data: { statusCode: 200, data: {} } }),
+    );
+    const onClose = vi.fn();
+    renderWithProviders(<MarkReturnedModal open orderId="95" onClose={onClose} />);
+    // `MCR-AbC9` kirill (ЙЦУКЕН) tartibida: M→Ь, C→С, R→К, A→Ф, b→и, C→С.
+    enterQr("ЬСК-ФиС9");
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(apiPost.mock.calls[0]).toEqual(["scan/market-cancelled", { qr_token: "MCR-AbC9" }]);
+  });
+
+  it("#51: skanerning ikkinchi Enter'i — bir martalik QR ikkinchi marta yuborilmaydi (yolg'on xato yo'q)", async () => {
+    apiPost.mockImplementation((url: string) =>
+      url === "scan/market-cancelled"
+        ? Promise.resolve({ data: { data: { authorization_token: "MHA-1" } } })
+        : Promise.resolve({ data: { statusCode: 200, data: {} } }),
+    );
+    const onClose = vi.fn();
+    renderWithProviders(<MarkReturnedModal open orderId="95" onClose={onClose} />);
+    fireEvent.change(screen.getByTestId("mark-returned-qr-input"), { target: { value: "MCR-abc" } });
+    fireEvent.click(screen.getByTestId("mark-returned-submit"));
+    fireEvent.click(screen.getByTestId("mark-returned-submit"));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(apiPost.mock.calls.map(([url]) => url)).toEqual(["scan/market-cancelled", "orders/95/mark-returned-to-market"]);
+    expect(screen.queryByTestId("mark-returned-error")).not.toBeInTheDocument();
+  });
+
+  it("#51: qayta yuborilgan topshirishga «allaqachon RETURNED_TO_MARKET» — muvaffaqiyat, xato emas", async () => {
+    let markCalls = 0;
+    apiPost.mockImplementation((url: string) => {
+      if (url === "scan/market-cancelled") return Promise.resolve({ data: { data: { authorization_token: "MHA-1" } } });
+      markCalls += 1;
+      return Promise.reject(
+        markCalls === 1
+          ? Object.assign(new Error("timeout"), { isAxiosError: true, code: "ECONNABORTED", request: {} })
+          : backendError("Order allaqachon RETURNED_TO_MARKET holatida"),
+      );
+    });
+    const onClose = vi.fn();
+    const onDone = vi.fn();
+    renderWithProviders(<MarkReturnedModal open orderId="95" onClose={onClose} onDone={onDone} />);
+    enterQr("MCR-abc");
+    await waitFor(() => expect(screen.getByTestId("mark-returned-authorized")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("mark-returned-error")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId("mark-returned-submit"));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(markCalls).toBe(2);
+  });
+
   it("QR skan rad etilsa (muddati tugagan) — topshirish so'rovi KETMAYDI", async () => {
     apiPost.mockRejectedValue(backendError("QR muddati tugagan"));
     renderWithProviders(<MarkReturnedModal open orderId="95" onClose={vi.fn()} />);

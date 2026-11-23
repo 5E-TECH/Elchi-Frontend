@@ -433,11 +433,16 @@ export const fetchAllTransferBatches = async (
   return { data, capped: true };
 };
 
-export const useBatches = (params?: BatchListParams, options?: { enabled?: boolean }) =>
+export const useBatches = (
+  params?: BatchListParams,
+  options?: { enabled?: boolean; refetchInterval?: number | false },
+) =>
   useQuery<BatchListResponse>({
     queryKey: [BATCH_KEY, params],
     queryFn: () => fetchTransferBatchesPage(params),
     enabled: options?.enabled ?? true,
+    // Skan auditi #19: ochiq skaner sahifasida ro'yxat o'zi yangilanib tursin (sahifa ochilgandan keyin kelgan paket).
+    refetchInterval: options?.refetchInterval,
   });
 
 /**
