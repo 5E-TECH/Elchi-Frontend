@@ -989,6 +989,9 @@
   "returnHandoverInvalidCode": "Введите 6-значный PIN-код или QR-код маркета (начинается с MCR-)",
   "returnHandoverPinAccepted": "PIN-код принят — идёт передача",
   "returnHandoverAuthorizedPin": "PIN-код маркета принят. Повторите подтверждение передачи.",
+  "returnHandoverNoQrHint": "Для этого маркета QR не требуется — подтвердите передачу.",
+  "returnHandoverNoQr": "Администратор отключил QR для этого маркета: посылка передаётся без QR маркета.",
+  "returnHandoverConfirm": "Передать маркету",
   "returnPath": {
     "title": "Путь возврата",
     "subtitleClosed": "Цепочка закрыта — посылка вернулась маркету",
