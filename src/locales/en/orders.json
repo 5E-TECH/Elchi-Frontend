@@ -989,6 +989,9 @@
   "returnHandoverInvalidCode": "Enter the 6-digit PIN or the market QR code (starts with MCR-)",
   "returnHandoverPinAccepted": "PIN accepted — handing over",
   "returnHandoverAuthorizedPin": "Market PIN accepted. Confirm the handover again.",
+  "returnHandoverNoQrHint": "This market doesn't require a QR — confirm the handover.",
+  "returnHandoverNoQr": "An admin turned off the QR requirement for this market: the parcel is handed over without the market's QR.",
+  "returnHandoverConfirm": "Hand over to market",
   "returnPath": {
     "title": "Return path",
     "subtitleClosed": "Chain closed — the parcel is back with the market",
