@@ -10,6 +10,7 @@ import {
   canRunCourierAction,
   isOrderReceivedOrLater,
   isOrderSentToBranch,
+  isRegionalWarehouseOrder,
   normalizeOrderStatus,
   parseOrderTotalPrice,
   type EditableOrderItem,
@@ -269,5 +270,14 @@ describe("new order update rules", () => {
     );
     expect(productsLockReasonOf({ status: "received", fulfillment_source: "WAREHOUSE" })).toBe("warehouse");
     expect(productsLockReasonOf({ status: "received" })).toBe("hq");
+  });
+
+  it("XnnpmbBO: isRegionalWarehouseOrder — ombor buyurtmasi, Markaziy ombor (kind HQ) emas", () => {
+    expect(isRegionalWarehouseOrder({ fulfillment_source: "WAREHOUSE" })).toBe(true);
+    expect(isRegionalWarehouseOrder({ fulfillment_source: "WAREHOUSE", warehouse: { kind: "REGIONAL" } })).toBe(true);
+    expect(isRegionalWarehouseOrder({ fulfillment_source: "WAREHOUSE", warehouse: { kind: "HQ" } })).toBe(false);
+    expect(isRegionalWarehouseOrder({ fulfillment_source: "HQ" })).toBe(false);
+    expect(isRegionalWarehouseOrder({ status: "received" })).toBe(false);
+    expect(isRegionalWarehouseOrder(null)).toBe(false);
   });
 });

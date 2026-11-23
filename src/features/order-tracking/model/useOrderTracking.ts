@@ -26,12 +26,25 @@ const HIDDEN_TRACKING_ACTIONS = new Set(["custody_change", "custody_changed"]);
 /** React Query kaliti — buyurtma tarixi (sahifalar `useInfiniteQuery` ichida). */
 export const orderTrackingQueryKey = (orderId: string | number) => ["order-tracking", String(orderId)] as const;
 
+/**
+ * Id'ni kamayish tartibida solishtirish (raqamli bigint satr: avval uzunlik, keyin satr; aks holda satr). Kattaroq id —
+ * keyin yozilgan yozuv.
+ */
+const compareIdsDesc = (left: string, right: string) => {
+  if (/^\d+$/.test(left) && /^\d+$/.test(right) && left.length !== right.length) return right.length - left.length;
+  return right < left ? -1 : right > left ? 1 : 0;
+};
+
+/**
+ * Yangisi tepada. XnnpmbBO: bir tranzaksiyada yozilgan yozuvlar (masalan «Qabul qilindi» va «Omborga qaytdi») vaqti
+ * teng bo'ladi — ikkinchi kalit `id` (keyin yozilgani tepada), aks holda tartib tasodifiy («Qaytarish yo'li» kabi).
+ */
 const sortEvents = (items: TrackingEvent[]) =>
   [...items].sort((left, right) => {
     const leftTime = new Date(left.created_at).getTime();
     const rightTime = new Date(right.created_at).getTime();
 
-    return rightTime - leftTime;
+    return rightTime - leftTime || compareIdsDesc(String(left.id ?? ""), String(right.id ?? ""));
   });
 
 /** Faqat backend matni. Javob kelmagan (tarmoq) — bo'sh: blok `tracking.error` ni ko'rsatadi, xom "Network Error" emas. */
