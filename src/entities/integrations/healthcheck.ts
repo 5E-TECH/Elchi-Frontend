@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { readHealthReason, type HealthReason } from "./healthReason";
 
 /**
  * CHIQUVCHI ULANISHNI SINASH (`POST integrations/:id/healthcheck`).
@@ -20,6 +21,8 @@ export interface HealthcheckResult {
   status: number | null;
   response_time_ms: number | null;
   url: string | null;
+  /** Yiqilish sababi (backend 2026-11-25); eski backendda va muvaffaqiyatda — `null`. */
+  reason: HealthReason | null;
   /** Backend `message` maydonida sababni beradi (502 holatida). */
   message: string | null;
 }
@@ -38,6 +41,7 @@ const readResult = (raw: unknown): HealthcheckResult => {
     status,
     response_time_ms: typeof inner.response_time_ms === "number" ? inner.response_time_ms : null,
     url: typeof inner.url === "string" ? inner.url : null,
+    reason: readHealthReason(inner.reason),
     /**
      * Muvaffaqiyatli javobda ham `message` bo'ladi ("healthcheck completed") —
      * uni xato deb ko'rsatmaslik uchun faqat yiqilganda olamiz.

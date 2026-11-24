@@ -58,6 +58,20 @@ describe("«Tashqi saytlar» — sayt tanlash", () => {
       { route: "/new-orders/sites", preloadedState: adminState },
     );
 
+  it("⭐ «Olingan buyurtmalar» — buyurtmalarning o'zidan (`imported_orders`), chiquvchi sinxron sonidan EMAS", async () => {
+    apiGetMock.mockResolvedValue({
+      data: {
+        data: {
+          items: [{ ...adosh, total_synced_orders: 4, imported_orders: { total: 49, today: 1, last_at: null } }],
+          markets: [],
+        },
+      },
+    });
+    renderList();
+    expect((await screen.findAllByText(/49 ta/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/^4 ta/)).toBeNull();
+  });
+
   it("⭐ faol, marketga bog'langan ulanishlar — market nomi bilan; to'lov tizimi va marketsizi chiqmaydi", async () => {
     apiGetMock.mockImplementation((url: string) => {
       if (url === "integrations") {

@@ -15,19 +15,9 @@ import {
   SkeletonTable,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
+import { importedOrdersOf, siteScanPath } from "../../../entities/integrations/siteSource";
 import NewOrdersTabs from "../ui/NewOrdersTabs";
 import { toExternalSites, useExternalSites, type ExternalSite } from "./model/externalSites";
-
-/** Sayt skanerlash sahifasi — ulanish id si bo'yicha (qidiruvga `slug`, qabulga `id` kerak; sahifa ikkalasini oladi). */
-export const siteScanPath = (site: ExternalSite) => `/new-orders/sites/${site.integration.id}`;
-
-/** Backend `last_sync_at` ni `bigint` (ms) — matn sifatida ham — qaytaradi. */
-const syncDate = (value: unknown): number | string | null => {
-  if (value === null || value === undefined || value === "") return null;
-  if (typeof value === "number") return value;
-  const raw = String(value);
-  return /^\d+$/.test(raw) ? Number(raw) : raw;
-};
 
 /** `.el-stat-icon` — neytral ikonka qutisi (36 px), «Kiruvchi posilkalar» manbalari bilan bir xil. */
 const SITE_ICON = (
@@ -71,7 +61,7 @@ const ExternalSitesPage = () => {
             {SITE_ICON}
             <span className="flex min-w-0 flex-col">
               <Link
-                to={siteScanPath(site)}
+                to={siteScanPath(site.integration.id)}
                 className="min-w-0 font-semibold text-text [overflow-wrap:anywhere] hover:text-action-hover"
               >
                 {site.integration.name}
@@ -92,17 +82,21 @@ const ExternalSitesPage = () => {
         header: t("sites.colSynced"),
         align: "end",
         className: "w-[14%]",
-        cell: (site) =>
-          t("sites.syncedValue", { value: formatNumberLocalized(site.integration.total_synced_orders ?? 0, { language }) }),
+        // Olingan buyurtmalar (buyurtmalarning o'zidan); `total_synced_orders` — chiquvchi holat sinxroni, bu emas.
+        cell: (site) => {
+          const imports = importedOrdersOf(site.integration);
+          return imports ? t("sites.syncedValue", { value: formatNumberLocalized(imports.total, { language }) }) : "—";
+        },
       },
       {
         id: "lastSync",
         header: t("sites.colLastSync"),
         className: "w-[20%] pl-10",
         cell: (site) => {
-          const date = syncDate(site.integration.last_sync_at);
+          const imports = importedOrdersOf(site.integration);
+          const date = imports?.last_at ?? null;
           return date === null ? (
-            <span className="text-text-muted">{t("sites.neverSynced")}</span>
+            <span className="text-text-muted">{imports ? t("sites.neverSynced") : "—"}</span>
           ) : (
             <span className="whitespace-nowrap">{formatDateTimeLocalized(date, { language })}</span>
           );
@@ -116,7 +110,7 @@ const ExternalSitesPage = () => {
         cell: (site) => {
           const label = t("sites.open", { name: site.integration.name });
           return (
-            <Link to={siteScanPath(site)} aria-label={label} title={label} className={ROW_LINK}>
+            <Link to={siteScanPath(site.integration.id)} aria-label={label} title={label} className={ROW_LINK}>
               <ChevronRight size={18} aria-hidden="true" />
             </Link>
           );
@@ -127,16 +121,18 @@ const ExternalSitesPage = () => {
   );
 
   const renderCard = (site: ExternalSite) => (
-    <Link to={siteScanPath(site)} className="flex min-h-14 min-w-0 items-start gap-3 px-4 py-3 text-sm text-text">
+    <Link to={siteScanPath(site.integration.id)} className="flex min-h-14 min-w-0 items-start gap-3 px-4 py-3 text-sm text-text">
       {SITE_ICON}
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="font-semibold [overflow-wrap:anywhere]">{site.integration.name}</span>
         <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
           {[
             site.marketName,
-            t("sites.syncedLine", {
-              value: formatNumberLocalized(site.integration.total_synced_orders ?? 0, { language }),
-            }),
+            importedOrdersOf(site.integration)
+              ? t("sites.syncedLine", {
+                  value: formatNumberLocalized(importedOrdersOf(site.integration)?.total ?? 0, { language }),
+                })
+              : null,
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -204,7 +200,7 @@ const ExternalSitesPage = () => {
               columns={columns}
               getRowKey={(site) => String(site.integration.id)}
               label={t("sites.tableLabel")}
-              onRowClick={(site) => navigate(siteScanPath(site))}
+              onRowClick={(site) => navigate(siteScanPath(site.integration.id))}
               renderCard={renderCard}
               className="border-t border-border"
             />

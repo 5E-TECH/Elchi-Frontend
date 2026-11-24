@@ -1329,5 +1329,43 @@
       "prereq3": "IP addresses of the company's servers (optional)"
     },
     "hqFallback": "Tashkent HQ"
+  },
+  "conn": {
+    "notFoundTitle": "Connection not found",
+    "notFoundText": "It was deleted or the link is wrong.",
+    "toList": "Integrations list",
+    "scan": "Scan",
+    "siteHint": "Order source: the parcel QR is scanned, the order is taken from the site and goes to its region mail.",
+    "colImported": "Received orders",
+    "importedShort": "{{value}} received",
+    "importTitle": "Received orders",
+    "importSub": "Accepted from this site by QR",
+    "importTotal": "Total",
+    "importToday": "Today",
+    "importLast": "Last received",
+    "importNever": "None yet",
+    "importMarket": "Market",
+    "importOpenOrders": "View orders",
+    "checkMarket": "Market",
+    "chkMarketSet": "Linked — orders are created for this market",
+    "chkMarketMissing": "Not linked — orders cannot be received",
+    "fixMarket": "Settings → Market",
+    "fixMarketButton": "Link a market",
+    "checkImported": "Last received",
+    "chkNeverImported": "No orders received yet",
+    "chkImportUnknown": "Could not be determined right now",
+    "pingOk": "Connected — the site responded",
+    "pingFailTitle": "Connection failed",
+    "pingHttp": "The site returned HTTP {{status}}",
+    "pingReason": {
+      "auth_failed": "Sign-in failed. Check the login, password or sign-in address.",
+      "auth_rejected": "The site rejected the access key (HTTP {{status}}).",
+      "timeout": "The site did not respond in time.",
+      "unreachable": "Could not connect to the site. Check the address.",
+      "server_error": "Error on the site's side (HTTP {{status}}).",
+      "endpoint_failed": "The requested address returned an error (HTTP {{status}})."
+    },
+    "mixSiteTitle": "Statuses sent to the site",
+    "mixSiteEmpty": "When an order status changes, the site is notified and it appears here."
   }
 }

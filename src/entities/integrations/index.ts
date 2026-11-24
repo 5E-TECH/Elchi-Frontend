@@ -111,8 +111,11 @@ export type Integration = {
   field_mapping?: unknown;
   status_mapping?: unknown;
   status_sync_config?: unknown;
+  /** ⚠️ Chiquvchi HOLAT sinxroni soni — olingan buyurtmalar emas (`imported_orders`). */
   total_synced_orders: number;
   last_sync_at: string | null;
+  /** Shu saytdan olingan buyurtmalar; `null` / yo'q (eski backend) — noma'lum. */
+  imported_orders?: { total: number; today: number; last_at: string | null } | null;
   /**
    * Quyi kalitlar (fG48Xv5X) — `GET /integrations/:id` beradi. Master
    * (`is_active`) o'chiq bo'lsa ular ta'sir qilmaydi. Eski backendda yo'q.

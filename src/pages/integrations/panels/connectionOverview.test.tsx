@@ -310,15 +310,31 @@ describe("ConnectionOverview — banner amallari", () => {
 
     apiPostMock.mockResolvedValueOnce({ data: { statusCode: 200, data: { ok: true, status: 200 } } });
     await userEvent.click(ping);
-    await waitFor(() => expect(success).toHaveBeenCalledWith("Aloqani sinash — bajarildi"));
-    expect(await screen.findByText("Aloqani sinash — bajarildi")).toBeInTheDocument();
+    await waitFor(() => expect(success).toHaveBeenCalledWith("Aloqa bor — sayt javob berdi"));
+    expect(await screen.findByText("Aloqa bor — sayt javob berdi")).toBeInTheDocument();
     expect(apiPostMock).toHaveBeenCalledWith("integrations/7/healthcheck", {});
 
-    // Backend yiqilganda HTTP xato BERMAYDI — "bajarildi" deyilmasligi kerak.
-    apiPostMock.mockResolvedValueOnce({ data: { statusCode: 200, message: "timeout", data: { ok: false, status: null } } });
+    // Backend yiqilganda HTTP xato BERMAYDI — sababi `reason` bo'yicha o'zbekcha chiqadi.
+    apiPostMock.mockResolvedValueOnce({
+      data: { statusCode: 502, message: "x", data: { ok: false, status: 401, reason: "auth_rejected" } },
+    });
     await userEvent.click(ping);
-    await waitFor(() => expect(error).toHaveBeenCalledWith("timeout"));
+    await waitFor(() =>
+      expect(error).toHaveBeenCalledWith("Aloqa o'rnatilmadi", {
+        description: "Sayt kirish kalitini qabul qilmadi (HTTP 401).",
+      }),
+    );
     expect(success).toHaveBeenCalledTimes(1);
+
+    // ⭐ Eski backend: ok:false + «integration healthcheck completed» — bu matn xato bo'lib CHIQMAYDI.
+    apiPostMock.mockResolvedValueOnce({
+      data: { statusCode: 200, message: "integration healthcheck completed", data: { ok: false, status: 404 } },
+    });
+    await userEvent.click(ping);
+    await waitFor(() =>
+      expect(error).toHaveBeenCalledWith("Aloqa o'rnatilmadi", { description: "Sayt HTTP 404 qaytardi" }),
+    );
+    expect(screen.queryByText(/healthcheck completed/)).toBeNull();
   });
 
   it("hamkorda \"Aloqani sinash\" yo'q (tashqi API yo'q), \"Yangilash\" bor", () => {
@@ -327,5 +343,67 @@ describe("ConnectionOverview — banner amallari", () => {
     );
     expect(bannerButton(/Aloqani sinash/)).toBeNull();
     expect(bannerButton(/Yangilash/)).not.toBeNull();
+  });
+});
+
+describe("ConnectionOverview — sayt (buyurtma manbasi)", () => {
+  const site = (imported: unknown): Connection =>
+    ({
+      uid: "integration:3",
+      kind: "integration",
+      id: "3",
+      name: "Lidershop",
+      role: "source",
+      category: "marketplace",
+      is_active: true,
+      subtitle: "",
+      raw: {
+        id: "3",
+        slug: "lidershop",
+        base_url: "https://api.lidershop.uz",
+        auth_type: "login",
+        market_id: "3949",
+        is_active: true,
+        imported_orders: imported,
+      },
+    }) as unknown as Connection;
+
+  const hiddenTabs = new Set(["shipments", "settlement"]);
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiGetMock.mockResolvedValue({ data: { data: null } });
+  });
+
+  it("⭐ olingan buyurtmalar ko'rinadi; posilka, webhook va o'lchanmagan foiz chizilmaydi", () => {
+    renderWithProviders(
+      <ConnectionOverview
+        connection={site({ total: 49, today: 1, last_at: "2026-11-24T18:57:57.000Z" })}
+        metrics={undefined}
+        onFix={vi.fn()}
+        hiddenTabs={hiddenTabs}
+      />,
+    );
+    const block = screen.getByTestId("ovw-imports");
+    expect(within(block).getByText("49 ta")).toBeInTheDocument();
+    expect(within(block).getByText("Buyurtmalarni ko'rish").closest("a")).toHaveAttribute(
+      "href",
+      "/orders?orderMarketId=3949",
+    );
+    expect(screen.queryByTestId("ovw-shipments")).toBeNull();
+    expect(screen.queryByTestId("ovw-webhooks")).toBeNull();
+    expect(screen.queryByText("Muvaffaqiyat · 24 soat")).toBeNull();
+    // Chalg'ituvchi yo'llanma yo'q.
+    expect(screen.queryByText(/Navbatni hoziroq yuborish/)).toBeNull();
+    expect(screen.queryByText(/hali ishlatilmagan bo'lishi mumkin/)).toBeNull();
+  });
+
+  it("son noma'lum (eski backend) — «—», 0 emas", () => {
+    renderWithProviders(
+      <ConnectionOverview connection={site(undefined)} metrics={undefined} onFix={vi.fn()} hiddenTabs={hiddenTabs} />,
+    );
+    const block = screen.getByTestId("ovw-imports");
+    expect(within(block).queryByText("0 ta")).toBeNull();
+    expect(within(block).getAllByText("—").length).toBeGreaterThanOrEqual(3);
   });
 });

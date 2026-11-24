@@ -47,6 +47,10 @@ export interface Connection {
   raw: Partner | Integration;
 }
 
+/** Buyurtma manbasi (sayt / CRM): «biz ulanamiz» turi, rol — `source`. */
+export const isSiteSource = (c: Pick<Connection, "kind" | "role">): boolean =>
+  c.kind === "integration" && c.role === "source";
+
 const partnerToConnection = (p: Partner): Connection => ({
   uid: `partner:${p.id}`,
   kind: "partner",

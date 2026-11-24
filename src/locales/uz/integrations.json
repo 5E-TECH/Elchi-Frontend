@@ -1329,5 +1329,43 @@
       "prereq3": "Kompaniya serverlarining IP manzillari (ixtiyoriy)"
     },
     "hqFallback": "Toshkent HQ"
+  },
+  "conn": {
+    "notFoundTitle": "Ulanish topilmadi",
+    "notFoundText": "U o'chirilgan yoki havola noto'g'ri.",
+    "toList": "Integratsiyalar ro'yxati",
+    "scan": "Skanerlash",
+    "siteHint": "Buyurtma manbasi: posilkadagi QR skanerlanadi, buyurtma saytdan olinadi va viloyat pochtasiga tushadi.",
+    "colImported": "Olingan buyurtmalar",
+    "importedShort": "{{value}} ta olingan",
+    "importTitle": "Olingan buyurtmalar",
+    "importSub": "Shu saytdan QR orqali qabul qilingan",
+    "importTotal": "Jami",
+    "importToday": "Bugun",
+    "importLast": "Oxirgi qabul",
+    "importNever": "Hali olinmagan",
+    "importMarket": "Market",
+    "importOpenOrders": "Buyurtmalarni ko'rish",
+    "checkMarket": "Market",
+    "chkMarketSet": "Biriktirilgan — buyurtmalar shu market nomidan yaratiladi",
+    "chkMarketMissing": "Biriktirilmagan — buyurtma olib bo'lmaydi",
+    "fixMarket": "Sozlamalar → Market",
+    "fixMarketButton": "Marketni biriktirish",
+    "checkImported": "Oxirgi qabul",
+    "chkNeverImported": "Hali buyurtma olinmagan",
+    "chkImportUnknown": "Hozir aniqlab bo'lmadi",
+    "pingOk": "Aloqa bor — sayt javob berdi",
+    "pingFailTitle": "Aloqa o'rnatilmadi",
+    "pingHttp": "Sayt HTTP {{status}} qaytardi",
+    "pingReason": {
+      "auth_failed": "Login o'tmadi. Login, parol yoki login manzilini tekshiring.",
+      "auth_rejected": "Sayt kirish kalitini qabul qilmadi (HTTP {{status}}).",
+      "timeout": "Sayt o'z vaqtida javob bermadi.",
+      "unreachable": "Saytga ulanib bo'lmadi. Manzilni tekshiring.",
+      "server_error": "Saytning o'zida xato (HTTP {{status}}).",
+      "endpoint_failed": "So'ralgan manzil xato qaytardi (HTTP {{status}})."
+    },
+    "mixSiteTitle": "Saytga yuborilgan holatlar",
+    "mixSiteEmpty": "Buyurtma holati o'zgarganda saytga xabar yuboriladi va shu yerda ko'rinadi."
   }
 }
