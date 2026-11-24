@@ -21,6 +21,7 @@ export type SiteFieldMapping = {
   phone_field: string;
   address_field: string;
   district_code_field: string;
+  region_code_field: string;
   comment_field: string;
   total_price_field: string;
   delivery_price_field: string;
@@ -38,6 +39,7 @@ export const DEFAULT_SITE_MAPPING: SiteFieldMapping = {
   phone_field: "phone",
   address_field: "address",
   district_code_field: "district",
+  region_code_field: "region",
   comment_field: "comment",
   total_price_field: "total_price",
   delivery_price_field: "delivery_price",
@@ -128,6 +130,8 @@ export type SiteOrderPreview = {
   address: string;
   /** Saytdagi tuman kodi (SOATO yoki Elchi id'si) — xom; nomi `siteEdit.ts` → `findSiteDistrict`. */
   districtCode: string;
+  /** Saytdagi viloyat kodi (SOATO, masalan 1703) — tuman bilan solishtirish uchun. */
+  regionCode: string;
   comment: string;
   items: SiteOrderItem[];
   /** `total_price + delivery_price` (backend `finalPrice`); summa o'qilmasa `null`. */
@@ -175,6 +179,7 @@ export const toSitePreview = (
     phone: text(readPath(raw, mapping.phone_field)),
     address: text(readPath(raw, mapping.address_field)),
     districtCode: text(readPath(raw, mapping.district_code_field)),
+    regionCode: text(readPath(raw, mapping.region_code_field)),
     comment: text(readPath(raw, mapping.comment_field)),
     items: readItems(readPath(raw, mapping.items_field), readPath(raw, mapping.total_count_field), mapping),
     amount: total === null || delivery === null ? null : total + delivery,
@@ -225,6 +230,7 @@ const KNOWN_SKIP_REASONS = [
   "customer_create_failed",
   "district_unresolved",
   "region_unresolved",
+  "region_mismatch",
 ] as const;
 
 export type SiteSkipReason = (typeof KNOWN_SKIP_REASONS)[number];

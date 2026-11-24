@@ -4,7 +4,7 @@ import { Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isCompleteUzbekistanPhone, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import { Button, Dialog, Field, Select, TextInput, type SelectOption } from "../../../../shared/ui/primitives";
-import { findSiteDistrict, normalizeSitePhone, type SiteDistrict, type SiteOrderEdit } from "../model/siteEdit";
+import { findSiteDistrict, normalizeSitePhone, siteRegionConflicts, type SiteDistrict, type SiteOrderEdit } from "../model/siteEdit";
 import type { SiteOrderPreview } from "../model/siteOrder";
 import { siteOrderLabel } from "./siteOrderLabel";
 
@@ -39,6 +39,7 @@ const seedPhone = (raw: string): string => {
 const SiteOrderEditDialog = ({ row, districts, onClose, onSave }: Props) => {
   const { t } = useTranslation(["newOrders", "common"]);
   const current = useMemo(() => (districts ? findSiteDistrict(districts, row.districtCode) : null), [districts, row.districtCode]);
+  const conflict = Boolean(current && siteRegionConflicts(row.regionCode, current));
   const initial = useMemo(
     () => ({
       name: row.name,
@@ -96,7 +97,8 @@ const SiteOrderEditDialog = ({ row, districts, onClose, onSave }: Props) => {
       ...(phone && phone !== normalizeSitePhone(row.phone) ? { phone } : {}),
       ...(name !== row.name ? { name } : {}),
       ...(address !== row.address ? { address } : {}),
-      ...(district && district.id !== current?.id ? { districtCode: district.sato ?? district.id } : {}),
+      // Viloyat zid bo'lsa, o'sha tuman qayta tasdiqlangani ham yoziladi (saytning viloyati bo'shatiladi).
+      ...(district && (district.id !== current?.id || conflict) ? { districtCode: district.sato ?? district.id } : {}),
       ...(amountEditable ? { amount } : {}),
     });
   };
@@ -138,7 +140,13 @@ const SiteOrderEditDialog = ({ row, districts, onClose, onSave }: Props) => {
             labelAs="span"
             required
             error={errors.region}
-            hint={!current && row.districtCode ? t("sites.edit.districtUnknown", { value: row.districtCode }) : undefined}
+            hint={
+              conflict
+                ? t("sites.edit.regionConflict", { region: row.regionCode, district: row.districtCode })
+                : !current && row.districtCode
+                  ? t("sites.edit.districtUnknown", { value: row.districtCode })
+                  : undefined
+            }
           >
             <Select
               searchable

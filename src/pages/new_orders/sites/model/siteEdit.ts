@@ -56,7 +56,11 @@ export const findSiteDistrict = (districts: readonly SiteDistrict[], code: strin
   return districts.find((item) => item.sato === code) ?? districts.find((item) => item.id === code) ?? null;
 };
 
-export type SiteProblem = "phone_missing" | "phone_invalid" | "district_unresolved" | "price_invalid";
+export type SiteProblem = "phone_missing" | "phone_invalid" | "district_unresolved" | "region_mismatch" | "price_invalid";
+
+/** Saytning viloyati tumanga zidmi — backend `siteRegionConflicts` bilan ayni: faqat ikkalasi ham SOATO bo'lsa. */
+export const siteRegionConflicts = (regionCode: string, district: SiteDistrict): boolean =>
+  /^17\d{2}$/.test(regionCode) && /^17\d{5}$/.test(district.sato ?? "") && !district.sato!.startsWith(regionCode);
 
 /**
  * Qatordagi muammolar — server aynan shu sabablar bilan rad etardi. Tumanlar ro'yxati kelmagan bo'lsa (`null`)
@@ -66,7 +70,11 @@ export const siteProblems = (row: SiteOrderPreview, districts: readonly SiteDist
   const problems: SiteProblem[] = [];
   if (!row.phone) problems.push("phone_missing");
   else if (!normalizeSitePhone(row.phone)) problems.push("phone_invalid");
-  if (districts?.length && !findSiteDistrict(districts, row.districtCode)) problems.push("district_unresolved");
+  if (districts?.length) {
+    const district = findSiteDistrict(districts, row.districtCode);
+    if (!district) problems.push("district_unresolved");
+    else if (siteRegionConflicts(row.regionCode, district)) problems.push("region_mismatch");
+  }
   if (row.amount === null) problems.push("price_invalid");
   return problems;
 };
@@ -98,7 +106,11 @@ export const applySiteEdit = (
   if (edit.name !== undefined) set(mapping.customer_name_field, edit.name);
   if (edit.phone !== undefined) set(mapping.phone_field, edit.phone);
   if (edit.address !== undefined) set(mapping.address_field, edit.address);
-  if (edit.districtCode !== undefined) set(mapping.district_code_field, edit.districtCode);
+  if (edit.districtCode !== undefined) {
+    set(mapping.district_code_field, edit.districtCode);
+    // Operator tumanni o'zi tanladi — saytning eski viloyati zid qolib, serverda rad etilmasin.
+    set(mapping.region_code_field, null);
+  }
   if (edit.amount !== undefined) {
     set(mapping.total_price_field, edit.amount);
     set(mapping.delivery_price_field, 0);

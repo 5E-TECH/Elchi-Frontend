@@ -120,6 +120,7 @@
       "regionError": "Viloyatni tanlang",
       "districtError": "Tumanni tanlang",
       "districtUnknown": "Saytdagi tuman kodi ({{value}}) topilmadi — qo'lda tanlang",
+      "regionConflict": "Saytdagi viloyat ({{region}}) tumanga ({{district}}) mos emas — to'g'risini tanlab saqlang",
       "address": "Manzil",
       "amount": "Mijozdan olinadigan summa",
       "amountHint": "Saytdan summa o'qilmadi — yetkazish bilan birga jami summani yozing",
@@ -133,6 +134,7 @@
       "customer_create_failed": "Mijozni yaratib bo'lmadi",
       "district_unresolved": "Tuman aniqlanmadi",
       "region_unresolved": "Viloyat aniqlanmadi",
+      "region_mismatch": "Saytdagi viloyat va tuman mos emas",
       "other": "Yaratilmadi: {{reason}}"
     }
   },
