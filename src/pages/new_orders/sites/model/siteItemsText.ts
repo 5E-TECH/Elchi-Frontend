@@ -6,9 +6,7 @@
  * jadvallari) birga o'zgaradi.
  */
 
-/** Backend ustunlari: nom — varchar(255), son — int4. */
-const PRODUCT_NAME_MAX = 255;
-const QUANTITY_MAX = 2_147_483_647;
+import { fitProductName, fitQuantity } from "./siteItemLimits";
 
 /**
  * Bitta qator: `<nom> x <son> = <summa>`, so'ng vergul / `;` / yangi qator yoki matn oxiri.
@@ -31,15 +29,13 @@ const normalizeText = (raw: string): string =>
     .replace(/[^\S\n]+/g, " ")
     .trim();
 
-/** Belgilar bo'yicha (surrogat juftlik bo'linmasin) ustun sig'imiga kesadi. */
-const productName = (raw: string): string =>
-  Array.from(raw.replace(/\s+/g, " ").trim()).slice(0, PRODUCT_NAME_MAX).join("");
+/** Har xil bo'shliq bittaga keltirilgan va ustun sig'imiga kesilgan nom. */
+const productName = (raw: string): string => fitProductName(raw.replace(/\s+/g, " ").trim());
 
 /** `total_count` — musbat butun son (yoki shunday matn), aks holda 1. */
 const fallbackQuantity = (totalCount: unknown): number => {
   if (typeof totalCount !== "number" && typeof totalCount !== "string") return 1;
-  const count = Number(totalCount);
-  return Number.isInteger(count) && count > 0 && count <= QUANTITY_MAX ? count : 1;
+  return fitQuantity(Number(totalCount));
 };
 
 type SiteTextItem = { name: string; quantity: number };
