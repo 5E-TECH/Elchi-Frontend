@@ -24,6 +24,13 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
   },
 }));
 
+// F7PWp6cK: adminning «AI yordamchi» bandi — faqat `access/me` → `allowed` bo'lsa. Sukut — ruxsat bor (maket
+// personasi); haqiqiy so'rov ketmaydi.
+const aiMenu = vi.hoisted(() => ({ allowed: true as boolean | undefined }));
+vi.mock("../../../entities/ai-advisor/api/aiMenuAccess", () => ({
+  useAiAssistantMenuAllowed: (enabled: boolean) => (enabled ? aiMenu.allowed : undefined),
+}));
+
 // XtcEyQjb: menejerning «Ombor» bandi — faqat o'z filialida ombor bo'lsa (`GET /warehouses` bo'sh emas). Sukut — bor
 // (maket personasi); haqiqiy so'rov ketmaydi.
 const ownWarehouse = vi.hoisted(() => ({ exists: true as boolean | undefined }));
@@ -149,6 +156,7 @@ afterEach(() => {
   pending.path = null;
   unread.count = 0;
   ownWarehouse.exists = true;
+  aiMenu.allowed = true;
   logoutSpy.mockReset();
   vi.restoreAllMocks();
 });

@@ -255,6 +255,12 @@
      "group": "Moliya"
     },
     {
+     "key": "aiAssistant",
+     "label": "AI yordamchi",
+     "icon": "Sparkles",
+     "group": "Moliya"
+    },
+    {
      "key": "products",
      "label": "Mahsulotlar",
      "icon": "i9",

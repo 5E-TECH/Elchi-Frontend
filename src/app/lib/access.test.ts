@@ -98,8 +98,8 @@ const MATRIX: Record<string, string> = {
   canViewMails: "   ✓   ✓   —   ✓   ✓   ✓   —   ✓   ✓   —   —   —   —",
   canViewUsers: "   ✓   ✓   —   —   —   ✓   ✓   ✓   ✓   —   —   —   —",
   canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —   —   —   —",
-  // F7PWp6cK / T2 ega qarori 1: AI yordamchi — faqat superadmin.
-  canViewAiAdvisor: "✓   —   —   —   —   —   —   —   —   —   —   —   —",
+  // F7PWp6cK (ega 2026-11-23): AI yordamchi — superadmin va admin (adminda ruxsat serverda, `access/me`).
+  canViewAiAdvisor: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
   canViewNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
   canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
   canViewBranches: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",

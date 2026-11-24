@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  normalizeAccessList,
   normalizeAccessState,
   normalizeAssistantEvent,
   normalizeConversation,
@@ -67,5 +68,32 @@ describe("AI yordamchi javoblari → tiplar", () => {
     expect(normalizeAssistantEvent("future", '{"a":1}')).toBeNull();
     expect(normalizeAssistantEvent("meta", '{"conversation_id":"1"}')).toBeNull();
     expect(normalizeAssistantEvent("error", '{"message":"x"}')).toEqual({ type: "error", code: "ai_error", message: "x", conversationId: null, resetAt: null });
+  });
+});
+
+describe("AI yordamchi ruxsatlari (GET ai/assistant/access, F7PWp6cK)", () => {
+  it("o'ram `data`; ID'siz qator tashlanadi; limit null — sukut; sukut kelmasa 100", () => {
+    expect(
+      normalizeAccessList({
+        statusCode: 200,
+        data: {
+          feature_enabled: true,
+          default_daily_limit: 80,
+          items: [
+            { user_id: 7, enabled: true, daily_limit: "30", effective_daily_limit: 30, updated_at: "2026-11-23T10:00:00Z" },
+            { user_id: "8", enabled: false, daily_limit: null, effective_daily_limit: 80 },
+            { enabled: true },
+          ],
+        },
+      }),
+    ).toEqual({
+      featureEnabled: true,
+      defaultDailyLimit: 80,
+      items: [
+        { userId: "7", enabled: true, dailyLimit: 30, effectiveDailyLimit: 30, updatedAt: "2026-11-23T10:00:00Z" },
+        { userId: "8", enabled: false, dailyLimit: null, effectiveDailyLimit: 80, updatedAt: null },
+      ],
+    });
+    expect(normalizeAccessList({ data: {} })).toEqual({ featureEnabled: false, defaultDailyLimit: 100, items: [] });
   });
 });

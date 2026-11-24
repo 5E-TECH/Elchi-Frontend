@@ -369,7 +369,7 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
     renderPage();
     const state = (await screen.findByText("AI yordamchini ochib bo'lmadi")).closest("[data-error-kind]");
     expect(state).toHaveAttribute("data-error-kind", "forbidden");
-    expect(state).toHaveTextContent("AI yordamchi faqat superadmin uchun");
+    expect(state).toHaveTextContent("AI yordamchi faqat superadmin va ruxsat berilgan adminlar uchun");
     expect(screen.queryByText(/qolgan qismidan/)).toBeNull();
   });
 
@@ -397,7 +397,7 @@ describe("AI moliyaviy yordamchi sahifasi", () => {
   it("ruxsat yo'q (role_forbidden, backend `daily_limit: 0`): limit hech bir o'lchamda chizilmaydi («0 / 0 savol, Limit tugadi» yolg'on)", async () => {
     mocks.access = { ...ACCESS, allowed: false, reason: "role_forbidden", dailyLimit: 0, usedToday: 0, remainingToday: 0 };
     renderPage();
-    expect(await screen.findByText("AI yordamchi faqat superadmin uchun")).toBeInTheDocument();
+    expect(await screen.findByText("AI yordamchi faqat superadmin va ruxsat berilgan adminlar uchun")).toBeInTheDocument();
     expect(screen.queryByRole("meter")).toBeNull();
     expect(screen.queryByText("0 / 0 savol")).toBeNull();
     expect(screen.queryByText(/Limit tugadi/)).toBeNull();

@@ -100,8 +100,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/all-users", icon: Users, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
-    // F7PWp6cK / T2: «AI yordamchi» — «Moliya» guruhida «Balans» dan keyin (maket `roles.json`); faqat superadmin
-    // (ega qarori 1 — admin menyusida yo'q).
+    // F7PWp6cK / T2: «AI yordamchi» — «Moliya» guruhida «Balans» dan keyin (maket `roles.json`). Superadmin doim
+    // kiradi; adminda — ruxsat berilgan bo'lsa (ega 2026-11-23).
     { to: "/ai-assistant", icon: Sparkles, label: "aiAssistant" },
     { to: "/regions", icon: MapIcon, label: "regions" },
     { to: "/notifications", icon: Send, label: "notifications" },
@@ -125,6 +125,9 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/all-users", icon: Users, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
+    // F7PWp6cK (ega 2026-11-23): «AI yordamchi» — superadmin ruxsat bergan adminga. Band faqat `access/me` →
+    // `allowed` bo'lsa ko'rinadi (`navSections.ts` → `useNavSections`), javob kelguncha yashirin.
+    { to: "/ai-assistant", icon: Sparkles, label: "aiAssistant" },
     { to: "/regions", icon: MapIcon, label: "regions" },
     // Ega 2026-11-02: filial yaratish adminga ham (backend `@Roles(SUPERADMIN, ADMIN)`).
     { to: "/branches", icon: Building2, label: "branches" },

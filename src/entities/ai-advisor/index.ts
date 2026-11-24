@@ -9,8 +9,11 @@ export {
   AI_ASSISTANT_TOOL_NAMES,
 } from "./model/types";
 export type {
+  AiAccessGrant,
+  AiAccessList,
   AiAccessReason,
   AiAccessState,
+  AiAccessUpdate,
   AiAssistantErrorCode,
   AiAssistantEvent,
   AiAssistantToolName,
@@ -23,6 +26,8 @@ export type {
   AiSourcePeriod,
 } from "./model/types";
 export {
+  normalizeAccessGrant,
+  normalizeAccessList,
   normalizeAccessState,
   normalizeAssistantEvent,
   normalizeConversation,
@@ -34,12 +39,19 @@ export {
 export { formatSource, formatSourcePeriod, formatSourcesLine, sourceLabel, visibleSources } from "./model/sources";
 export { ANSWER_STOPS, failedStopCode, isAnswerStop, messageKind } from "./model/messageKind";
 export type { AiMessageKind } from "./model/messageKind";
-export { getAiAccessMe, getAiConversation, getAiConversations } from "./api/aiAssistantApi";
+export {
+  getAiAccessList,
+  getAiAccessMe,
+  getAiConversation,
+  getAiConversations,
+  updateAiAccess,
+} from "./api/aiAssistantApi";
 export {
   AI_CONVERSATIONS_PAGE_SIZE,
   invalidateAiAfterQuestion,
   isConversationId,
   refetchAiAccessMe,
+  useAiAccessList,
   useAiAccessMe,
   useAiConversation,
   useAiConversations,
