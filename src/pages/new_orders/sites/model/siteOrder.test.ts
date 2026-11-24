@@ -136,6 +136,34 @@ describe("toSitePreview — ro'yxat qatori", () => {
   });
 });
 
+describe("mahsulotlar — items matn bo'lib kelganda (backend readExternalItemsText nusxasi)", () => {
+  const items = (raw: Record<string, unknown>, mapping = DEFAULT_SITE_MAPPING) =>
+    toSitePreview({ id: 1, phone: "901234567", ...raw }, mapping, "Q").items;
+
+  it("⭐ Lidershop / Alion: nom va son matndan, summa esa maydonlardan", () => {
+    const row = toSitePreview(
+      { id: 1, items: "Diskali soat x 1 = 99 000 so'm", total_count: 1, total_price: 150000, delivery_price: 30000 },
+      DEFAULT_SITE_MAPPING,
+      "Q",
+    );
+    expect(row.items).toEqual([{ name: "Diskali soat", quantity: 1 }]);
+    expect(row.amount).toBe(180000);
+  });
+
+  it("ajralmasa — butun matn bitta qator, soni total_count_field dan", () => {
+    expect(items({ items: "salom", total_count: "3" })).toEqual([{ name: "salom", quantity: 3 }]);
+    expect(items({ items: "salom" })).toEqual([{ name: "salom", quantity: 1 }]);
+    const mapping = readSiteMapping({ items_field: "order.goods", total_count_field: "order.count" });
+    expect(items({ items: "boshqa", order: { goods: "salom", count: 4 } }, mapping)).toEqual([
+      { name: "salom", quantity: 4 },
+    ]);
+  });
+
+  it.each([undefined, null, 5, true, { name: "Telefon" }, "", "  "])("massiv ham, matn ham emas (%j) — bo'sh", (raw) => {
+    expect(items({ items: raw, total_count: 2 })).toEqual([]);
+  });
+});
+
 describe("qrSearchEndpoint — search-by-qr ga endpoint", () => {
   it("ulanishda qidiruv sozlangan — yuborilmaydi (backend o'zinikini oladi)", () => {
     expect(
