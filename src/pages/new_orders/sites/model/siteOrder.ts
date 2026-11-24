@@ -11,6 +11,8 @@
  * `getFieldValue` kabi.
  */
 
+import { readItemsText } from "./siteItemsText";
+
 /** Ulanishdagi maydon nomlari (`field_mapping`) — faqat ro'yxatda va qabulda kerak bo'ladiganlari. */
 export type SiteFieldMapping = {
   id_field: string;
@@ -24,6 +26,7 @@ export type SiteFieldMapping = {
   items_field: string;
   item_name_field: string;
   item_qty_field: string;
+  total_count_field: string;
 };
 
 /** Backend sukutlari (`fieldMapping.x ?? '<sukut>'`). */
@@ -39,6 +42,7 @@ export const DEFAULT_SITE_MAPPING: SiteFieldMapping = {
   items_field: "items",
   item_name_field: "name",
   item_qty_field: "quantity",
+  total_count_field: "total_count",
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -133,7 +137,9 @@ export type SiteOrderPreview = {
   error?: string;
 };
 
-const readItems = (raw: unknown, mapping: SiteFieldMapping): SiteOrderItem[] => {
+/** Mahsulotlar: massiv — elementlari, matn — undan ajratilgan qatorlar (`readItemsText`), boshqasi — bo'sh. */
+const readItems = (raw: unknown, totalCount: unknown, mapping: SiteFieldMapping): SiteOrderItem[] => {
+  if (typeof raw === "string") return readItemsText(raw, totalCount);
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((row) => {
     const name = text(readPath(row, mapping.item_name_field));
@@ -163,7 +169,7 @@ export const toSitePreview = (
     phone: text(readPath(raw, mapping.phone_field)),
     address: text(readPath(raw, mapping.address_field)),
     comment: text(readPath(raw, mapping.comment_field)),
-    items: readItems(readPath(raw, mapping.items_field), mapping),
+    items: readItems(readPath(raw, mapping.items_field), readPath(raw, mapping.total_count_field), mapping),
     amount: total === null || delivery === null ? null : total + delivery,
     payload,
   };
