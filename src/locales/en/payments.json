@@ -1189,7 +1189,7 @@
         "action": "Resend the report",
         "sending": "Sending…",
         "confirmTitle": "Resend the report?",
-        "confirmText": "The report will be sent again to the recipients from the settings (superadmin, couriers, markets, branch cashbox) as a new round.",
+        "confirmText": "The report will be sent again to the recipients from the settings (superadmin, couriers, markets, branch cashbox) as a new round. For a main cashbox shift, every connected branch group also gets its own report.",
         "confirm": "Resend",
         "done": "Report resent",
         "skipped": "The report was not sent to anyone",
@@ -1309,7 +1309,7 @@
           "superadmin": "Full report and attachment",
           "couriers": "Only their own operations",
           "markets": "Only payments to them · Telegram — to the owner's private chat, message + Excel",
-          "branches": "To the branch group or managers · message + Excel"
+          "branches": "To the branch group or managers · when the main cashbox closes, each branch gets only its own"
         },
         "channels": {
           "telegram": "Telegram",

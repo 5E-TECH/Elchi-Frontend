@@ -1188,7 +1188,7 @@
         "action": "Hisobotni qayta yuborish",
         "sending": "Yuborilmoqda…",
         "confirmTitle": "Hisobotni qayta yuborasizmi?",
-        "confirmText": "Hisobot sozlamadagi qabul qiluvchilarga (superadmin, kuryerlar, marketlar, filial kassasi) yangi raund bilan yana yuboriladi.",
+        "confirmText": "Hisobot sozlamadagi qabul qiluvchilarga (superadmin, kuryerlar, marketlar, filial kassasi) yangi raund bilan yana yuboriladi. Asosiy kassa smenasi bo'lsa — barcha ulangan filial guruhlariga ham o'z hisoboti ketadi.",
         "confirm": "Qayta yuborish",
         "done": "Hisobot qayta yuborildi",
         "skipped": "Hisobot hech kimga yuborilmadi",
@@ -1307,7 +1307,7 @@
           "superadmin": "To'liq hisobot va ilova",
           "couriers": "Faqat o'z operatsiyalari",
           "markets": "Faqat o'ziga to'lovlar · Telegram — egasining shaxsiy chatiga, xabar + Excel",
-          "branches": "Filial guruhiga yoki menejerlarga · xabar + Excel"
+          "branches": "Filial guruhiga yoki menejerlarga · asosiy kassa yopilganda har filialga faqat o'zi"
         },
         "channels": {
           "telegram": "Telegram",
