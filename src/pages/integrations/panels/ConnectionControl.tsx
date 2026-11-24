@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { usePartnerActions } from "../../../entities/partners";
 import { useGetIntegrationById, useReconcileNow, useUpdateIntegration } from "../../../entities/integrations";
+import { healthcheckErrorText } from "../../../entities/integrations/healthReason";
 import { useIntegrationHealthcheck } from "../../../entities/integrations/healthcheck";
 import { useProcessQueue, useRetryFailed } from "../../../entities/integrations/shipments";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
@@ -470,7 +471,7 @@ const ConnectionControl = ({
                     // `ok` bo'yicha o'qish kerak, aks holda "bajarildi"
                     // deb yolg'on xabar chiqardi.
                     if (!res.ok) {
-                      throw new Error(res.message ?? `HTTP ${res.status ?? "—"}`);
+                      throw new Error(healthcheckErrorText(res, t));
                     }
                   })
                 }

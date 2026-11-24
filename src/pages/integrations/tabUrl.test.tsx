@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useLocation } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient } from "@tanstack/react-query";
+import ConnectionPage from "./ConnectionPage";
 import ConnectionsPage from "./ConnectionsPage";
 import { renderWithProviders } from "../../test/test-utils";
 
@@ -57,20 +58,29 @@ describe("Ulanish paneli — tab URL'da", () => {
    * noto'g'ri natija berardi. Marshrut holati router'ning O'ZIDAN o'qiladi.
    */
   const LocationProbe = () => {
-    const { search } = useLocation();
-    return <span data-testid="search">{search}</span>;
+    const { pathname, search } = useLocation();
+    return (
+      <>
+        <span data-testid="path">{pathname}</span>
+        <span data-testid="search">{search}</span>
+      </>
+    );
   };
 
   const open = (route: string) =>
     renderWithProviders(
       <>
-        <ConnectionsPage />
+        <Routes>
+          <Route path="/integrations/connections" element={<ConnectionsPage />} />
+          <Route path="/integrations/connections/:connectionId" element={<ConnectionPage />} />
+        </Routes>
         <LocationProbe />
       </>,
       { route },
     );
 
   const currentSearch = () => screen.getByTestId("search").textContent ?? "";
+  const currentPath = () => screen.getByTestId("path").textContent ?? "";
 
   /**
    * ⚠️ `getByRole` ISHLATILMAYDI. antd v6 CSS-in-JS jsdom'da yaroqsiz
@@ -141,26 +151,47 @@ describe("Ulanish paneli — tab URL'da", () => {
     await waitFor(() => expect(panelTab(/Umumiy holat/i)).toHaveAttribute("aria-selected", "true"));
   });
 
-  it("⭐ boshqa ulanishga o'tganda tab BIRINCHISIGA qaytadi", async () => {
-    /**
-     * "Hodisalar" tabida turib boshqa ulanishga o'tish chalkash bo'lardi:
-     * ekranda boshqa ulanishning hodisalari chiqib, operator qaysi
-     * ulanishga qarayotganini yo'qotardi.
-     *
-     * ⚠️ Ikki parametr BITTA yangilanishda yoziladi — aks holda ketma-ket
-     * ikki `setSearchParams` bir-birini bosib o'tishi mumkin edi.
-     */
-    open("/integrations/connections?c=partner:7&t=security");
+  /**
+   * ULANISH — O'Z SAHIFASIDA (ega qarori 2026-11-25). Ilgari tafsilot ro'yxat sahifasining pastida, ekrandan
+   * tashqarida almashardi: qator bosilsa hech narsa bo'lmagandek ko'rinardi.
+   */
+  it("⭐ ro'yxatda qator bosilsa ulanishning o'z sahifasi ochiladi, «← Integratsiyalar» ro'yxatga qaytaradi", async () => {
+    open("/integrations/connections?scope=partner");
 
-    await waitFor(() => expect(panelTab(/Xavfsizlik/i)).toHaveAttribute("aria-selected", "true"));
-
-    // Chipni bosish — ro'yxatda bitta ulanish bor, shu bois o'zini bosamiz.
-    const user = userEvent.setup();
-    await user.click(tabButton(/BeePost/i));
-
-    await waitFor(() => {
-      expect(currentSearch()).toContain("t=overview");
+    const link = await waitFor(() => {
+      const found = document.querySelector<HTMLAnchorElement>('a[href="/integrations/connections/partner-7"]');
+      if (!found) throw new Error("havola yo'q");
+      return found;
     });
+    // Ro'yxatda tafsilot YO'Q.
+    expect(screen.queryByTestId("ovw-checklist")).toBeNull();
+    fireEvent.click(link);
+
+    await waitFor(() => expect(currentPath()).toBe("/integrations/connections/partner-7"));
+    await waitFor(() => expect(panelTab(/Umumiy holat/i)).toHaveAttribute("aria-selected", "true"));
+    expect(document.querySelector("h1")).toHaveTextContent("BeePost");
+
+    fireEvent.click(document.querySelector('a[href="/integrations/connections?scope=partner"]')!);
+    await waitFor(() => expect(currentPath()).toBe("/integrations/connections"));
+    expect(currentSearch()).toBe("?scope=partner");
+  });
+
+  it("⭐ eski havola (`?c=…&t=…`) yangi manzilga yo'naltiriladi, tab saqlanadi", async () => {
+    open("/integrations/connections?scope=partner&c=partner:7&t=security");
+
+    await waitFor(() => expect(currentPath()).toBe("/integrations/connections/partner-7"));
+    expect(currentSearch()).toBe("?t=security");
+    await waitFor(() => expect(panelTab(/Xavfsizlik/i)).toHaveAttribute("aria-selected", "true"));
+  });
+
+  it("yo'q ulanish — «Ulanish topilmadi» va ro'yxatga havola", async () => {
+    open("/integrations/connections/integration-999");
+
+    await waitFor(() => expect(document.querySelector("h1")).toHaveTextContent("Ulanish topilmadi"));
+    expect(screen.getByText("Integratsiyalar ro'yxati").closest("a")).toHaveAttribute(
+      "href",
+      "/integrations/connections",
+    );
   });
 
   /**
