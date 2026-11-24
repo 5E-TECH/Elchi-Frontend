@@ -1,11 +1,13 @@
 // dizayn-v2: (maket yo'q) superadmin-integrations-legacy-source-detail
 import { memo, useMemo } from "react";
-import { CircleAlert, Trash2 } from "lucide-react";
+import { CircleAlert, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../../shared/lib/formatPhone";
-import { DataTable, IconButton, type DataTableColumn } from "../../../../shared/ui/primitives";
+import { Badge, Button, DataTable, IconButton, type DataTableColumn } from "../../../../shared/ui/primitives";
+import { findSiteDistrict, type SiteDistrict } from "../model/siteEdit";
 import type { SiteOrderPreview } from "../model/siteOrder";
+import { siteOrderLabel } from "./siteOrderLabel";
 
 /** Ko'rsatiladigan mahsulotlar soni — qolgani «+N» (BeePost: 4 ta; jadval ustunida 2 tasi sig'adi). */
 const VISIBLE_ITEMS = 2;
@@ -13,12 +15,15 @@ const VISIBLE_ITEMS = 2;
 type Props = {
   rows: readonly SiteOrderPreview[];
   onRemove: (row: SiteOrderPreview) => void;
-  /** Qabul ketayotganda — olib tashlash o'chiq. */
+  /** Qatorni tuzatish oynasi (telefon, tuman …). */
+  onEdit: (row: SiteOrderPreview) => void;
+  /** Qatorning muammosi matni (server xatosi yoki oldindan tekshiruv); yo'q — `null`. */
+  errorOf: (row: SiteOrderPreview) => string | null;
+  /** Sayt tuman kodini nomga aylantirish uchun; `null` — ro'yxat kelmagan. */
+  districts: readonly SiteDistrict[] | null;
+  /** Qabul ketayotganda — olib tashlash va tuzatish o'chiq. */
   busy?: boolean;
 };
-
-/** Qator nomi — mijoz ismi, bo'lmasa QR (xabar va tugma nomlarida). */
-export const siteOrderLabel = (row: SiteOrderPreview) => row.name || row.qr;
 
 const RowError = ({ text }: { text: string }) => (
   <span className="flex items-start gap-1.5 text-[13px] font-semibold text-danger-fg">
@@ -35,7 +40,7 @@ const RowError = ({ text }: { text: string }) => (
  * telefon) · manzil · mahsulotlar · summa · «olib tashlash». Qabulda o'tmagan qatorda sababi qizil matn bilan.
  * Telefonda — kartalar.
  */
-const SiteOrdersTable = ({ rows, onRemove, busy }: Props) => {
+const SiteOrdersTable = ({ rows, onRemove, onEdit, errorOf, districts, busy }: Props) => {
   const { t, i18n } = useTranslation("newOrders");
   const language = i18n.resolvedLanguage ?? i18n.language;
 
@@ -64,6 +69,50 @@ const SiteOrdersTable = ({ rows, onRemove, busy }: Props) => {
     />
   );
 
+  /** Muammoli qatorda — aniq fe'lli tugma, qolganida — qalamcha. */
+  const editButton = (row: SiteOrderPreview, className?: string) => (
+    <IconButton
+      icon={Pencil}
+      label={t("sites.edit.actionLabel", { order: siteOrderLabel(row) })}
+      disabled={busy}
+      className={className}
+      onClick={(event) => {
+        event.stopPropagation();
+        onEdit(row);
+      }}
+    />
+  );
+
+  const problem = (row: SiteOrderPreview) => {
+    const error = errorOf(row);
+    if (!error) return row.edited ? <Badge tone="info" size="sm">{t("sites.edit.badge")}</Badge> : null;
+    return (
+      <span className="flex flex-col items-start gap-2">
+        <RowError text={error} />
+        <Button
+          variant="secondary"
+          size="sm"
+          leftIcon={Pencil}
+          disabled={busy}
+          className="max-md:min-h-11"
+          aria-label={t("sites.edit.actionLabel", { order: siteOrderLabel(row) })}
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit(row);
+          }}
+        >
+          {t("sites.edit.action")}
+        </Button>
+      </span>
+    );
+  };
+
+  /** «Jalaquduq, Andijon» — buyurtma qaysi viloyat pochtasiga tushishi qabuldan OLDIN ko'rinadi. */
+  const place = (row: SiteOrderPreview) => {
+    const district = districts ? findSiteDistrict(districts, row.districtCode) : null;
+    return district ? [district.name, district.regionName].filter(Boolean).join(", ") : null;
+  };
+
   const columns = useMemo<DataTableColumn<SiteOrderPreview>[]>(
     () => [
       {
@@ -91,7 +140,7 @@ const SiteOrdersTable = ({ rows, onRemove, busy }: Props) => {
               {row.name || t("sites.unknownCustomer")}
             </span>
             {row.phone ? <span className="whitespace-nowrap text-[13px] text-text-muted">{formatPhone(row.phone)}</span> : null}
-            {row.error ? <RowError text={row.error} /> : null}
+            {problem(row)}
           </span>
         ),
       },
@@ -99,12 +148,20 @@ const SiteOrdersTable = ({ rows, onRemove, busy }: Props) => {
         id: "address",
         header: t("sites.colAddress"),
         className: "w-[22%]",
-        cell: (row) =>
-          row.address ? (
-            <span className="[overflow-wrap:anywhere]">{row.address}</span>
-          ) : (
-            <span className="text-text-muted">—</span>
-          ),
+        cell: (row) => {
+          const where = place(row);
+          if (!where && !row.address) return <span className="text-text-muted">—</span>;
+          return (
+            <span className="flex min-w-0 flex-col gap-0.5">
+              {where ? <span className="font-semibold text-text">{where}</span> : null}
+              {row.address ? (
+                <span className={where ? "text-[13px] text-text-muted [overflow-wrap:anywhere]" : "[overflow-wrap:anywhere]"}>
+                  {row.address}
+                </span>
+              ) : null}
+            </span>
+          );
+        },
       },
       {
         id: "items",
@@ -130,13 +187,18 @@ const SiteOrdersTable = ({ rows, onRemove, busy }: Props) => {
       {
         id: "actions",
         header: <span className="sr-only">{t("sites.colActions")}</span>,
-        className: "w-14",
+        className: "w-24",
         cellClassName: "text-right",
-        cell: (row) => removeButton(row),
+        cell: (row) => (
+          <span className="flex justify-end gap-1">
+            {errorOf(row) ? null : editButton(row)}
+            {removeButton(row)}
+          </span>
+        ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ustunlar faqat til va band holatiga bog'liq
-    [busy, language, t],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ustunlar til, band holati, tumanlar va xato matniga bog'liq
+    [busy, districts, errorOf, language, t],
   );
 
   const renderCard = (row: SiteOrderPreview) => {
@@ -151,14 +213,18 @@ const SiteOrdersTable = ({ rows, onRemove, busy }: Props) => {
             <span className="whitespace-nowrap font-semibold">{amount(row)}</span>
           </span>
           {row.phone ? <span className="text-[13px] text-text-muted">{formatPhone(row.phone)}</span> : null}
+          {place(row) ? <span className="text-[13px] font-semibold text-text">{place(row)}</span> : null}
           {row.address ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{row.address}</span> : null}
           {text ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{text}</span> : null}
           <span className="text-[13px] text-text-subtle [overflow-wrap:anywhere]">
             {[row.qr, row.externalId ? t("sites.siteId", { id: row.externalId }) : null].filter(Boolean).join(" · ")}
           </span>
-          {row.error ? <RowError text={row.error} /> : null}
+          {problem(row)}
         </span>
-        {removeButton(row, "-mr-2 -mt-1 shrink-0")}
+        <span className="-mr-2 -mt-1 flex shrink-0">
+          {errorOf(row) ? null : editButton(row)}
+          {removeButton(row)}
+        </span>
       </div>
     );
   };
@@ -169,7 +235,7 @@ const SiteOrdersTable = ({ rows, onRemove, busy }: Props) => {
       columns={columns}
       getRowKey={(row) => row.key}
       label={t("sites.listTitle")}
-      rowClassName={(row) => (row.error ? "bg-danger-soft" : null)}
+      rowClassName={(row) => (errorOf(row) ? "bg-danger-soft" : null)}
       renderCard={renderCard}
     />
   );

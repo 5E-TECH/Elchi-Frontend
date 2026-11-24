@@ -42,7 +42,11 @@ import {
   unwrapSiteOrders,
   type SiteOrderPreview,
 } from "./model/siteOrder";
-import SiteOrdersTable, { siteOrderLabel } from "./ui/SiteOrdersTable";
+import { applySiteEdit, siteProblems, type SiteOrderEdit } from "./model/siteEdit";
+import { useSiteDistricts } from "./model/useSiteDistricts";
+import SiteOrderEditDialog from "./ui/SiteOrderEditDialog";
+import SiteOrdersTable from "./ui/SiteOrdersTable";
+import { siteOrderLabel } from "./ui/siteOrderLabel";
 
 /** Bundan qisqa qiymat fokussiz yo'lda skan emas, odam bosgan tugma (`incoming-orders` dagi chegara). */
 const KEYBOARD_SCAN_MIN_LENGTH = 6;
@@ -70,6 +74,10 @@ const SITE_SEARCH_CONCURRENCY = 2;
  *  3. «Qabul qilish» (tasdiq bilan): buyurtmalar ulanishning marketi nomidan yaratiladi (`orders/external/receive`)
  *     va o'sha zahoti QR bo'yicha qabul qilinadi (`orders/external/receive-by-scan` — skan qabulining yagona yo'li,
  *     kun tartibi va filial chegarasi bilan). O'tmagan qator ro'yxatda sababi bilan qoladi.
+ *
+ * XATO MA'LUMOT SHU YERDA TUZATILADI (ega 2026-11-25): telefon xato / yo'q, tuman aniqlanmagan yoki summa o'qilmagan
+ * bo'lsa qator skanerlanishi bilan qizil bo'ladi va «Tuzatish» oynasi ochiladi (`SiteOrderEditDialog`). Tuzatilmagan
+ * qator serverga yuborilmaydi — qolganlari qabul qilinaveradi.
  *
  * SKANLAR NAVBATDA: har skan saytga so'rov, USB skaner esa tez — so'rovlar ketma-ket yuboriladi, takror QR
  * navbatdaligida ham ushlanadi (aks holda bitta posilka ikki qator bo'lardi).
@@ -105,6 +113,18 @@ const SiteScanPage = () => {
     rowsRef.current = next(rowsRef.current);
     setRows(rowsRef.current);
   }, []);
+
+  const districtsQuery = useSiteDistricts();
+  // Bo'sh ro'yxat ham «kelmagan» — tanlash maydoni bo'sh ochilib, saqlashni to'smasin.
+  const districts = districtsQuery.data?.length ? districtsQuery.data : null;
+  const districtsRef = useRef(districts);
+  useEffect(() => {
+    districtsRef.current = districts;
+  }, [districts]);
+
+  /** Tuzatilayotgan qator (oyna ochiq). */
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const editing = rows.find((row) => row.key === editingKey) ?? null;
 
   const [message, setMessage] = useState<ScanMessageData | null>(null);
   const [accepting, setAccepting] = useState(false);
@@ -150,6 +170,14 @@ const SiteScanPage = () => {
         return;
       }
       updateRows((prev) => [...fresh, ...prev]);
+      const broken = fresh.find((row) => siteProblems(row, districtsRef.current).length);
+      if (broken) {
+        const [problem] = siteProblems(broken, districtsRef.current);
+        const text = t("sites.addedProblem", { order: siteOrderLabel(broken) });
+        void playScanFeedback("error", text);
+        setMessage({ tone: "warn", text, detail: t(`sites.reason.${problem}`), undoIds: fresh.map((row) => row.key) });
+        return;
+      }
       const text = t("sites.added", { order: siteOrderLabel(fresh[0]) });
       void playScanFeedback("success", text, undefined, { voice: "added" });
       setMessage({
@@ -238,8 +266,34 @@ const SiteScanPage = () => {
     return known ? t(`sites.reason.${known}`) : t("sites.reason.other", { reason });
   };
 
+  /** Qatorning ko'rsatiladigan muammosi: server sababi, bo'lmasa oldindan tekshiruv. */
+  const errorOf = useCallback(
+    (row: SiteOrderPreview): string | null => {
+      if (row.error) return row.error;
+      const [problem] = siteProblems(row, districts);
+      return problem ? t(`sites.reason.${problem}`) : null;
+    },
+    [districts, t],
+  );
+
+  const handleEdit = useCallback((row: SiteOrderPreview) => setEditingKey(row.key), []);
+  const closeEdit = useCallback(() => {
+    setEditingKey(null);
+    inputRef.current?.focus();
+  }, []);
+  const saveEdit = (edit: SiteOrderEdit) => {
+    const row = editing;
+    if (!row) return;
+    updateRows((prev) => prev.map((item) => (item.key === row.key ? applySiteEdit(item, mapping, edit) : item)));
+    setMessage({ tone: "success", text: t("sites.edit.saved", { order: edit.name || siteOrderLabel(row) }) });
+    closeEdit();
+  };
+
+  /** Serverga ketadiganlar — oldindan tekshiruvdan o'tganlari (tuzatilmagani ro'yxatda qoladi). */
+  const readyRows = rows.filter((row) => !siteProblems(row, districts).length);
+
   const accept = async () => {
-    const current = rowsRef.current;
+    const current = rowsRef.current.filter((row) => !siteProblems(row, districtsRef.current).length);
     if (!integration || !current.length) return;
     const errors = new Map<string, string>();
 
@@ -294,7 +348,7 @@ const SiteScanPage = () => {
   };
 
   const handleAccept = async () => {
-    const current = rowsRef.current;
+    const current = rowsRef.current.filter((row) => !siteProblems(row, districtsRef.current).length);
     if (!current.length || accepting || receiveClosed || searching > 0) return;
     const value = formatNumberLocalized(current.length, { language });
     const ok = await confirm({
@@ -349,7 +403,7 @@ const SiteScanPage = () => {
     subtitle: [row.qr, row.amount === null ? null : formatMoneyLocalized(row.amount, { language })]
       .filter(Boolean)
       .join(" · "),
-    tone: row.error ? "danger" : "success",
+    tone: errorOf(row) ? "danger" : "success",
     onUndo: () => handleRemove(row),
   }));
 
@@ -419,13 +473,13 @@ const SiteScanPage = () => {
         actions={
           <Button
             leftIcon={Check}
-            disabled={!rows.length || receiveClosed || searching > 0}
+            disabled={!readyRows.length || receiveClosed || searching > 0}
             loading={accepting}
             loadingText={t("sites.accepting")}
             onClick={() => void handleAccept()}
           >
-            {t("sites.accept", { value: formatNumberLocalized(rows.length, { language }) })}
-            <span className="max-md:hidden">{t("sites.acceptUnit", { count: rows.length })}</span>
+            {t("sites.accept", { value: formatNumberLocalized(readyRows.length, { language }) })}
+            <span className="max-md:hidden">{t("sites.acceptUnit", { count: readyRows.length })}</span>
           </Button>
         }
       />
@@ -495,7 +549,14 @@ const SiteScanPage = () => {
       {/* ===== Skanerlangan buyurtmalar ===== */}
       <Card padding="none" title={t("sites.listTitle")}>
         {rows.length ? (
-          <SiteOrdersTable rows={rows} onRemove={handleRemove} busy={accepting} />
+          <SiteOrdersTable
+            rows={rows}
+            onRemove={handleRemove}
+            onEdit={handleEdit}
+            errorOf={errorOf}
+            districts={districts}
+            busy={accepting}
+          />
         ) : (
           <EmptyState
             icon={integration ? ScanLine : Globe}
@@ -504,6 +565,16 @@ const SiteScanPage = () => {
           />
         )}
       </Card>
+
+      {editing ? (
+        <SiteOrderEditDialog
+          key={editing.key}
+          row={editing}
+          districts={districts}
+          onClose={closeEdit}
+          onSave={saveEdit}
+        />
+      ) : null}
     </div>
   );
 };
