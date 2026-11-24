@@ -293,6 +293,54 @@ describe("ShiftReportPage — auto close and report deliveries (y8Tqm9Ap, gWI4gY
     await waitFor(() => expect(http.get.mock.calls.length).toBeGreaterThan(reads));
   });
 
+  it("resend with status `skipped` (branch group not linked) says nobody got it — not «qayta yuborildi»", async () => {
+    const user = userEvent.setup();
+    render(superadmin, AUTO_REPORT);
+    http.post.mockReset();
+    const reason = "Filial guruhi ulanmagan — filial sahifasida ulang";
+    http.post.mockResolvedValueOnce({
+      data: {
+        statusCode: 200,
+        data: {
+          round: 3,
+          status: "skipped",
+          deliveries: [
+            delivery({ round: 3, recipient_id: "1", recipient_name: "HQ Toshkent", recipient_kind: "branch", channel: "telegram_group", status: "failed", failed_reason: reason, sent_at: null }),
+          ],
+        },
+      },
+    });
+    await user.click(await screen.findByRole("button", { name: "Hisobotni qayta yuborish" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Hisobotni qayta yuborasizmi?" });
+    await user.click(within(dialog).getByRole("button", { name: "Qayta yuborish" }));
+    expect(await screen.findByText("Hisobot hech kimga yuborilmadi")).toBeInTheDocument();
+    expect(screen.getByText(reason)).toBeInTheDocument();
+    expect(screen.queryByText("Hisobot qayta yuborildi")).not.toBeInTheDocument();
+  });
+
+  it("branch group not linked: the skipped report shows the reason; an old skipped report (no rows) — both causes", async () => {
+    const { unmount } = render(superadmin, {
+      ...AUTO_REPORT,
+      report: { status: "skipped", round: 1, file_format: null, has_file: false, file_url: null },
+      deliveries: [
+        delivery({ recipient_id: "1", recipient_name: "HQ Toshkent", recipient_kind: "branch", channel: "telegram_group", status: "failed", failed_reason: "Filial guruhi ulanmagan", sent_at: null }),
+      ],
+    });
+    const row = await screen.findByTestId("shift-delivery-branch");
+    expect(row).toHaveTextContent("Telegram 0 / 1");
+    expect(row).toHaveTextContent("HQ Toshkent — Telegram: Filial guruhi ulanmagan");
+    unmount();
+
+    render(superadmin, {
+      ...AUTO_REPORT,
+      report: { status: "skipped", round: 1, file_format: null, has_file: false, file_url: null },
+      deliveries: [],
+    });
+    expect(
+      await screen.findByText(/sozlamada qabul qiluvchi yoqilmagan yoki filial Telegram guruhi ulanmagan/),
+    ).toBeInTheDocument();
+  });
+
   it("a rejected resend (400 — already sending) shows the backend message", async () => {
     const user = userEvent.setup();
     render(superadmin, AUTO_REPORT);

@@ -436,6 +436,18 @@
         "notCounted": "Sanalmadi",
         "expectedUnknown": "Kutilgan noma'lum"
       },
+      "history": {
+        "title": "Smenalar tarixi",
+        "subtitle": "{{cashbox}} · smenani tanlang — hisoboti ochiladi",
+        "shift": "Smena #{{id}}",
+        "open": "Ochiq",
+        "auto": "Avtomatik yopilgan",
+        "loading": "Smenalar yuklanmoqda",
+        "emptyTitle": "Hali smena yo'q",
+        "emptyText": "Smena ochilgach shu yerda ko'rinadi.",
+        "pages": "Smenalar sahifalari",
+        "close": "Yopish"
+      },
       "result": {
         "title": "Smena yopildi",
         "subtitle": "{{range}} · {{cashbox}}",
@@ -1176,9 +1188,10 @@
         "action": "Hisobotni qayta yuborish",
         "sending": "Yuborilmoqda…",
         "confirmTitle": "Hisobotni qayta yuborasizmi?",
-        "confirmText": "Hisobot sozlamadagi qabul qiluvchilarga (superadmin, kuryerlar, marketlar) yangi raund bilan yana yuboriladi.",
+        "confirmText": "Hisobot sozlamadagi qabul qiluvchilarga (superadmin, kuryerlar, marketlar, filial kassasi) yangi raund bilan yana yuboriladi.",
         "confirm": "Qayta yuborish",
         "done": "Hisobot qayta yuborildi",
+        "skipped": "Hisobot hech kimga yuborilmadi",
         "failed": "Hisobot qayta yuborilmadi"
       },
       "deliveries": {
@@ -1210,7 +1223,7 @@
         "empty": {
           "open": "Smena yopilgach hisobot yuboriladi.",
           "pending": "Hisobot navbatda — tez orada yuboriladi.",
-          "skipped": "Hisobot yuborilmadi — sozlamada barcha qabul qiluvchilar o'chirilgan.",
+          "skipped": "Hisobot hech kimga yuborilmadi — sozlamada qabul qiluvchi yoqilmagan yoki filial Telegram guruhi ulanmagan.",
           "failed": "Hisobotni yuborishda xato bo'ldi — qayta yuborib ko'ring.",
           "none": "Bu smena hisoboti hali hech kimga yuborilmagan."
         }
