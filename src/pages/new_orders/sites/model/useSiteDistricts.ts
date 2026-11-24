@@ -7,7 +7,8 @@ import { toSiteDistricts } from "./siteEdit";
 /** Barcha tumanlar (SOATO kodi va xizmat viloyati bilan) — sayt kodini nomga aylantirish va qo'lda tanlash uchun. */
 export const useSiteDistricts = () =>
   useQuery({
-    queryKey: ["site-districts"],
+    // Ildiz — `useRegionDistrictCatalog` niki (bitta endpoint — bitta ildiz): tuman o'zgarsa bu ro'yxat ham eskiradi.
+    queryKey: ["region-district-catalog", "all", "sites"],
     queryFn: () => api.get(API_ENDPOINTS.DISTRICTS.BASE).then((res) => toSiteDistricts(res.data)),
     staleTime: 10 * 60_000,
     refetchOnWindowFocus: false,
