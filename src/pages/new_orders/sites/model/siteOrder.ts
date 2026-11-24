@@ -18,6 +18,7 @@ export type SiteFieldMapping = {
   customer_name_field: string;
   phone_field: string;
   address_field: string;
+  district_code_field: string;
   comment_field: string;
   total_price_field: string;
   delivery_price_field: string;
@@ -33,6 +34,7 @@ export const DEFAULT_SITE_MAPPING: SiteFieldMapping = {
   customer_name_field: "full_name",
   phone_field: "phone",
   address_field: "address",
+  district_code_field: "district",
   comment_field: "comment",
   total_price_field: "total_price",
   delivery_price_field: "delivery_price",
@@ -120,6 +122,8 @@ export type SiteOrderPreview = {
   name: string;
   phone: string;
   address: string;
+  /** Saytdagi tuman kodi (SOATO yoki Elchi id'si) — xom; nomi `siteEdit.ts` → `findSiteDistrict`. */
+  districtCode: string;
   comment: string;
   items: SiteOrderItem[];
   /** `total_price + delivery_price` (backend `finalPrice`); summa o'qilmasa `null`. */
@@ -131,6 +135,8 @@ export type SiteOrderPreview = {
   payload: Record<string, unknown>;
   /** Oxirgi qabulda o'tmagan bo'lsa — sababi (qatorda ko'rsatiladi). */
   error?: string;
+  /** Operator qo'lda tuzatgan (`siteEdit.ts`). */
+  edited?: boolean;
 };
 
 const readItems = (raw: unknown, mapping: SiteFieldMapping): SiteOrderItem[] => {
@@ -162,6 +168,7 @@ export const toSitePreview = (
     name: text(readPath(raw, mapping.customer_name_field)),
     phone: text(readPath(raw, mapping.phone_field)),
     address: text(readPath(raw, mapping.address_field)),
+    districtCode: text(readPath(raw, mapping.district_code_field)),
     comment: text(readPath(raw, mapping.comment_field)),
     items: readItems(readPath(raw, mapping.items_field), mapping),
     amount: total === null || delivery === null ? null : total + delivery,
