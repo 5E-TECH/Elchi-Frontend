@@ -60,17 +60,63 @@ describe("readPath / withPath — nuqtali yo'l", () => {
   });
 });
 
-describe("readAmount — backend safeExternalAmount kabi", () => {
+/**
+ * Jadval backend speci bilan bir xil (`order-service.external-import.spec.ts`, «NARX»): ro'yxatda ko'ringan summa
+ * yaratiladigan buyurtmaniki bo'lsin, backend rad etadigani esa `null` («—»).
+ */
+describe("readAmount — backend import narxi kabi", () => {
   it.each([
     [undefined, 0],
+    [null, 0],
     ["", 0],
+    ["   ", 0],
     [150000, 150000],
-    ["150 000", 150000],
-    ["12,5", 12.5],
+    ["150000", 150000],
+    ["150000.50", 150000.5],
     [-5, 0],
-    ["abc", null],
-  ])("%s → %s", (value, expected) => {
+  ])("son: %j → %j", (value, expected) => {
     expect(readAmount(value)).toBe(expected);
+  });
+
+  it.each([
+    ["150 000", 150000],
+    ["99 000", 99000],
+    ["1 500 000", 1500000],
+    [" 150 000 ", 150000],
+    ["150\u00a0000", 150000],
+    ["150\u202f000", 150000],
+    ["150\u2009000", 150000],
+    ["999 999 999 999", 999999999999],
+  ])("⭐ minglik bo'shlig'i (ega qarori 2026-11-25): %j → %j", (value, expected) => {
+    expect(readAmount(value)).toBe(expected);
+  });
+
+  it.each([
+    "tekin",
+    "150 000 so'm",
+    "99,000",
+    "1,500,000",
+    "150,5",
+    "12,5",
+    "150 000,50",
+    "150 000.50",
+    "15 0",
+    "1500 000",
+    "150 00",
+    "150  000",
+    "0 150",
+    "-150 000",
+    "1 000 000 000 000",
+    NaN,
+  ])("⭐ backend rad etadi (price_invalid) — null: %j", (value) => {
+    expect(readAmount(value)).toBeNull();
+  });
+
+  it("son ham, matn ham emas — null (backend kabi)", () => {
+    expect(readAmount(["150 000"])).toBeNull();
+    expect(readAmount([5])).toBeNull();
+    expect(readAmount(true)).toBeNull();
+    expect(readAmount({})).toBeNull();
   });
 });
 
@@ -161,6 +207,41 @@ describe("mahsulotlar — items matn bo'lib kelganda (backend readExternalItemsT
 
   it.each([undefined, null, 5, true, { name: "Telefon" }, "", "  "])("massiv ham, matn ham emas (%j) — bo'sh", (raw) => {
     expect(items({ items: raw, total_count: 2 })).toEqual([]);
+  });
+});
+
+describe("mahsulotlar — massiv (backend external-item-limits nusxasi)", () => {
+  const items = (raw: unknown) =>
+    toSitePreview({ id: 1, phone: "901234567", items: raw }, DEFAULT_SITE_MAPPING, "Q").items;
+
+  it.each([1.5, "2.5", 0.4, 2_147_483_648, "4780012345678", 1e300, -5, "salom"])(
+    "⭐ son musbat butun emas yoki int4 ga sig'maydi (%j) — 1",
+    (quantity) => {
+      expect(items([{ name: "Gilam", quantity }])).toEqual([{ name: "Gilam", quantity: 1 }]);
+    },
+  );
+
+  it("⭐ nom 255 belgiga kesiladi, emoji yarmidan bo'linmaydi", () => {
+    expect(items([{ name: `${"a".repeat(255)}ortiqcha`, quantity: 3 }])).toEqual([
+      { name: "a".repeat(255), quantity: 3 },
+    ]);
+    expect(items([{ name: `${"a".repeat(254)}🎁🎁` }])[0].name).toBe(`${"a".repeat(254)}🎁`);
+  });
+
+  it("⭐ sonlar yig'indisi int4 dan oshmaydi", () => {
+    const rows = items([
+      { name: "A", quantity: 2_000_000_000 },
+      { name: "B", quantity: 2_000_000_000 },
+      { name: "C", quantity: 5 },
+    ]);
+    expect(rows.map((row) => row.quantity)).toEqual([2_000_000_000, 1, 5]);
+  });
+
+  it("sig'adigan qator o'zgarmaydi", () => {
+    expect(items([{ name: "  Soat  qora ", quantity: "2" }, { name: "B" }])).toEqual([
+      { name: "Soat  qora", quantity: 2 },
+      { name: "B", quantity: 1 },
+    ]);
   });
 });
 
