@@ -11,6 +11,7 @@
  * `getFieldValue` kabi.
  */
 
+import { fitProductName, fitQuantity, fitTotalQuantity } from "./siteItemLimits";
 import { readItemsText } from "./siteItemsText";
 
 /** Ulanishdagi maydon nomlari (`field_mapping`) — faqat ro'yxatda va qabulda kerak bo'ladiganlari. */
@@ -81,12 +82,21 @@ const text = (value: unknown): string => {
 };
 
 /**
- * Summa — backend `safeExternalAmount` kabi: son yoki sonli matn; bo'sh — 0; son bo'lmasa `null` (backend uni
+ * Minglik bo'shlig'i bilan yozilgan narx (ega qarori 2026-11-25: «150 000» — 150000). 12 xonagacha; oddiy, NBSP, tor va
+ * ingichka bo'shliq. ⚠️ BACKEND NUSXASI — `apps/order-service/src/lifecycle/external-price.ts`: vergul, nuqta, valyuta
+ * taxmin QILINMAYDI, qoida o'zgarsa ikkalasi birga o'zgaradi.
+ */
+const GROUPED_THOUSANDS = /^[1-9]\d{0,2}(?:[ \u00a0\u202f\u2009]\d{3}){1,3}$/;
+
+/**
+ * Summa — backend import narxi kabi: son, sonli matn yoki minglik bo'shlig'i; bo'sh — 0; boshqasi — `null` (backend
  * `price_invalid` deb o'tkazib yuboradi, ro'yxatda esa «—»).
  */
 export const readAmount = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return 0;
-  const parsed = typeof value === "number" ? value : Number(String(value).replace(/\s+/g, "").replace(",", "."));
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  const raw = typeof value === "string" ? value.trim() : value;
+  const parsed = Number(typeof raw === "string" && GROUPED_THOUSANDS.test(raw) ? raw.replace(/\D/g, "") : raw);
   return Number.isFinite(parsed) ? Math.max(parsed, 0) : null;
 };
 
@@ -147,12 +157,13 @@ export type SiteOrderPreview = {
 const readItems = (raw: unknown, totalCount: unknown, mapping: SiteFieldMapping): SiteOrderItem[] => {
   if (typeof raw === "string") return readItemsText(raw, totalCount);
   if (!Array.isArray(raw)) return [];
-  return raw.flatMap((row) => {
+  const rows = raw.flatMap((row) => {
     const name = text(readPath(row, mapping.item_name_field));
     if (!name) return [];
     const quantity = Number(readPath(row, mapping.item_qty_field) ?? 1);
-    return [{ name, quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1 }];
+    return [{ name: fitProductName(name), quantity: fitQuantity(quantity) }];
   });
+  return fitTotalQuantity(rows);
 };
 
 /** Bitta sayt buyurtmasi → ro'yxat qatori. */
