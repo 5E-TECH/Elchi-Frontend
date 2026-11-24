@@ -704,6 +704,10 @@ export const API_ENDPOINTS = {
     CONVERSATION: (id: string | number) => `ai/assistant/conversations/${id}`,
     // GET → {allowed, reason, feature_enabled, daily_limit, used_today, remaining_today, reset_at}
     ACCESS_ME: "ai/assistant/access/me",
+    // FAQAT superadmin: GET → {feature_enabled, default_daily_limit, model, items[{user_id, enabled, daily_limit,
+    // effective_daily_limit, updated_by, updated_at}]}; PATCH {user_id, enabled, daily_limit: 0..10000 | null} —
+    // faqat ADMIN rolli foydalanuvchiga (boshqa rol — 400, topilmasa — 404).
+    ACCESS: "ai/assistant/access",
   },
   // AI maslahatchi — ogohlantirishlar R1–R8 va qoidalar (shartnoma v0.3, backend #644; FAQAT superadmin, admin — 403).
   // Backend hali hamma muhitda yo'q: sahifa `OVERVIEW` ni bir marta so'rab mavjudligini aniqlaydi (404/501 — yo'q).

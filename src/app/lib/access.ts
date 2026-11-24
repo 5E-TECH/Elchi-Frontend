@@ -123,11 +123,14 @@ export const canViewUsers: Predicate = anyOf(
 export const canViewFinancialBalance: Predicate = hasRole("superadmin", "admin");
 
 /**
- * AI moliyaviy yordamchi (`/ai-assistant`, F7PWp6cK; T2 6gKt64FN ega qarori 1, 2026-10-29): hozircha FAQAT superadmin.
- * Backend `ai/assistant/*` ruxsat berilgan adminga ham ochiq, lekin ruxsat berish oynasi («Kirish huquqi») qilinmaydi —
- * admin menyusida band yo'q, sahifa 403.
+ * AI moliyaviy yordamchi (`/ai-assistant`, F7PWp6cK). Ega qarori 2026-11-23 (T2 «ega qarori 1» ni almashtiradi):
+ * superadmin doim, admin — superadmin «Kirish huquqi» oynasida ruxsat bergan bo'lsa. Ruxsat serverda
+ * (`GET ai/assistant/access/me` → `allowed`), shuning uchun marshrut rol bo'yicha ochiq: ruxsatsiz admin sahifada
+ * «Sizga AI yordamchidan foydalanish ruxsati berilmagan» holatini ko'radi (`ChatPanel`, backend 403), menyuda esa
+ * band faqat `allowed` bo'lsa chiqadi (`navSections.ts`). Ogohlantirishlar va sozlamalar (`ai/advisor/*`) — faqat
+ * superadmin.
  */
-export const canViewAiAdvisor: Predicate = hasRole("superadmin");
+export const canViewAiAdvisor: Predicate = hasRole("superadmin", "admin");
 
 /**
  * Telegram guruhlari (`/notifications`) — backend `GET|POST|PATCH|DELETE /notifications` `@Roles(SUPERADMIN, ADMIN)`

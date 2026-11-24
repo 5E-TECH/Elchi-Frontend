@@ -91,6 +91,7 @@ export const mockAiAssistantApi = async (
     patch = "ok",
     settingsPatch = "ok",
     explainReadyAfter = 2,
+    adminAccess = "allowed",
   }: {
     role?: string;
     theme?: "light" | "dark";
@@ -104,6 +105,8 @@ export const mockAiAssistantApi = async (
     settingsPatch?: AdvisorSettingsPatchMode;
     /** `pending` izoh nechta `GET :id` dan keyin `ready` bo'ladi. */
     explainReadyAfter?: number;
+    /** F7PWp6cK (ega 2026-11-23): admin uchun `access/me` — superadmin ruxsat berganmi (`access_disabled`). */
+    adminAccess?: "allowed" | "denied";
   } = {},
 ) => {
   const advisorMock = createAdvisorMock({ mode: advisor, settings, explain, patch, settingsPatch, explainReadyAfter });
@@ -118,11 +121,12 @@ export const mockAiAssistantApi = async (
   const reply = (route: Route, body: unknown, status = 200, extra: Record<string, string> = {}) =>
     route.fulfill({ status, contentType: "application/json", headers: { ...corsFor(route), ...extra }, body: JSON.stringify(body) });
 
+  const adminDenied = role === "admin" && adminAccess === "denied";
   const state = {
     mode,
     access: {
-      allowed: true,
-      reason: null as string | null,
+      allowed: !adminDenied,
+      reason: (adminDenied ? "access_disabled" : null) as string | null,
       feature_enabled: true,
       daily_limit: 100,
       used_today: 38,
@@ -135,8 +139,20 @@ export const mockAiAssistantApi = async (
     posts: [] as Array<Record<string, unknown>>,
     /** `pending` rejimidagi ochiq so'rovlar soni (javob kelmaydi). */
     hanging: 0,
+    /** «Kirish huquqi» (faqat superadmin): `GET/PATCH ai/assistant/access`, adminlar — `GET users?role=admin`. */
+    grants: [
+      { user_id: "11", enabled: true, daily_limit: 50, effective_daily_limit: 50, updated_by: "1", updated_at: null },
+      { user_id: "12", enabled: true, daily_limit: null, effective_daily_limit: 100, updated_by: "1", updated_at: null },
+      { user_id: "13", enabled: false, daily_limit: null, effective_daily_limit: 100, updated_by: "1", updated_at: null },
+    ] as Array<Record<string, unknown>>,
+    accessPatches: [] as Array<Record<string, unknown>>,
   };
   const leaked: string[] = [];
+  const ADMINS = [
+    { id: "11", name: "Nilufar Rashidova", phone_number: "+998901234567", role: "admin", status: "active" },
+    { id: "12", name: "Bekzod Aliyev", phone_number: "+998977013341", role: "admin", status: "active" },
+    { id: "13", name: "Kamola Yusupova", phone_number: "+998946551890", role: "admin", status: "active" },
+  ];
 
   const ask = (body: Record<string, unknown>) => {
     const question = String(body.message ?? "").trim();
@@ -192,6 +208,20 @@ export const mockAiAssistantApi = async (
       return reply(route, result.body, result.status);
     }
 
+    if (path === "ai/assistant/access" && (method === "GET" || method === "PATCH")) {
+      if (role !== "superadmin") return reply(route, { statusCode: 403, message: "Forbidden" }, 403);
+      if (method === "PATCH") {
+        const body = (request.postDataJSON() ?? {}) as Record<string, unknown>;
+        state.accessPatches.push(body);
+        const grant = state.grants.find((item) => item.user_id === body.user_id);
+        if (grant) Object.assign(grant, { enabled: body.enabled, daily_limit: body.daily_limit ?? null });
+        return reply(route, wrap({ ok: true }));
+      }
+      return reply(route, wrap({ feature_enabled: true, default_daily_limit: 100, model: "e2e", items: state.grants }));
+    }
+    if (path === "users" && method === "GET" && url.searchParams.get("role") === "admin") {
+      return reply(route, wrap({ items: ADMINS, meta: { page: 1, limit: 100, total: ADMINS.length, totalPages: 1 } }));
+    }
     if (path === "ai/assistant/access/me" && method === "GET") {
       if (role !== "superadmin" && role !== "admin") return reply(route, { statusCode: 403, message: "Forbidden" }, 403);
       return reply(route, wrap(state.access));

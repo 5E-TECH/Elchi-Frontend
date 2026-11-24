@@ -4,7 +4,9 @@ import { advisorCalls, composer, mockAiAssistantApi, openAiAssistant } from "./s
 /**
  * F7PWp6cK / T2 — AI moliyaviy yordamchi (faqat suhbat, superadmin), desktop 1280: menyu «Moliya» → «AI yordamchi»,
  * bo'sh suhbat → savol → SSE javob (markdown jadval, «Manba», limit `done.limits` dan), URL `?conversation=`,
- * «To'xtatish», uzilish va tarixdan to'liq javob, 503 → «AI o'chiq», 429 → limit tugadi; admin — menyuda yo'q, 403.
+ * «To'xtatish», uzilish va tarixdan to'liq javob, 503 → «AI o'chiq», 429 → limit tugadi. Ega 2026-11-23: superadmin
+ * «Kirish huquqi» oynasida adminga ruxsat beradi; ruxsatli admin — menyuda va sahifada, ruxsatsiz — menyuda yo'q,
+ * URL'da «ruxsat berilmagan».
  */
 test.describe.configure({ timeout: 120_000 });
 
@@ -186,11 +188,47 @@ test("suhbat topilmadi (404) → «Yangi suhbat»", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Moliya bo'yicha savol bering" })).toBeVisible();
 });
 
-test("admin: menyuda «AI yordamchi» yo'q, URL — 403", async ({ page }) => {
-  await mockAiAssistantApi(page, { role: "admin" });
+test("⭐ ruxsatli admin: menyuda «AI yordamchi», suhbat ochiladi; «Kirish huquqi» va maslahatchi zondi yo'q", async ({ page }) => {
+  const { advisor, leaked } = await mockAiAssistantApi(page, { role: "admin" });
+  await page.goto("/");
+  const link = page.getByRole("link", { name: "AI yordamchi" });
+  await expect(link).toBeVisible({ timeout: 60_000 });
+  await link.click();
+  await expect(page.getByRole("heading", { level: 1, name: "AI moliyaviy yordamchi" })).toBeVisible();
+  await expect(composer(page)).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Kirish huquqi" })).toHaveCount(0);
+  expect(advisorCalls(advisor, "ai/advisor/overview")).toHaveLength(0);
+  expect(leaked).toEqual([]);
+});
+
+test("ruxsatsiz admin: menyuda «AI yordamchi» yo'q, URL'da «ruxsat berilmagan»", async ({ page }) => {
+  await mockAiAssistantApi(page, { role: "admin", adminAccess: "denied" });
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Balans" })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("link", { name: "AI yordamchi" })).toHaveCount(0);
   await page.goto("/ai-assistant");
-  await expect(page.getByText("Bu sahifaga ruxsatingiz yo'q")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("Sizga AI yordamchidan foydalanish ruxsati berilmagan")).toBeVisible({ timeout: 60_000 });
+});
+
+test("⭐ superadmin «Kirish huquqi»: adminga ruxsat va limit — faqat o'zgargan qatorlar PATCH", async ({ page }) => {
+  const { state, leaked } = await mockAiAssistantApi(page);
+  await openAiAssistant(page);
+  await page.getByRole("button", { name: "Kirish huquqi" }).click();
+  const dialog = page.getByRole("dialog", { name: "AI yordamchiga kirish huquqi" });
+  await expect(dialog.getByText("Ruxsat berilgan: 2 / 3")).toBeVisible({ timeout: 30_000 });
+  await expect(dialog.getByText("Doim kiradi", { exact: true })).toBeVisible();
+
+  await dialog.getByRole("switch", { name: "Kamola Yusupova" }).click();
+  await dialog.getByRole("switch", { name: "Bekzod Aliyev" }).click();
+  await expect(dialog.getByText("Ruxsat berilgan: 2 / 3")).toBeVisible();
+  await dialog.getByRole("button", { name: "Saqlash" }).click();
+
+  await expect(dialog).toHaveCount(0);
+  // Toast matni ko'rinadigan xabarda va ekran o'quvchi uchun jonli hududda — birinchisi.
+  await expect(page.getByText("Ruxsatlar saqlandi").first()).toBeVisible();
+  expect(state.accessPatches).toEqual([
+    { user_id: "12", enabled: false, daily_limit: null },
+    { user_id: "13", enabled: true, daily_limit: null },
+  ]);
+  expect(leaked).toEqual([]);
 });

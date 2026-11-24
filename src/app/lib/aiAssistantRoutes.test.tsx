@@ -6,8 +6,9 @@ import type { RootState } from "../config/store";
 import AppRouter from "./routes";
 
 /**
- * F7PWp6cK / T2 (ega qarori 1): `/ai-assistant` — faqat superadmin (`canViewAiAdvisor`). Admin (backend ruxsat
- * berilgan adminga ham ochiq, lekin «Kirish huquqi» oynasi qilinmaydi) va qolgan rollar — shell ichida 403.
+ * F7PWp6cK (ega 2026-11-23, T2 «ega qarori 1» ni almashtiradi): `/ai-assistant` — superadmin va admin
+ * (`canViewAiAdvisor`). Adminning o'z ruxsati serverda (`access/me`): ruxsatsiz admin sahifada «ruxsat berilmagan»
+ * holatini ko'radi (`AiAssistantPage.test.tsx`). Qolgan rollar — shell ichida 403.
  */
 
 vi.mock("../../widgets/layout/dashboardLayout", async () => {
@@ -45,14 +46,13 @@ const renderAt = (route: string, role: string, branchType?: string) =>
     { route, preloadedState: signedInAs(role, branchType) },
   );
 
-describe("/ai-assistant — route guard (F7PWp6cK, T2 ega qarori 1)", () => {
-  it("superadmin: sahifa ochiladi (`?conversation=` bilan ham)", async () => {
-    renderAt("/ai-assistant?conversation=41", "superadmin");
+describe("/ai-assistant — route guard (F7PWp6cK, ega 2026-11-23)", () => {
+  it.each(["superadmin", "admin"])("%s: sahifa ochiladi (`?conversation=` bilan ham)", async (role) => {
+    renderAt("/ai-assistant?conversation=41", role);
     expect(await screen.findByText("AI yordamchi sahifasi", undefined, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it.each([
-    ["admin", undefined],
     ["manager", "HQ"],
     ["registrator", "HQ"],
     ["market", undefined],

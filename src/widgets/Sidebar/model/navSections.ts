@@ -5,6 +5,8 @@ import type { RootState } from "../../../app/config/store";
 import type { User } from "../../../entities/user/model/types";
 // Yengil modul (barrel emas) — asosiy chunkka to'liq ombor API'si tushmasin.
 import { useHasOwnWarehouse } from "../../../entities/warehouse/api/ownWarehouse";
+// Yengil modul (barrel emas): maslahatchi kodi asosiy chunkka tushmasin.
+import { useAiAssistantMenuAllowed } from "../../../entities/ai-advisor/api/aiMenuAccess";
 import { useNewIncomingOrdersCount } from "../../../entities/order/api/orderStatusCounts";
 import {
   getSidebarGroupsForUser,
@@ -249,6 +251,13 @@ export const getNavPersona = (
  */
 const OWN_WAREHOUSE_PATH = "/warehouses";
 
+/**
+ * F7PWp6cK (ega 2026-11-23): adminning «AI yordamchi» bandi — faqat superadmin ruxsat bergan bo'lsa
+ * (`GET ai/assistant/access/me` → `allowed`). Javob kelguncha va xato bo'lsa yashirin — ruxsatsiz adminga
+ * «ruxsat berilmagan» sahifasiga olib boradigan band ko'rinmasin. Superadminda shart yo'q (doim kiradi).
+ */
+const AI_ASSISTANT_PATH = "/ai-assistant";
+
 const withoutPath = (sections: NavSection[], path: string): NavSection[] =>
   sections
     .map((section) => ({ ...section, items: section.items.filter((item) => item.to !== path) }))
@@ -264,10 +273,15 @@ export const useNavSections = () => {
   const gateWarehouse =
     userRole === "manager" && baseSections.some((section) => section.items.some((item) => item.to === OWN_WAREHOUSE_PATH));
   const hasOwnWarehouse = useHasOwnWarehouse(gateWarehouse);
-  const sections = useMemo(
-    () => (gateWarehouse && hasOwnWarehouse !== true ? withoutPath(baseSections, OWN_WAREHOUSE_PATH) : baseSections),
-    [baseSections, gateWarehouse, hasOwnWarehouse],
-  );
+  const gateAiAssistant =
+    userRole === "admin" && baseSections.some((section) => section.items.some((item) => item.to === AI_ASSISTANT_PATH));
+  const aiAllowed = useAiAssistantMenuAllowed(gateAiAssistant) === true;
+  const sections = useMemo(() => {
+    let next = baseSections;
+    if (gateWarehouse && hasOwnWarehouse !== true) next = withoutPath(next, OWN_WAREHOUSE_PATH);
+    if (gateAiAssistant && !aiAllowed) next = withoutPath(next, AI_ASSISTANT_PATH);
+    return next;
+  }, [baseSections, gateWarehouse, hasOwnWarehouse, gateAiAssistant, aiAllowed]);
   const items = useMemo(() => sections.flatMap((section) => section.items), [sections]);
   const branchTypeMissing = hasUnknownBranchType(userRole, user);
 

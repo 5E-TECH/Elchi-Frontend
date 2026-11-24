@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery, type QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
-import { getAiAccessMe, getAiConversation, getAiConversations } from "../api/aiAssistantApi";
+import { getAiAccessList, getAiAccessMe, getAiConversation, getAiConversations } from "../api/aiAssistantApi";
 import type { AiAccessState, AiConversationList, AiLimits } from "./types";
 
 /** Suhbatlar ro'yxati — bir sahifada 50 ta, «Ko'proq» bilan keyingisi (backend chegarasi 1..100). */
@@ -21,6 +21,17 @@ export const useAiAccessMe = ({ enabled = true }: { enabled?: boolean } = {}) =>
     enabled,
     refetchOnWindowFocus: true,
     staleTime: 30_000,
+    meta: { silentError: true },
+  });
+
+/**
+ * Adminlar ruxsatlari — FAQAT superadmin («Kirish huquqi» oynasi ochilganda). Xato oynaning o'zida, global xabarsiz.
+ */
+export const useAiAccessList = ({ enabled = true }: { enabled?: boolean } = {}) =>
+  useQuery({
+    queryKey: queryKeys.aiAssistant.access,
+    queryFn: getAiAccessList,
+    enabled,
     meta: { silentError: true },
   });
 

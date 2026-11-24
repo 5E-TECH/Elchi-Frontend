@@ -33,6 +33,13 @@ vi.mock("../../../entities/warehouse/api/ownWarehouse", () => ({
   useHasOwnWarehouse: (enabled: boolean) => (enabled ? ownWarehouse.exists : undefined),
 }));
 
+// F7PWp6cK: adminning «AI yordamchi» bandi — faqat `access/me` → `allowed` bo'lsa. Sukut — ruxsat bor (maket
+// personasi); haqiqiy so'rov ketmaydi.
+const aiMenu = vi.hoisted(() => ({ allowed: true as boolean | undefined }));
+vi.mock("../../../entities/ai-advisor/api/aiMenuAccess", () => ({
+  useAiAssistantMenuAllowed: (enabled: boolean) => (enabled ? aiMenu.allowed : undefined),
+}));
+
 // GaBIPi3Z: «Qabul va yaratish» badge'i (`GET /orders/status-counts` → `new_incoming`) — haqiqiy so'rov ketmaydi,
 // son testda boshqariladi; `enabled` qiymatlari yoziladi (badge'siz rolda so'rov yoqilmaydi).
 const newIncoming = vi.hoisted(() => ({ count: null as number | null, enabled: [] as boolean[] }));
@@ -123,6 +130,7 @@ afterEach(() => {
   pending.path = null;
   localStorage.removeItem("sidebar:collapsedGroups");
   ownWarehouse.exists = true;
+  aiMenu.allowed = true;
   vi.restoreAllMocks();
 });
 
@@ -293,6 +301,30 @@ describe("Sidebar — guruhlar va yig'ish", () => {
     act(() => link.focus());
     fireEvent.keyDown(link, { key: "Escape" });
     expect(screen.queryByText("Pochta")).not.toBeInTheDocument();
+  });
+});
+
+describe("Sidebar — adminning «AI yordamchi» bandi (F7PWp6cK, ega 2026-11-23)", () => {
+  it("faqat superadmin ruxsat bergan bo'lsa (javob kelguncha ham yashirin); superadminda doim", () => {
+    aiMenu.allowed = false;
+    const denied = renderSidebar("admin");
+    expect(linkNames()).not.toContain("AI yordamchi");
+    denied.unmount();
+
+    aiMenu.allowed = undefined;
+    const pending = renderSidebar("admin");
+    expect(linkNames()).not.toContain("AI yordamchi");
+    pending.unmount();
+
+    aiMenu.allowed = true;
+    const allowed = renderSidebar("admin");
+    expect(screen.getByRole("link", { name: "AI yordamchi" })).toHaveAttribute("href", "/ai-assistant");
+    allowed.unmount();
+
+    // Superadminda shart yo'q: hook o'chiq (`undefined`), band baribir bor.
+    aiMenu.allowed = false;
+    renderSidebar("superadmin");
+    expect(screen.getByRole("link", { name: "AI yordamchi" })).toHaveAttribute("href", "/ai-assistant");
   });
 });
 

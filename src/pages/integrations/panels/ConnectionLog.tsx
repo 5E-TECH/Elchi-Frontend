@@ -47,6 +47,7 @@ import {
   type DataTableColumn,
   type SelectOption,
   type Tone,
+  useConfirm,
 } from "../../../shared/ui/primitives";
 import { useStatusLabel } from "../statusLabel";
 import { ChartBlock, ColumnGrid, FilterChips, InlineAlert, LegendList, PanelSection, SectionHead, SegBar, SuccessGauge } from "../ui";
@@ -374,8 +375,9 @@ const IncomingWebhookLog = ({ connection, switcher }: { connection: Connection; 
 
 /**
  * BIZ yuborgan webhooklar (`partner_webhook_outbox`). Sukut bo'yicha ochiq hamkor; «Barcha hamkorlar» —
- * umumiy yetkazish jurnali (maket `*-integrations-legacy-partners`, eski `/integrations/partners` dan ko'chgan):
- * yiqilgan hodisani har hamkorni birma-bir ochmasdan topish uchun.
+ * umumiy yetkazish jurnali (eski `/integrations/partners` sahifasidan ko'chgan, ega 2026-11-23 da tasdiqladi):
+ * yiqilgan hodisani har hamkorni birma-bir ochmasdan topish uchun. «Qayta yuborish» — tasdiq oynasi bilan
+ * (Dj70iDbD, ega 2026-11-23): tasodifiy bosishda hamkorga takror hodisa ketmasin.
  */
 const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?: ConnectionMetrics }) => {
   const { t, i18n } = useTranslation("integrations");
@@ -396,21 +398,13 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
     { silentError: true },
   );
   const { retryWebhook } = usePartnerActions();
+  const confirm = useConfirm();
   const rows = webhooks.data?.data ?? [];
   const partnerOf = (r: PartnerWebhookRow) => partnerNames.get(String(r.partner_id)) ?? r.partner_id;
   const partnerOptions: SelectOption[] = [
     { value: ALL_PARTNERS, label: t("console.allPartners") },
     ...(partners ?? []).map((item) => ({ value: String(item.id), label: item.name })),
   ];
-
-  const retry = async (id: string) => {
-    try {
-      await retryWebhook.mutateAsync(id);
-      notify.success(t("logRequeued"));
-    } catch (error) {
-      notify.error(getBackendErrorMessage(error) || t("logRetryFailed"));
-    }
-  };
 
   /**
    * ⚠️ O'ZGARUVCHI NOMI `tag`, `t` EMAS — i18n funksiyasini SOYA QILMASIN.
@@ -421,6 +415,22 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
   };
   const eventText = (r: PartnerWebhookRow) => (r.new_status ? statusLabel(r.new_status) : r.event_type || "—");
   const orderNo = (r: PartnerWebhookRow) => (r.order_id ? `№${r.order_id}` : "");
+  const retry = async (r: PartnerWebhookRow) => {
+    const id = String(r.id);
+    // Xato oyna ichida ko'rinadi (`onConfirm`): foydalanuvchi qayta urinadi yoki bekor qiladi.
+    const ok = await confirm({
+      tone: "primary",
+      title: t("console.retryConfirmTitle"),
+      description: t("console.retryConfirmDesc", { order: orderNo(r) || r.external_order_id, partner: partnerOf(r) }),
+      confirmLabel: t("console.retryConfirmBtn"),
+      cancelLabel: t("npCancel"),
+      icon: RefreshCw,
+      confirmIcon: RefreshCw,
+      onConfirm: () => retryWebhook.mutateAsync(id),
+      errorMessage: (error) => getBackendErrorMessage(error) || t("logRetryFailed"),
+    });
+    if (ok) notify.success(t("logRequeued"));
+  };
   const retryButton = (r: PartnerWebhookRow, iconOnly: boolean) =>
     r.status === "completed" ? (
       <span className="text-xs text-text-subtle">
@@ -433,7 +443,7 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
         icon={RefreshCw}
         label={t("console.retryEventAria", { order: orderNo(r) || r.external_order_id })}
         loading={retryWebhook.isPending && retryWebhook.variables === String(r.id)}
-        onClick={() => void retry(String(r.id))}
+        onClick={() => void retry(r)}
       />
     ) : (
       <Button
@@ -443,7 +453,7 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
         title={t("logRetryTip")}
         aria-label={t("console.retryEventAria", { order: orderNo(r) || r.external_order_id })}
         loading={retryWebhook.isPending && retryWebhook.variables === String(r.id)}
-        onClick={() => void retry(String(r.id))}
+        onClick={() => void retry(r)}
       >
         {t("logRetryBtn")}
       </Button>
