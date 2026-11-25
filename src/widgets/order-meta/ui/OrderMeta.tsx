@@ -212,7 +212,7 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, operat
     return where ? t("metaHolderStage", { stage: label, place: where }) : label;
   })();
 
-  const tariffFields = visibleTariffs(role);
+  const tariffFields = visibleTariffs(role, { hasCourier: meta.courierId !== null });
   /** Integratsiya buyurtmasida `operator` — hamkor kaliti (ism emas): qator chiqmaydi. */
   const showOperator = canSeeOrderOperator(role) && !meta.operator.external;
   const operatorName = meta.operator.name ?? (meta.operator.id ? `#${meta.operator.id}` : null);

@@ -1178,7 +1178,33 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     expect(title.closest("[data-tone]")).toHaveTextContent("Standart narxni market kartasida belgilang.");
   });
 
-  it("menejer (N3, yiFTzkzH): qatorsiz market — tariflar `GET markets?search=` dan; `users/:id` so'ralmaydi", async () => {
+  it("⭐ D5NxxpJW: menejer narxni ko'rmaydi (eski backend yuborsa ham), sukut turi esa qo'llanadi; `users/:id` so'ralmaydi", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets"
+        ? ok({
+            items: [
+              { ...MARKETS[1], ...TARIFFS },
+              { ...MARKETS[0], ...TARIFFS, default_tariff: "center" },
+            ],
+          })
+        : url.startsWith("product/")
+          ? ok(CATALOG)
+          : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, {
+      preloadedState: managerState,
+      route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
+    });
+
+    await waitFor(() => expect(radio(/Markazgacha/)).toBeChecked());
+    expect(deliveryGroup()).not.toHaveTextContent(/so'm|Narx yo'q|standart/);
+    expect(deliveryPrice()).not.toBeInTheDocument();
+    expect(mocks.get).toHaveBeenCalledWith("markets", { params: { search: "Baraka Shop", limit: 20 } });
+    expect(mocks.get).not.toHaveBeenCalledWith("users/3");
+    expect(mocks.get).not.toHaveBeenCalledWith("auth/my-profile");
+  });
+
+  it("registrator (N3, yiFTzkzH): qatorsiz market — tariflar `GET markets?search=` dan; `users/:id` so'ralmaydi", async () => {
     mocks.get.mockImplementation((url: string) =>
       url === "markets"
         ? ok({ items: [{ ...MARKETS[1], ...TARIFFS }, { ...MARKETS[0], ...TARIFFS }] })
@@ -1187,7 +1213,7 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
           : aiApiGet(url),
     );
     renderWithProviders(<OrderCreate />, {
-      preloadedState: managerState,
+      preloadedState: { role: { id: "9", role: "registrator", region: null, name: "Ro'yxatchi" } } as never,
       route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
     });
 

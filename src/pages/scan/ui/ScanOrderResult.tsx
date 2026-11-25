@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { hidesMarketMoney } from "../../../entities/order/model/marketMoney";
 import { Link, useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { canViewDispatchPage } from "../../../app/lib/access";
@@ -186,7 +187,18 @@ const MetaItem = ({ icon: Icon, label, children }: { icon: LucideIcon; label: st
   </div>
 );
 
-const SummaryCard = ({ view, order, staff }: { view: ScanOrderView; order: OrderDetail; staff: boolean }) => {
+const SummaryCard = ({
+  view,
+  order,
+  staff,
+  hideMarketMoney,
+}: {
+  view: ScanOrderView;
+  order: OrderDetail;
+  staff: boolean;
+  /** D5NxxpJW: menejer / filial / registrator — «To'langan» (marketga) yo'q, backend ham yubormaydi. */
+  hideMarketMoney: boolean;
+}) => {
   const { t, i18n } = useTranslation("scan");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const isPhone = useIsBelowMd();
@@ -247,9 +259,11 @@ const SummaryCard = ({ view, order, staff }: { view: ScanOrderView; order: Order
           </MetaItem>
           {staff ? (
             <>
-              <MetaItem icon={Banknote} label={t("order.paid")}>
-                {formatMoneyLocalized(view.paid, { language })}
-              </MetaItem>
+              {hideMarketMoney ? null : (
+                <MetaItem icon={Banknote} label={t("order.paid")}>
+                  {formatMoneyLocalized(view.paid, { language })}
+                </MetaItem>
+              )}
               <MetaItem icon={Calendar} label={t("order.created")}>
                 {date ?? "—"}
               </MetaItem>
@@ -806,7 +820,12 @@ export const ScanOrderResult = ({
       {topNotice}
       <div className="flex flex-wrap items-start gap-6">
         <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
-          <SummaryCard view={view} order={order} staff={roleKind === "staff"} />
+          <SummaryCard
+            view={view}
+            order={order}
+            staff={roleKind === "staff"}
+            hideMarketMoney={hidesMarketMoney(role)}
+          />
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-4">
             <CustomerCard view={view} />
             <ProductsCard view={view} />
