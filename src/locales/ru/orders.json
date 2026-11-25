@@ -928,6 +928,7 @@
   "orderDetail": {
     "created": "Создан: {{date}}",
     "customer": "Клиент",
+    "callCustomer": "Позвонить: {{name}}, {{phone}}",
     "products": "Товары",
     "itemsCount": "{{count}} шт.",
     "productsCount": "Товаров: {{count}}",

@@ -928,6 +928,7 @@
   "orderDetail": {
     "created": "Yaratilgan: {{date}}",
     "customer": "Mijoz",
+    "callCustomer": "Qo'ng'iroq qilish: {{name}}, {{phone}}",
     "products": "Mahsulotlar",
     "itemsCount": "{{count}} ta",
     "productsCount": "{{count}} ta mahsulot",
