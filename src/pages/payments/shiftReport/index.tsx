@@ -609,6 +609,13 @@ const ShiftReportPage = () => {
     if (!ok) return;
     try {
       const result = await resend.mutateAsync(shiftId);
+      // `skipped` — hech kimga ketmadi (masalan filial guruhi ulanmagan): «yuborildi» deyilmaydi, sababi blokda.
+      if (result.status === "skipped") {
+        notify.warning(t("shiftCheck.report.resend.skipped"), {
+          description: result.deliveries.find((row) => row.failed_reason)?.failed_reason ?? undefined,
+        });
+        return;
+      }
       notify.success(t("shiftCheck.report.resend.done"), {
         description: result.round ? t("shiftCheck.report.deliveries.round", { round: result.round }) : undefined,
       });

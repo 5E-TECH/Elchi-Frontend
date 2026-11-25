@@ -285,7 +285,7 @@
   },
   "telegram": {
     "title": "Cash report · Telegram",
-    "hint": "When the cash desk (shift) closes — manually or automatically at the end of the day — the report is sent as a message and an Excel file to the branch Telegram group or to the managers' private chats.",
+    "hint": "When the cash desk (shift) closes — manually or automatically at the end of the day — the report is sent as a message and an Excel file to the branch Telegram group or to the managers' private chats. When the main cashbox shift closes, only what this branch handed over to HQ is sent here as well.",
     "groupTitle": "Branch group",
     "connected": "Connected",
     "inactive": "Inactive",

@@ -436,6 +436,18 @@
         "notCounted": "Not counted",
         "expectedUnknown": "Expected unknown"
       },
+      "history": {
+        "title": "Shift history",
+        "subtitle": "{{cashbox}} · choose a shift to open its report",
+        "shift": "Shift #{{id}}",
+        "open": "Open",
+        "auto": "Closed automatically",
+        "loading": "Loading shifts",
+        "emptyTitle": "No shifts yet",
+        "emptyText": "A shift appears here once it is opened.",
+        "pages": "Shift pages",
+        "close": "Close"
+      },
       "result": {
         "title": "Shift closed",
         "subtitle": "{{range}} · {{cashbox}}",
@@ -1177,9 +1189,10 @@
         "action": "Resend the report",
         "sending": "Sending…",
         "confirmTitle": "Resend the report?",
-        "confirmText": "The report will be sent again to the recipients from the settings (superadmin, couriers, markets) as a new round.",
+        "confirmText": "The report will be sent again to the recipients from the settings (superadmin, couriers, markets, branch cashbox) as a new round. For a main cashbox shift, every connected branch group also gets its own report.",
         "confirm": "Resend",
         "done": "Report resent",
+        "skipped": "The report was not sent to anyone",
         "failed": "The report was not resent"
       },
       "deliveries": {
@@ -1211,7 +1224,7 @@
         "empty": {
           "open": "The report is sent after the shift closes.",
           "pending": "The report is queued and will be sent shortly.",
-          "skipped": "The report was not sent — all recipients are turned off in the settings.",
+          "skipped": "The report was not sent to anyone — no recipient is turned on in the settings or the branch Telegram group is not connected.",
           "failed": "Sending the report failed — try resending it.",
           "none": "This shift report has not been sent to anyone yet."
         }
@@ -1296,7 +1309,7 @@
           "superadmin": "Full report and attachment",
           "couriers": "Only their own operations",
           "markets": "Only payments to them · Telegram — to the owner's private chat, message + Excel",
-          "branches": "To the branch group or managers · message + Excel"
+          "branches": "To the branch group or managers · when the main cashbox closes, each branch gets only its own"
         },
         "channels": {
           "telegram": "Telegram",

@@ -276,9 +276,9 @@ describe("CloseShiftPopup — kartalar qoldig'ini tasdiqlash (kiZgTybn)", () => 
     expect(postsTo("finance/shift/close")[0]).toEqual({ shift_id: SHIFT_ID, closing_balance_cash: 18_240_000 });
     // BE-A: kartalarsiz yopish ham uzoq kutish muddati bilan (MAIN da backend «Asosiy karta»ni o'zi tekshiradi).
     expect(closeCalls()[0][2]).toEqual({ timeout: 60_000 });
-    // Kartalar tekshirilmagan — natija oynasida hisobot havolasi yo'q.
+    // Kartalar tekshirilmagan bo'lsa ham hisobot havolasi bor (ega 2026-11-25: hisobot UI'dan topilmas edi).
     const result = await screen.findByRole("dialog", { name: "Smena yopildi" });
-    expect(within(result).queryByRole("link", { name: /Smena hisoboti/ })).not.toBeInTheDocument();
+    expect(within(result).getByRole("link", { name: /Smena hisoboti/ })).toHaveAttribute("href", `/payments/shifts/${SHIFT_ID}`);
   });
 
   it("enabled: per-card rows replace «Sanalgan karta»; balance and required photos are validated before posting", async () => {
