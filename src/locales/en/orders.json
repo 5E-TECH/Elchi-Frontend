@@ -238,6 +238,8 @@
   "metaSoldAt": "Sold at",
   "metaMarket": "Market",
   "metaBranch": "Branch",
+  "metaBranchManager": "Manager",
+  "metaBranchManagerNone": "Not assigned",
   "metaPost": "Post",
   "metaCourier": "Courier",
   "metaCourierNone": "Not assigned yet",

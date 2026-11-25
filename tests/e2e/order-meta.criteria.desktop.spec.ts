@@ -39,6 +39,17 @@ const createdEvent = (orderId: string, createdAt: string) => ({
   created_at: createdAt,
 });
 
+/** 0Rn5U6AD: backend xodimlarga filial va kuryer kontaktini beradi (`GET orders/:id`). */
+const withContacts = (order: Record<string, unknown>) => ({
+  ...order,
+  branch: {
+    id: "1",
+    name: "HQ Toshkent",
+    phone_number: "+998712000001",
+    manager: { id: "5", name: "Karimov Karim", phone_number: "+998901112233" },
+  },
+});
+
 const openTariffs = async (page: Page) => {
   const block = page.getByTestId("meta-tariffs");
   await block.locator("button[aria-pressed]").click();
@@ -114,6 +125,34 @@ test.describe("Buyurtma ma'lumotlari — qabul mezonlari (1440px)", () => {
     // Bosiladigan: ko'rinadi, ustida boshqa element yo'q (trial click — haqiqiy qo'ng'iroq ochilmaydi).
     await phone.click({ trial: true });
     expect(leaked).toEqual([]);
+  });
+
+  test("⭐ 0Rn5U6AD: superadmin va registrator — filial, menejer va kuryer kontakti bosiladigan tel: havola", async ({ page }) => {
+    for (const profile of [SUPERADMIN, REGISTRATOR]) {
+      const courier = { id: "93", name: "Xorazm Courier", phone_number: "+998970000090" };
+      const { leaked } = await mockOrderDetailApi(page, { ...withContacts(ORDER_95), courier }, { profile });
+      await openOrderDetail(page, "95");
+      for (const [row, name, phone] of [
+        ["meta-branch", "HQ Toshkent", "+998712000001"],
+        ["meta-branch-manager", "Karimov Karim", "+998901112233"],
+        ["meta-courier", "Xorazm Courier", "+998970000090"],
+      ] as const) {
+        const block = page.getByTestId(row);
+        await expect(block, `${profile.role} ${row}`).toContainText(name);
+        const link = block.locator('a[href^="tel:"]');
+        await expect(link, `${profile.role} ${row}`).toHaveAttribute("href", `tel:${phone}`);
+        await link.click({ trial: true });
+      }
+      expect(leaked, profile.role).toEqual([]);
+      await page.context().unrouteAll({ behavior: "ignoreErrors" });
+    }
+  });
+
+  test("⭐ 0Rn5U6AD: kuryer biriktirilmagan (registrator) — «Hali biriktirilmagan», filial kontakti joyida", async ({ page }) => {
+    await mockOrderDetailApi(page, { ...withContacts(ORDER_102), courier: null }, { profile: REGISTRATOR });
+    await openOrderDetail(page, "102");
+    await expect(page.getByTestId("meta-courier")).toContainText("Hali biriktirilmagan");
+    await expect(page.getByTestId("meta-branch").locator("a")).toHaveAttribute("href", "tel:+998712000001");
   });
 
   test("⭐ tarif standart holatda XIRA; ko'z tugmasi bosilganda ochiladi", async ({ page }) => {

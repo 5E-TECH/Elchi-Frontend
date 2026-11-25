@@ -31,6 +31,18 @@ const ORDER_95 = {
   branch: { id: "1", name: "HQ Toshkent" },
 };
 
+/** 0Rn5U6AD: backend xodimlarga filial va kuryer kontaktini ham beradi. */
+const ORDER_CONTACTS = {
+  ...ORDER_95,
+  branch: {
+    id: "1",
+    name: "HQ Toshkent",
+    phone_number: "+998712000001",
+    manager: { id: "5", name: "Menejer Karim", phone_number: "+998901112233" },
+  },
+  courier: { id: "93", name: "Xorazm Courier", phone_number: "+998970000090" },
+};
+
 const row = (id: string) => screen.getByTestId(id);
 const tariffValue = (field: string) =>
   document.querySelector<HTMLElement>(`[data-tariff="${field}"] dd`)!;
@@ -206,6 +218,63 @@ describe("OrderMeta", () => {
   it("kuryer biriktirilmagan — \"Hali biriktirilmagan\"", () => {
     renderWithProviders(<OrderMeta order={{ ...ORDER_95, courier_id: null, holder_type: "HQ" }} role="admin" />);
     expect(row("meta-courier")).toHaveTextContent("Hali biriktirilmagan");
+  });
+
+  it.each(["superadmin", "admin", "registrator"])(
+    "⭐ 0Rn5U6AD: %s — filial (nom, tel), menejeri va kuryer kontakti javobdan, qo'shimcha so'rovsiz",
+    (role) => {
+      renderWithProviders(<OrderMeta order={ORDER_CONTACTS} role={role} />);
+      expect(row("meta-branch")).toHaveTextContent("HQ Toshkent");
+      expect(row("meta-branch").querySelector("a")!.getAttribute("href")).toBe("tel:+998712000001");
+      expect(row("meta-branch-manager")).toHaveTextContent("Menejer Karim");
+      expect(row("meta-branch-manager").querySelector("a")!.getAttribute("href")).toBe("tel:+998901112233");
+      expect(row("meta-courier")).toHaveTextContent("Xorazm Courier");
+      expect(row("meta-courier").querySelector("a")!.getAttribute("href")).toBe("tel:+998970000090");
+      expect(row("meta-holder")).toHaveTextContent("Kuryerda: Xorazm Courier");
+      for (const id of ["meta-branch", "meta-branch-manager", "meta-courier"]) {
+        // Nishon telefonda 44px (zona): ko'rinadigan qator balandligi oshmaydi.
+        expect(row(id).querySelector("a")!.className, id).toMatch(/min-h-11/);
+      }
+      expect(apiGet).not.toHaveBeenCalled();
+    },
+  );
+
+  it("0Rn5U6AD: filial menejeri yo'q — «Biriktirilmagan»; filial nomi yo'q — qator baribir turadi («—»)", () => {
+    const first = renderWithProviders(
+      <OrderMeta order={{ ...ORDER_CONTACTS, branch: { ...ORDER_CONTACTS.branch, phone_number: null, manager: null } }} role="admin" />,
+    );
+    expect(row("meta-branch").querySelector("a")).toBeNull();
+    expect(row("meta-branch-manager")).toHaveTextContent("Biriktirilmagan");
+    first.unmount();
+
+    renderWithProviders(<OrderMeta order={{ ...ORDER_CONTACTS, branch: null }} role="registrator" />);
+    expect(row("meta-branch")).toHaveTextContent("—");
+    expect(screen.queryByTestId("meta-branch-manager")).not.toBeInTheDocument();
+  });
+
+  it("0Rn5U6AD: eski javob (kontaktsiz) — filial nomi bor, menejer qatori yo'q, kuryer so'rovdan", async () => {
+    renderWithProviders(<OrderMeta order={ORDER_95} role="admin" />);
+    expect(row("meta-branch").querySelector("a")).toBeNull();
+    expect(screen.queryByTestId("meta-branch-manager")).not.toBeInTheDocument();
+    await waitFor(() => expect(row("meta-courier")).toHaveTextContent("Xorazm Courier"));
+  });
+
+  it("0Rn5U6AD: kuryer biriktirilmagan, filial kontakti bor — «Hali biriktirilmagan», filial o'z o'rnida", () => {
+    renderWithProviders(
+      <OrderMeta order={{ ...ORDER_CONTACTS, courier_id: null, courier: null, holder_type: "HQ" }} role="registrator" />,
+    );
+    expect(row("meta-courier")).toHaveTextContent("Hali biriktirilmagan");
+    expect(row("meta-branch-manager")).toHaveTextContent("Menejer Karim");
+  });
+
+  it("⭐ 0Rn5U6AD: market — backend kontakt yuborsa ham filial telefoni/menejeri va kuryer telefoni chizilmaydi", () => {
+    renderWithProviders(<OrderMeta order={ORDER_CONTACTS} role="market" />);
+    expect(row("meta-branch")).toHaveTextContent("HQ Toshkent");
+    expect(row("meta-branch").querySelector("a")).toBeNull();
+    expect(screen.queryByTestId("meta-branch-manager")).not.toBeInTheDocument();
+    expect(row("meta-courier")).toHaveTextContent("#93");
+    expect(row("meta-courier").querySelector("a")).toBeNull();
+    expect(apiGet).not.toHaveBeenCalled();
   });
 
   it("nom so'rovi yiqilsa — #id qoladi (yolg'on nom emas)", async () => {

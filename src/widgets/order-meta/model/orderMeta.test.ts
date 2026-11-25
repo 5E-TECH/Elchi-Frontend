@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canLookupBranches,
   canLookupUsers,
+  canSeeOrderContacts,
   canSeeOrderOperator,
   readOrderMeta,
   telHref,
@@ -37,7 +38,7 @@ describe("readOrderMeta", () => {
     expect(meta.orderNumber).toBe("95");
     expect(readOrderMeta({ ...ORDER_95, order_number: "EL-100095" })!.orderNumber).toBe("EL-100095");
     expect(meta.market).toEqual({ id: "m7", name: "Kimdur Kimdur", phone: "+998992222222" });
-    expect(meta.branch).toEqual({ id: "1", name: "HQ Toshkent" });
+    expect(meta.branch).toEqual({ id: "1", name: "HQ Toshkent", phone: null });
     expect(meta.postId).toBe("78");
     expect(meta.courierId).toBe("93");
     expect(meta.holderType).toBe("COURIER");
@@ -47,6 +48,46 @@ describe("readOrderMeta", () => {
     // Epoch ms SATR — sana sifatida o'qiladi.
     expect(meta.soldAt?.getTime()).toBe(1784557174975);
     expect(meta.parentOrderId).toBeNull();
+  });
+
+  it("⭐ 0Rn5U6AD: filial telefoni, menejeri va kuryer kontakti; `manager` yo'q ≠ `null`", () => {
+    const meta = readOrderMeta({
+      ...ORDER_95,
+      branch: {
+        id: "1",
+        name: "HQ Toshkent",
+        phone_number: "+998712000001",
+        manager: { id: "5", name: "Menejer Karim", phone_number: "+998901112233" },
+      },
+      courier: { id: 93, name: "Xorazm Courier", phone_number: "+998970000090" },
+    })!;
+    expect(meta.branch).toEqual({
+      id: "1",
+      name: "HQ Toshkent",
+      phone: "+998712000001",
+      manager: { id: "5", name: "Menejer Karim", phone: "+998901112233" },
+    });
+    expect(meta.courier).toEqual({ id: "93", name: "Xorazm Courier", phone: "+998970000090" });
+
+    const noManager = readOrderMeta({ ...ORDER_95, branch: { id: "1", name: "HQ Toshkent", phone_number: null, manager: null } })!;
+    expect(noManager.branch).toEqual({ id: "1", name: "HQ Toshkent", phone: null, manager: null });
+    expect(readOrderMeta(ORDER_95)!.branch!.manager).toBeUndefined();
+  });
+
+  it("0Rn5U6AD: kuryer kontakti faqat BIRIKTIRILGAN kuryerniki (courier_id bilan bir xil)", () => {
+    const courier = { id: "77", name: "Boshqa kuryer", phone_number: "+998970000077" };
+    expect(readOrderMeta({ ...ORDER_95, courier })!.courier).toBeNull();
+    expect(readOrderMeta({ ...ORDER_95, courier_id: null, courier })!.courier).toBeNull();
+    expect(readOrderMeta({ ...ORDER_95, courier: null })!.courier).toBeNull();
+  });
+
+  it("0Rn5U6AD: kontaktlarni xodim rollar ko'radi, market va kuryer — yo'q", () => {
+    for (const role of ["superadmin", "admin", "registrator", "manager", "branch", "SUPERADMIN"]) {
+      expect(canSeeOrderContacts(role), role).toBe(true);
+    }
+    for (const role of ["market", "market_operator", "courier", "investor", "", null, undefined]) {
+      expect(canSeeOrderContacts(role), String(role)).toBe(false);
+    }
   });
 
   it("⭐ yo'q / buzuq tarif `null` — HECH QACHON 0 emas; `0` esa haqiqiy 0", () => {
