@@ -9,10 +9,11 @@ import { toast } from "./support/toast";
  */
 test.describe.configure({ timeout: 180_000 });
 
-const today = () => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
+/**
+ * Bugun — Toshkent kuni (`YYYY-MM-DD`), ilovadagi `todayIso` bilan bir xil qoida. Yuguruvchining mahalliy soati emas:
+ * `TZ` berilmagan muhitda (bulut konteyneri, lokal UTC) 19:00–24:00 UTC oralig'ida Toshkentda allaqachon ertangi kun.
+ */
+const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent" }).format(new Date());
 
 test("⭐ «To'lovlar» tabi: hisob, «To'lov yozish» tasdiq bilan, tarixda yangi yozuv; kassaga tegmaydi", async ({ page }) => {
   const mock = await openMarketOperators(page);

@@ -744,7 +744,7 @@ describe("NewOrderUpdate — mijoz havolasi va rol ko'rinishlari", () => {
 
   it("superadmin — ism /all-users/:id havolasi («Profilni ko'rish uchun bosing»)", () => {
     renderAsUser("superadmin");
-    const link = screen.getByRole("link", { name: /Ali Valiyev/ });
+    const link = screen.getByRole("link", { name: /^Ali Valiyev/ });
     expect(link).toHaveAttribute("href", "/all-users/c1");
     expect(link).toHaveTextContent("Profilni ko'rish uchun bosing");
   });
@@ -752,7 +752,8 @@ describe("NewOrderUpdate — mijoz havolasi va rol ko'rinishlari", () => {
   it("market — ism havola emas, mahsulotlarda yetkazish turi yo'q (u Manzil kartasida)", () => {
     orderState.items = [{ id: "i1", quantity: 2, product_id: null, product: null, product_name: "Ipak ro'mol" }];
     renderAsUser("market");
-    expect(screen.queryByRole("link", { name: /Ali Valiyev/ })).not.toBeInTheDocument();
+    // Ism havola emas; telefon esa qo'ng'iroq havolasi (iOiPoBMG).
+    expect(screen.queryByRole("link", { name: /^Ali Valiyev/ })).not.toBeInTheDocument();
     const products = screen.getByRole("region", { name: "Mahsulotlar" });
     expect(within(products).queryByText("Yetkazish turi")).not.toBeInTheDocument();
     expect(within(products).getByText("Katalogdan tashqari")).toBeInTheDocument();

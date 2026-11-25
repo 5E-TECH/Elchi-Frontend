@@ -44,6 +44,8 @@ export interface OrderDetailCustomer {
   id: string;
   name: string;
   phone_number: string;
+  /** Qo'shimcha raqam (ixtiyoriy). */
+  extra_number?: string;
 }
 
 export interface OrderDetail extends EditableOrderSnapshot {
@@ -125,6 +127,7 @@ export const normalizeOrderDetail = (response: unknown): OrderDetail | null => {
       id: asId(customer.id),
       name: asText(customer.name),
       phone_number: asText(customer.phone_number),
+      extra_number: asText(customer.extra_number),
     },
   };
 };

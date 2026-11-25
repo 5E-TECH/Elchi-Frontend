@@ -238,6 +238,8 @@
   "metaSoldAt": "Sotilgan vaqt",
   "metaMarket": "Market",
   "metaBranch": "Filial",
+  "metaBranchManager": "Menejer",
+  "metaBranchManagerNone": "Biriktirilmagan",
   "metaPost": "Pochta",
   "metaCourier": "Kuryer",
   "metaCourierNone": "Hali biriktirilmagan",
@@ -928,6 +930,7 @@
   "orderDetail": {
     "created": "Yaratilgan: {{date}}",
     "customer": "Mijoz",
+    "callCustomer": "Qo'ng'iroq qilish: {{name}}, {{phone}}",
     "products": "Mahsulotlar",
     "itemsCount": "{{count}} ta",
     "productsCount": "{{count}} ta mahsulot",

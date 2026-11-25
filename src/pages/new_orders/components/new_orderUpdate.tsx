@@ -30,6 +30,7 @@ import { Button, QueryBoundary } from "../../../shared/ui/primitives";
 import { OrderMeta, readOrderMeta } from "../../../widgets/order-meta";
 import { OrderReturnPathCard, useOrderReturnPath } from "../../../widgets/order-return-path";
 import { OrderTracking } from "../../../widgets/order-tracking";
+import { hidesMarketMoney } from "../../../entities/order/model/marketMoney";
 import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
 import CancelModal from "../../orders/list/courier/list/CancelModal";
 import {
@@ -479,7 +480,7 @@ const NewOrderUpdate = () => {
             onEdit={() => setEditing("address")}
           />
         </div>
-        <PaymentCard order={detail} />
+        <PaymentCard order={detail} hideMarketMoney={hidesMarketMoney(role)} />
         <OrderQrCard order={detail} />
       </div>
       <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-6 max-md:gap-4">

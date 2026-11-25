@@ -1,8 +1,8 @@
 // dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail
-import { ChevronRight, Lock } from "lucide-react";
+import { ChevronRight, Lock, Phone } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { formatPhone } from "../../../../shared/lib/formatPhone";
+import { formatPhone, toTelHref } from "../../../../shared/lib/formatPhone";
 import { Card } from "../../../../shared/ui/primitives";
 import { getInitials } from "../../../orders/list/courier/list/orderActionModel";
 import { EditButton } from "./EditButton";
@@ -11,6 +11,27 @@ import type { OrderDetail } from "./orderDetailModel";
 
 /** Mijoz kartasidagi qulf izohi (`registrator-orders-detail`: tugma `aria-describedby`). */
 export const CUSTOMER_LOCK_ID = "cust-lock";
+
+/**
+ * Mijoz raqami — bosilsa qo'ng'iroq (`tel:`, iOiPoBMG; ega 2026-11-20). Telefonda nishon balandligi 44px. Raqam yo'q —
+ * «—»; buzuq raqam havolasiz, matn bo'lib qoladi (xatosi ko'rinib tursin — `toTelHref`).
+ */
+const CustomerPhone = ({ phone, name }: { phone: string; name: string }) => {
+  const { t } = useTranslation("orders");
+  const text = formatPhone(phone);
+  const href = toTelHref(phone);
+  if (!href) return <>{text}</>;
+  return (
+    <a
+      href={href}
+      aria-label={t("orderDetail.callCustomer", { name, phone: text })}
+      className="flex w-fit max-w-full items-center gap-2 tabular-nums text-action-fg hover:underline max-md:min-h-11"
+    >
+      <Phone size={16} aria-hidden="true" className="shrink-0" />
+      <span className="min-w-0 wrap-break-word">{text}</span>
+    </a>
+  );
+};
 
 type CustomerCardProps = {
   order: OrderDetail;
@@ -90,10 +111,22 @@ export const CustomerCard = ({
     </div>
   );
 
+  const extraPhone = order.customer.extra_number?.trim() ?? "";
+  // Telefonda qatorlar orasi yo'q: 44px nishonlar ustma-ust tushmasin.
   const phone = (
-    <dl className="m-0 grid grid-cols-[120px_1fr] gap-x-4 gap-y-2.5 text-sm">
+    <dl className="m-0 grid grid-cols-[120px_1fr] items-center gap-x-4 gap-y-2.5 text-sm max-md:gap-y-0">
       <dt className="text-text-muted">{t("phone", { ns: "newOrders" })}</dt>
-      <dd className="m-0 min-w-0 font-semibold text-text">{formatPhone(order.customer.phone_number)}</dd>
+      <dd className="m-0 min-w-0 font-semibold text-text" data-testid="customer-phone">
+        <CustomerPhone phone={order.customer.phone_number} name={name} />
+      </dd>
+      {extraPhone ? (
+        <>
+          <dt className="text-text-muted">{t("additionalPhone")}</dt>
+          <dd className="m-0 min-w-0 font-semibold text-text" data-testid="customer-extra-phone">
+            <CustomerPhone phone={extraPhone} name={name} />
+          </dd>
+        </>
+      ) : null}
     </dl>
   );
 

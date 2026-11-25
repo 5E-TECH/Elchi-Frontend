@@ -238,6 +238,8 @@
   "metaSoldAt": "Sold at",
   "metaMarket": "Market",
   "metaBranch": "Branch",
+  "metaBranchManager": "Manager",
+  "metaBranchManagerNone": "Not assigned",
   "metaPost": "Post",
   "metaCourier": "Courier",
   "metaCourierNone": "Not assigned yet",
@@ -928,6 +930,7 @@
   "orderDetail": {
     "created": "Created: {{date}}",
     "customer": "Customer",
+    "callCustomer": "Call: {{name}}, {{phone}}",
     "products": "Products",
     "itemsCount": "{{count}} pcs",
     "productsCount": "{{count}} products",

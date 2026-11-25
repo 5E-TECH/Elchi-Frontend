@@ -238,6 +238,8 @@
   "metaSoldAt": "Время продажи",
   "metaMarket": "Маркет",
   "metaBranch": "Филиал",
+  "metaBranchManager": "Менеджер",
+  "metaBranchManagerNone": "Не назначен",
   "metaPost": "Почта",
   "metaCourier": "Курьер",
   "metaCourierNone": "Ещё не назначен",
@@ -928,6 +930,7 @@
   "orderDetail": {
     "created": "Создан: {{date}}",
     "customer": "Клиент",
+    "callCustomer": "Позвонить: {{name}}, {{phone}}",
     "products": "Товары",
     "itemsCount": "{{count}} шт.",
     "productsCount": "Товаров: {{count}}",

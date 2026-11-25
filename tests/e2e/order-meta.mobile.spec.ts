@@ -55,6 +55,36 @@ test.describe("Buyurtma ma'lumotlari — 390px", () => {
     expect(leaked).toEqual([]);
   });
 
+  test("⭐ 0Rn5U6AD: filial, menejer va kuryer telefoni — 44px nishon, ekrandan chiqmaydi", async ({ page }) => {
+    const { leaked } = await mockOrderDetailApi(page, {
+      ...ORDER_96,
+      branch: {
+        id: "1",
+        name: "Andijon viloyati Oltinko'l tumani filiali",
+        phone_number: "+998712000001",
+        manager: { id: "5", name: "Abdurahmonov Muhammadaziz Karimjonovich", phone_number: "+998901112233" },
+      },
+      courier: { id: "93", name: "Xorazm Courier", phone_number: "+998970000090" },
+    });
+    await openOrderDetail(page);
+    for (const [id, phone] of [
+      ["meta-branch", "+998712000001"],
+      ["meta-branch-manager", "+998901112233"],
+      ["meta-courier", "+998970000090"],
+    ] as const) {
+      const link = page.getByTestId(id).locator('a[href^="tel:"]');
+      await link.scrollIntoViewIfNeeded();
+      await expect(link, id).toHaveAttribute("href", `tel:${phone}`);
+      const box = (await link.boundingBox())!;
+      expect(box.height, id).toBeGreaterThanOrEqual(44);
+      expect(box.x + box.width, id).toBeLessThanOrEqual(390);
+      // Nom kesilsa ham telefon to'liq ko'rinadi.
+      expect(await link.evaluate((el) => el.scrollWidth - el.clientWidth), id).toBeLessThanOrEqual(0);
+      await link.click({ trial: true });
+    }
+    expect(leaked).toEqual([]);
+  });
+
   test.describe("brauzer UTC zonasida", () => {
     test.use({ timezoneId: "UTC" });
 

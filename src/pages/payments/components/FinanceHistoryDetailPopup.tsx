@@ -422,8 +422,9 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
   const orderSums: Array<[string, number]> = [
     // «Jami summa» — `total_price`; faqat maydon kelmasa `to_be_paid` (haqiqiy 0 almashtirilmaydi).
     [t("v2HistoryDetail.orderTotal"), hasValue(order?.total_price) ? orderTotal : orderToBePaid],
-    [t("v2HistoryDetail.toBePaid"), orderToBePaid],
-    [t("v2HistoryDetail.paid"), orderPaid],
+    // D5NxxpJW: menejer, filial va registratorga bu ikki maydon kelmaydi — «0 so'm» yolg'on bo'lardi, qator chizilmaydi.
+    ...(hasValue(order?.to_be_paid) ? ([[t("v2HistoryDetail.toBePaid"), orderToBePaid]] as Array<[string, number]>) : []),
+    ...(hasValue(order?.paid_amount) ? ([[t("v2HistoryDetail.paid"), orderPaid]] as Array<[string, number]>) : []),
   ];
 
   const kvRow = (label: string, value: ReactNode) => (
