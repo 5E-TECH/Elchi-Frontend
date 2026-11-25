@@ -15,6 +15,7 @@ import SessionRestoreScreen from "../../auth/SessionRestoreScreen";
 import SessionExpiryCountdown from "../../auth/SessionExpiryCountdown";
 import PasswordChangePrompt from "../providers/PasswordChangePrompt";
 import SettingsSync from "../providers/SettingsSync";
+import BusinessDaySync from "../providers/BusinessDaySync";
 import RealtimeSync from "../providers/RealtimeSync";
 // Aniq fayldan (barrel emas): barrel sozlamalar sahifasidagi push tugmasi va oynasini boshlang'ich faylga tortardi.
 import PushSync from "../../features/push-notifications/ui/PushSync";
@@ -106,6 +107,7 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
                 <UiHost />
                 <AuthBootstrap>
                   <SettingsSync />
+                  <BusinessDaySync />
                   <PushSync />
                   <RealtimeSync />
                   <SessionExpiryCountdown />

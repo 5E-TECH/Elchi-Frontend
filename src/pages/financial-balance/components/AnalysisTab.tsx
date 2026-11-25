@@ -16,7 +16,8 @@ import { useTranslation } from "react-i18next";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { isFinanceDailyForbidden, toDailyRange, useFinancialBalanceDaily } from "../../../entities/payments/financeDaily";
 import { cx } from "../../../shared/lib/cx";
-import { getThisMonthRange, getThisWeekRange, getTodayRange, toISODate, type ISODateRange } from "../../../shared/lib/dateRange";
+import { getThisMonthRange, getThisWeekRange, getTodayRange, type ISODateRange } from "../../../shared/lib/dateRange";
+import { businessToday } from "../../../shared/lib/businessDay";
 import { formatDateTimeLocalized, type DateInput } from "../../../shared/lib/formatDateTime";
 import {
   formatNumberLocalized,
@@ -281,7 +282,7 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange, preset: presetProp, onPr
       />
     );
 
-  const today = toISODate(new Date());
+  const today = businessToday();
   const reachesToday = !range.to || range.to >= today;
   const periodText =
     formatRangeShort(range) ??

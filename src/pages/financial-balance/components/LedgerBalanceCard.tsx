@@ -9,7 +9,7 @@ import {
   useFinancialBalanceDaily,
 } from "../../../entities/payments/financeDaily";
 import { cx } from "../../../shared/lib/cx";
-import { toISODate } from "../../../shared/lib/dateRange";
+import { businessToday } from "../../../shared/lib/businessDay";
 import { formatDateLocalized, formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
   formatCompactMoneyLocalized,
@@ -46,7 +46,7 @@ const LedgerBalanceCard = ({ fromDate, toDate, generalBalance }: LedgerBalanceCa
   const data = query.data ?? null;
 
   const money = (value: number | null) => (value === null ? "—" : formatMoneyLocalized(value, { language }));
-  const today = toISODate(new Date());
+  const today = businessToday();
   const reachesToday = range.to >= today;
 
   const points = useMemo<DailyBalancePoint[]>(() => {

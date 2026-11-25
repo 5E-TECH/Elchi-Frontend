@@ -1,5 +1,6 @@
 import { useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+import { businessToday, useBusinessDayChangeTime } from "../../lib/businessDay";
 import type { ISODateRange } from "../../lib/dateRange";
 import { cx } from "../../lib/cx";
 import { formatNumberLocalized } from "../../lib/formatMoney";
@@ -17,7 +18,6 @@ import {
   pluralForm,
   RANGE_DASH,
   resolvePreset,
-  todayISODay,
   type DatePresetKey,
   type ISODay,
 } from "./date/calendarMath";
@@ -123,7 +123,9 @@ export const DateRangePanel = ({
   const { t } = useTranslation("ui");
   const { language } = useCalendarText();
   const range = normalizeRange(value);
-  const today = normalizeISODay(todayProp) || todayISODay();
+  // «Bugun» — ISH KUNI sanasi (xhiXv3w3): kun 05:00 da almashsa, 01:30 da hali kechagi sana.
+  const today = normalizeISODay(todayProp) || businessToday();
+  const dayChange = useBusinessDayChangeTime();
   // Qoralama: birinchi bosilgan kun (ikkinchisi kutilmoqda) va kursor ostidagi kun (oldindan ko'rinish).
   const [draftStart, setDraftStart] = useState<ISODay>("");
   const [preview, setPreview] = useState<ISODay>("");
@@ -248,6 +250,9 @@ export const DateRangePanel = ({
         className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-[13px] text-text-muted"
       >
         {summary}
+        {dayChange !== "00:00" ? (
+          <span data-business-day-hint="">{t("date.businessDayHint", { time: dayChange })}</span>
+        ) : null}
       </div>
     </div>
   );
@@ -328,7 +333,7 @@ export const DateRange = ({
   const presetList = presets === false ? [] : presets.filter((preset) => preset !== "all");
   const matchedPreset =
     dayMode && !empty && presetList.length
-      ? resolvePreset(range, presetList, chosen, normalizeISODay(today) || todayISODay())
+      ? resolvePreset(range, presetList, chosen, normalizeISODay(today) || businessToday())
       : null;
   const presetText = matchedPreset ? t(`date.presets.${matchedPreset}`) : null;
 

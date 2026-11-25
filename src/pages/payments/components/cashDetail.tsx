@@ -72,6 +72,9 @@ import PaymentHistoryList, { historyRowView } from "./PaymentHistoryList";
 import OpenShiftFlow from "./OpenShiftFlow";
 import ShiftLockedCard from "./ShiftLockedCard";
 import { useCashboxShift } from "./lib/useCashboxShift";
+import HistoryMethodCardFilters from "./HistoryMethodCardFilters";
+import { showsPaymentMethod } from "./paymentSourceType";
+import { methodCardParams, useCardFilterOptions, useMethodCardUrlFilters } from "./lib/historyMethodCardFilter";
 import ReceiptField, { ReceiptAttachedValue } from "./receipt/ReceiptField";
 import { useReceiptField } from "./receipt/useReceiptField";
 import { CashboxCardSelectField } from "./cashboxCards/CashboxCardPicker";
@@ -450,7 +453,7 @@ const cashDetailSchema: yup.ObjectSchema<CashboxActionFormValues> = yup.object({
 });
 
 const CashDetail = () => {
-  const { t } = useTranslation("payments");
+  const { t } = useTranslation(["payments", "ui"]);
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
   // Tur URL'da ham turadi (`?type=branch`) — F5, ulashilgan havola va yangi
@@ -531,6 +534,31 @@ const CashDetail = () => {
   // qidirardi (ID lar bitta fazoda) va `{cashboxes:[...]}` qaytarardi — state'siz
   // ochilganda (F5 / havola) "Umumiy balans 0" va "Foydalanuvchi" chiqardi.
   const isCourierDetailRequest = requestedType === "courier";
+  /**
+   * KRN902pg: tarix filtrlari URL'da (`payment_method`, `card_id`). «To'lov usuli» — `showsPaymentMethod` (63HO6cBU:
+   * kuryer filial kassasida usulni ko'rmaydi — filtr ham yo'q); menejerning market ko'rinishida tarix yo'q — filtr
+   * ham yo'q. «Karta» — superadmin/admin, kuryer va market kassasida (qator kartasi — o'tkazmaning HQ kartasi);
+   * filial kassasida karta yo'q. `dateParams` ga QO'SHILMAYDI — u menejerning HQ'ga qarzi so'rovida ham ishlaydi.
+   */
+  const historyCashboxType = isCourierDetailRequest
+    ? "couriers"
+    : isMarketDetailRequest
+      ? "markets"
+      : isBranchDetailRequest
+        ? "branch"
+        : null;
+  const showMethodFilter =
+    historyCashboxType !== null &&
+    !isManagerMarketRequest &&
+    showsPaymentMethod(historyCashboxType, String(currentRole).toLowerCase());
+  const cardFilterRequested = isHqStaffViewer && (isCourierDetailRequest || isMarketDetailRequest);
+  const methodCard = useMethodCardUrlFilters(cardFilterRequested);
+  const cardFilter = useCardFilterOptions(cardFilterRequested, methodCard.filters.card_id);
+  const methodCardQuery = useMemo(
+    () => methodCardParams(methodCard.filters, { method: showMethodFilter, card: cardFilter.available }),
+    [cardFilter.available, methodCard.filters, showMethodFilter],
+  );
+  const methodCardActive = Object.keys(methodCardQuery).length > 0;
   const dateParams = useMemo(
     () => ({
       ...(selectedDateFrom && { fromDate: selectedDateFrom }),
@@ -554,8 +582,9 @@ const CashDetail = () => {
         cashbox_type: "markets",
       }),
       ...dateParams,
+      ...methodCardQuery,
     }),
-    [dateParams, isCourierDetailRequest, isHqBranchReceiveRequest, isMarketDetailRequest],
+    [dateParams, isCourierDetailRequest, isHqBranchReceiveRequest, isMarketDetailRequest, methodCardQuery],
   );
   // 2026-11-15: HQ ko'rinishida asosiy kassa qatorlari `source_branch_id` bilan — faqat filial → HQ va uning
   // teskari yozuvi. `source_user_id` da market/kuryer id'lari ham turadi (filial id'lari alohida sanaladi): prod'da
@@ -570,8 +599,9 @@ const CashDetail = () => {
           : { user_id: id, cashbox_type: "branch" }
         : {}),
       ...dateParams,
+      ...methodCardQuery,
     }),
-    [dateParams, id, isHqBranchReceiveRequest],
+    [dateParams, id, isHqBranchReceiveRequest, methodCardQuery],
   );
   const branchOwnHistoryParams = useMemo(
     () => ({
@@ -579,8 +609,9 @@ const CashDetail = () => {
       limit: HISTORY_PAGE_LIMIT,
       ...(id ? { user_id: id, cashbox_type: "branch" } : {}),
       ...dateParams,
+      ...methodCardQuery,
     }),
-    [dateParams, id],
+    [dateParams, id, methodCardQuery],
   );
   const byUserCashboxQuery = useGetCashBoxById(
     id || "",
@@ -1123,8 +1154,9 @@ const CashDetail = () => {
       user_id: id ?? undefined,
       cashbox_type: dailyCashboxType ?? undefined,
       ...(historyTab === "payments" && { source_types: PAYMENT_HISTORY_SOURCE_TYPES }),
+      ...methodCardQuery,
     };
-  }, [dailyCashboxType, dailyFrom, historyTab, id, selectedDateTo]);
+  }, [dailyCashboxType, dailyFrom, historyTab, id, methodCardQuery, selectedDateTo]);
   const dailyQuery = useFinanceHistoryDaily(dailyParams, Boolean(id && dailyFrom && dailyCashboxType && canReadDaily));
   const dailySummary = useMemo<MovementSummary | null>(() => {
     const daily = dailyQuery.isError ? null : dailyQuery.data;
@@ -2020,6 +2052,32 @@ const CashDetail = () => {
             }}
           />
         </div>
+        {showMethodFilter || cardFilter.available ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <HistoryMethodCardFilters
+              filters={methodCard.filters}
+              onChange={methodCard.update}
+              showMethod={showMethodFilter}
+              card={cardFilter.available ? cardFilter : null}
+              className="flex min-w-0 flex-[999_1_auto] flex-wrap items-center gap-3"
+              itemClassName="min-w-[200px] flex-[1_1_220px] md:max-w-[300px]"
+            />
+            {methodCardActive || selectedDateFrom || selectedDateTo ? (
+              <Button
+                variant="link"
+                size="sm"
+                className="shrink-0 max-md:min-h-11"
+                onClick={() => {
+                  setSelectedDateFrom("");
+                  setSelectedDateTo("");
+                  methodCard.clear();
+                }}
+              >
+                {t("ui:filters.clearAll")}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         {!historyLoading && !historyError && movementRows.length > 0 ? (
           <BalanceMovement
             rows={movementRows}
@@ -2027,7 +2085,8 @@ const CashDetail = () => {
             income={income}
             expense={expense}
             viewerRole={currentRole}
-            continuous={historyTab === "all"}
+            // Usul / karta filtri bilan qatorlar ketma-ket emas — qoldiq chizig'i chizilmaydi («To'lov o'tkazmalari» kabi).
+            continuous={historyTab === "all" && !methodCardActive}
             summary={dailySummary}
             truncated={movementRows.length >= HISTORY_PAGE_LIMIT}
             // Superadmin/admin filial kassasida «Hozir» (filial kassasidagi joriy qoldiq) yo'q (Dilshod, 2026-11-14) —

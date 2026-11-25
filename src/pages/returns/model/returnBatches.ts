@@ -1,10 +1,10 @@
 import { toApiBatchStatus, type ApiBatchStatus, type BatchStatus } from "../../../entities/batch";
+import { businessToday } from "../../../shared/lib/businessDay";
 import type { ISODateRange } from "../../../shared/lib/dateRange";
 import {
   getPresetRange,
   matchPreset,
   normalizeISODay,
-  todayISODay,
   type ISODay,
 } from "../../../shared/ui/primitives/date/calendarMath";
 
@@ -91,7 +91,7 @@ export const writeReturnFilters = (prev: URLSearchParams, patch: Partial<ReturnF
 };
 
 /** Sana filtri → maydon qiymati (`DateRange selection="day"`): davr — tez tanlov oralig'i, kun — `{ d, d }`. */
-export const dateFilterToRange = (filter: ReturnDateFilter, today: ISODay = todayISODay()): ISODateRange => {
+export const dateFilterToRange = (filter: ReturnDateFilter, today: ISODay = businessToday()): ISODateRange => {
   if (!filter) return { from: "", to: "" };
   if ("date" in filter) return { from: filter.date, to: filter.date };
   return getPresetRange(filter.period, today);
@@ -102,7 +102,7 @@ export const dateFilterToRange = (filter: ReturnDateFilter, today: ISODay = toda
  * 1-kuni «Bu oy» «Bugun» bilan bir xil oraliq — `today`, backend natijasi ham bir xil); bitta kun — `date`.
  * Kun rejimida boshqa oraliq bo'lmaydi; bo'lsa — boshlanish kuni.
  */
-export const rangeToDateFilter = (range: ISODateRange, today: ISODay = todayISODay()): ReturnDateFilter => {
+export const rangeToDateFilter = (range: ISODateRange, today: ISODay = businessToday()): ReturnDateFilter => {
   const from = normalizeISODay(range.from);
   const to = normalizeISODay(range.to);
   if (!from && !to) return null;

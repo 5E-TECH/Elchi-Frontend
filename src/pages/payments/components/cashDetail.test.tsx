@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import CashDetail, { normalizeType } from "./cashDetail";
@@ -276,6 +276,9 @@ const openWithoutState = (route: string, preloadedState = superadmin) =>
   );
 
 const lastCashboxParams = () => cashboxState.calls.at(-1)?.params;
+
+/** KRN902pg: URL'dagi so'rov qatori (filtrlar `useSearchParams` orqali yoziladi). */
+const SearchProbe = () => <span data-testid="search">{useLocation().search}</span>;
 
 const setAmount = (amount: string) =>
   fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: amount } });
@@ -2525,5 +2528,119 @@ describe("P0 63HO6cBU — menejer: ?type siz ochilish va kuryer kassasi bitta ja
     });
     openWithoutState("/payments/cash-detail/263?type=courier");
     expect(await screen.findByRole("img", { name: /^Kassadagi summa .*naqd/ })).toBeInTheDocument();
+  });
+});
+
+describe("KRN902pg — cash-detail tarix filtrlari («To'lov usuli», «Karta»)", () => {
+  const courier = { role: { id: "263", role: "courier", region: null, name: "Kuryer" } } as never;
+  const marketResponse = {
+    data: { cashbox: { id: "40", cashbox_type: "markets", user_id: "3", balance: 0 }, user: { name: "Market" }, history: [] },
+  };
+  const historyParamsList = () => historyState.calls.map((call) => call.params as Record<string, unknown>);
+
+  beforeAll(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+  beforeEach(() => {
+    cashboxState.calls = [];
+    cashboxState.error = undefined;
+    cashboxState.failWhen = undefined;
+    historyState.calls = [];
+    historyState.data = undefined;
+    shiftState.shift = OPEN_SHIFT;
+  });
+
+  it("TC6: superadmin, kuryer kassasi — URL'dagi usul va karta `cashbox/user` so'roviga ketadi, maydonlar ko'rinadi", () => {
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier&payment_method=cash&card_id=none");
+
+    expect(lastCashboxParams()).toEqual(
+      expect.objectContaining({ cashbox_type: "couriers", payment_method: "cash", card_id: "none" }),
+    );
+    expect(screen.getByLabelText("To'lov usuli")).toHaveTextContent("Naqd");
+    expect(screen.getByLabelText("Karta")).toHaveTextContent("Belgilanmagan");
+  });
+
+  it("TC6: superadmin, market kassasi — tanlov URL'ga yoziladi va so'rovga ketadi; «Filtrlarni tozalash»", async () => {
+    cashboxState.response = marketResponse;
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/payments/cash-detail/:id" element={<CashDetail />} />
+        </Routes>
+        <SearchProbe />
+      </>,
+      { route: "/payments/cash-detail/3?type=market", preloadedState: superadmin },
+    );
+    const search = () => screen.getByTestId("search").textContent ?? "";
+
+    expect(screen.queryByRole("button", { name: "Filtrlarni tozalash" })).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText("To'lov usuli"));
+    await user.click(await screen.findByRole("option", { name: "Marketga o'tkazma" }));
+
+    await waitFor(() => expect(search()).toContain("payment_method=click_to_market"));
+    expect(search()).toContain("type=market");
+    expect(lastCashboxParams()).toEqual(
+      expect.objectContaining({ cashbox_type: "markets", payment_method: "click_to_market" }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
+    await waitFor(() => expect(search()).not.toContain("payment_method"));
+    expect(lastCashboxParams()).not.toHaveProperty("payment_method");
+  });
+
+  it("superadmin, filial kassasi — «To'lov usuli» bor, «Karta» yo'q (63HO6cBU: filialda karta yo'q)", () => {
+    cashboxState.response = { data: { cashbox: { id: "30", cashbox_type: "branch", user_id: "13", balance: 0 } } };
+    openWithoutState("/payments/cash-detail/13?type=branch&payment_method=cash&card_id=3");
+
+    expect(screen.getByLabelText("To'lov usuli")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Karta")).not.toBeInTheDocument();
+    const historyParams = historyParamsList();
+    expect(historyParams.length).toBeGreaterThan(0);
+    for (const params of historyParams) {
+      expect(params).toEqual(expect.objectContaining({ payment_method: "cash" }));
+      expect(params).not.toHaveProperty("card_id");
+    }
+    expect(lastCashboxParams()).not.toHaveProperty("card_id");
+  });
+
+  it("menejer, o'z filiali kassasi — «To'lov usuli» bor, «Karta» yo'q", () => {
+    openWithoutState("/payments/cash-detail/16?type=branch&payment_method=click", manager);
+
+    expect(screen.getByLabelText("To'lov usuli")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Karta")).not.toBeInTheDocument();
+    expect(historyParamsList().at(-1)).toEqual(expect.objectContaining({ payment_method: "click" }));
+  });
+
+  it("menejer, market kassasi (filial ulushi, tarix yo'q) — filtrlar yo'q va so'rovga ketmaydi", () => {
+    cashboxState.response = {
+      data: {
+        cashbox: { id: null, cashbox_type: "markets", user_id: "3", balance: 100 },
+        branch_share: 100,
+        payable: 100,
+        user: { id: "3", name: "Market" },
+        history: [],
+      },
+    };
+    openWithoutState("/payments/cash-detail/3?type=market&payment_method=cash", manager);
+
+    expect(screen.queryByLabelText("To'lov usuli")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Karta")).not.toBeInTheDocument();
+    expect(lastCashboxParams()).not.toHaveProperty("payment_method");
+  });
+
+  it("TC7: kuryer filial kassasini ko'rganda usul / karta filtrlari yo'q (63HO6cBU)", () => {
+    openWithoutState("/payments/cash-detail/13?type=branch&payment_method=cash&card_id=none", courier);
+
+    expect(screen.queryByLabelText("To'lov usuli")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Karta")).not.toBeInTheDocument();
+    for (const params of historyParamsList()) {
+      expect(params).not.toHaveProperty("payment_method");
+      expect(params).not.toHaveProperty("card_id");
+    }
+    for (const call of cashboxState.calls) {
+      expect(call.params).not.toHaveProperty("payment_method");
+    }
   });
 });

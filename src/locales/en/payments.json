@@ -2093,5 +2093,19 @@
         "card_to_cash": "To cash"
       }
     }
+  },
+  "historyFilters": {
+    "group": "Payment method and card filter",
+    "paymentMethod": "Payment method",
+    "card": "Card",
+    "methods": {
+      "cash": "Cash",
+      "click": "Transfer (card)",
+      "click_to_market": "Transfer to market",
+      "none": "Not set"
+    },
+    "cardNone": "Not set",
+    "cardNoneHint": "No card: cash, transfer to market, branch cashbox",
+    "cardArchived": "{{name}} (archived)"
   }
 }

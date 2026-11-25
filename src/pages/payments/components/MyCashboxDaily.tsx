@@ -10,6 +10,7 @@ import {
 } from "../../../entities/payments/financeDaily";
 import { cx } from "../../../shared/lib/cx";
 import { toISODate } from "../../../shared/lib/dateRange";
+import { businessToday } from "../../../shared/lib/businessDay";
 import { formatDateLocalized, toValidDate } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { DeltaChip, Sparkline, Waterfall, type ChartView, type WaterfallStep } from "../../../shared/ui/charts";
@@ -95,7 +96,7 @@ export const ClosingSpark = memo(
           <span>{formatDateLocalized(points[0].date, { language }).slice(0, 5)}</span>
           <span>{caption}</span>
           <span className="font-semibold text-text">
-            {last.date === toISODate(new Date()) ? t("v2Daily.today") : formatDateLocalized(last.date, { language }).slice(0, 5)}
+            {last.date === businessToday() ? t("v2Daily.today") : formatDateLocalized(last.date, { language }).slice(0, 5)}
           </span>
         </div>
       </div>

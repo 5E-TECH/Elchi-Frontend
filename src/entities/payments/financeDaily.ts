@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { businessToday } from "../../shared/lib/businessDay";
 import { parseISODate, toISODate, type ISODateRange } from "../../shared/lib/dateRange";
 import { shouldRetryQuery } from "../../shared/lib/queryRetry";
 
@@ -35,6 +36,10 @@ export type FinanceDailyParams = {
   source_types?: string;
   source_user_id?: string;
   created_by?: string;
+  /** KRN902pg: «To'lov usuli» — `cash` | `click` | `click_to_market` | `none` (vergul bilan bir nechta). */
+  payment_method?: string;
+  /** KRN902pg: «Karta» — karta ID si yoki `none`. */
+  card_id?: string;
 };
 
 export type DailyFlow = {
@@ -224,9 +229,9 @@ export const shiftDay = (day: string, delta: number) => {
   return toISODate(date);
 };
 
-/** Bugun bilan tugaydigan `count` kunlik oraliq (backend sukuti — 14 kun). */
+/** Bugungi ISH KUNI bilan tugaydigan `count` kunlik oraliq (backend sukuti — 14 kun; xhiXv3w3). */
 export const lastDaysRange = (count: number, now: Date = new Date()): ISODateRange => {
-  const to = toISODate(now);
+  const to = businessToday(now);
   return { from: shiftDay(to, -(count - 1)), to };
 };
 
@@ -269,7 +274,7 @@ const changeBetween = (current: number, previous: number): DayChange => ({
 });
 
 /** «Kechaga nisbatan» = bugungi − kechagi `closing_balance`. Biri noma'lum bo'lsa — `null` (delta chizilmaydi). */
-export const dayOverDay = (days: readonly DailyFlow[], today: string = toISODate(new Date())): DayChange | null => {
+export const dayOverDay = (days: readonly DailyFlow[], today: string = businessToday()): DayChange | null => {
   const current = days.find((day) => day.date === today)?.closingBalance ?? null;
   const previous = days.find((day) => day.date === shiftDay(today, -1))?.closingBalance ?? null;
   return current === null || previous === null ? null : changeBetween(current, previous);
@@ -289,7 +294,7 @@ export const balanceTrend = (
   days: readonly FinancialBalanceDay[],
   pick: (snapshot: BalanceSnapshot) => number | null,
   live: number | null,
-  today: string = toISODate(new Date()),
+  today: string = businessToday(),
 ): BalanceTrend => {
   const past = days
     .filter((day) => day.date < today && day.snapshot)

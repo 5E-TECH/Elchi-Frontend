@@ -3,7 +3,7 @@ import { Clock, Inbox, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isCutoffPassed, type OrderIntakeState } from "../../../entities/order-intake";
 import { CLOCK_TIME, toClockDraft } from "../../../shared/lib/clockTime";
-import { formatTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatDateLocalized, formatTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { Card, Field, TextInput } from "../../../shared/ui/primitives";
 import type { IntakeDraft, ScheduleErrors } from "../model/scheduleDraft";
 
@@ -12,6 +12,9 @@ import type { IntakeDraft, ScheduleErrors } from "../model/scheduleDraft";
  * chegarasi, yaratilgan buyurtmalarni qabul qilish chegarasi (yangi backend bo'lsa) va kun almashish vaqti. Har maydon
  * ostida — serverdagi joriy holat («Hozir ochiq · 10:00 da yopiladi»); yangi soat joriy ish kunida o'tgan bo'lsa —
  * «Saqlansa … darhol yopiladi» (izoh o'rnida). Soat maydoni — `HH:MM`, raqam yoziladi, «:» o'zi qo'yiladi.
+ *
+ * Kun almashish vaqti — butun tizimning ISH KUNI (xhiXv3w3): yangi soat keyingi kun almashishidan amal qiladi.
+ * Saqlangan, lekin hali boshlanmagan soat bo'lsa — «05:00 — 27.11.2026 dan · bugungi kun 27.11 05:00 da tugaydi».
  */
 
 type WindowState = { limit: string | null; closed: boolean; closesAt: string | null; reopensAt: string | null };
@@ -88,6 +91,11 @@ export const IntakeCard = ({
   const passes = (value: string, saved: string | null) =>
     value !== (saved ?? "") && CLOCK_TIME.test(value) && isCutoffPassed(value, intake);
   const cutoffPasses = passes(draft.cutoff, intake.cutoffTime);
+  // Saqlangan yangi soat hali boshlanmagan (ertangi ish kunidan) — FAQAT OLDINGA qoidasi.
+  const pendingDayChange =
+    intake.dayChangeEffectiveFrom && intake.businessDate && intake.dayChangeEffectiveFrom > intake.businessDate
+      ? intake.dayChangeEffectiveFrom
+      : null;
   const receivePasses = daily && passes(draft.receiveCutoff, intake.receiveCutoffTime);
 
   return (
@@ -165,7 +173,16 @@ export const IntakeCard = ({
             required
             onChange={(dayChange) => onChange({ ...draft, dayChange })}
           />
-          {intake.nextDayChangeAt ? (
+          {pendingDayChange && intake.nextDayChangeAt ? (
+            <p className="m-0 flex items-start gap-1.5 text-[13px] text-text-muted">
+              <Clock aria-hidden="true" size={14} className="mt-0.5 shrink-0" />
+              {t("dailySchedule.status.dayChangeFrom", {
+                time: intake.dayChangeTime,
+                date: formatDateLocalized(pendingDayChange),
+                end: `${formatDateLocalized(intake.nextDayChangeAt)} ${formatTimeLocalized(intake.nextDayChangeAt)}`,
+              })}
+            </p>
+          ) : intake.nextDayChangeAt ? (
             <p className="m-0 flex items-center gap-1.5 text-[13px] text-text-muted">
               <Clock aria-hidden="true" size={14} className="shrink-0" />
               {t("dailySchedule.status.nextDayChange", { time: formatTimeLocalized(intake.nextDayChangeAt) })}

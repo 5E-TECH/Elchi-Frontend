@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { setBusinessDaySchedule } from "../../shared/lib/businessDay";
 import {
   isIntakeUnsupportedError,
   isOrderIntakeClosed,
@@ -19,7 +20,10 @@ const fetchOrderIntake = async (): Promise<OrderIntakeState> => {
   try {
     // Fonda (5 daqiqada) so'raladi, xatosi global xabar bermaydi — javobsizlikda ham (2026-11-20).
     const response = await api.get(API_ENDPOINTS.ORDERS.INTAKE_SETTINGS, { silentNetworkError: true });
-    return normalizeOrderIntake(response.data);
+    const state = normalizeOrderIntake(response.data);
+    // Ish kuni jadvali — sana tanlagichlar «Bugun»ni shundan oladi (xhiXv3w3).
+    setBusinessDaySchedule(state.daySchedule);
+    return state;
   } catch (error) {
     // Backend hali chiqmagan — funksiya yo'q (xato emas, hech narsa to'silmaydi).
     if (isIntakeUnsupportedError(error)) return UNSUPPORTED_INTAKE;
@@ -89,6 +93,9 @@ export const useUpdateOrderIntakeSettings = () => {
       api
         .patch(API_ENDPOINTS.ORDERS.INTAKE_SETTINGS, body)
         .then((response) => normalizeOrderIntake(response.data)),
-    onSuccess: (state) => queryClient.setQueryData(ORDER_INTAKE_KEY, state),
+    onSuccess: (state) => {
+      setBusinessDaySchedule(state.daySchedule);
+      queryClient.setQueryData(ORDER_INTAKE_KEY, state);
+    },
   });
 };

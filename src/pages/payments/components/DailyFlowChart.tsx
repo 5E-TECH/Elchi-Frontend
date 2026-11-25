@@ -3,7 +3,7 @@ import { memo, useMemo, useState } from "react";
 import { ChartColumn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { toISODate } from "../../../shared/lib/dateRange";
+import { businessToday } from "../../../shared/lib/businessDay";
 import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
 import {
   MINUS_SIGN,
@@ -79,7 +79,7 @@ const FlowTooltip = ({ active, payload, language, labels, showNet }: FlowTooltip
 const DailyFlowChart = ({ days, view, ariaLabel, tableLabel, showNet = false }: DailyFlowChartProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const todayKey = toISODate(new Date());
+  const todayKey = businessToday();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const rows = useMemo<PlotRow[]>(

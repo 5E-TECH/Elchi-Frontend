@@ -1,7 +1,20 @@
 // dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, manager-payments-overview-shift-closed
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
-import { ArrowDownLeft, ArrowUpRight, CreditCard, Info, ListFilter, Receipt, Timer, User, Wallet, X } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Banknote,
+  CreditCard,
+  Info,
+  ListFilter,
+  Receipt,
+  Timer,
+  User,
+  Wallet,
+  WalletCards,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { RECEIPT_FILTER_STATUSES, useCashBox } from "../../entities/payments";
@@ -41,6 +54,12 @@ import SettlementPickerDialog, {
   type SettlementPickerTarget,
 } from "./components/SettlementPickerDialog";
 import { useReceiveOptions } from "./components/lib/receiveOptions";
+import {
+  readCardFilter,
+  readPaymentMethodFilter,
+  useCardFilterOptions,
+  usePaymentMethodFilterOptions,
+} from "./components/lib/historyMethodCardFilter";
 import { useCashboxShift } from "./components/lib/useCashboxShift";
 import OpenShiftFlow from "./components/OpenShiftFlow";
 import ShiftBanner from "./components/ShiftBanner";
@@ -167,16 +186,22 @@ type PaymentsFilters = {
   created_by: string;
   /** «Chek holati» (QlLf33Ma) — faqat superadmin/admin; noma'lum qiymat yoki menejer — bo'sh. */
   receipt_status: string;
+  /** «To'lov usuli» (KRN902pg): `cash` | `click` | `click_to_market` | `none`; noma'lum qiymat — bo'sh. */
+  payment_method: string;
+  /** «Karta» (KRN902pg): karta ID si yoki `none` — faqat superadmin/admin (menejer filialida karta yo'q). */
+  card_id: string;
   from_date: string;
   to_date: string;
 };
-type SelectFilterKey = "source_type" | "cashbox_type" | "created_by" | "receipt_status";
+type SelectFilterKey = "source_type" | "cashbox_type" | "created_by" | "receipt_status" | "payment_method" | "card_id";
 /** Tabdan tashqari filtrlar («Filtrlarni tozalash» shularni tozalaydi; tab — o'zining «Barchasi»). */
 const CLEARABLE: Record<Exclude<keyof PaymentsFilters, "operation_type">, string> = {
   source_type: "",
   cashbox_type: "",
   created_by: "",
   receipt_status: "",
+  payment_method: "",
+  card_id: "",
   from_date: "",
   to_date: "",
 };
@@ -220,7 +245,13 @@ type FiltersSheetProps = {
   open: boolean;
   onClose: () => void;
   initial: PaymentsFilters;
-  fields: ReadonlyArray<{ key: SelectFilterKey; label: string; options: readonly SelectOption[]; loading?: boolean }>;
+  fields: ReadonlyArray<{
+    key: SelectFilterKey;
+    label: string;
+    options: readonly SelectOption[];
+    loading?: boolean;
+    onOpen?: () => void;
+  }>;
   onApply: (values: Pick<PaymentsFilters, SelectFilterKey>) => void;
 };
 
@@ -235,6 +266,8 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
     cashbox_type: values.cashbox_type,
     created_by: values.created_by,
     receipt_status: values.receipt_status,
+    payment_method: values.payment_method,
+    card_id: values.card_id,
   });
   const [draft, setDraft] = useState(pick(initial));
   const [prevOpen, setPrevOpen] = useState(open);
@@ -259,7 +292,16 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
             variant="secondary"
             size="lg"
             className="max-md:flex-none!"
-            onClick={() => setDraft({ source_type: "", cashbox_type: "", created_by: "", receipt_status: "" })}
+            onClick={() =>
+              setDraft({
+                source_type: "",
+                cashbox_type: "",
+                created_by: "",
+                receipt_status: "",
+                payment_method: "",
+                card_id: "",
+              })
+            }
           >
             {t("ui:filters.reset")}
           </Button>
@@ -284,6 +326,9 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
             onChange={(next) => setDraft((current) => ({ ...current, [field.key]: next ?? "" }))}
             placeholder={all}
             loading={field.loading}
+            onOpenChange={(isOpen) => {
+              if (isOpen) field.onOpen?.();
+            }}
           />
         </Field>
       ))}
@@ -368,15 +413,20 @@ const Payments = () => {
         !isManagerRole && (RECEIPT_FILTER_STATUSES as readonly string[]).includes(allParams.receipt_status ?? "")
           ? allParams.receipt_status
           : "",
+      // KRN902pg: noto'g'ri qiymat 400 berardi — so'rovga ketmaydi; «Karta» menejerga yo'q (filial kassasi kartasiz).
+      payment_method: readPaymentMethodFilter(allParams.payment_method),
+      card_id: isManagerRole ? "" : readCardFilter(allParams.card_id),
       // Noto'g'ri sana e'tiborsiz qoldiriladi (so'rovga ketmaydi).
       from_date: ISO_DAY.test(allParams.from_date ?? "") ? allParams.from_date : "",
       to_date: ISO_DAY.test(allParams.to_date ?? "") ? allParams.to_date : "",
     }),
     [
+      allParams.card_id,
       allParams.cashbox_type,
       allParams.created_by,
       allParams.from_date,
       allParams.operation_type,
+      allParams.payment_method,
       allParams.receipt_status,
       allParams.source_type,
       allParams.to_date,
@@ -620,6 +670,9 @@ const Payments = () => {
     [role, t],
   );
 
+  const paymentMethodOptions = usePaymentMethodFilterOptions();
+  const cardFilter = useCardFilterOptions(!isManagerRole, filtersFromUrl.card_id);
+
   const receiptStatusOptions = useMemo<SelectOption[]>(
     () =>
       RECEIPT_FILTER_STATUSES.map((value) => ({
@@ -652,6 +705,8 @@ const Payments = () => {
     if (filtersFromUrl.operation_type) base.operation_type = filtersFromUrl.operation_type;
     if (filtersFromUrl.source_type) base.source_type = filtersFromUrl.source_type;
     if (filtersFromUrl.created_by) base.created_by = filtersFromUrl.created_by;
+    if (filtersFromUrl.payment_method) base.payment_method = filtersFromUrl.payment_method;
+    if (filtersFromUrl.card_id) base.card_id = filtersFromUrl.card_id;
     return base;
   }, [filtersFromUrl, isManagerRole]);
   const flowCashboxLabel = isManagerRole
@@ -680,6 +735,8 @@ const Payments = () => {
     options: readonly SelectOption[];
     loading?: boolean;
     searchable?: boolean;
+    /** Ro'yxat ochilganda (masalan «Karta» — kartalar shundagina so'raladi). */
+    onOpen?: () => void;
   }> = [
     { key: "source_type", label: t("v2Overview.history.sourceType"), icon: CreditCard, options: sourceTypeOptions },
     { key: "cashbox_type", label: t("v2Overview.history.cashboxType"), icon: Wallet, options: cashboxTypeOptions },
@@ -702,6 +759,27 @@ const Payments = () => {
             options: receiptStatusOptions,
           },
         ]),
+    // KRN902pg: «To'lov usuli» — hamma (/payments faqat superadmin/admin/menejer — usul ko'rinadi, 63HO6cBU);
+    // «Karta» — superadmin/admin (kassa kartalari + «Belgilanmagan»).
+    {
+      key: "payment_method",
+      label: t("historyFilters.paymentMethod"),
+      icon: Banknote,
+      options: paymentMethodOptions,
+    },
+    ...(cardFilter.available
+      ? [
+          {
+            key: "card_id" as const,
+            label: t("historyFilters.card"),
+            icon: WalletCards,
+            options: cardFilter.options,
+            loading: cardFilter.loading,
+            searchable: cardFilter.options.length > 8,
+            onOpen: cardFilter.onOpen,
+          },
+        ]
+      : []),
   ];
   const selectActive = selectFields.filter((field) => filtersFromUrl[field.key]).length;
   const dateActive = filtersFromUrl.from_date || filtersFromUrl.to_date ? 1 : 0;
@@ -744,6 +822,9 @@ const Payments = () => {
         inlineLabel={field.label}
         icon={field.icon}
         loading={field.loading}
+        onOpenChange={(open) => {
+          if (open) field.onOpen?.();
+        }}
         searchable={field.searchable}
       />
     </Field>
