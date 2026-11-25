@@ -304,7 +304,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Kampaniya → tugallanmagan (yoki kutish chegarasidan oshgan) fon eksporti. Backend tayyor faylni 7 kun saqlaydi va
- * faqat navbatdagi / ishlayotgan vazifani takrorlamaydi — id yo'qolsa, «keyinroq qayta urinish» butun CSV ni qaytadan
+ * faqat navbatdagi / ishlayotgan vazifani takrorlamaydi — id yo'qolsa, «keyinroq qayta urinish» butun faylni qaytadan
  * qurdirardi. Sahifa yangilanguncha yashaydi (ataylab — `localStorage` emas).
  */
 const pendingExports = new Map<string, string>();
@@ -321,7 +321,7 @@ export type ExportCampaignOptions = {
 };
 
 /**
- * CSV eksport (faqat superadmin): ≤ 10 000 qator — fayl darhol; kattasi — fon vazifasi, holati har 2 s so'raladi va
+ * Excel eksport (faqat superadmin): ≤ 10 000 qator — fayl darhol; kattasi — fon vazifasi, holati har 2 s so'raladi va
  * tayyor bo'lgach fayl yuklab olinadi. Fon vazifasi id'si kampaniya bo'yicha eslab qolinadi: kutish chegarasidan
  * oshsa, keyingi bosish yangi vazifa ochmaydi — o'sha vazifani davom ettiradi (tayyor bo'lsa darhol yuklaydi); vazifa
  * xato bilan tugasa yoki fayl muddati o'tgan bo'lsa (404 / 410) — yangisi ochiladi. Fayl brauzer orqali saqlanadi
@@ -342,7 +342,7 @@ export const useExportCampaignUndelivered = (
       const ref: CampaignReportRef = typeof target === "string" ? { id: target, kind: "notification" } : target;
       /** Eslab qolingan fon vazifasi kaliti (SMS — `sms:<id>`). */
       const id = campaignReportKey(ref);
-      const fallbackName = `${ref.kind === "sms" ? "sms-kampaniya" : "kampaniya"}-${ref.id}-yetkazilmaganlar.csv`;
+      const fallbackName = `${ref.kind === "sms" ? "sms-kampaniya" : "kampaniya"}-${ref.id}-yetkazilmaganlar.xlsx`;
       const pollJob = async (exportId: string): Promise<CampaignExportOutcome> => {
         for (let attempt = 0; attempt < maxPolls; attempt += 1) {
           if (attempt > 0) await wait(pollMs);

@@ -461,7 +461,7 @@
         "counted": "Counted",
         "diff": "Difference",
         "cardNotCounted": "Card not counted — no card difference was calculated.",
-        "excelNote": "The Excel report was downloaded. Download again if needed.",
+        "excelNote": "The Excel report downloads automatically. Download again if needed.",
         "export": "Export to Excel",
         "done": "Done"
       }

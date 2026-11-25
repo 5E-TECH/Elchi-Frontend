@@ -59,7 +59,7 @@ import {
   OLD_MAIL_STATUS_FILTERS_COURIER,
   OLD_MAILS_BATCH_MODE_ALL,
   OLD_MAILS_BATCH_MODE_KEY,
-  OLD_MAILS_EXPORT_MAX_PAGES,
+  OLD_MAILS_EXPORT_MAX_ROWS,
   OLD_MAILS_PAGE_MAX,
   readOldMailsFilters,
   readOldMailsPage,
@@ -507,8 +507,12 @@ const OldMails = ({ layout }: OldMailsProps) => {
 
   /* ─── Excel ─────────────────────────────────────────────────────────────── */
 
-  const exportRows = (items: readonly OldMailSource[]) =>
+  const exportRows = (items: readonly OldMailSource[], capped: boolean) =>
     exportOldMailsToExcel({
+      title: isAllBatchMode ? t("mails:oldBatchExportTitle") : t("mails:oldExportTitle"),
+      subtitle: chips.map((chip) => chip.label).join(" · "),
+      capped,
+      hideCourier: isAllBatchMode,
       rows: items.map((mail) => {
         const row = toRow(mail);
         return {
@@ -516,26 +520,38 @@ const OldMails = ({ layout }: OldMailsProps) => {
           region: regionNameOf(mail),
           courier: isAllBatchMode ? "" : mail.courier?.name ?? "",
           status: row.status?.label ?? "",
+          statusTone: row.status?.tone ?? null,
           orders: Number(mail.order_quantity ?? 0),
           amount: Number(mail.post_total_price ?? 0),
           createdAt: getOldMailDate(mail),
         };
       }),
       labels: {
-        title: isAllBatchMode ? t("mails:oldBatchExportTitle") : t("mails:oldExportTitle"),
         generatedAt: t("mails:oldExportGeneratedAt"),
         no: t("mails:oldExportNo"),
-        mailId: t("mails:mailNumber"),
+        mailId: t(isAllBatchMode ? "mails:oldExcel.batchNumber" : "mails:mailNumber"),
         region: t("mails:oldRegionFilterLabel"),
         courier: t("mails:courier"),
         status: t("mails:oldStatusFilterLabel"),
         orders: t("mails:ordersLabel"),
         amount: t("mails:amountLabel"),
-        date: t("mails:mailDate"),
-        totalMails: t("mails:totalMails"),
+        date: t(isAllBatchMode ? "mails:oldExcel.batchDate" : "mails:mailDate"),
+        totalMails: t(isAllBatchMode ? "mails:oldExcel.totalBatches" : "mails:totalMails"),
         totalOrders: t("mails:oldExportTotalOrders"),
         totalAmount: t("mails:oldExportTotalAmount"),
         currency: t("payments:currency"),
+        summaryTitle: t(isAllBatchMode ? "mails:oldExcel.batchSummaryTitle" : "mails:oldExcel.summaryTitle"),
+        byStatus: t("mails:oldExcel.byStatus"),
+        byRegion: t("mails:oldExcel.byRegion"),
+        byCourier: t("mails:oldExcel.byCourier"),
+        mails: t(isAllBatchMode ? "mails:oldExcel.batches" : "mails:oldExcel.mails"),
+        share: t("mails:oldExcel.share"),
+        total: t("mails:oldExcel.total"),
+        others: t("mails:oldExcel.others"),
+        unassigned: t("mails:oldExcel.unassigned"),
+        mailsUnit: t(isAllBatchMode ? "mails:oldExcel.batchesUnit" : "mails:oldExcel.mailsUnit"),
+        ordersUnit: t("mails:oldExcel.ordersUnit"),
+        cappedNote: t("old.exportCapped", { limit: count(OLD_MAILS_EXPORT_MAX_ROWS) }),
       },
     });
 
@@ -549,15 +565,15 @@ const OldMails = ({ layout }: OldMailsProps) => {
     setExporting(true);
     try {
       const { rows: items, capped }: { rows: OldMailSource[]; capped: boolean } = isAllBatchMode
-        ? { rows: filteredBatches, capped: false }
+        ? { rows: filteredBatches, capped: filteredBatches.length > OLD_MAILS_EXPORT_MAX_ROWS }
         : await fetchAllOldMailPages(
             (params) => fetchOldMails(isCourier, params),
             buildOldMailsQuery({ filters, page: 1, limit: OLD_MAILS_PAGE_MAX, isCourier }),
           );
-      exportRows(items);
+      await exportRows(items, capped);
       // Chegaraga yetdi (serverda yana sahifa bor): fayl beriladi, lekin jim kesilmaydi — ogohlantirish.
       if (capped) {
-        notify.warning(t("old.exportCapped", { limit: count(OLD_MAILS_EXPORT_MAX_PAGES * OLD_MAILS_PAGE_MAX) }));
+        notify.warning(t("old.exportCapped", { limit: count(OLD_MAILS_EXPORT_MAX_ROWS) }));
       } else {
         notify.success(t("mails:oldExportSuccess", { count: items.length }));
       }

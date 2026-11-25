@@ -560,19 +560,27 @@ describe("OldMails — xodim (pochtalar)", () => {
       [false, { page: 3, ...filters }],
     ]);
     expect(mocks.exportOldMailsToExcel).toHaveBeenCalledTimes(1);
-    const { rows, labels } = mocks.exportOldMailsToExcel.mock.calls[0][0];
+    const { rows, labels, ...file } = mocks.exportOldMailsToExcel.mock.calls[0][0];
+    expect(file).toEqual({
+      title: "Eski pochtalar hisoboti",
+      subtitle: expect.stringContaining("Buxoro"),
+      capped: false,
+      hideCourier: false,
+    });
     expect(rows).toHaveLength(250);
     expect(rows[0]).toEqual({
       id: "1000",
       region: "Buxoro",
       courier: "Buxaro Courier",
       status: "Qabul qilingan",
+      statusTone: "success",
       orders: 3,
       amount: 650000,
       createdAt: "2026-10-05T12:33:00.000Z",
     });
     expect(labels).toMatchObject({
-      title: "Eski pochtalar hisoboti",
+      summaryTitle: "Eski pochtalar xulosasi",
+      mailsUnit: "ta pochta",
       mailId: "Pochta raqami",
       region: "Viloyat",
       courier: "Kuryer",
@@ -605,21 +613,22 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(mocks.exportOldMailsToExcel).not.toHaveBeenCalled();
   });
 
-  it("⭐ Excel chegarasi (200 sahifa = 20 000 qator): fayl beriladi, lekin «Fayl to'liq emas» ogohlantirishi bilan", async () => {
+  it("⭐ Excel chegarasi (100 sahifa = 10 000 qator): fayl beriladi, lekin «Fayl to'liq emas» ogohlantirishi bilan", async () => {
     const user = userEvent.setup();
-    mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 20_050 }));
-    pagedFetch(20_050);
+    mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 10_050 }));
+    pagedFetch(10_050);
     renderOld("admin", "/mails/old", "card");
 
     await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
 
     expect(
-      await screen.findByText("Fayl to'liq emas: faqat birinchi 20 000 qator yuklandi. Filtrni toraytiring."),
+      await screen.findByText("Fayl to'liq emas: faqat birinchi 10 000 qator yuklandi. Filtrni toraytiring."),
     ).toBeInTheDocument();
-    // 201-sahifa so'ralmaydi, fayl baribir yuklanadi; «N ta yuklandi» muvaffaqiyat xabari chiqmaydi.
-    expect(mocks.fetchOldMails).toHaveBeenCalledTimes(200);
+    // 101-sahifa so'ralmaydi, fayl baribir yuklanadi; «N ta yuklandi» muvaffaqiyat xabari chiqmaydi.
+    expect(mocks.fetchOldMails).toHaveBeenCalledTimes(100);
     expect(mocks.exportOldMailsToExcel).toHaveBeenCalledTimes(1);
-    expect(mocks.exportOldMailsToExcel.mock.calls[0][0].rows).toHaveLength(20_000);
+    expect(mocks.exportOldMailsToExcel.mock.calls[0][0].rows).toHaveLength(10_000);
+    expect(mocks.exportOldMailsToExcel.mock.calls[0][0].capped).toBe(true);
     expect(screen.queryByText(/ta eski pochta Excel fayliga yuklandi/)).not.toBeInTheDocument();
   });
 
@@ -834,19 +843,29 @@ describe("OldMails — «Pochtalar | Filial paketlari» (D11)", () => {
 
     expect(await screen.findByText("1 ta eski pochta Excel fayliga yuklandi")).toBeInTheDocument();
     expect(mocks.fetchOldMails).not.toHaveBeenCalled();
-    const { rows, labels } = mocks.exportOldMailsToExcel.mock.calls[0][0];
+    const { rows, labels, title, hideCourier } = mocks.exportOldMailsToExcel.mock.calls[0][0];
     expect(rows).toEqual([
       {
         id: "129",
         region: "Toshkent",
         courier: "",
         status: "Qabul qilingan",
+        statusTone: "success",
         orders: 14,
         amount: 3186000,
         createdAt: "2026-10-07T12:55:00.000Z",
       },
     ]);
-    expect(labels.title).toBe("Eski paketlar hisoboti");
+    expect(title).toBe("Eski paketlar hisoboti");
+    expect(hideCourier).toBe(true);
+    expect(labels).toMatchObject({
+      mailId: "Paket raqami",
+      date: "Paket sanasi",
+      totalMails: "Jami paketlar",
+      summaryTitle: "Eski paketlar xulosasi",
+      mails: "Paketlar",
+      mailsUnit: "ta paket",
+    });
   });
 
   it("paket qatori paket sahifasini ochadi (/batches/:id, orqaga — «Eski pochtalar» filtrlar bilan)", async () => {

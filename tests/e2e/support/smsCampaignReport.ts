@@ -163,7 +163,7 @@ export const checkSmsReport = async (page: Page, width: 390 | 1440, theme: "ligh
   await expect(dialog).toContainText("***4411");
   await expect(dialog).toContainText("Operator rad etdi");
   await expect(dialog).not.toContainText("raw");
-  await expect(dialog.getByRole("button", { name: "CSV yuklab olish" })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Excel yuklab olish" })).toBeVisible();
   if (width === 390) {
     // Telefonda — pastki varaqa, kanal jadvali o'rniga ro'yxat.
     const box = (await dialog.boundingBox())!;

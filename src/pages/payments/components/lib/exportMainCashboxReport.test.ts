@@ -1,87 +1,48 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PaymentRow } from "../patmentHistoryTable";
-import { exportMainCashboxReport, type MainCashboxReportLabels } from "./exportMainCashboxReport";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { exportMainCashboxReport } from "./exportMainCashboxReport";
 
-const labels = new Proxy({} as MainCashboxReportLabels, { get: (_target, key) => String(key) });
+const http = vi.hoisted(() => ({ get: vi.fn() }));
+const save = vi.hoisted(() => vi.fn());
 
-/** Yuklab olinadigan `.xls` (HTML) matni — `URL.createObjectURL` ga berilgan Blob'dan. */
-const exportHtml = async (rows: PaymentRow[], options: { singleTotal?: boolean; totalBalance?: number } = {}) => {
-  let blob: Blob | null = null;
-  vi.spyOn(URL, "createObjectURL").mockImplementation((value) => {
-    blob = value as Blob;
-    return "blob:report";
+vi.mock("../../../../shared/api/api", () => ({ api: http, LONG_REQUEST_TIMEOUT_MS: 120_000 }));
+vi.mock("../../../../shared/lib/exportFile", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  saveBlob: save,
+}));
+
+const call = () => http.get.mock.calls[0] as [string, { params: unknown; responseType: string; timeout: number }];
+
+describe("exportMainCashboxReport", () => {
+  beforeEach(() => {
+    http.get.mockResolvedValue({
+      data: new Blob(["x"]),
+      headers: { "content-disposition": 'attachment; filename="kassa-hisobot-2026-11-25.xlsx"' },
+    });
   });
-  vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
-  vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
-  exportMainCashboxReport({
-    rows,
-    totalBalance: options.totalBalance ?? 0,
-    cashBalance: 0,
-    cardBalance: 0,
-    labels,
-    singleTotal: options.singleTotal,
-  });
-  expect(blob).not.toBeNull();
-  // jsdom Blob'ida `.text()` yo'q — FileReader bilan o'qiladi.
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(blob as unknown as Blob);
-  });
-};
+  afterEach(() => vi.clearAllMocks());
 
-const expense = (over: Partial<PaymentRow>): PaymentRow =>
-  ({
-    id: "1",
-    amount: 150_000,
-    operation_type: "expense",
-    source_type: "manual_expense",
-    payment_method: "cash",
-    created_by: "Nilufar Rashidova",
-    ...over,
-  }) as PaymentRow;
-
-afterEach(() => vi.restoreAllMocks());
-
-describe("exportMainCashboxReport — «Izoh» ustuni", () => {
-  it("izoh bo'lsa — izoh; izohsiz chiqimda — kategoriya nomi; ikkalasi ham bo'lmasa — avvalgidek manba turi", async () => {
-    const html = await exportHtml([
-      expense({ id: "1", comment: "Benzin, oktabr", expense_category_name: "Yoqilg'i" }),
-      expense({ id: "2", comment: "", expense_category_name: "Ovqatlanish" }),
-      expense({ id: "3", comment: undefined, expense_category_name: null }),
-    ]);
-    expect(html).toContain('<td class="cell">Benzin, oktabr</td>');
-    expect(html).toContain('<td class="cell">Ovqatlanish</td>');
-    expect(html).toContain('<td class="cell">manual_expense</td>');
-  });
-});
-
-describe("exportMainCashboxReport — P0 63HO6cBU: filial kassasi (menejer) balansi bitta jami", () => {
-  it("singleTotal: balans bir katakda (naqd / karta qoldig'i yo'q); operatsiyalarda to'lov turi ustunlari qoladi (ega Q2)", async () => {
-    const html = await exportHtml(
-      [
-        expense({ id: "1", amount: 150_000, payment_method: "cash" }),
-        expense({ id: "2", amount: 70_000, payment_method: undefined }),
-        { ...expense({ id: "3", amount: 90_000, payment_method: "click" }), operation_type: "income" } as PaymentRow,
-      ],
-      { singleTotal: true, totalBalance: 3_785_000 },
-    );
-    // Operatsiyalar jadvali — asosiy kassadagidek: naqd · karta · boshqa.
-    expect(html).toContain('<td class="cell subhead">cash</td>');
-    expect(html).toContain('<td class="cell subhead">card</td>');
-    expect(html).toContain('<td class="cell subhead">other</td>');
-    expect(html).toContain('colspan="6" class="cell title"');
-    // Balans bir marta, o'ng blokni to'liq egallaydi; «jami» da takrorlanmaydi.
-    expect(html.match(/3\D785\D000/g)).toHaveLength(1);
-    expect(html).toContain('<td colspan="4" class="cell subhead">balance</td>');
-    expect(html).not.toContain('<td class="cell subhead">total</td>');
+  it("smena yopilganda — faqat shu smena (sana filtri e'tiborsiz); nom serverdan", async () => {
+    await exportMainCashboxReport({ shiftId: "16", fromDate: "2026-11-01", toDate: "2026-11-25" });
+    expect(call()[0]).toBe("export/cashbox-report.xlsx");
+    expect(call()[1]).toMatchObject({ params: { shift_id: "16" }, responseType: "blob", timeout: 120_000 });
+    expect(save).toHaveBeenCalledWith(expect.any(Blob), "kassa-hisobot-2026-11-25.xlsx");
   });
 
-  it("sukut (asosiy kassa): balans naqd · karta · jami bilan o'zgarmagan", async () => {
-    const html = await exportHtml([expense({ id: "1" })]);
-    expect(html).toContain('<td class="cell subhead">total</td>');
-    expect(html).toContain('colspan="6" class="cell title"');
-    expect(html).toContain('class="cell num summary-purple"');
+  it("tugma: sana filtri; filtrsiz — parametrsiz (server: bugun), butun tarix emas", async () => {
+    await exportMainCashboxReport({ fromDate: "2026-11-01", toDate: "2026-11-25" });
+    expect(call()[1].params).toEqual({ from_date: "2026-11-01", to_date: "2026-11-25" });
+    http.get.mockClear();
+    await exportMainCashboxReport({});
+    expect(call()[1].params).toEqual({});
+  });
+
+  it("sarlavha o'qilmasa — zaxira nom; xato yuqoriga (fayl saqlanmaydi)", async () => {
+    http.get.mockResolvedValueOnce({ data: new Blob(["x"]), headers: {} });
+    await exportMainCashboxReport({ shiftId: "16" });
+    expect(save).toHaveBeenCalledWith(expect.any(Blob), "kassa-hisobot-smena-16.xlsx");
+    save.mockClear();
+    http.get.mockRejectedValueOnce(new Error("403"));
+    await expect(exportMainCashboxReport({})).rejects.toThrow("403");
+    expect(save).not.toHaveBeenCalled();
   });
 });

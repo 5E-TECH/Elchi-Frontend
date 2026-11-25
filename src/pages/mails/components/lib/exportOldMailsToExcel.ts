@@ -1,15 +1,26 @@
+import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../../shared/api";
+import { getFileNameFromDisposition, saveBlob, XLSX_MIME } from "../../../../shared/lib/exportFile";
+import type { Tone } from "../../../../shared/ui/primitives";
+import { OLD_MAILS_EXPORT_MAX_ROWS } from "../../model/oldMailsModel";
+
+/**
+ * ESKI POCHTALAR / PAKETLAR (Excel) — `POST export/old-mails.xlsx`: qatorlar (server yoki mijoz filtri bilan yig'ilgan)
+ * yuboriladi, server tasdiqlangan dizaynda .xlsx qaytaradi (2026-11-25; ilgari brauzerda HTML `.xls`). Yorliqlar —
+ * panel tilida.
+ */
 export type OldMailExportRow = {
   id: string;
   region: string;
   courier: string;
   status: string;
+  statusTone?: Tone | null;
   orders: number;
   amount: number;
   createdAt: string;
 };
 
 export type OldMailsExportLabels = {
-  title: string;
   generatedAt: string;
   no: string;
   mailId: string;
@@ -23,109 +34,86 @@ export type OldMailsExportLabels = {
   totalOrders: string;
   totalAmount: string;
   currency: string;
+  summaryTitle: string;
+  byStatus: string;
+  byRegion: string;
+  byCourier: string;
+  mails: string;
+  share: string;
+  total: string;
+  others: string;
+  unassigned: string;
+  mailsUnit: string;
+  ordersUnit: string;
+  cappedNote: string;
 };
 
-const escapeHtml = (value: unknown) => {
-  const text = String(value ?? "");
-  const safeText = /^[=+\-@]/.test(text) ? `'${text}` : text;
-
-  return safeText
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-};
-
-const formatAmount = (value: number) =>
-  Number(value || 0).toLocaleString("uz-UZ", { maximumFractionDigits: 0 });
-
-const formatDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value || "-";
-
-  const pad = (part: number) => String(part).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-export const buildOldMailsWorkbook = (
-  rows: OldMailExportRow[],
-  labels: OldMailsExportLabels,
-) => {
-  const totalOrders = rows.reduce((sum, row) => sum + Number(row.orders || 0), 0);
-  const totalAmount = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-  const generatedAt = formatDate(new Date().toISOString());
-  const dataRows = rows.map((row, index) => `
-    <tr>
-      <td class="cell center">${index + 1}</td>
-      <td class="cell">${escapeHtml(row.id)}</td>
-      <td class="cell">${escapeHtml(row.region)}</td>
-      <td class="cell">${row.courier ? escapeHtml(row.courier) : "-"}</td>
-      <td class="cell">${escapeHtml(row.status)}</td>
-      <td class="cell num">${formatAmount(row.orders)}</td>
-      <td class="cell num">${formatAmount(row.amount)} ${escapeHtml(labels.currency)}</td>
-      <td class="cell">${escapeHtml(formatDate(row.createdAt))}</td>
-    </tr>
-  `).join("");
-
-  return `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="ProgId" content="Excel.Sheet" />
-        <style>
-          body { font-family: Calibri, Arial, sans-serif; }
-          table { border-collapse: collapse; width: 100%; }
-          .title { background: #ff7a00; color: #ffffff; font-size: 18px; font-weight: 700; text-align: center; }
-          .subhead { background: #fff1df; color: #4a2a00; font-weight: 700; text-align: center; }
-          .summary { background: #f4f6fb; font-weight: 700; }
-          .cell { border: 1px solid #b8bdc9; padding: 7px 9px; }
-          .center { text-align: center; }
-          .num { text-align: right; }
-        </style>
-      </head>
-      <body>
-        <table>
-          <tr><td colspan="8" class="cell title">${escapeHtml(labels.title)}</td></tr>
-          <tr><td colspan="8" class="cell">${escapeHtml(labels.generatedAt)}: ${escapeHtml(generatedAt)}</td></tr>
-          <tr>
-            <td class="cell subhead">${escapeHtml(labels.no)}</td>
-            <td class="cell subhead">${escapeHtml(labels.mailId)}</td>
-            <td class="cell subhead">${escapeHtml(labels.region)}</td>
-            <td class="cell subhead">${escapeHtml(labels.courier)}</td>
-            <td class="cell subhead">${escapeHtml(labels.status)}</td>
-            <td class="cell subhead">${escapeHtml(labels.orders)}</td>
-            <td class="cell subhead">${escapeHtml(labels.amount)}</td>
-            <td class="cell subhead">${escapeHtml(labels.date)}</td>
-          </tr>
-          ${dataRows}
-          <tr>
-            <td colspan="4" class="cell summary">${escapeHtml(labels.totalMails)}: ${rows.length}</td>
-            <td colspan="2" class="cell summary">${escapeHtml(labels.totalOrders)}: ${formatAmount(totalOrders)}</td>
-            <td colspan="2" class="cell summary">${escapeHtml(labels.totalAmount)}: ${formatAmount(totalAmount)} ${escapeHtml(labels.currency)}</td>
-          </tr>
-        </table>
-      </body>
-    </html>
-  `;
-};
-
-export const exportOldMailsToExcel = ({
-  rows,
-  labels,
-}: {
-  rows: OldMailExportRow[];
+export type OldMailsExportInput = {
+  title: string;
+  /** Qo'llangan filtrlar («Viloyat: Buxoro · Holati: …»). */
+  subtitle?: string;
+  /** Ro'yxat chegarada to'xtagan — faylda DIQQAT eslatmasi. */
+  capped: boolean;
+  /** Paketlar rejimi — kuryer ustuni yo'q. */
+  hideCourier: boolean;
+  rows: readonly OldMailExportRow[];
   labels: OldMailsExportLabels;
-}) => {
-  const blob = new Blob([`\ufeff${buildOldMailsWorkbook(rows, labels)}`], {
-    type: "application/vnd.ms-excel;charset=utf-8;",
-  });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
+};
 
-  link.href = url;
-  link.download = `old-mails-${new Date().toISOString().slice(0, 10)}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+const clip = (value: unknown, max: number) => String(value ?? "").slice(0, max);
+const whole = (value: number) => Math.min(1_000_000, Math.max(0, Math.round(Number(value) || 0)));
+const money = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
+
+/** Server shartnomasi: snake_case, matn uzunligi va son chegaralari (DTO bilan bir xil). */
+export const toOldMailsPayload = ({ title, subtitle, capped, hideCourier, rows, labels }: OldMailsExportInput) => ({
+  title: clip(title, 120),
+  ...(subtitle ? { subtitle: clip(subtitle, 300) } : {}),
+  capped: capped || rows.length > OLD_MAILS_EXPORT_MAX_ROWS,
+  hide_courier: hideCourier,
+  labels: {
+    generated_at: clip(labels.generatedAt, 80),
+    no: clip(labels.no, 80),
+    mail_id: clip(labels.mailId, 80),
+    region: clip(labels.region, 80),
+    courier: clip(labels.courier, 80),
+    status: clip(labels.status, 80),
+    orders: clip(labels.orders, 80),
+    amount: clip(labels.amount, 80),
+    date: clip(labels.date, 80),
+    total_mails: clip(labels.totalMails, 80),
+    total_orders: clip(labels.totalOrders, 80),
+    total_amount: clip(labels.totalAmount, 80),
+    currency: clip(labels.currency, 20),
+    summary_title: clip(labels.summaryTitle, 120),
+    by_status: clip(labels.byStatus, 80),
+    by_region: clip(labels.byRegion, 80),
+    by_courier: clip(labels.byCourier, 80),
+    mails: clip(labels.mails, 80),
+    share: clip(labels.share, 80),
+    total: clip(labels.total, 20),
+    others: clip(labels.others, 80),
+    unassigned: clip(labels.unassigned, 80),
+    mails_unit: clip(labels.mailsUnit, 20),
+    orders_unit: clip(labels.ordersUnit, 20),
+    capped_note: clip(labels.cappedNote, 300),
+  },
+  rows: rows.slice(0, OLD_MAILS_EXPORT_MAX_ROWS).map((row) => ({
+    id: clip(row.id, 40),
+    region: clip(row.region, 120),
+    courier: row.courier ? clip(row.courier, 120) : null,
+    status: clip(row.status, 60),
+    ...(row.statusTone ? { status_tone: row.statusTone } : {}),
+    orders: whole(row.orders),
+    amount: money(row.amount),
+    created_at: clip(row.createdAt, 40),
+  })),
+});
+
+export const exportOldMailsToExcel = async (input: OldMailsExportInput): Promise<void> => {
+  const response = await api.post(API_ENDPOINTS.EXPORT.OLD_MAILS_XLSX, toOldMailsPayload(input), {
+    responseType: "blob",
+    timeout: LONG_REQUEST_TIMEOUT_MS,
+  });
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: XLSX_MIME });
+  saveBlob(blob, getFileNameFromDisposition(response.headers?.["content-disposition"]) ?? "old-mails.xlsx");
 };

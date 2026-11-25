@@ -403,10 +403,12 @@ describe("Close shift dialog → result", () => {
     expect(within(table).getAllByText("Sanalmadi")).toHaveLength(2);
     expect(within(result).getByText("Karta sanalmadi — karta bo'yicha farq hisoblanmadi.")).toBeInTheDocument();
     expect(within(result).getByText("Naqd ikki marta sanaldi")).toBeInTheDocument();
-    expect(within(result).getByText("Excel hisobot yuklab olindi. Kerak bo'lsa qayta yuklang.")).toBeInTheDocument();
+    expect(within(result).getByText("Excel hisobot avtomatik yuklab olinadi. Kerak bo'lsa qayta yuklang.")).toBeInTheDocument();
 
     await user.click(within(result).getByRole("button", { name: /Excelga yuklash/ }));
     expect(exportReport).toHaveBeenCalledTimes(2);
+    // Ikkalasi ham — AYNAN yopilgan smena hisoboti (kassaning butun tarixi emas).
+    expect(exportReport.mock.calls).toEqual([[{ shiftId: "12" }], [{ shiftId: "12" }]]);
     await user.click(within(result).getByRole("button", { name: "Tayyor" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     // Smena yopildi — yana ochish taklif qilinadi, qulf qaytdi.
@@ -525,7 +527,7 @@ describe("D1 — the main cashbox history is main-cashbox only for superadmin/ad
     expect(historyCalls().at(-1)).toEqual({ page: 1, limit: 10000 });
   });
 
-  it("superadmin: the table and the Excel report use exactly the main-cashbox rows", async () => {
+  it("superadmin: the table shows the main-cashbox rows; Excel asks the server for the date filter (none → today)", async () => {
     server.historyItems = [
       {
         id: "501",
@@ -546,9 +548,7 @@ describe("D1 — the main cashbox history is main-cashbox only for superadmin/ad
     await user.click(screen.getByRole("button", { name: /Excelga yuklash/ }));
 
     expect(exportReport).toHaveBeenCalledTimes(1);
-    expect(exportReport.mock.calls[0][0]).toEqual(
-      expect.objectContaining({ rows: server.historyItems, fromDate: undefined, toDate: undefined }),
-    );
+    expect(exportReport.mock.calls[0][0]).toEqual({ fromDate: undefined, toDate: undefined });
   });
 });
 
@@ -634,11 +634,9 @@ describe("P0 63HO6cBU — filial kassasi bitta jami (menejer)", () => {
     expect(within(table).getByRole("columnheader", { name: "Jami" })).toBeInTheDocument();
     expect(within(table).queryByRole("columnheader", { name: "Naqd" })).not.toBeInTheDocument();
     expect(within(result).queryByText(/Karta sanalmadi/)).not.toBeInTheDocument();
-    // Excel — menejerda balans bitta jami (operatsiyalardagi to'lov turi ustunlari qoladi — ega Q2).
+    // Excel — shu smena; doira (filial kassasi, bitta jami — ega Q2, C4) serverda JWT'dan.
     await waitFor(() => expect(exportReport).toHaveBeenCalledTimes(1));
-    expect(exportReport.mock.calls[0][0]).toEqual(expect.objectContaining({ singleTotal: true }));
-    // Hisobot sarlavhasi — filial kassasi, «Asosiy kassa» emas (C4).
-    expect(exportReport.mock.calls[0][0].labels.mainCashbox).toBe("Urgut filiali kassasi");
+    expect(exportReport.mock.calls[0][0]).toEqual({ shiftId: "31" });
   });
 
   it("C10: cashbox/main javobida `balance` yo'q — jami naqd + karta (0 emas), smena oynasida soxta «Ortiqcha» yo'q", async () => {
@@ -661,12 +659,25 @@ describe("P0 63HO6cBU — filial kassasi bitta jami (menejer)", () => {
     expect(within(dialog).queryByText("Ortiqcha")).not.toBeInTheDocument();
   });
 
-  it("superadmin's Excel keeps the cash/card split", async () => {
+  it("Excel: bir vaqtda bitta yuklash; server xatosi — sababi bilan toast (blob ichidagi matn)", async () => {
+    let fail: (reason: unknown) => void = () => undefined;
+    exportReport.mockReturnValueOnce(new Promise((_resolve, reject) => (fail = reject)));
     const user = userEvent.setup();
     open(superadmin);
 
-    await user.click(await screen.findByRole("button", { name: /Excelga yuklash/ }));
-    expect(exportReport.mock.calls[0][0]).toEqual(expect.objectContaining({ singleTotal: false }));
+    const button = await screen.findByRole("button", { name: /Excelga yuklash/ });
+    await user.click(button);
+    expect(button).toHaveAttribute("aria-busy", "true");
+    await user.click(button);
+    expect(exportReport).toHaveBeenCalledTimes(1);
+    fail({
+      response: {
+        status: 400,
+        data: new Blob([JSON.stringify({ statusCode: 400, message: "Davr 92 kundan oshmasin" })], { type: "application/json" }),
+      },
+    });
+    expect(await screen.findByText("Davr 92 kundan oshmasin")).toBeInTheDocument();
+    await waitFor(() => expect(button).not.toHaveAttribute("aria-busy"));
   });
 
   it("history (ega Q2): manager sees the «To'lov turi» column and the method too; superadmin unchanged", async () => {

@@ -691,11 +691,11 @@
     "report": {
       "title": "Campaign report",
       "close": "Close",
-      "export": "Download CSV",
+      "export": "Download Excel",
       "exporting": "Preparing the file…",
-      "exportSaved": "CSV file downloaded",
+      "exportSaved": "Excel file downloaded",
       "exportTimeout": "The file is not ready yet — try again a bit later",
-      "exportFailed": "Could not prepare the CSV file — try again a bit later",
+      "exportFailed": "Could not prepare the Excel file — try again a bit later",
       "loading": "Loading the report",
       "error": {
         "title": "Could not load the report",

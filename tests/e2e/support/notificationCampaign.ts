@@ -473,14 +473,14 @@ export const mockCampaignApi = async (
       mock.exports += 1;
       return route.fulfill({
         status: 200,
-        contentType: "text/csv; charset=utf-8",
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         // Backend `exposedHeaders` da `Content-Disposition` bor (api-gateway main.ts).
         headers: {
           ...cors,
           "access-control-expose-headers": "Content-Disposition",
-          "content-disposition": 'attachment; filename="kampaniya-notification-14-yetkazilmaganlar.csv"',
+          "content-disposition": 'attachment; filename="kampaniya-notification-14-yetkazilmaganlar.xlsx"',
         },
-        body: "ism,rol,kanal,holat,sabab\nAkmal Rasulov,courier,push,failed,\n",
+        body: "xlsx",
       });
     }
     if (path === "notifications/campaigns/schedule-policy") {
