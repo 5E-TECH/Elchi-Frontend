@@ -281,7 +281,7 @@
   },
   "telegram": {
     "title": "Kassa hisoboti · Telegram",
-    "hint": "Kassa (smena) yopilganda — qo'lda yoki kun oxirida avtomatik — hisobot xabar va Excel fayl sifatida filial Telegram guruhiga yoki menejerlarning shaxsiy chatiga yuboriladi.",
+    "hint": "Kassa (smena) yopilganda — qo'lda yoki kun oxirida avtomatik — hisobot xabar va Excel fayl sifatida filial Telegram guruhiga yoki menejerlarning shaxsiy chatiga yuboriladi. Asosiy kassa smenasi yopilganda ham shu yerga faqat filialning o'zi HQ'ga topshirgan puli boradi.",
     "groupTitle": "Filial guruhi",
     "connected": "Ulangan",
     "inactive": "Nofaol",

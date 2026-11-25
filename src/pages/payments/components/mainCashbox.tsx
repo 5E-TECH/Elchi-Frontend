@@ -13,6 +13,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  History,
   Inbox,
   Info,
   List,
@@ -72,6 +73,7 @@ import {
 import { dayOverDay, lastDaysRange, useFinanceHistoryDaily } from "../../../entities/payments/financeDaily";
 import { paymentCorrectionBadgeKind } from "../../../entities/payments/paymentCorrection";
 import { toReceiptRef } from "../../../entities/payments/receipt";
+import { MAIN_CASHBOX_USER_ID } from "../../../entities/payments/shiftHistory";
 import { useRefreshExpenseCategories } from "../../../entities/expense-category";
 import type { RootState } from "../../../app/config/store";
 import { canManageExpenseCategories, canUseManualCashboxOperations } from "../../../app/lib/access";
@@ -89,6 +91,7 @@ import BalanceTrendCard from "./BalanceTrendCard";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
 import OpenShiftDialog from "./OpenShiftDialog";
 import ShiftBanner from "./ShiftBanner";
+import ShiftHistoryDialog from "./ShiftHistoryDialog";
 import ShiftResultDialog from "./ShiftResultDialog";
 import SalaryPaymentPopup, { type SalaryCardSource } from "./SalaryPaymentPopup";
 import SettlementPickerDialog, {
@@ -132,7 +135,8 @@ import {
  *
  *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (menejerda filial nomi bilan); «Excelga yuklash»
  *    (hisobot AYNAN eskidek), smena holati ma'lum bo'lsagina — yopiq: «Smenani ochish» (asosiy), ochiq: «Smenani
- *    yopish» (ikkinchi darajali). Smena yopiq — «Smena boshlanmagan» banneri va «Tezkor amallar» qulfi.
+ *    yopish» (ikkinchi darajali); «Smenalar tarixi» — smena hisobotlari ro'yxati (`ShiftHistoryDialog`, ega
+ *    2026-11-25). Smena yopiq — «Smena boshlanmagan» banneri va «Tezkor amallar» qulfi.
  *    Xarajat kategoriyalari sozlamasi (Elchi Pochta №1) bu yerda emas — Ops vositalari → «Xarajat kategoriyalari»
  *    (`/ops?tab=expense-categories`, 2026-10-23 da sarlavhadagi tugma + oynadan ko'chirildi); «Kassadan xarajat»
  *    oynasida faol kategoriya yo'q bo'lsa superadminga o'sha tabga havola.
@@ -460,6 +464,7 @@ const MainCashbox = () => {
     reportHref?: string | null;
   } | null>(null);
   const [isShiftResultOpen, setIsShiftResultOpen] = useState(false);
+  const [isShiftHistoryOpen, setIsShiftHistoryOpen] = useState(false);
 
   // ── Ma'lumot ────────────────────────────────────────────────────────────────
   const { data: usersData } = useGetUser({ limit: FULL_LIST_LIMIT }, isSalaryPopupOpen);
@@ -809,7 +814,6 @@ const MainCashbox = () => {
       if (!closingShiftId || closeShift.isPending) return undefined;
       const openedByName = shiftState.openedByName;
       let closed: CashboxShift | null = null;
-      let closedResponse: unknown = null;
       try {
         const response = await closeShift.mutateAsync({
           shift_id: closingShiftId,
@@ -818,7 +822,6 @@ const MainCashbox = () => {
           comment: comment || undefined,
           ...(accounts ? { accounts } : {}),
         });
-        closedResponse = response;
         closed = normalizeCashboxShift(asRecord(response).data);
       } catch (error) {
         // kiZgTybn: kartalar tekshiruvining 400 xabari karta nomi bilan keladi («Humo: izoh majburiy») — kassir nimani
@@ -838,9 +841,8 @@ const MainCashbox = () => {
       setClosingShiftId(null);
       handleExportExcel();
       if (closed) {
-        // kiZgTybn: kartalar tekshirilgan bo'lsa natija oynasida «Smena hisoboti» havolasi.
-        const accountsChecked = Boolean(asRecord(asRecord(closedResponse).data).accounts_check);
-        setShiftResult({ shift: closed, openedByName, reportHref: accountsChecked ? `/payments/shifts/${closed.id}` : null });
+        // Natija oynasida «Smena hisoboti» havolasi — har smenada (ega 2026-11-25; ilgari faqat kartalar tekshirilganda).
+        setShiftResult({ shift: closed, openedByName, reportHref: `/payments/shifts/${closed.id}` });
         setIsShiftResultOpen(true);
       } else {
         notify.success(t("common:success"), { description: t("closeShiftSuccess") });
@@ -1757,6 +1759,16 @@ const MainCashbox = () => {
             <Button variant="secondary" leftIcon={Download} onClick={handleExportExcel}>
               {t("v2MainCashbox.exportExcel")}
             </Button>
+            {shiftState.canManage ? (
+              <Button
+                variant="secondary"
+                leftIcon={History}
+                onClick={() => setIsShiftHistoryOpen(true)}
+                aria-haspopup="dialog"
+              >
+                {t("v2MainCashbox.shift.history.title")}
+              </Button>
+            ) : null}
             {shiftAction}
           </>
         }
@@ -1870,6 +1882,13 @@ const MainCashbox = () => {
         cardLabel={shiftCardLabel}
         singleTotal={isManagerRole}
         onExport={handleExportExcel}
+      />
+
+      <ShiftHistoryDialog
+        open={isShiftHistoryOpen}
+        onClose={() => setIsShiftHistoryOpen(false)}
+        cashboxLabel={shiftCashboxLabel}
+        cashboxUserId={isManagerRole ? undefined : MAIN_CASHBOX_USER_ID}
       />
 
       <FinanceHistoryDetailPopup row={selectedRow} rows={historyRows} onClose={() => setSelectedRow(null)} />

@@ -37,7 +37,7 @@ type ShiftResultDialogProps = {
   /** «Karta (Click)» (asosiy kassa) yoki «Karta» (filial). */
   cardLabel: string;
   onExport: () => void;
-  /** kiZgTybn — kartalar tekshirilgan smenada «Smena hisoboti» havolasi (`/payments/shifts/:id`). */
+  /** «Smena hisoboti» havolasi (`/payments/shifts/:id`). */
   reportHref?: string | null;
   /** Filial kassasi (P0 63HO6cBU): naqd/karta o'rnida bitta «Jami» ustuni. */
   singleTotal?: boolean;
