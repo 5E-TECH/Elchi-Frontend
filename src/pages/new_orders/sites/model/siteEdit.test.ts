@@ -106,3 +106,23 @@ describe("applySiteEdit", () => {
     expect(after.payload).toMatchObject({ total_price: 129000, delivery_price: 0 });
   });
 });
+
+describe("viloyat va tuman zid (backend `region_mismatch`)", () => {
+  it("⭐ SOATO viloyat tumanga to'g'ri kelmasa — muammo; mos, yo'q yoki SOATO bo'lmasa — yo'q", () => {
+    expect(siteProblems(row({ region: 1706 }), DISTRICTS)).toEqual(["region_mismatch"]);
+    for (const region of [1703, "1703", null, undefined, "Andijon", 3]) {
+      expect(siteProblems(row({ region }), DISTRICTS)).toEqual([]);
+    }
+  });
+
+  it("⭐ tuman tanlangach saytning viloyati bo'shatiladi — serverda qayta rad etilmaydi", () => {
+    const after = applySiteEdit(row({ region: 1706 }), mapping, { districtCode: "1703211" });
+    expect(after.payload).toMatchObject({ district: "1703211", region: null });
+    expect(siteProblems(after, DISTRICTS)).toEqual([]);
+  });
+
+  it("telefon tuzatilsa viloyat tegilmaydi", () => {
+    const after = applySiteEdit(row({ region: 1703, phone: "x" }), mapping, { phone: "+998901234567" });
+    expect(after.payload).toMatchObject({ region: 1703 });
+  });
+});
