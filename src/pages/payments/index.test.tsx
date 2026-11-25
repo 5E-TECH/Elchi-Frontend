@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { vi } from "vitest";
 import Payments from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { PHONE_QUERY } from "../../shared/ui/primitives/date/useIsPhone";
 
 /**
  * ⚠️ `MemoryRouter` brauzer manzilini o'zgartirmaydi — URL holati router'ning
@@ -177,6 +178,29 @@ vi.mock("../../entities/payments/managerMarkets", () => ({
     isFetching: false,
     refetch: vi.fn(),
   }),
+}));
+
+// KRN902pg: kassa kartalari («Karta» filtri) — `enabled` chaqiruvlari yoziladi (ro'yxat faqat tanlov ochilganda / URL'da
+// karta bo'lsa so'raladi).
+const cardsState = vi.hoisted(() => ({ enabledCalls: [] as boolean[] }));
+vi.mock("../../entities/payments/cashboxCards", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useCashboxCards: ({ enabled = true }: { enabled?: boolean } = {}) => {
+    cardsState.enabledCalls.push(enabled);
+    return {
+      data: enabled
+        ? {
+            cashbox_type: "main",
+            cards: [
+              { id: "1", name: "Asosiy karta", is_default: true, is_active: true, last4: null },
+              { id: "3", name: "Humo 1", is_default: false, is_active: true, last4: "4455" },
+              { id: "4", name: "Eski Uzcard", is_default: false, is_active: false, last4: null },
+            ],
+          }
+        : undefined,
+      isLoading: false,
+    };
+  },
 }));
 
 vi.mock("./components/patmentHistoryTable", () => ({
@@ -402,6 +426,144 @@ describe("Payments filters", () => {
     await waitFor(() => expect(currentSearch()).not.toContain("source_type=sell"));
     expect(currentSearch()).toContain("cashbox_type=main");
     expect(field).toHaveTextContent("Barchasi");
+  });
+});
+
+describe("KRN902pg — /payments «To'lov usuli» va «Karta» filtrlari", () => {
+  beforeAll(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+  const originalMatchMedia = window.matchMedia;
+  beforeEach(() => {
+    cardsState.enabledCalls = [];
+  });
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+  const setPhone = (phone: boolean) => {
+    window.matchMedia = ((query: string) => ({
+      matches: phone && query === PHONE_QUERY,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+  };
+  const open = (route = "/payments", preloadedState?: never) =>
+    renderWithProviders(
+      <>
+        <Payments />
+        <LocationProbe />
+      </>,
+      { route, ...(preloadedState ? { preloadedState } : {}) },
+    );
+  const currentSearch = () => screen.getByTestId("search").textContent ?? "";
+
+  it("TC4/TC5: «Naqd» — URL'ga 1-sahifa bilan yoziladi va GET /finance/history ga `payment_method=cash` ketadi", async () => {
+    const user = userEvent.setup();
+    open("/payments?paymentsPage=2");
+
+    await user.click(screen.getByLabelText("To'lov usuli"));
+    for (const name of ["Naqd", "O'tkazma (karta)", "Marketga o'tkazma", "Belgilanmagan"]) {
+      expect(await screen.findByRole("option", { name })).toBeInTheDocument();
+    }
+    await user.click(screen.getByRole("option", { name: "Naqd" }));
+
+    await waitFor(() => expect(currentSearch()).toContain("payment_method=cash"));
+    expect(currentSearch()).toContain("paymentsPage=1");
+    expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ payment_method: "cash", page: 1 }),
+    );
+  });
+
+  it("TC4: «Karta» — ro'yxat sahifa ochilganda so'ralmaydi; ochilganda kartalar (arxivlangani ham) + «Belgilanmagan»", async () => {
+    const user = userEvent.setup();
+    open("/payments");
+
+    expect(cardsState.enabledCalls.length).toBeGreaterThan(0);
+    expect(cardsState.enabledCalls.every((enabled) => !enabled)).toBe(true);
+
+    await user.click(screen.getByLabelText("Karta"));
+    expect(await screen.findByRole("option", { name: /Humo 1/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Asosiy karta/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Eski Uzcard \(arxivlangan\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /^Belgilanmagan/ })).toBeInTheDocument();
+    expect(cardsState.enabledCalls.at(-1)).toBe(true);
+
+    await user.click(screen.getByRole("option", { name: /Humo 1/ }));
+    await waitFor(() => expect(currentSearch()).toContain("card_id=3"));
+    expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(expect.objectContaining({ card_id: "3", page: 1 }));
+  });
+
+  it("TC5: F5 / havola — URL'dagi filtrlar so'rovga ketadi va maydonlarda ko'rinadi", async () => {
+    open("/payments?payment_method=click&card_id=3");
+
+    await waitFor(() =>
+      expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ payment_method: "click", card_id: "3" }),
+      ),
+    );
+    expect(screen.getByLabelText("To'lov usuli")).toHaveTextContent("O'tkazma (karta)");
+    // URL'da karta — nomi uchun ro'yxat so'raladi.
+    await waitFor(() => expect(screen.getByLabelText("Karta")).toHaveTextContent("Humo 1"));
+  });
+
+  it("TC3: noto'g'ri qiymat so'rovga ketmaydi (backend 400 berardi)", async () => {
+    open("/payments?payment_method=card&card_id=abc");
+    await waitFor(() => expect(getFinanceHistoryMock).toHaveBeenCalled());
+    for (const [params] of getFinanceHistoryMock.mock.calls) {
+      expect(params).not.toHaveProperty("payment_method");
+      expect(params).not.toHaveProperty("card_id");
+    }
+  });
+
+  it("TC5: «Filtrlarni tozalash» ularni ham URL'dan olib tashlaydi", async () => {
+    const user = userEvent.setup();
+    open("/payments?payment_method=cash&card_id=none&paymentsPage=3");
+
+    await waitFor(() => expect(currentSearch()).toContain("payment_method=cash"));
+    await user.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
+
+    await waitFor(() => expect(currentSearch()).not.toContain("payment_method"));
+    expect(currentSearch()).not.toContain("card_id");
+    expect(currentSearch()).toContain("paymentsPage=1");
+    expect(getFinanceHistoryMock.mock.lastCall?.[0]).not.toHaveProperty("payment_method");
+    expect(getFinanceHistoryMock.mock.lastCall?.[0]).not.toHaveProperty("card_id");
+  });
+
+  it("menejer: «To'lov usuli» bor, «Karta» yo'q (filial kassasi kartasiz) — URL'dagi card_id so'rovga ketmaydi", async () => {
+    open("/payments?payment_method=cash&card_id=3", manager);
+
+    await waitFor(() =>
+      expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(expect.objectContaining({ payment_method: "cash" })),
+    );
+    expect(getFinanceHistoryMock.mock.lastCall?.[0]).not.toHaveProperty("card_id");
+    expect(screen.getByLabelText("To'lov usuli")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Karta")).not.toBeInTheDocument();
+    expect(cardsState.enabledCalls.every((enabled) => !enabled)).toBe(true);
+  });
+
+  it("TC8: telefon — faol filtr chip bo'lib ko'rinadi, ikkala filtr «Filtrlar» varaqasida", async () => {
+    setPhone(true);
+    const user = userEvent.setup();
+    open("/payments?payment_method=cash");
+
+    expect(await screen.findByText("To'lov usuli: Naqd")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Filtrlar\s*\d*$/ }));
+    const sheet = await screen.findByRole("dialog", { name: "Filtrlar" });
+    expect(within(sheet).getByLabelText("To'lov usuli")).toHaveTextContent("Naqd");
+    expect(within(sheet).getByLabelText("Karta")).toBeInTheDocument();
+
+    await user.click(within(sheet).getByLabelText("Karta"));
+    await user.click(await screen.findByRole("option", { name: /^Belgilanmagan/ }));
+    await user.click(within(sheet).getByRole("button", { name: "Natijalarni ko'rsatish" }));
+
+    await waitFor(() => expect(currentSearch()).toContain("card_id=none"));
+    expect(currentSearch()).toContain("payment_method=cash");
+    expect(await screen.findByText("Karta: Belgilanmagan")).toBeInTheDocument();
   });
 });
 

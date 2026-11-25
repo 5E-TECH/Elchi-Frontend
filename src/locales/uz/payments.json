@@ -2086,5 +2086,19 @@
         "card_to_cash": "Naqdga"
       }
     }
+  },
+  "historyFilters": {
+    "group": "To'lov usuli va karta filtri",
+    "paymentMethod": "To'lov usuli",
+    "card": "Karta",
+    "methods": {
+      "cash": "Naqd",
+      "click": "O'tkazma (karta)",
+      "click_to_market": "Marketga o'tkazma",
+      "none": "Belgilanmagan"
+    },
+    "cardNone": "Belgilanmagan",
+    "cardNoneHint": "Kartasiz: naqd, marketga o'tkazma, filial kassasi",
+    "cardArchived": "{{name}} (arxivlangan)"
   }
 }

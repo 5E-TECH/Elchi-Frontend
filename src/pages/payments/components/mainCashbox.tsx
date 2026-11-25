@@ -110,6 +110,8 @@ import {
 import { getExpenseCategoryName } from "./lib/expenseCategory";
 import { exportMainCashboxReport, type CashboxReportParams } from "./lib/exportMainCashboxReport";
 import { useCashboxShift } from "./lib/useCashboxShift";
+import HistoryMethodCardFilters from "./HistoryMethodCardFilters";
+import { methodCardParams, useCardFilterOptions, useMethodCardUrlFilters } from "./lib/historyMethodCardFilter";
 import {
   buildDailyBalanceSeries,
   computePeriodStats,
@@ -427,6 +429,16 @@ const MainCashbox = () => {
   const normalizedRole = String(role).toLowerCase();
   const isManagerRole = normalizedRole === "manager";
   const isStaffRole = normalizedRole === "superadmin" || normalizedRole === "admin";
+  // KRN902pg: tarix filtrlari «To'lov usuli» (63HO6cBU qoidasi) va «Karta» (superadmin/admin — asosiy kassa
+  // kartalari; menejer filiali kartasiz). URL'da — F5 va havola; o'zgarsa 1-sahifa.
+  const showMethodFilter = showsPaymentMethod(isManagerRole ? "branch" : "main", normalizedRole);
+  const resetHistoryPage = useCallback(() => setHistoryPage(1), []);
+  const methodCard = useMethodCardUrlFilters(isStaffRole, resetHistoryPage);
+  const cardFilter = useCardFilterOptions(isStaffRole, methodCard.filters.card_id);
+  const methodCardQuery = useMemo(
+    () => methodCardParams(methodCard.filters, { method: showMethodFilter, card: cardFilter.available }),
+    [cardFilter.available, methodCard.filters, showMethodFilter],
+  );
   const currentUserId = String(profileUserId ?? roleUserId ?? "").trim();
 
   const profileRecord = asRecord(profile);
@@ -487,8 +499,9 @@ const MainCashbox = () => {
       // bekorlar aralashmasin). Menejerda param yo'q — gateway o'z filiali kassasini qo'yadi.
       ...(isStaffRole ? { cashbox_type: "main" } : {}),
       ...(draftHistoryFrom && draftHistoryTo && { fromDate: draftHistoryFrom, toDate: draftHistoryTo }),
+      ...methodCardQuery,
     }),
-    [draftHistoryFrom, draftHistoryTo, isStaffRole],
+    [draftHistoryFrom, draftHistoryTo, isStaffRole, methodCardQuery],
   );
   const historyQuery = useGetFinanceHistory(historyParams);
   // Menejer (maket): «kechaga nisbatan» — bugungi − kechagi `closing_balance` (qzjTMWPb). Noma'lum bo'lsa chizilmaydi.
@@ -840,6 +853,11 @@ const MainCashbox = () => {
     setHistoryPage(1);
   }, []);
   const clearHistoryRange = useCallback(() => setHistoryRange("", ""), [setHistoryRange]);
+  const hasHistoryFilter = hasDateFilter || methodCard.activeCount > 0;
+  const clearHistoryFilters = useCallback(() => {
+    clearHistoryRange();
+    methodCard.clear();
+  }, [clearHistoryRange, methodCard]);
 
   // ── Ko'rinish yordamchilari ─────────────────────────────────────────────────
   const money = (value: number) => (balanceVisible ? formatMoneyLocalized(value, { language }) : MASK);
@@ -1590,19 +1608,29 @@ const MainCashbox = () => {
       className={className}
     />
   );
-  const clearButton = hasDateFilter ? (
-    <Button variant="link" size="sm" onClick={clearHistoryRange} className="max-md:min-h-11">
+  const methodCardFilters = (className?: string, itemClassName?: string) => (
+    <HistoryMethodCardFilters
+      filters={methodCard.filters}
+      onChange={methodCard.update}
+      showMethod={showMethodFilter}
+      card={cardFilter.available ? cardFilter : null}
+      className={className}
+      itemClassName={itemClassName}
+    />
+  );
+  const clearButton = hasHistoryFilter ? (
+    <Button variant="link" size="sm" onClick={clearHistoryFilters} className="max-md:min-h-11">
       {t("v2MainCashbox.history.clearFilters")}
     </Button>
   ) : null;
 
-  const historyEmpty = hasDateFilter ? (
+  const historyEmpty = hasHistoryFilter ? (
     <EmptyState
       icon={ListFilter}
       title={t("v2MainCashbox.history.empty")}
       description={t("v2MainCashbox.history.filteredEmptyDescription")}
       action={
-        <Button variant="secondary" onClick={clearHistoryRange}>
+        <Button variant="secondary" onClick={clearHistoryFilters}>
           {t("v2MainCashbox.history.clearFilters")}
         </Button>
       }
@@ -1622,8 +1650,9 @@ const MainCashbox = () => {
       title={t("v2MainCashbox.history.title")}
       description={historyDescription}
       actions={
-        <div className="flex flex-wrap items-center gap-2 max-md:hidden">
+        <div className="flex flex-wrap items-center justify-end gap-2 max-md:hidden">
           {dateFilter("w-[260px]")}
+          {methodCardFilters("flex flex-wrap items-center gap-2", "w-[220px]")}
           {clearButton}
         </div>
       }
@@ -1651,6 +1680,7 @@ const MainCashbox = () => {
     >
       <div className="flex flex-col gap-2 border-b border-border px-4 py-3 md:hidden">
         {dateFilter("w-full")}
+        {methodCardFilters("flex flex-col gap-2", "w-full")}
         {clearButton ? <div>{clearButton}</div> : null}
       </div>
       {historyFetching && historyRows.length > 0 ? (

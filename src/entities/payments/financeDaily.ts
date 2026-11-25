@@ -36,6 +36,10 @@ export type FinanceDailyParams = {
   source_types?: string;
   source_user_id?: string;
   created_by?: string;
+  /** KRN902pg: «To'lov usuli» — `cash` | `click` | `click_to_market` | `none` (vergul bilan bir nechta). */
+  payment_method?: string;
+  /** KRN902pg: «Karta» — karta ID si yoki `none`. */
+  card_id?: string;
 };
 
 export type DailyFlow = {
