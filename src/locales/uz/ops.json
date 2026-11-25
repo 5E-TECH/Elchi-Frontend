@@ -107,7 +107,8 @@
       "openUntil": "Hozir: ochiq · {{time}} da yopiladi",
       "closed": "Hozir: yopiq",
       "closedUntil": "Hozir: yopiq · {{time}} da ochiladi",
-      "nextDayChange": "Keyingi kun almashishi: {{time}}"
+      "nextDayChange": "Keyingi kun almashishi: {{time}}",
+      "dayChangeFrom": "Yangi vaqt {{time}} — {{date}} ish kunidan. Bugungi kun {{end}} da tugaydi"
     },
     "intake": {
       "title": "Buyurtma qabuli",
@@ -121,7 +122,7 @@
       "receiveHint": "Har kuni shu vaqtdan keyin marketlardan kelgan yangi buyurtmalar qabul qilinmaydi",
       "receivePasses": "Bu vaqt bugun o'tgan — saqlansa, qabul darhol yopiladi",
       "dayChange": "Kun almashish vaqti",
-      "dayChangeHint": "Faqat buyurtma qabuliga ta'sir qiladi: hisobotlar, pochtalar va smenalar 00:00 bo'yicha",
+      "dayChangeHint": "Butun tizim kuni: bosh sahifa, hisobotlar, moliya, Excel va kunlik pochtalar shu soatda almashadi. Yangi soat keyingi kun almashishidan amal qiladi, o'tgan kunlar qayta hisoblanmaydi",
       "unlimitedPlaceholder": "Cheklovsiz"
     },
     "open": {

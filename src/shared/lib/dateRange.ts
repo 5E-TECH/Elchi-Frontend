@@ -1,3 +1,5 @@
+import { businessToday } from "./businessDay";
+
 export type DateRangePreset = "today" | "week" | "month" | "year" | "all";
 
 export interface ISODateRange {
@@ -26,33 +28,34 @@ export const parseISODate = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
+/**
+ * «Bugun / Hafta / Oy / Yil» — ISH KUNI bo'yicha (xhiXv3w3, `businessDay.ts`): kun 05:00 da almashsa, 01:30 da
+ * «Bugun» hali kechagi sana. Soat 00:00 (sukut) — qurilmaning kalendar sanasi, avvalgidek.
+ */
+const dayKeyShift = (key: string, days: number) =>
+  new Date(Date.parse(`${key}T00:00:00Z`) + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
 export const getTodayRange = (): ISODateRange => {
-  const now = new Date();
-  const today = toISODate(now);
+  const today = businessToday();
 
   return { from: today, to: today };
 };
 
 export const getThisWeekRange = (): ISODateRange => {
-  const now = new Date();
-  const weekStartOffset = now.getDay() === 0 ? 6 : now.getDay() - 1;
-  const from = new Date(now);
-  from.setDate(now.getDate() - weekStartOffset);
+  const today = businessToday();
+  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay();
+  const weekStartOffset = weekday === 0 ? 6 : weekday - 1;
 
-  return { from: toISODate(from), to: toISODate(now) };
+  return { from: dayKeyShift(today, -weekStartOffset), to: today };
 };
 
 export const getThisMonthRange = (): ISODateRange => {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  const today = businessToday();
 
-  return { from: toISODate(from), to: toISODate(now) };
+  return { from: `${today.slice(0, 7)}-01`, to: today };
 };
 
-export const getThisYearRange = (): ISODateRange => {
-  const now = new Date();
-  return getYearRange(now.getFullYear());
-};
+export const getThisYearRange = (): ISODateRange => getYearRange(Number(businessToday().slice(0, 4)));
 
 export const getYearRange = (year: number): ISODateRange => {
   const from = new Date(year, 0, 1);
@@ -63,7 +66,7 @@ export const getYearRange = (year: number): ISODateRange => {
 
 export const getAllTimeRange = (): ISODateRange => ({
   from: "1970-01-01",
-  to: toISODate(new Date()),
+  to: businessToday(),
 });
 
 /** Inclusive date range immediately preceding the selected range. UTC day math avoids DST shifts. */

@@ -1,3 +1,4 @@
+import { normalizeBusinessDaySchedule, type BusinessDayRule } from "../../shared/lib/businessDay";
 import { tashkentClockNow } from "../../shared/lib/clockTime";
 import { getErrorStatus } from "../../shared/lib/errorKind";
 
@@ -16,10 +17,12 @@ import { getErrorStatus } from "../../shared/lib/errorKind";
  *   Qabul yopiq paytda buyurtma yaratadigan barcha endpointlar (POST orders, tashqi / hamkor) →
  *         `409 { code: "ORDER_INTAKE_CLOSED", message, reopens_at, cutoff_time }`; AI confirm — har buyurtma
  *         natijasida `code: "intake_closed"`.
- *   «Kun almashishi» — `day_change_time` (Toshkent, sukut 00:00; Trello #756): FAQAT buyurtma qabuli oynasiga ta'sir
- *         qiladi (hisobotlar, kunlik pochtalar, smenalar — 00:00 bo'yicha). `PATCH { day_change_time }` — superadmin;
- *         `null` → 00:00; noto'g'ri — 400. Soat o'zgarsa joriy ish kuni siljiydi: bugungi cheklov yangi oynaga faqat
- *         ish kuni sanasi (`date`) o'zgarmasa ko'chadi.
+ *   «Kun almashishi» — `day_change_time` (Toshkent, sukut 00:00; Trello #756, xhiXv3w3): butun tizimning ISH KUNI —
+ *         qabul oynasi, dashboard, buyurtmalar filtri, moliya kunlari, Excel va kunlik pochtalar. `PATCH
+ *         { day_change_time }` — superadmin; `null` → 00:00; noto'g'ri — 400. FAQAT OLDINGA: yangi soat keyingi kun
+ *         almashishidan (`day_change_effective_from`) amal qiladi, joriy ish kuni yangi chegarada tugaydi
+ *         (`next_day_change_at`), o'tgan kunlar qayta hisoblanmaydi. `current_day_change_time` — joriy kun qaysi soatda
+ *         boshlangan; `day_change_schedule` — `{ from, time }` qoidalari (`shared/lib/businessDay.ts`).
  *
  * Backend javob bermaguncha (404 / 405 / 501 — backend deploy bo'lmagan muhit) funksiya YO'Q deb olinadi:
  * boshqaruv ko'rinmaydi va hech narsa to'silmaydi.
@@ -44,8 +47,16 @@ export type OrderIntakeState = {
   isOpen: boolean | null;
   closesAt: string | null;
   reopensAt: string | null;
-  /** Kun almashish soati (Toshkent, `HH:MM`) — yo'q yoki buzuq bo'lsa `00:00`. */
+  /** Kun almashish soati (Toshkent, `HH:MM`) — oxirgi o'rnatilgani; yo'q yoki buzuq bo'lsa `00:00`. */
   dayChangeTime: string;
+  /** Joriy ish kuni qaysi soatda boshlangan (yangi soat ertadan bo'lsa — eskisi); eski backendda `dayChangeTime`. */
+  currentDayChangeTime: string;
+  /** `dayChangeTime` qaysi ish kunidan (`YYYY-MM-DD`) amal qiladi; `null` — o'zgartirilmagan / eski backend. */
+  dayChangeEffectiveFrom: string | null;
+  /** Joriy ish kuni sanasi (`date`). */
+  businessDate: string | null;
+  /** Ish kuni qoidalari (`day_change_schedule`). */
+  daySchedule: BusinessDayRule[];
   /** Joriy ish kuni boshlangan lahza (ISO). */
   dayStartedAt: string | null;
   /** Keyingi kun almashish lahzasi (ISO). */
@@ -78,6 +89,10 @@ export const UNSUPPORTED_INTAKE: OrderIntakeState = {
   closesAt: null,
   reopensAt: null,
   dayChangeTime: DEFAULT_DAY_CHANGE_TIME,
+  currentDayChangeTime: DEFAULT_DAY_CHANGE_TIME,
+  dayChangeEffectiveFrom: null,
+  businessDate: null,
+  daySchedule: [],
   dayStartedAt: null,
   nextDayChangeAt: null,
   receiveSupported: false,
@@ -103,13 +118,24 @@ const minutesOf = (clock: string) => Number(clock.slice(0, 2)) * 60 + Number(clo
 export const normalizeOrderIntake = (payload: unknown): OrderIntakeState => {
   const root = asRecord(payload);
   const data = asRecord(root.data ?? root);
+  const dayChangeTime = clockOrNull(data.day_change_time) ?? DEFAULT_DAY_CHANGE_TIME;
+  const businessDate =
+    typeof data.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : null;
+  const effectiveFrom =
+    typeof data.day_change_effective_from === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.day_change_effective_from)
+      ? data.day_change_effective_from
+      : null;
   return {
     supported: true,
     cutoffTime: clockOrNull(data.cutoff_time),
     isOpen: typeof data.is_open === "boolean" ? data.is_open : null,
     closesAt: isoOrNull(data.closes_at),
     reopensAt: isoOrNull(data.reopens_at),
-    dayChangeTime: clockOrNull(data.day_change_time) ?? DEFAULT_DAY_CHANGE_TIME,
+    dayChangeTime,
+    currentDayChangeTime: clockOrNull(data.current_day_change_time) ?? dayChangeTime,
+    dayChangeEffectiveFrom: effectiveFrom,
+    businessDate,
+    daySchedule: normalizeBusinessDaySchedule(data.day_change_schedule),
     dayStartedAt: isoOrNull(data.day_started_at),
     nextDayChangeAt: isoOrNull(data.next_day_change_at),
     receiveSupported: Object.hasOwn(data, "receive_cutoff_time"),
@@ -122,16 +148,18 @@ export const normalizeOrderIntake = (payload: unknown): OrderIntakeState => {
 
 /**
  * Joriy ish kunida `cutoff` soati qaysi lahzaga to'g'ri keladi (ms). Ish kuni `day_started_at` dan boshlanadi va
- * `day_change_time` dan keyingi kun shu soatgacha davom etadi: kun 18:00 da almashsa, `10:00` — ertangi tong
- * (`(10:00 − 18:00 + 24 soat) mod 24 soat` = 16 soat kun boshidan). `day_started_at` bo'lmasa — `null`.
+ * shu kun boshlangan soatdan (`currentDayChangeTime`, eski backendda `dayChangeTime`) keyingi kun almashishigacha
+ * davom etadi: kun 18:00 da almashsa, `10:00` — ertangi tong (`(10:00 − 18:00 + 24 soat) mod 24 soat` = 16 soat kun
+ * boshidan). `day_started_at` bo'lmasa — `null`.
  */
 export const cutoffClosesAt = (
   cutoff: string,
-  state: Pick<OrderIntakeState, "dayStartedAt" | "dayChangeTime">,
+  state: Pick<OrderIntakeState, "dayStartedAt" | "dayChangeTime"> & { currentDayChangeTime?: string },
 ): number | null => {
   const dayStart = state.dayStartedAt ? Date.parse(state.dayStartedAt) : Number.NaN;
   if (!CLOCK.test(cutoff) || !Number.isFinite(dayStart)) return null;
-  const offset = (minutesOf(cutoff) - minutesOf(state.dayChangeTime) + 1440) % 1440;
+  const startClock = state.currentDayChangeTime ?? state.dayChangeTime;
+  const offset = (minutesOf(cutoff) - minutesOf(startClock) + 1440) % 1440;
   return dayStart + offset * 60_000;
 };
 
@@ -141,7 +169,7 @@ export const cutoffClosesAt = (
  */
 export const isCutoffPassed = (
   cutoff: string,
-  state: Pick<OrderIntakeState, "dayStartedAt" | "dayChangeTime">,
+  state: Pick<OrderIntakeState, "dayStartedAt" | "dayChangeTime"> & { currentDayChangeTime?: string },
   now: number = Date.now(),
 ) => {
   const closes = cutoffClosesAt(cutoff, state);

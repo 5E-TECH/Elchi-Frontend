@@ -107,7 +107,8 @@
       "openUntil": "Now: open · closes at {{time}}",
       "closed": "Now: closed",
       "closedUntil": "Now: closed · reopens at {{time}}",
-      "nextDayChange": "Next day change: {{time}}"
+      "nextDayChange": "Next day change: {{time}}",
+      "dayChangeFrom": "New time {{time}} — from the {{date}} working day. Today ends at {{end}}"
     },
     "intake": {
       "title": "Order intake",
@@ -121,7 +122,7 @@
       "receiveHint": "Every day after this time new orders from markets are not received",
       "receivePasses": "This time has already passed today — saving closes intake right away",
       "dayChange": "Day change time",
-      "dayChangeHint": "Affects order intake only: reports, mail and shifts use 00:00",
+      "dayChangeHint": "The working day for the whole system: the dashboard, reports, finance, Excel and daily mail change at this time. A new time applies from the next day change; past days are not recalculated",
       "unlimitedPlaceholder": "No limit"
     },
     "open": {

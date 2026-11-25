@@ -608,7 +608,8 @@
       "Juma",
       "Shanba",
       "Yakshanba"
-    ]
+    ],
+    "businessDayHint": "Ish kuni {{time}} dan"
   },
   "dateKit": {
     "groups": {

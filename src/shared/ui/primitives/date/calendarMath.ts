@@ -1,3 +1,4 @@
+import { businessToday } from "../../../lib/businessDay";
 import type { ISODateRange } from "../../../lib/dateRange";
 import { formatDateLocalized } from "../../../lib/formatDateTime";
 
@@ -208,7 +209,7 @@ export type DatePresetKey = "today" | "yesterday" | "week" | "lastWeek" | "month
 /** Maketdagi tez tanlov to'plami (`tizim-states-forms` 04, ro'yxat sahifalari filtri). */
 export const DEFAULT_DATE_PRESETS: readonly DatePresetKey[] = Object.freeze(["today", "week", "month", "all"]);
 
-export const getPresetRange = (preset: DatePresetKey, today: ISODay = todayISODay()): ISODateRange => {
+export const getPresetRange = (preset: DatePresetKey, today: ISODay = businessToday()): ISODateRange => {
   switch (preset) {
     case "today":
       return { from: today, to: today };
@@ -239,7 +240,7 @@ export const getPresetRange = (preset: DatePresetKey, today: ISODay = todayISODa
 export const matchPreset = (
   range: ISODateRange,
   presets: readonly DatePresetKey[],
-  today: ISODay = todayISODay(),
+  today: ISODay = businessToday(),
 ): DatePresetKey | null => {
   for (const preset of presets) {
     const candidate = getPresetRange(preset, today);
@@ -256,7 +257,7 @@ export const resolvePreset = (
   range: ISODateRange,
   presets: readonly DatePresetKey[],
   chosen: DatePresetKey | null,
-  today: ISODay = todayISODay(),
+  today: ISODay = businessToday(),
 ): DatePresetKey | null => {
   if (chosen && presets.includes(chosen)) {
     const candidate = getPresetRange(chosen, today);

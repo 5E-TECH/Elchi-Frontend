@@ -15,6 +15,45 @@ import {
 const at = (iso: string) => Date.parse(iso);
 
 describe("normalizeOrderIntake", () => {
+  it("xhiXv3w3: ish kuni jadvali — joriy kun soati, yangi qoida sanasi va `date` o'qiladi", () => {
+    const state = normalizeOrderIntake({
+      data: {
+        cutoff_time: null,
+        is_open: true,
+        day_change_time: "05:00",
+        current_day_change_time: "00:00",
+        day_change_effective_from: "2026-11-27",
+        date: "2026-11-26",
+        day_started_at: "2026-11-25T19:00:00.000Z",
+        next_day_change_at: "2026-11-27T00:00:00.000Z",
+        day_change_schedule: [
+          { from: "2026-11-27", time: "05:00" },
+          { from: "yomon", time: "05:00" },
+          { from: "2026-11-28", time: "25:00" },
+        ],
+      },
+    });
+    expect(state).toMatchObject({
+      dayChangeTime: "05:00",
+      currentDayChangeTime: "00:00",
+      dayChangeEffectiveFrom: "2026-11-27",
+      businessDate: "2026-11-26",
+      daySchedule: [{ from: "2026-11-27", time: "05:00" }],
+    });
+    // Chegara bugungi (00:00 da boshlangan) kun soatidan o'lchanadi, yangi 05:00 dan emas.
+    expect(cutoffClosesAt("10:00", state)).toBe(Date.parse("2026-11-26T05:00:00.000Z"));
+  });
+
+  it("xhiXv3w3: eski backend (jadvalsiz) — joriy kun soati = `day_change_time`", () => {
+    expect(normalizeOrderIntake({ day_change_time: "06:00", is_open: true })).toMatchObject({
+      dayChangeTime: "06:00",
+      currentDayChangeTime: "06:00",
+      dayChangeEffectiveFrom: null,
+      businessDate: null,
+      daySchedule: [],
+    });
+  });
+
   it("`{ data: {...} }` va «10:00:00» → «10:00»; noto'g'ri qiymatlar — null", () => {
     expect(
       normalizeOrderIntake({
@@ -34,6 +73,10 @@ describe("normalizeOrderIntake", () => {
       dayChangeTime: "00:00",
       dayStartedAt: null,
       nextDayChangeAt: null,
+      currentDayChangeTime: "00:00",
+      dayChangeEffectiveFrom: null,
+      businessDate: null,
+      daySchedule: [],
       receiveSupported: false,
       receiveCutoffTime: null,
       receiveIsOpen: null,
@@ -51,6 +94,10 @@ describe("normalizeOrderIntake", () => {
       dayChangeTime: "00:00",
       dayStartedAt: null,
       nextDayChangeAt: null,
+      currentDayChangeTime: "00:00",
+      dayChangeEffectiveFrom: null,
+      businessDate: null,
+      daySchedule: [],
       receiveSupported: false,
       receiveCutoffTime: null,
       receiveIsOpen: null,

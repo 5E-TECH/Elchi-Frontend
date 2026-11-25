@@ -608,7 +608,8 @@
       "Friday",
       "Saturday",
       "Sunday"
-    ]
+    ],
+    "businessDayHint": "Working day starts at {{time}}"
   },
   "dateKit": {
     "groups": {

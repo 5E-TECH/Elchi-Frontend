@@ -29,6 +29,7 @@ import {
 } from "../../../entities/payments/paymentCorrection";
 import { cx } from "../../../shared/lib/cx";
 import { toISODate } from "../../../shared/lib/dateRange";
+import { businessToday } from "../../../shared/lib/businessDay";
 import { formatDateTimeLocalized, toValidDate } from "../../../shared/lib/formatDateTime";
 import {
   CURRENCY_LABEL,
@@ -545,7 +546,7 @@ const MyCashboxPage = () => {
   );
 
   // «Bugun» bloki: asosiy javob bugunni to'liq qamrasa — o'sha so'rov (kalit bir xil), aks holda bugungi kun.
-  const today = toISODate(new Date());
+  const today = businessToday();
   const coversToday = historyTab === "all" && (!dateFrom || dateFrom <= today) && (!dateTo || dateTo >= today);
   const todayParams = useMemo(
     () => (coversToday ? params : { fromDate: today, toDate: today }),
