@@ -227,8 +227,6 @@ export const V2_SCOPE_PENDING = Object.freeze({
 export const OUTPUT_FORMAT_FILES = Object.freeze({
   "src/features/print-receipts/lib/printReceiptHtml.ts":
     "chek / yorliq brauzer chop etish HTML'i — oq qog'ozda qora (#000 / #fff), ilova mavzusidan tashqari",
-  "src/pages/mails/components/lib/exportOldMailsToExcel.ts": "Excel katak ranglari (ARGB)",
-  "src/pages/payments/components/lib/exportMainCashboxReport.ts": "Excel katak ranglari (ARGB)",
 });
 const OUTPUT_FORMAT_PATHS = Object.keys(OUTPUT_FORMAT_FILES);
 

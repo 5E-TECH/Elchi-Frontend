@@ -461,7 +461,7 @@
         "counted": "Sanalgan",
         "diff": "Farq",
         "cardNotCounted": "Karta sanalmadi — karta bo'yicha farq hisoblanmadi.",
-        "excelNote": "Excel hisobot yuklab olindi. Kerak bo'lsa qayta yuklang.",
+        "excelNote": "Excel hisobot avtomatik yuklab olinadi. Kerak bo'lsa qayta yuklang.",
         "export": "Excelga yuklash",
         "done": "Tayyor"
       }

@@ -680,11 +680,11 @@
     "report": {
       "title": "Kampaniya hisoboti",
       "close": "Yopish",
-      "export": "CSV yuklab olish",
+      "export": "Excel yuklab olish",
       "exporting": "Fayl tayyorlanmoqda…",
-      "exportSaved": "CSV fayl yuklab olindi",
+      "exportSaved": "Excel fayl yuklab olindi",
       "exportTimeout": "Fayl hali tayyor emas — birozdan keyin qayta urinib ko'ring",
-      "exportFailed": "CSV faylni tayyorlab bo'lmadi — birozdan keyin qayta urinib ko'ring",
+      "exportFailed": "Excel faylni tayyorlab bo'lmadi — birozdan keyin qayta urinib ko'ring",
       "loading": "Hisobot yuklanmoqda",
       "error": {
         "title": "Hisobotni yuklab bo'lmadi",

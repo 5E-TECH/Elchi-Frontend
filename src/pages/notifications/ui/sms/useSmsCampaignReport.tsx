@@ -14,7 +14,7 @@ const hasReport = (item: SmsCampaignHistoryItem) => (item as { status?: unknown 
  * SMS «KAMPANIYALAR TARIXI» → «Hisobot» (H7kpCman): har qatorda «Hisobot» tugmasi umumiy kampaniya hisoboti oynasini
  * (`CampaignReportDialog`, maket `superadmin-notifications-campaign-report-dialog`) SMS rejimida ochadi —
  * `GET /notifications/sms/campaigns/:id/report` (bo'laklar, kodlash, operator hisoboti, taxminiy narx),
- * «Yetkazilmaganlar» (maskalangan telefon + sabab) va CSV (faqat superadmin). Tarix ustunlari va kartasi o'zgarmaydi —
+ * «Yetkazilmaganlar» (maskalangan telefon + sabab) va Excel (faqat superadmin). Tarix ustunlari va kartasi o'zgarmaydi —
  * oxiriga tugma qo'shiladi (`columns`, `renderCard` o'ramlari), oyna — `dialog`.
  */
 export const useSmsCampaignReport = () => {

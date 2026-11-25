@@ -260,7 +260,7 @@ describe("CampaignHistoryCard (KM-3)", () => {
     expect(await screen.findByText("Kampaniya bekor qilindi")).toBeInTheDocument();
   });
 
-  it("hisobot oynasi: 4 katak, kanal jadvali, yetkazilmaganlar (sabab — kod xaritasidan); CSV faqat can_export da", async () => {
+  it("hisobot oynasi: 4 katak, kanal jadvali, yetkazilmaganlar (sabab — kod xaritasidan); Excel faqat can_export da", async () => {
     const user = userEvent.setup();
     renderWithProviders(<CampaignHistoryCard />);
     const card = await screen.findByTestId("campaign-history");
@@ -282,7 +282,7 @@ describe("CampaignHistoryCard (KM-3)", () => {
     expect(report).toHaveTextContent("Push — o'tkazildi");
     expect(report).not.toHaveTextContent("raw provider text");
     expect(report).toHaveTextContent("2 tadan 1–2");
-    expect(within(dialog).queryByRole("button", { name: "CSV yuklab olish" })).toBeNull();
+    expect(within(dialog).queryByRole("button", { name: "Excel yuklab olish" })).toBeNull();
     await user.click(within(dialog).getAllByRole("button", { name: "Yopish" }).at(-1)!);
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Kampaniya hisoboti" })).toBeNull());
   });

@@ -22,6 +22,13 @@ const cors = {
 const reply = (route: Route, body: unknown) =>
   route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
 
+/** `POST export/old-mails.xlsx` tanasi (2026-11-25: fayl serverda yasaladi). */
+type ExportPayload = {
+  title: string;
+  labels: Record<string, string>;
+  rows: { id: string; courier: string | null }[];
+};
+
 const post = (id: string, courier: { id: string; name: string; phone_number: string } | null, region: string) => ({
   id,
   branch_id: "1",
@@ -50,9 +57,10 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 90_000 });
 
-  test("⭐ TC2+TC3 + F4: server sahifalash, Excel'da barcha 150 qator, «Kuryer» ustuni to'la; kuryersiz pochtada «-»", async ({ page }) => {
+  test("⭐ TC2+TC3 + F4: server sahifalash, Excel'da barcha 150 qator, «Kuryer» ustuni to'la; kuryersiz pochta bo'sh", async ({ page }) => {
     const leaked: string[] = [];
     const postQueries: Record<string, string>[] = [];
+    const exports: ExportPayload[] = [];
     await page.context().route("**/*", async (route) => {
       const request = route.request();
       const url = new URL(request.url());
@@ -87,6 +95,19 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
             orders_total: ALL_POSTS.reduce((sum, item) => sum + item.order_quantity, 0),
             amount_total: ALL_POSTS.reduce((sum, item) => sum + item.post_total_price, 0),
           },
+        });
+      }
+      if (path === "export/old-mails.xlsx") {
+        exports.push(request.postDataJSON() as ExportPayload);
+        return route.fulfill({
+          status: 200,
+          contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          headers: {
+            ...cors,
+            "access-control-expose-headers": "Content-Disposition",
+            "content-disposition": 'attachment; filename="old-mails-2026-11-25.xlsx"',
+          },
+          body: "xlsx",
         });
       }
       if (request.method() !== "GET") leaked.push(`${request.method()} ${path}`);
@@ -128,21 +149,18 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Excelga yuklash", exact: true }).click();
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^old-mails-\d{4}-\d{2}-\d{2}\.xls$/);
-    const html = readFileSync((await file.path())!, "utf8");
+    expect(file.suggestedFilename()).toBe("old-mails-2026-11-25.xlsx");
+    expect(readFileSync((await file.path())!, "utf8"), "fayl — server javobi").toBe("xlsx");
 
-    // Sarlavha qatoridagi «Kuryer» ustuni indeksi bo'yicha har qatorning qiymati.
-    const rows = [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) =>
-      [...m[1].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g)].map((c) => c[1].replace(/<[^>]+>/g, "").trim()),
-    );
-    const header = rows.find((cells) => cells.includes("Kuryer"))!;
-    expect(header, "sarlavhada «Kuryer» ustuni").toBeTruthy();
-    const courierIndex = header.indexOf("Kuryer");
-    const dataRows = rows.filter((cells) => /^\d+$/.test(cells[0] ?? "") && /^\d+$/.test(cells[1] ?? ""));
-    expect(dataRows, "Excel'da barcha filtrlangan qatorlar (joriy sahifa emas)").toHaveLength(150);
-    const byId = new Map(dataRows.map((cells) => [cells[1], cells[courierIndex]]));
+    // Serverga ketgan qatorlar: barcha filtrlangan pochtalar (joriy sahifa emas), kuryer nomi bilan.
+    expect(exports).toHaveLength(1);
+    const [payload] = exports;
+    expect(payload).toMatchObject({ title: "Eski pochtalar hisoboti", capped: false, hide_courier: false });
+    expect(payload.labels).toMatchObject({ courier: "Kuryer" });
+    expect(payload.rows).toHaveLength(150);
+    const byId = new Map(payload.rows.map((row) => [row.id, row.courier]));
     expect(byId.get("90")).toBe("Buxaro Courier");
-    expect(byId.get("91")).toBe("-");
+    expect(byId.get("91"), "kuryersiz pochta — server «Biriktirilmagan» deb yozadi").toBeNull();
     // Excel: 100 talab 2 sahifa, ro'yxat filtrlari bilan; hech bir so'rov 100 dan ko'p so'ramaydi.
     const exportQueries = postQueries.filter((query) => query.limit === "100");
     expect(exportQueries.map((query) => query.page)).toEqual(["1", "2"]);

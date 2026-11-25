@@ -84,7 +84,7 @@ export interface CampaignReport {
   dlr: { supported: boolean; received: number | null; awaiting: number | null };
   sms: CampaignReportSms | null;
   cost: CampaignReportCost;
-  /** CSV — faqat superadmin (`permissions.can_export`). */
+  /** Excel — faqat superadmin (`permissions.can_export`). */
   canExport: boolean;
   /** Shu sondan katta eksport fonda tayyorlanadi (202). */
   exportSyncLimit: number;

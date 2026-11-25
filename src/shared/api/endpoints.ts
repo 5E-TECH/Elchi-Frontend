@@ -565,7 +565,7 @@ export const API_ENDPOINTS = {
     CAMPAIGN_CANCEL: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/cancel`, // POST (409 — tugagan)
     CAMPAIGN_REPORT: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/report`, // GET
     CAMPAIGN_UNDELIVERED: (id: string) => `notifications/campaigns/${encodeURIComponent(id)}/undelivered`, // GET
-    // GET CSV (faqat superadmin): ≤10 000 — fayl, kattasi — 202 { export_id }
+    // GET Excel (faqat superadmin): ≤10 000 — fayl, kattasi — 202 { export_id }
     CAMPAIGN_UNDELIVERED_EXPORT: (id: string) =>
       `notifications/campaigns/${encodeURIComponent(id)}/undelivered/export`,
     CAMPAIGN_EXPORT_BY_ID: (exportId: string) => `notifications/campaigns/exports/${encodeURIComponent(exportId)}`,
@@ -575,7 +575,7 @@ export const API_ENDPOINTS = {
     SMS_CAMPAIGN_REPORT: (id: string) => `notifications/sms/campaigns/${encodeURIComponent(id)}/report`, // GET
     SMS_CAMPAIGN_UNDELIVERED: (id: string) => `notifications/sms/campaigns/${encodeURIComponent(id)}/undelivered`,
     SMS_CAMPAIGN_UNDELIVERED_EXPORT: (id: string) =>
-      `notifications/sms/campaigns/${encodeURIComponent(id)}/undelivered/export`, // GET CSV (faqat superadmin)
+      `notifications/sms/campaigns/${encodeURIComponent(id)}/undelivered/export`, // GET Excel (faqat superadmin)
     // Web Push (current user's device) ─────────────────────────────────────
     PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
     PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device
@@ -664,6 +664,8 @@ export const API_ENDPOINTS = {
     CASHBOX_HISTORY_XLSX: "export/cashbox-history.xlsx",
     SHIFTS_XLSX: "export/shifts.xlsx",
     FINANCIAL_BALANCE_XLSX: "export/financial-balance.xlsx", // Balans → Tarix filtrlari bilan
+    CASHBOX_REPORT_XLSX: "export/cashbox-report.xlsx", // GET: shift_id | from_date, to_date (hech biri — bugun)
+    OLD_MAILS_XLSX: "export/old-mails.xlsx", // POST: { title, rows[≤10 000], labels } → .xlsx
   },
 
   // ── Printer (binary/print) — guide §10 ───────────────────────────────────

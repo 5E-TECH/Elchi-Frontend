@@ -183,9 +183,9 @@ describe("CampaignReportDialog — H7kpCman / N9", () => {
     expect(body).toHaveTextContent("***1122");
     expect(getSpy).toHaveBeenCalledWith("notifications/sms/campaigns/7/report");
     expect(getSpy).toHaveBeenCalledWith("notifications/sms/campaigns/7/undelivered", { params: { page: 1, limit: 10 } });
-    // CSV — faqat can_export (superadmin): SMS eksport manzili.
+    // Excel — faqat can_export (superadmin): SMS eksport manzili.
     getSpy.mockResolvedValueOnce({ status: 200, data: new Blob(["a"]), headers: {} } as never);
-    await user.click(within(dialog).getByRole("button", { name: "CSV yuklab olish" }));
+    await user.click(within(dialog).getByRole("button", { name: "Excel yuklab olish" }));
     await waitFor(() =>
       expect(getSpy).toHaveBeenCalledWith("notifications/sms/campaigns/7/undelivered/export", expect.anything()),
     );

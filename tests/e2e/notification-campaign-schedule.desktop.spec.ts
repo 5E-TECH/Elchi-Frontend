@@ -71,7 +71,7 @@ test.describe("Xabar yuborish — rejalashtirish va kampaniyalar tarixi", () => 
     expect(mock.campaigns[0].body).not.toHaveProperty("scheduled_at");
   });
 
-  test("tarix: tablar, bekor qilish oynasi, hisobot oynasi va CSV", async ({ page }) => {
+  test("tarix: tablar, bekor qilish oynasi, hisobot oynasi va Excel", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     const mock = await mockCampaignApi(page, { history: true });
     await page.goto("/notifications/send");
@@ -139,8 +139,8 @@ test.describe("Xabar yuborish — rejalashtirish va kampaniyalar tarixi", () => 
     await shot(page, "desktop-report");
 
     const download = page.waitForEvent("download");
-    await report.getByRole("button", { name: "CSV yuklab olish" }).click();
-    expect((await download).suggestedFilename()).toBe("kampaniya-notification-14-yetkazilmaganlar.csv");
+    await report.getByRole("button", { name: "Excel yuklab olish" }).click();
+    expect((await download).suggestedFilename()).toBe("kampaniya-notification-14-yetkazilmaganlar.xlsx");
     expect(mock.exports).toBe(1);
     expect(mock.leaked).toEqual([]);
   });

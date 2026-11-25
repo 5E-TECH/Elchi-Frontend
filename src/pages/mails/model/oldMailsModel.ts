@@ -185,11 +185,14 @@ export const effectiveOldMailsStatus = (
 /** Backend bitta sahifada beradigan eng ko'p qator (`GET /post`, `post/courier/old-posts`, kA70Rban). */
 export const OLD_MAILS_PAGE_MAX = 100;
 
+/** Excel'dagi eng ko'p qator — `POST export/old-mails.xlsx` chegarasi. */
+export const OLD_MAILS_EXPORT_MAX_ROWS = 10_000;
+
 /**
- * Excel uchun eng ko'p sahifa (`fetchAllOldMailPages`) — 200 × 100 = 20 000 qator. Undan ko'p bo'lsa fayl
- * baribir beriladi, lekin «Fayl to'liq emas» ogohlantirishi bilan (`capped: true`).
+ * Excel uchun eng ko'p sahifa (`fetchAllOldMailPages`). Undan ko'p bo'lsa fayl baribir beriladi, lekin «Fayl to'liq
+ * emas» ogohlantirishi bilan (`capped: true`).
  */
-export const OLD_MAILS_EXPORT_MAX_PAGES = 200;
+export const OLD_MAILS_EXPORT_MAX_PAGES = OLD_MAILS_EXPORT_MAX_ROWS / OLD_MAILS_PAGE_MAX;
 
 /**
  * URL holati → backend pochta holati (`sent | received | canceled | canceled_received`). Eski havolalar

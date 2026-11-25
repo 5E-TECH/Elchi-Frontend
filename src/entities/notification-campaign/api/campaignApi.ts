@@ -552,7 +552,7 @@ const fileNameFrom = (headers: unknown) => {
   return match ? match[1] : null;
 };
 
-/** CSV (faqat superadmin): ≤10 000 — fayl (200), kattasi — fon vazifasi (202 `{ export_id }`). */
+/** Excel (faqat superadmin): ≤10 000 — fayl (200), kattasi — fon vazifasi (202 `{ export_id }`). */
 export type CampaignExportResult =
   | { kind: "file"; blob: Blob; fileName: string | null }
   | { kind: "job"; exportId: string };
@@ -561,7 +561,7 @@ export const exportCampaignUndelivered = async (
   id: string,
   kind: CampaignReportKind = "notification",
 ): Promise<CampaignExportResult> => {
-  // CSV 10 000 qatorgacha sinxron quriladi (gateway 60 s kutadi) — umumiy 20 s emas, eksport muddati.
+  // Excel 10 000 qatorgacha sinxron quriladi (gateway 60 s kutadi) — umumiy 20 s emas, eksport muddati.
   const response = await api.get(REPORT_URLS[kind].export(id), {
     responseType: "blob",
     timeout: LONG_REQUEST_TIMEOUT_MS,
