@@ -238,6 +238,8 @@
   "metaSoldAt": "Sotilgan vaqt",
   "metaMarket": "Market",
   "metaBranch": "Filial",
+  "metaBranchManager": "Menejer",
+  "metaBranchManagerNone": "Biriktirilmagan",
   "metaPost": "Pochta",
   "metaCourier": "Kuryer",
   "metaCourierNone": "Hali biriktirilmagan",

@@ -7,13 +7,21 @@
  * hech narsa taxmin qilinmaydi: yo'q / buzuq qiymat `null` bo'lib qoladi va UI
  * "—" ko'rsatadi (0 emas).
  *
- * ⚠️ Backend detal javobi kuryer va "hozir kimda" filialining FAQAT id'sini
- * beradi (nomi yo'q) — nomlar alohida so'raladi (`useOrderMetaLookups`).
+ * 0Rn5U6AD (ega 2026-11-20): `GET orders/:id` kuryer kontaktini (`courier`) va xodimlarga buyurtma filiali telefoni
+ * bilan menejerini (`branch.phone_number`, `branch.manager`) beradi. "Hozir kimda" filialining esa faqat id'si bor —
+ * nomi (va eski javobda kuryer) alohida so'raladi (`useOrderMetaLookups`).
  */
 
 import { orderNumberOf } from "../../../entities/order/model/orderNumber";
 
 export type HolderType = "HQ" | "BRANCH" | "COURIER" | "MARKET";
+
+/** Aloqa: ism va telefon (bo'sh bo'lishi mumkin). */
+export interface OrderMetaContact {
+  id: string | null;
+  name: string | null;
+  phone: string | null;
+}
 
 export interface OrderMetaData {
   id: string;
@@ -22,8 +30,13 @@ export interface OrderMetaData {
   /** Sotilgan vaqt (backend epoch ms satr yoki ISO beradi). */
   soldAt: Date | null;
   market: { id: string | null; name: string | null; phone: string | null } | null;
-  /** Buyurtmaning uy (egasi) filiali — javobda nomi bilan keladi. */
-  branch: { id: string | null; name: string | null } | null;
+  /**
+   * Buyurtma filiali. `phone` va `manager` — faqat backend yuborgan rollarda (0Rn5U6AD); `manager`: `undefined` —
+   * javobda yo'q (rolga berilmaydi / eski backend), `null` — filialda faol menejer yo'q.
+   */
+  branch: (OrderMetaContact & { manager?: OrderMetaContact | null }) | null;
+  /** Kuryer kontakti (`courier`) — faqat biriktirilgan kuryerniki; javobda yo'q — `null`. */
+  courier: OrderMetaContact | null;
   postId: string | null;
   courierId: string | null;
   holderType: HolderType | null;
@@ -72,6 +85,11 @@ const date = (value: unknown): Date | null => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const contact = (value: unknown): OrderMetaContact | null => {
+  const row = record(value);
+  return row ? { id: id(row.id), name: text(row.name), phone: text(row.phone_number) } : null;
+};
+
 const HOLDER_TYPES: readonly HolderType[] = ["HQ", "BRANCH", "COURIER", "MARKET"];
 
 export const readOrderMeta = (raw: unknown): OrderMetaData | null => {
@@ -81,6 +99,9 @@ export const readOrderMeta = (raw: unknown): OrderMetaData | null => {
 
   const market = record(order.market);
   const branch = record(order.branch);
+  const branchContact = contact(branch);
+  const courier = contact(order.courier);
+  const courierId = id(order.courier_id);
   const holder = text(order.holder_type)?.toUpperCase() ?? null;
   const operatorText = text(order.operator);
   const externalOperator = operatorText?.startsWith("external_") ?? false;
@@ -93,9 +114,13 @@ export const readOrderMeta = (raw: unknown): OrderMetaData | null => {
     market: market
       ? { id: id(market.id), name: text(market.name), phone: text(market.phone_number) }
       : null,
-    branch: branch ? { id: id(branch.id), name: text(branch.name) } : null,
+    branch:
+      branch && branchContact
+        ? { ...branchContact, ...("manager" in branch ? { manager: contact(branch.manager) } : {}) }
+        : null,
     postId: id(order.post_id),
-    courierId: id(order.courier_id),
+    courierId,
+    courier: courier && courierId !== null && courier.id === courierId ? courier : null,
     holderType: holder && (HOLDER_TYPES as readonly string[]).includes(holder) ? (holder as HolderType) : null,
     holderBranchId: id(order.holder_branch_id),
     holderCourierId: id(order.holder_courier_id),
@@ -156,6 +181,13 @@ export const canSeeOrderOperator = (role: string | null | undefined) =>
   ["superadmin", "admin", "registrator", "manager", "branch", "market", "market_operator"].includes(
     (role ?? "").toLowerCase(),
   );
+
+/**
+ * 0Rn5U6AD: filial va kuryer kontaktini ko'radigan xodimlar. Market va boshqa rollarda kuryer kontakti javobda bo'lsa
+ * ham chizilmaydi (avvalgidek).
+ */
+export const canSeeOrderContacts = (role: string | null | undefined) =>
+  ["superadmin", "admin", "registrator", "manager", "branch"].includes((role ?? "").toLowerCase());
 
 /** Kuryer kontaktini (`GET users/:id`) so'ray oladigan rollar — backend ruxsati bilan bir xil. */
 export const canLookupUsers = (role: string | null | undefined) =>

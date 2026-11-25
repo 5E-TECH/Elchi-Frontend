@@ -32,6 +32,7 @@ import {
 import {
   canLookupBranches,
   canLookupUsers,
+  canSeeOrderContacts,
   canSeeOrderOperator,
   readOrderMeta,
   telHref,
@@ -122,6 +123,10 @@ const PhoneLink = ({ phone }: { phone: string }) => (
   </a>
 );
 
+/** Qator sarlavhasi (`title`): «nom · telefon» — nom kesilganda to'liq matn. */
+const contactTitle = (value: { name: string | null; phone: string | null } | null | undefined) =>
+  [value?.name, value?.phone ? formatPhone(value.phone) || value.phone : null].filter(Boolean).join(" · ") || undefined;
+
 const TARIFF_LABEL: Record<TariffField, string> = {
   marketTariff: "metaTariffMarket",
   courierTariff: "metaTariffCourier",
@@ -137,8 +142,12 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, operat
 
   const selfId = self?.id !== null && self?.id !== undefined ? String(self.id) : null;
   const isCourier = (role ?? "").toLowerCase() === "courier";
+  const seesContacts = canSeeOrderContacts(role);
+  // Javobdagi kuryer kontakti (0Rn5U6AD) — alohida `GET users/:id` kerak emas (registratorga u yopiq ham).
+  const serverCourier = seesContacts && meta?.courier?.name ? meta.courier : null;
   const userIds = [meta?.courierId, meta?.holderType === "COURIER" ? meta.holderCourierId : null].filter(
-    (value): value is string => Boolean(value) && value !== (isCourier ? selfId : null),
+    (value): value is string =>
+      Boolean(value) && value !== (isCourier ? selfId : null) && value !== serverCourier?.id,
   );
   const holderBranchId =
     meta?.holderType === "BRANCH" && meta.holderBranchId && meta.holderBranchId !== meta.branch?.id
@@ -158,6 +167,7 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, operat
     if (isCourier && selfId === courierId) {
       return { name: self?.name ?? null, phone: self?.phone_number ?? null };
     }
+    if (serverCourier?.id === courierId) return { name: serverCourier.name, phone: serverCourier.phone };
     return userById.get(courierId) ?? null;
   };
 
@@ -287,14 +297,35 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, operat
           </Row>
         ) : null}
 
-        {meta.branch?.name ? (
+        {meta.branch?.name || seesContacts ? (
           <Row
             icon={<Building size={15} aria-hidden="true" />}
             label={t("metaBranch")}
             testId="meta-branch"
-            title={meta.branch.name}
+            title={contactTitle(meta.branch)}
           >
-            <Fit>{meta.branch.name}</Fit>
+            <Fit>{meta.branch?.name ?? "—"}</Fit>
+            {seesContacts && meta.branch?.phone ? <PhoneLink phone={meta.branch.phone} /> : null}
+          </Row>
+        ) : null}
+
+        {seesContacts && meta.branch?.manager !== undefined ? (
+          <Row
+            icon={<UserRound size={15} aria-hidden="true" />}
+            label={t("metaBranchManager")}
+            testId="meta-branch-manager"
+            title={contactTitle(meta.branch?.manager ?? null)}
+          >
+            {meta.branch?.manager ? (
+              <>
+                <Fit>{meta.branch.manager.name ?? "—"}</Fit>
+                {meta.branch.manager.phone ? <PhoneLink phone={meta.branch.manager.phone} /> : null}
+              </>
+            ) : (
+              <Fit>
+                <span className="font-normal text-text-muted">{t("metaBranchManagerNone")}</span>
+              </Fit>
+            )}
           </Row>
         ) : null}
 
