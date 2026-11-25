@@ -17,8 +17,9 @@ import {
 
 describe("orderPricing — standart narx (CS-B)", () => {
   it("narxni superadmin, admin, market, menejer va registrator ko'radi (N3 — backend 3b23c75), qolganlar yo'q", () => {
-    expect(["superadmin", "admin", "market", "manager", "registrator"].every(canSeeMarketTariffs)).toBe(true);
-    expect(["courier", "market_operator", "logist", null, undefined].some(canSeeMarketTariffs)).toBe(false);
+    expect(["superadmin", "admin", "market", "registrator"].every(canSeeMarketTariffs)).toBe(true);
+    // D5NxxpJW: menejer yaratishda ham market tarifini ko'rmaydi.
+    expect(["manager", "courier", "market_operator", "logist", null, undefined].some(canSeeMarketTariffs)).toBe(false);
   });
 
   it("tarif: musbat butun so'm; `null`, bo'sh, 0, manfiy va noto'g'ri — belgilanmagan", () => {

@@ -119,17 +119,23 @@ export type TariffField = keyof OrderMetaData["tariffs"];
 
 /**
  * TARIF — ROL bo'yicha (maxfiylik):
- *   superadmin / admin / manager → hammasi (tariflar + ulushlar);
+ *   superadmin / admin           → hammasi (tariflar + ulushlar);
+ *   menejer (D5NxxpJW, ega 2026-11-25) → filial ulushi; buyurtma kuryerga topshirilgan bo'lsa — kuryer tarifi va
+ *                                  ulushi ham. Market tarifi YO'Q (backend ham yubormaydi);
  *   market                       → faqat o'z to'lovi (market tarifi);
  *   kuryer                       → faqat o'z tarifi;
  *   qolganlar (registrator, operator...) → hech narsa.
  */
-export const visibleTariffs = (role: string | null | undefined): TariffField[] => {
+export const visibleTariffs = (
+  role: string | null | undefined,
+  { hasCourier = true }: { hasCourier?: boolean } = {},
+): TariffField[] => {
   switch ((role ?? "").toLowerCase()) {
     case "superadmin":
     case "admin":
-    case "manager":
       return ["marketTariff", "courierTariff", "courierShare", "branchShare"];
+    case "manager":
+      return hasCourier ? ["branchShare", "courierTariff", "courierShare"] : ["branchShare"];
     // MO-3: market operatori — backend proyeksiyasi market bilan bir xil (`order-role-projection`: MARKET /
     // MARKET_OPERATOR — kuryer tarifi/ulushi va filial ulushisiz).
     case "market":

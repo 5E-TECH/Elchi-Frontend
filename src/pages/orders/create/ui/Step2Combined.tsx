@@ -249,7 +249,7 @@ const Step2Combined = () => {
       : null;
   const tariffState = useMarketTariffs(control);
   const tariffs = tariffState.status === "ready" ? tariffState.tariffs : null;
-  const defaultDeliveryType = tariffs?.defaultType ?? null;
+  const defaultDeliveryType = tariffState.defaultType;
 
   // Sukut turi — market kartasidagi `default_tariff` (CS-B): tariflar shu market uchun kelgach, tur qo'lda
   // tanlanmagan bo'lsa moslanadi. Qo'lda tanlangani ustidan yozilmaydi (market almashsa ham); yaratishdan keyingi

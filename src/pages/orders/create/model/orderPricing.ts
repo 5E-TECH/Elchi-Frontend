@@ -7,15 +7,16 @@ import { ORDER_AMOUNT_MAX_DIGITS } from "../../lib/orderAmountInput";
  *
  * Narx dvigateli (DAqXPeSy, vazn va hajm) hali yo'q — hozircha faqat market kartasidagi STANDART narx
  * (`tariff_home` / `tariff_center`, `int`, so'm) va sukut turi (`default_tariff`: backend `Where_deliver` —
- * `center` | `address`). Tariflarni faqat superadmin, admin (`GET markets` to'liq qatori yoki `GET users/:id`) va
- * market (`GET auth/my-profile`) oladi; menejer va registratorga backend bermaydi (N3) — ularda narx chizilmaydi.
+ * `center` | `address`). Tariflarni superadmin, admin (`GET markets` to'liq qatori yoki `GET users/:id`), market
+ * (`GET auth/my-profile`) va registrator (`GET markets`, N3) oladi. Menejerga narx berilmaydi (D5NxxpJW) — unda narx
+ * chizilmaydi, faqat sukut turi (`default_tariff`) ishlatiladi.
  */
 
 /** Yetkazish narxlari qaysi rollarga ko'rinadi (backend shu rollarga tariflarni beradi). */
 export const canSeeMarketTariffs = (role: string | null | undefined) =>
-  // Menejer va registrator — N3 (yiFTzkzH, backend 3b23c75): `GET /markets` ularga ham `tariff_home`,
-  // `tariff_center`, `default_tariff` beradi.
-  role === "superadmin" || role === "admin" || role === "market" || role === "manager" || role === "registrator";
+  // Registrator — N3 (yiFTzkzH): `GET /markets` unga ham `tariff_home`, `tariff_center`, `default_tariff` beradi.
+  // Menejer — yo'q (D5NxxpJW, ega 2026-11-25): yaratishda ham market tarifini ko'rmaydi.
+  role === "superadmin" || role === "admin" || role === "market" || role === "registrator";
 
 export type MarketTariffs = {
   /** «Uygacha» standart narxi; `null` — belgilanmagan. */

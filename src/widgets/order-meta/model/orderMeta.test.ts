@@ -75,10 +75,17 @@ describe("readOrderMeta", () => {
 });
 
 describe("tarif ko'rinishi — ROL bo'yicha", () => {
-  it("superadmin / admin / manager — tariflar va ulushlar", () => {
-    for (const role of ["superadmin", "admin", "manager"]) {
-      expect(visibleTariffs(role), role).toEqual(["marketTariff", "courierTariff", "courierShare", "branchShare"]);
+  it("superadmin / admin — tariflar va ulushlar (kuryersiz ham)", () => {
+    for (const role of ["superadmin", "admin"]) {
+      const all = ["marketTariff", "courierTariff", "courierShare", "branchShare"];
+      expect(visibleTariffs(role), role).toEqual(all);
+      expect(visibleTariffs(role, { hasCourier: false }), role).toEqual(all);
     }
+  });
+
+  it("⭐ D5NxxpJW: menejer — filial ulushi, kuryerga topshirilgan bo'lsa kuryer tarifi va ulushi; market tarifi yo'q", () => {
+    expect(visibleTariffs("manager")).toEqual(["branchShare", "courierTariff", "courierShare"]);
+    expect(visibleTariffs("manager", { hasCourier: false })).toEqual(["branchShare"]);
   });
 
   it("market — faqat market tarifi; kuryer — faqat kuryer tarifi", () => {

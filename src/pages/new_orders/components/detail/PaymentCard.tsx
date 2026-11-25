@@ -9,14 +9,29 @@ import type { OrderDetail } from "./orderDetailModel";
 /**
  * «To'lov»: Jami (16 · 700), To'lanishi kerak (600), To'langan (muted 600) — qatorlar orasida chiziq. Qo'shimcha
  * xarajat so'rovi bo'lsa (SPEC v2) — oxirida «Qo'shimcha xarajat» qatori (summa, holat, tovarlar).
+ *
+ * `hideMarketMoney` (D5NxxpJW — menejer, filial, registrator): faqat «Jami». «To'lanishi kerak» = jami − market
+ * tarifi, ya'ni market tarifini ochadi; backend ham bu maydonlarni yubormaydi.
  */
-export const PaymentCard = ({ order, className }: { order: OrderDetail; className?: string }) => {
+export const PaymentCard = ({
+  order,
+  hideMarketMoney = false,
+  className,
+}: {
+  order: OrderDetail;
+  hideMarketMoney?: boolean;
+  className?: string;
+}) => {
   const { t, i18n } = useTranslation("newOrders");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const rows = [
     { key: "total", label: t("total"), value: order.total_price, valueClass: "text-base font-bold text-text" },
-    { key: "toBePaid", label: t("toBePaid"), value: order.to_be_paid, valueClass: "font-semibold text-text" },
-    { key: "paid", label: t("paid"), value: order.paid_amount, valueClass: "font-semibold text-text-muted" },
+    ...(hideMarketMoney
+      ? []
+      : [
+          { key: "toBePaid", label: t("toBePaid"), value: order.to_be_paid, valueClass: "font-semibold text-text" },
+          { key: "paid", label: t("paid"), value: order.paid_amount, valueClass: "font-semibold text-text-muted" },
+        ]),
   ];
 
   return (
