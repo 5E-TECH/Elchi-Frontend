@@ -417,7 +417,7 @@ describe("so'rov kalitlari fabrikalari ↔ invalidatsiya (SZTZ4HEU 837be6)", () 
     const site = (file: string, key: unknown[]) =>
       invalidatedKeys.filter((entry) => entry.at.startsWith(`${file}:`) && JSON.stringify(entry.key) === JSON.stringify(key));
     // «Umumiy holat → Yangilash» (`useCallback` ichida, yozuv yo'q) — mutatsiya emas.
-    const refresh = site("src/pages/integrations/ConnectionsPage.tsx", integrationKeys.all as unknown as unknown[]);
+    const refresh = site("src/pages/integrations/ConnectionPage.tsx", integrationKeys.all as unknown as unknown[]);
     expect(refresh.length).toBeGreaterThan(0);
     expect(refresh.every((entry) => !entry.mutation)).toBe(true);
     // `invalidateUserLists` — `onSuccess: invalidateUserLists` orqali bog'langan yordamchi.

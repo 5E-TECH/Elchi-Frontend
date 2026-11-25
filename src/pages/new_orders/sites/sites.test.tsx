@@ -58,6 +58,20 @@ describe("«Tashqi saytlar» — sayt tanlash", () => {
       { route: "/new-orders/sites", preloadedState: adminState },
     );
 
+  it("⭐ «Olingan buyurtmalar» — buyurtmalarning o'zidan (`imported_orders`), chiquvchi sinxron sonidan EMAS", async () => {
+    apiGetMock.mockResolvedValue({
+      data: {
+        data: {
+          items: [{ ...adosh, total_synced_orders: 4, imported_orders: { total: 49, today: 1, last_at: null } }],
+          markets: [],
+        },
+      },
+    });
+    renderList();
+    expect((await screen.findAllByText(/49 ta/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/^4 ta/)).toBeNull();
+  });
+
   it("⭐ faol, marketga bog'langan ulanishlar — market nomi bilan; to'lov tizimi va marketsizi chiqmaydi", async () => {
     apiGetMock.mockImplementation((url: string) => {
       if (url === "integrations") {
@@ -193,6 +207,85 @@ describe("«Tashqi saytlar» — QR skan va qabul", () => {
     expect(postCalls("integrations/adosh/search-by-qr")[0][1]).toEqual({ qr_code: "ADQ-501", endpoint: "/qrorder/find" });
     expect(postCalls("orders/external/receive")).toHaveLength(0);
     expect(acceptButton()).toBeEnabled();
+  });
+
+  /** XATO MA'LUMOT SHU YERDA TUZATILADI (ega 2026-11-25). */
+  it("⭐ telefon xato — qator darhol belgilanadi, qabulga ketmaydi; tuzatilgach to'g'ri raqam bilan qabul qilinadi", async () => {
+    siteOrders = { "ADQ-501": siteOrder(501, { phone: "+99890123456" }), "ADQ-502": siteOrder(502) };
+    importResult = { created: [{ id: "9001", external_id: "502" }], skipped: [] };
+    receiveResult = { received: 1, unmatched: [] };
+    renderScan();
+    await screen.findByRole("heading", { level: 1, name: "Adosh" });
+    scan("ADQ-501");
+    expect((await screen.findAllByText("Mijoz telefoni noto'g'ri")).length).toBeGreaterThan(0);
+    expect(acceptButton()).toBeDisabled();
+
+    // Muammosiz qator bilan birga: faqat o'sha qabul qilinadi, xatosi ro'yxatda qoladi.
+    scan("ADQ-502");
+    await screen.findAllByText("Dilnoza Karimova");
+    expect(acceptButton()).toBeEnabled();
+    fireEvent.click(acceptButton());
+    fireEvent.click(await screen.findByRole("button", { name: "Qabul qilish" }));
+    await waitFor(() => expect(postCalls("orders/external/receive")).toHaveLength(1));
+    expect(postCalls("orders/external/receive")[0][1]).toEqual({ integration_id: "7", orders: [siteOrder(502)] });
+    await waitFor(() => expect(screen.queryByText("Dilnoza Karimova")).toBeNull());
+    expect(screen.getAllByText("Rustam Jo'rayev").length).toBeGreaterThan(0);
+
+    // Tuzatish — serverga hech narsa ketmaydi, qator tozalanadi.
+    fireEvent.click(screen.getAllByRole("button", { name: "Rustam Jo'rayev ma'lumotini tuzatish" })[0]);
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Saytdan kelgan: +99890123456")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    expect(await within(dialog).findByText("Telefon raqamini to'liq kiriting")).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText(/Telefon/), { target: { value: "90 123 45 67" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.queryByText("Mijoz telefoni noto'g'ri")).toBeNull();
+    expect(postCalls("orders/external/receive")).toHaveLength(1);
+
+    importResult = { created: [{ id: "9002", external_id: "501" }], skipped: [] };
+    fireEvent.click(acceptButton());
+    fireEvent.click(await screen.findByRole("button", { name: "Qabul qilish" }));
+    await waitFor(() => expect(postCalls("orders/external/receive")).toHaveLength(2));
+    expect(postCalls("orders/external/receive")[1][1]).toEqual({
+      integration_id: "7",
+      orders: [siteOrder(501, { phone: "+998901234567" })],
+    });
+  });
+
+  it("⭐ tuman kodi topilmasa — qo'lda tanlanadi; topilgani qabuldan oldin nomi bilan ko'rinadi", async () => {
+    const base = apiGetMock.getMockImplementation()!;
+    apiGetMock.mockImplementation((url: string) =>
+      url === "district"
+        ? Promise.resolve({
+            data: {
+              data: [
+                { id: "30", name: "Jalaquduq", sato_code: "1703211", region: { id: "3", name: "Andijon" } },
+                { id: "5", name: "Olmazor", sato_code: "1726280", region: { id: "1", name: "Toshkent shahri" } },
+              ],
+            },
+          })
+        : base(url),
+    );
+    siteOrders = {
+      "ADQ-501": siteOrder(501, { district: 1703211 }),
+      "ADQ-502": siteOrder(502, { district: 1799999 }),
+    };
+    renderScan();
+    await screen.findByRole("heading", { level: 1, name: "Adosh" });
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("district"));
+    scan("ADQ-501");
+    expect((await screen.findAllByText("Jalaquduq, Andijon")).length).toBeGreaterThan(0);
+    scan("ADQ-502");
+    expect((await screen.findAllByText("Tuman aniqlanmadi")).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Dilnoza Karimova ma'lumotini tuzatish" })[0]);
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText("Saytdagi tuman kodi (1799999) topilmadi — qo'lda tanlang"),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    expect(await within(dialog).findByText("Viloyatni tanlang")).toBeInTheDocument();
   });
 
   it("takror skan — saytga qayta so'ralmaydi, ogohlantirish; topilmagan QR — xato", async () => {

@@ -153,6 +153,7 @@ const IntegrationsPage = lazy(() => import("../../pages/integrations"));
 const ConnectionsPage = lazy(
   () => import("../../pages/integrations/ConnectionsPage"),
 );
+const ConnectionPage = lazy(() => import("../../pages/integrations/ConnectionPage"));
 const IntegrationsCatalogPage = lazy(
   () => import("../../pages/integrations/CatalogPage"),
 );
@@ -507,14 +508,20 @@ const AppRouter = () => {
                   ),
                 },
                 {
-                  /**
-                   * KONSOL — bitta ulanish bilan ishlash. Chapda ro'yxat
-                   * bo'lgani uchun manzaraga qaytmasdan sakrash mumkin.
-                   */
+                  /** KONSOL — ulanishlar ro'yxati; qator bosilsa ulanishning o'z sahifasi ochiladi. */
                   path: "connections",
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
                       <ConnectionsPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /** BITTA ULANISH — o'z sahifasi (`integration-3`, `partner-7`; ega qarori 2026-11-25). */
+                  path: "connections/:connectionId",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ConnectionPage />
                     </ProtectedRoute>
                   ),
                 },

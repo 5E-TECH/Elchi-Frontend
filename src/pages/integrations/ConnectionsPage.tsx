@@ -1,24 +1,21 @@
 // dizayn-v2: superadmin-integrations-partners-console, superadmin-integrations-external-console, superadmin-integrations-marketplace-console, superadmin-integrations-carrier-console, admin-integrations-partners, admin-integrations-external, admin-integrations-marketplace, admin-integrations-carrier-console
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
 import { Activity, ChevronRight, CircleCheck, CircleX, Clock, Plug, Plus, RefreshCw } from "lucide-react";
 import { canManageCarrierAccounts } from "../../app/lib/access";
-import { CATEGORY_LABEL, integrationKeys } from "../../entities/integrations";
+import { CATEGORY_LABEL, type Integration } from "../../entities/integrations";
 import { useCarrierAccounts } from "../../entities/integrations/carriers";
 import {
   connectionHealth,
   metricsByUid,
-  metricsKey,
   useIntegrationMetrics,
   type ConnectionHealth,
   type ConnectionMetrics,
   type IntegrationMetrics,
 } from "../../entities/integrations/metrics";
-import { settlementKey } from "../../entities/integrations/settlement";
-import { partnersKey } from "../../entities/partners";
+import { importedOrdersOf } from "../../entities/integrations/siteSource";
 import { cx } from "../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
 import { MINUS_SIGN, formatNumberLocalized, formatPercentLocalized } from "../../shared/lib/formatMoney";
@@ -28,28 +25,27 @@ import {
   Card,
   DataTable,
   EmptyState,
-  IconButton,
   PageHeader,
-  Pressable,
   SkeletonTable,
   StatCard,
   StatusBadge,
   Tabs,
   TextInput,
-  getPanelId,
   getTabId,
   type DataTableColumn,
   type TabItem,
-  type Tone,
 } from "../../shared/ui/primitives";
-import { fieldsFor, isConfigured, useConnections, type Connection } from "./useConnections";
-import ConnectionOverview from "./panels/ConnectionOverview";
-import ConnectionSettings from "./panels/ConnectionSettings";
-import ConnectionSecurity from "./panels/ConnectionSecurity";
-import ConnectionLog from "./panels/ConnectionLog";
-import ConnectionSettlement from "./panels/ConnectionSettlement";
-import ConnectionShipments from "./panels/ConnectionShipments";
-import ConnectionControl from "./panels/ConnectionControl";
+import {
+  HEALTH_KEY,
+  HEALTH_TONE,
+  connectionPath,
+  legacyConnectionPath,
+  matchScope,
+  scopePath,
+  successOf,
+  type Scope,
+} from "./connectionMeta";
+import { isConfigured, useConnections, type Connection } from "./useConnections";
 import NewPartnerModal from "./NewPartnerModal";
 import { CarrierConsole } from "./carrier/CarrierConsole";
 import { InlineAlert, InlineLegend, SegBar } from "./ui";
@@ -66,26 +62,16 @@ import { InlineAlert, InlineLegend, SegBar } from "./ui";
  *   «Barcha ulanishlar · oxirgi 24 soat» — 4 KPI (D1: «kechaga nisbatan» = 48 soat − 24 soat)
  *   Karta: scope tablari (Hamkorlar · Tashqi tizimlar · Marketplace, sonlari bilan) → izoh → qidiruv →
  *          ulanishlar jadvali (telefonda kartalar) → legenda
- *   Karta: tanlangan ulanish — sarlavha + 7 tab (Umumiy holat … Xavfsizlik) → panel
  *
- * ⚠️ Tanlangan ulanish + tab URL'da (`?scope=partner&c=partner:7&t=settings`) — havola yuborish va
- * sahifani yangilash tanlovni yo'qotmaydi (`tabUrl.test.tsx`).
+ * Qator bosilsa ulanishning O'Z SAHIFASI ochiladi (`ConnectionPage`, ega qarori 2026-11-25). Ilgari tafsilot shu
+ * sahifaning pastida edi (`?c=integration:3&t=log`) — eski havola yangi manzilga yo'naltiriladi.
  * Sparklinelar va «Chiziqlar — oxirgi 7 kun» — «Taklif» (kunlik seriya API'da yo'q), chizilmaydi.
  */
-
-type Scope = "partner" | "external" | "marketplace" | "carrier";
 
 const BASE_SCOPES: Scope[] = ["partner", "external", "marketplace"];
 /** Scope tablari `id` prefiksi — ikki joyda chizilgan tab qatorida bir xil (fokusni qaytarish uchun). */
 const SCOPE_TABS_ID = "integrations-scope";
 const ALL_SCOPES: Scope[] = [...BASE_SCOPES, "carrier"];
-
-const matchScope = (c: Connection, scope: Scope): boolean => {
-  if (scope === "carrier") return false;
-  if (scope === "partner") return c.kind === "partner";
-  if (scope === "marketplace") return c.kind === "integration" && c.category === "marketplace";
-  return c.kind === "integration" && c.category !== "marketplace";
-};
 
 /** Har scope uchun i18n kalitlari — tab, izoh, bo'sh holat, «Yangi» yorlig'i, ro'yxat nomi. */
 const SCOPE_KEY: Record<Scope, { tab: string; subtitle: string; empty: string; emptyHint: string; neu: string; list: string }> = {
@@ -123,33 +109,6 @@ const SCOPE_KEY: Record<Scope, { tab: string; subtitle: string; empty: string; e
   },
 };
 
-const HEALTH_TONE: Record<ConnectionHealth, Tone> = { ok: "success", attention: "warning", off: "neutral" };
-const HEALTH_KEY: Record<ConnectionHealth, string> = { ok: "healthOk", attention: "healthAttention", off: "healthOff" };
-/** Rol — birlik shaklida (maket: «Buyurtma manbasi», «Yetkazuvchi»). */
-const ROLE_ONE_KEY: Record<Connection["role"], string> = {
-  carrier: "console.roleOneCarrier",
-  source: "console.roleOneSource",
-  payment: "console.roleOnePayment",
-  mirror: "console.roleOneMirror",
-};
-
-/** Panel tablari — tartib maketdagidek. */
-const PANEL_TABS = [
-  { key: "overview", labelKey: "tabOverview" },
-  { key: "settings", labelKey: "tabSettings" },
-  { key: "shipments", labelKey: "tabShipments" },
-  { key: "log", labelKey: "tabEvents" },
-  { key: "settlement", labelKey: "tabSettlement" },
-  { key: "control", labelKey: "tabControl" },
-  { key: "security", labelKey: "tabSecurity" },
-] as const;
-
-type PanelKey = (typeof PANEL_TABS)[number]["key"];
-
-/** Yakunlangan hodisalar ulushi (Σ yetkazildi / (Σ yetkazildi + Σ yetmadi)), yakunlangan yo'q — `null`. */
-const successOf = (delivered: number, failed: number): number | null =>
-  delivered + failed > 0 ? (delivered / (delivered + failed)) * 100 : null;
-
 const sumOf = (data: IntegrationMetrics | undefined, key: "delivered" | "failed" | "events") =>
   (data?.connections ?? []).reduce((acc, c) => acc + (Number(c[key]) || 0), 0);
 
@@ -170,6 +129,7 @@ const ConnectionsPage = () => {
   /** 4-tab soni; ro'yxat `CarrierConsole` bilan bitta kesh (`queryKeys.carrierAccounts`). */
   const carriersQuery = useCarrierAccounts({ enabled: canManageCarriers, silentError: true });
 
+  const legacyPath = legacyConnectionPath(searchParams);
   const scopeParam = searchParams.get("scope");
   const scope: Scope = SCOPES.includes(scopeParam as Scope) ? (scopeParam as Scope) : "partner";
   const meta = SCOPE_KEY[scope];
@@ -186,54 +146,7 @@ const ConnectionsPage = () => {
     [connections, carrierCount],
   );
 
-  const tab = searchParams.get("t") ?? "overview";
-
-  const setTab = useCallback(
-    (next: string) => {
-      setSearchParams(
-        (prev) => {
-          const params = new URLSearchParams(prev);
-          params.set("t", next);
-          return params;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
-
   const byUid = useMemo(() => metricsByUid(metricsQuery.data), [metricsQuery.data]);
-  const byUid48 = useMemo(() => metricsByUid(prevQuery.data), [prevQuery.data]);
-
-  const activeUid = searchParams.get("c") ?? "";
-  const active = useMemo(() => scoped.find((c) => c.uid === activeUid) ?? scoped[0], [scoped, activeUid]);
-
-  /** Ro'yxat yuklangach URL'ni scope'dagi birinchi ulanish bilan to'ldiramiz. */
-  useEffect(() => {
-    if (active && activeUid !== active.uid) {
-      setSearchParams(
-        (prev) => {
-          const params = new URLSearchParams(prev);
-          params.set("c", active.uid);
-          return params;
-        },
-        { replace: true },
-      );
-    }
-  }, [activeUid, active, setSearchParams]);
-
-  /** Boshqa ulanishga o'tish: ikki parametr BITTA yangilanishda (tab birinchisiga qaytadi). */
-  const select = (uid: string) => {
-    setSearchParams(
-      (prev) => {
-        const params = new URLSearchParams(prev);
-        params.set("c", uid);
-        params.set("t", "overview");
-        return params;
-      },
-      { replace: true },
-    );
-  };
 
   /**
    * Scope tab qatori ikki joyda chiziladi (carrier — `CarrierConsole` kartasida, qolganlari — shu sahifa kartasida):
@@ -244,7 +157,7 @@ const ConnectionsPage = () => {
   const onScope = (next: Scope) => {
     setQuery("");
     refocusScopeTab.current = true;
-    navigate(`/integrations/connections?scope=${next}`);
+    navigate(scopePath(next));
   };
   useLayoutEffect(() => {
     if (!refocusScopeTab.current) return;
@@ -275,82 +188,8 @@ const ConnectionsPage = () => {
     return scoped.filter((c) => c.name.toLowerCase().includes(q) || c.subtitle.toLowerCase().includes(q));
   }, [scoped, query]);
 
-  const fields = useMemo(() => (active ? fieldsFor(active) : []), [active]);
-
-  const hiddenTabs = useMemo(() => {
-    if (!active) return new Set<string>();
-    const hide = new Set<string>();
-    if (active.role === "payment" || active.role === "mirror") {
-      hide.add("shipments");
-      hide.add("settlement");
-    }
-    if (active.role === "source" && active.kind === "integration") {
-      hide.add("settlement");
-    }
-    return hide;
-  }, [active]);
-
-  /**
-   * «Yangilash» (Umumiy holat) — TanStack Query keshini INVALIDATSIYA qiladi: ulanishlar, metrika va
-   * qarz qoldig'i. Sahifa qayta yuklanmaydi; ochiq so'rovlar fonda yangilanadi.
-   */
-  const queryClient = useQueryClient();
-  const refreshOverview = useCallback(() => {
-    void Promise.all([
-      queryClient.invalidateQueries({ queryKey: metricsKey }),
-      queryClient.invalidateQueries({ queryKey: [partnersKey] }),
-      queryClient.invalidateQueries({ queryKey: integrationKeys.all }),
-      queryClient.invalidateQueries({ queryKey: [settlementKey, "balance"] }),
-    ]);
-  }, [queryClient]);
-
-  const shownTabs = PANEL_TABS.filter((item) => !hiddenTabs.has(item.key));
-  const activeTab: PanelKey = (shownTabs.find((item) => item.key === tab) ?? shownTabs[0]).key;
-
   const healthOf = (c: Connection): ConnectionHealth =>
     connectionHealth({ isActive: c.is_active, configured: isConfigured(c), metrics: byUid.get(c.uid) });
-
-  /** Kechagi muvaffaqiyat (tanlangan ulanish): 48 soat − 24 soat. */
-  const prevRateOf = (uid: string): number | null => {
-    const now = byUid.get(uid);
-    const wide = byUid48.get(uid);
-    if (!now || !wide || prevQuery.isError) return null;
-    return successOf(Math.max(0, wide.delivered - now.delivered), Math.max(0, wide.failed - now.failed));
-  };
-
-  const panel = (key: PanelKey, c: Connection) => {
-    switch (key) {
-      case "overview":
-        return (
-          <ConnectionOverview
-            /* Ulanish almashganda panel YANGIDAN — oldingi ulanishning «Aloqani sinash» natijasi boshqasida chiqmaydi. */
-            key={c.uid}
-            connection={c}
-            metrics={byUid.get(c.uid)}
-            metricsState={metricsQuery.isPending ? "loading" : metricsQuery.isError ? "error" : "ready"}
-            onFix={setTab}
-            hiddenTabs={hiddenTabs}
-            onRefresh={refreshOverview}
-            refreshing={metricsQuery.isFetching}
-            prevSuccessRate={prevRateOf(c.uid)}
-          />
-        );
-      case "settings":
-        return <ConnectionSettings connection={c} fields={fields} onSaved={refetch} />;
-      case "shipments":
-        return <ConnectionShipments connection={c} />;
-      case "log":
-        return <ConnectionLog connection={c} metrics={byUid.get(c.uid)} />;
-      case "settlement":
-        return <ConnectionSettlement connection={c} />;
-      case "control":
-        return <ConnectionControl connection={c} onChanged={refetch} />;
-      case "security":
-        return <ConnectionSecurity connection={c} fields={fields} onSaved={refetch} />;
-      default:
-        return null;
-    }
-  };
 
   /* ─── Ulanishlar jadvali ─── */
   const eventInfo = (c: Connection) => {
@@ -402,19 +241,23 @@ const ConnectionsPage = () => {
 
   const sandboxOn = (c: Connection) => c.kind === "partner" && Boolean((c.raw as { sandbox_enabled?: boolean }).sandbox_enabled);
 
-  /** `stretched` — telefon kartasida tugmaning bosiladigan maydoni butun karta (≥ 44 px, ichida boshqa tugma yo'q). */
-  const nameButton = (c: Connection, stretched = false) => (
-    <Pressable
-      onClick={() => select(c.uid)}
-      aria-current={c.uid === active?.uid ? "true" : undefined}
+  const openLabel = (c: Connection) => t("console.openConnection", { name: c.name });
+
+  /** Nom — havola (yangi oynada ham ochiladi); `stretched` — telefon kartasida bosiladigan maydon butun karta. */
+  const nameLink = (c: Connection, stretched = false) => (
+    <Link
+      to={connectionPath(c.uid)}
       className={cx(
         "text-left text-sm font-semibold text-text hover:text-action-fg hover:underline",
         stretched && "after:absolute after:inset-0 after:content-['']",
       )}
     >
       {c.name}
-    </Pressable>
+    </Link>
   );
+
+  /** Saytdan olingan buyurtmalar — hamkorda yo'q; noma'lum bo'lsa `null` («—», 0 emas). */
+  const importsOf = (c: Connection) => (c.kind === "integration" ? importedOrdersOf(c.raw as Integration) : null);
 
   const columns: DataTableColumn<Connection>[] = [
     {
@@ -425,7 +268,7 @@ const ConnectionsPage = () => {
         return (
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="flex flex-wrap items-center gap-2">
-              {nameButton(c)}
+              {nameLink(c)}
               {sandboxOn(c) ? (
                 <Badge tone="info" size="sm">
                   {t("console.sandboxBadge")}
@@ -456,6 +299,31 @@ const ConnectionsPage = () => {
         return <StatusBadge tone={HEALTH_TONE[health]} label={t(HEALTH_KEY[health])} />;
       },
     },
+    ...(scope === "partner"
+      ? []
+      : [
+          {
+            id: "imported",
+            header: t("conn.colImported"),
+            align: "end" as const,
+            cell: (c: Connection) => {
+              const imports = importsOf(c);
+              if (!imports) return <span className="text-text-muted">—</span>;
+              return (
+                <span className="flex flex-col items-end">
+                  <span className={cx("font-semibold tabular-nums", imports.total ? "text-text" : "text-text-muted")}>
+                    {t("console.countTa", { count: num(imports.total) })}
+                  </span>
+                  {imports.last_at ? (
+                    <span className="whitespace-nowrap text-xs text-text-muted">
+                      {formatDateTimeLocalized(imports.last_at, { language })}
+                    </span>
+                  ) : null}
+                </span>
+              );
+            },
+          },
+        ]),
     {
       id: "events",
       header: t("console.colEvents24h"),
@@ -494,7 +362,14 @@ const ConnectionsPage = () => {
       header: <span className="sr-only">{t("console.colActions")}</span>,
       className: "w-16",
       cell: (c) => (
-        <IconButton size="sm" icon={ChevronRight} label={t("console.openConnection", { name: c.name })} onClick={() => select(c.uid)} />
+        <Link
+          to={connectionPath(c.uid)}
+          aria-label={openLabel(c)}
+          title={openLabel(c)}
+          className="inline-flex size-9 items-center justify-center rounded-[10px] text-text-muted hover:bg-sunken hover:text-text"
+        >
+          <ChevronRight size={18} aria-hidden="true" />
+        </Link>
       ),
     },
   ];
@@ -503,12 +378,14 @@ const ConnectionsPage = () => {
     const sub = subtitleOf(c);
     const health = healthOf(c);
     const { m, events, segAria, parts, note } = eventInfo(c);
+    const imports = importsOf(c);
     return (
-      <div className={cx("flex min-w-0 flex-col gap-1 px-4 py-3", c.uid === active?.uid && "bg-action-soft")}>
-        {nameButton(c, true)}
+      <div className="flex min-w-0 flex-col gap-1 px-4 py-3">
+        {nameLink(c, true)}
         <span className={cx("text-xs [overflow-wrap:anywhere]", sub.warn ? "text-warning-fg" : "text-text-muted")}>{sub.text}</span>
         <span className="text-xs text-text-muted">
           {scope !== "partner" ? `${t(CATEGORY_LABEL[c.category])} · ` : ""}
+          {imports ? `${t("conn.importedShort", { value: num(imports.total) })} · ` : ""}
           {m && events > 0 ? (
             <>
               {t("console.events24hShort", { count: num(events) })}
@@ -579,7 +456,7 @@ const ConnectionsPage = () => {
     />
   );
 
-  const panelIdPrefix = `conn-${active?.uid.replace(":", "-") ?? "none"}`;
+  if (legacyPath) return <Navigate replace to={legacyPath} />;
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
@@ -588,7 +465,7 @@ const ConnectionsPage = () => {
         description={t("pageSubtitle")}
         actions={
           <Button
-            variant={scope !== "carrier" && activeTab === "settings" && active ? "secondary" : "primary"}
+            variant="primary"
             leftIcon={Plus}
             onClick={onNew}
             aria-haspopup={scope === "carrier" ? "dialog" : undefined}
@@ -770,8 +647,7 @@ const ConnectionsPage = () => {
                 label={t(meta.list)}
                 cardsLabel={t(meta.list)}
                 density="tablet-tight"
-                onRowClick={(c) => select(c.uid)}
-                rowClassName={(c) => (c.uid === active?.uid ? "bg-action-soft hover:bg-action-soft" : null)}
+                onRowClick={(c) => navigate(connectionPath(c.uid))}
                 renderCard={renderCard}
                 busy={metricsQuery.isFetching && !metricsQuery.isPending}
                 className="border-t border-border"
@@ -779,46 +655,6 @@ const ConnectionsPage = () => {
             ) : null}
           </Card>
 
-          {/* ═══ Tanlangan ulanish ═══ */}
-          {active ? (
-            <Card padding="none" aria-labelledby="sel-name" className="overflow-hidden">
-              <div className="flex min-w-0 flex-wrap items-start gap-x-4 gap-y-3 px-5 pb-2 pt-4 max-md:px-4">
-                <span className="inline-flex size-9 flex-none items-center justify-center rounded-[10px] bg-sunken text-text-muted max-md:hidden">
-                  <Plug size={18} aria-hidden="true" />
-                </span>
-                <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1.5">
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
-                    <h2 id="sel-name" className="mr-1 text-base font-bold text-text">
-                      {active.name}
-                    </h2>
-                    <StatusBadge tone={HEALTH_TONE[healthOf(active)]} label={t(HEALTH_KEY[healthOf(active)])} />
-                    <Badge>{t(ROLE_ONE_KEY[active.role])}</Badge>
-                    <Badge>{t(CATEGORY_LABEL[active.category])}</Badge>
-                  </div>
-                  <p className="text-[13px] leading-[18px] text-text-muted">
-                    {t(active.kind === "partner" ? "console.selPartnerHint" : "console.selIntegrationHint")}
-                  </p>
-                </div>
-              </div>
-              <Tabs
-                items={shownTabs.map((item) => ({ value: item.key, label: t(item.labelKey) }))}
-                value={activeTab}
-                onValueChange={setTab}
-                ariaLabel={t("console.panelTabsAria", { name: active.name })}
-                idPrefix={panelIdPrefix}
-                controlsPanel
-                listClassName="px-3"
-              />
-              <div
-                role="tabpanel"
-                id={getPanelId(panelIdPrefix, activeTab)}
-                aria-labelledby={getTabId(panelIdPrefix, activeTab)}
-                className="min-w-0"
-              >
-                {panel(activeTab, active)}
-              </div>
-            </Card>
-          ) : null}
         </>
       )}
 

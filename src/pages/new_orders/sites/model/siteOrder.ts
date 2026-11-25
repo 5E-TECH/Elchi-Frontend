@@ -11,6 +11,7 @@
  * `getFieldValue` kabi.
  */
 
+import { fitProductName, fitQuantity, fitTotalQuantity } from "./siteItemLimits";
 import { readItemsText } from "./siteItemsText";
 
 /** Ulanishdagi maydon nomlari (`field_mapping`) — faqat ro'yxatda va qabulda kerak bo'ladiganlari. */
@@ -20,6 +21,7 @@ export type SiteFieldMapping = {
   customer_name_field: string;
   phone_field: string;
   address_field: string;
+  district_code_field: string;
   comment_field: string;
   total_price_field: string;
   delivery_price_field: string;
@@ -36,6 +38,7 @@ export const DEFAULT_SITE_MAPPING: SiteFieldMapping = {
   customer_name_field: "full_name",
   phone_field: "phone",
   address_field: "address",
+  district_code_field: "district",
   comment_field: "comment",
   total_price_field: "total_price",
   delivery_price_field: "delivery_price",
@@ -79,12 +82,21 @@ const text = (value: unknown): string => {
 };
 
 /**
- * Summa — backend `safeExternalAmount` kabi: son yoki sonli matn; bo'sh — 0; son bo'lmasa `null` (backend uni
+ * Minglik bo'shlig'i bilan yozilgan narx (ega qarori 2026-11-25: «150 000» — 150000). 12 xonagacha; oddiy, NBSP, tor va
+ * ingichka bo'shliq. ⚠️ BACKEND NUSXASI — `apps/order-service/src/lifecycle/external-price.ts`: vergul, nuqta, valyuta
+ * taxmin QILINMAYDI, qoida o'zgarsa ikkalasi birga o'zgaradi.
+ */
+const GROUPED_THOUSANDS = /^[1-9]\d{0,2}(?:[ \u00a0\u202f\u2009]\d{3}){1,3}$/;
+
+/**
+ * Summa — backend import narxi kabi: son, sonli matn yoki minglik bo'shlig'i; bo'sh — 0; boshqasi — `null` (backend
  * `price_invalid` deb o'tkazib yuboradi, ro'yxatda esa «—»).
  */
 export const readAmount = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return 0;
-  const parsed = typeof value === "number" ? value : Number(String(value).replace(/\s+/g, "").replace(",", "."));
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  const raw = typeof value === "string" ? value.trim() : value;
+  const parsed = Number(typeof raw === "string" && GROUPED_THOUSANDS.test(raw) ? raw.replace(/\D/g, "") : raw);
   return Number.isFinite(parsed) ? Math.max(parsed, 0) : null;
 };
 
@@ -124,6 +136,8 @@ export type SiteOrderPreview = {
   name: string;
   phone: string;
   address: string;
+  /** Saytdagi tuman kodi (SOATO yoki Elchi id'si) — xom; nomi `siteEdit.ts` → `findSiteDistrict`. */
+  districtCode: string;
   comment: string;
   items: SiteOrderItem[];
   /** `total_price + delivery_price` (backend `finalPrice`); summa o'qilmasa `null`. */
@@ -135,18 +149,21 @@ export type SiteOrderPreview = {
   payload: Record<string, unknown>;
   /** Oxirgi qabulda o'tmagan bo'lsa — sababi (qatorda ko'rsatiladi). */
   error?: string;
+  /** Operator qo'lda tuzatgan (`siteEdit.ts`). */
+  edited?: boolean;
 };
 
 /** Mahsulotlar: massiv — elementlari, matn — undan ajratilgan qatorlar (`readItemsText`), boshqasi — bo'sh. */
 const readItems = (raw: unknown, totalCount: unknown, mapping: SiteFieldMapping): SiteOrderItem[] => {
   if (typeof raw === "string") return readItemsText(raw, totalCount);
   if (!Array.isArray(raw)) return [];
-  return raw.flatMap((row) => {
+  const rows = raw.flatMap((row) => {
     const name = text(readPath(row, mapping.item_name_field));
     if (!name) return [];
     const quantity = Number(readPath(row, mapping.item_qty_field) ?? 1);
-    return [{ name, quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1 }];
+    return [{ name: fitProductName(name), quantity: fitQuantity(quantity) }];
   });
+  return fitTotalQuantity(rows);
 };
 
 /** Bitta sayt buyurtmasi → ro'yxat qatori. */
@@ -168,6 +185,7 @@ export const toSitePreview = (
     name: text(readPath(raw, mapping.customer_name_field)),
     phone: text(readPath(raw, mapping.phone_field)),
     address: text(readPath(raw, mapping.address_field)),
+    districtCode: text(readPath(raw, mapping.district_code_field)),
     comment: text(readPath(raw, mapping.comment_field)),
     items: readItems(readPath(raw, mapping.items_field), readPath(raw, mapping.total_count_field), mapping),
     amount: total === null || delivery === null ? null : total + delivery,

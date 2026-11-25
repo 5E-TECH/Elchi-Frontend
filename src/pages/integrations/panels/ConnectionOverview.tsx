@@ -15,9 +15,12 @@ import {
   Wallet,
   Webhook,
 } from "lucide-react";
+import type { Integration } from "../../../entities/integrations";
+import { healthcheckErrorText } from "../../../entities/integrations/healthReason";
 import { useIntegrationHealthcheck } from "../../../entities/integrations/healthcheck";
 import type { ConnectionMetrics } from "../../../entities/integrations/metrics";
 import { toAmount, useReceivableBalance } from "../../../entities/integrations/settlement";
+import { importedOrdersOf } from "../../../entities/integrations/siteSource";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -32,7 +35,8 @@ import {
   type Tone,
 } from "../../../shared/ui/primitives";
 import { ChartBlock, ColumnGrid, LegendList, SegBar, SuccessGauge } from "../ui";
-import type { Connection } from "../useConnections";
+import { isSiteSource, type Connection } from "../useConnections";
+import SiteImports from "./SiteImports";
 
 /**
  * UMUMIY HOLAT — tayyorlik ro'yxati + 24 soatlik natija (maket `*-partners-console`, `*-external-console`).
@@ -147,18 +151,45 @@ export const buildChecks = (c: Connection): Check[] => {
       fixTab: "settings",
       fixHintKey: "fixSettingsAuthType",
     },
+    ...(isSiteSource(c) ? siteChecks(c.raw as Integration) : [lastSyncCheck(i.last_sync_at)]),
+  ];
+};
+
+/**
+ * Buyurtma manbasi (sayt): market MAJBURIY (backend usiz buyurtma yaratmaydi), «oxirgi sinxron» esa emas — sayt
+ * navbat orqali sinxronlanmaydi, buyurtma QR skaneri bilan olinadi.
+ */
+const siteChecks = (raw: Integration): Check[] => {
+  const imports = importedOrdersOf(raw);
+  return [
     {
-      labelKey: "checkLastSync",
-      ok: Boolean(i.last_sync_at),
+      labelKey: "conn.checkMarket",
+      ok: Boolean(raw.market_id),
+      detailKey: raw.market_id ? "conn.chkMarketSet" : "conn.chkMarketMissing",
+      fixTab: "settings",
+      fixHintKey: "conn.fixMarket",
+    },
+    {
+      labelKey: "conn.checkImported",
+      ok: Boolean(imports?.total),
       optional: true,
-      ...(i.last_sync_at
-        ? { detailKey: "rawValue", detailParams: { value: formatDateTimeLocalized(i.last_sync_at) } }
-        : { detailKey: "chkNeverSynced" }),
-      fixTab: "control",
-      fixHintKey: "fixControlQueue",
+      ...(imports?.last_at
+        ? { detailKey: "rawValue", detailParams: { value: formatDateTimeLocalized(imports.last_at) } }
+        : { detailKey: imports ? "conn.chkNeverImported" : "conn.chkImportUnknown" }),
     },
   ];
 };
+
+const lastSyncCheck = (lastSyncAt: string | null | undefined): Check => ({
+  labelKey: "checkLastSync",
+  ok: Boolean(lastSyncAt),
+  optional: true,
+  ...(lastSyncAt
+    ? { detailKey: "rawValue", detailParams: { value: formatDateTimeLocalized(lastSyncAt) } }
+    : { detailKey: "chkNeverSynced" }),
+  fixTab: "control",
+  fixHintKey: "fixControlQueue",
+});
 
 /** Kirish turi xom kodi → yorliq kaliti («Turi: API kalit»). */
 const AUTH_TYPE_KEY: Record<string, string> = { api_key: "fOptApiKeyLabel", login: "fOptLoginLabel" };
@@ -169,6 +200,7 @@ const FIX_BUTTON_KEY: Record<string, string> = {
   checkWebhookUrl: "console.fixWebhookUrl",
   checkApiUrl: "console.fixApiUrl",
   checkAuthType: "console.fixAuthType",
+  "conn.checkMarket": "conn.fixMarketButton",
 };
 
 /** Metrika so'rovining holati — «—» ning SABABI shunga qarab aytiladi. */
@@ -328,7 +360,10 @@ const ConnectionOverview = ({
   const webhooks = metrics?.webhooks ?? null;
   const cod = metrics?.cod ?? null;
   /** Kiruvchi webhook — faqat «biz ulanamiz» turida (imzoni BIZ tekshiramiz). */
-  const showWebhooks = isIntegration && hasTab("log");
+  /** Sayt webhook yubormaydi — blok faqat haqiqatan kelgan bo'lsa (masalan CRM manbasi). */
+  const isSite = isSiteSource(connection);
+  const hasWebhooks = Boolean(webhooks && (webhooks.success || webhooks.failed || webhooks.invalid_signature));
+  const showWebhooks = isIntegration && hasTab("log") && (!isSite || hasWebhooks);
   const showShipments = hasTab("shipments");
   /** COD daftari faqat tashuvchi ulanishida yuritiladi (hamkorda — ularda). */
   const showCod = isIntegration && hasTab("settlement");
@@ -349,8 +384,11 @@ const ConnectionOverview = ({
     try {
       const res = await healthcheck.mutateAsync(connection.id);
       // ⚠️ Backend yiqilganda HTTP xato BERMAYDI — natija `ok` bo'yicha o'qiladi.
-      if (!res.ok) throw new Error(res.message ?? `HTTP ${res.status ?? "—"}`);
-      notify.success(t("ctlDone", { label }));
+      if (!res.ok) {
+        notify.error(t("conn.pingFailTitle"), { description: healthcheckErrorText(res, t) });
+        return;
+      }
+      notify.success(t("conn.pingOk"));
     } catch (error) {
       notify.error(getBackendErrorMessage(error) || t("ctlFailed", { label }));
     }
@@ -470,66 +508,70 @@ const ConnectionOverview = ({
           ) : null}
         </section>
 
-        {/* ═══ Muvaffaqiyat · 24 soat ═══ */}
-        <ChartBlock
-          id={`ovw-rate-${connection.uid}`}
-          title={t("console.rateTitle")}
-          subtitle={
-            measured
-              ? prevSuccessRate !== null
-                ? t("console.rateYesterday", { rate: pct(prevSuccessRate) })
-                : t("console.rateSub")
-              : t("console.rateNotMeasuredSub")
-          }
-          controls={
-            rateDelta !== null ? (
-              <Badge tone={Math.abs(rateDelta) < 0.05 ? "neutral" : rateDelta > 0 ? "success" : "danger"}>
-                {t("console.deltaPp", {
-                  value: `${rateDelta > 0 ? "+" : rateDelta < 0 ? MINUS_SIGN : ""}${formatNumberLocalized(Math.abs(rateDelta), { language, fractionDigits: 1 })}`,
-                })}
-              </Badge>
-            ) : null
-          }
-        >
-          <SuccessGauge
-            value={rate}
-            valueText={measured ? pct(rate) : "—"}
-            label={measured ? t("console.rateLabel") : t("console.rateNoneLabel")}
-            badge={
-              zoneKey ? (
-                <Badge tone={zone}>{t(zoneKey)}</Badge>
-              ) : (
-                <Badge icon={CircleMinus}>{t("console.rateNotMeasured")}</Badge>
-              )
-            }
-            ariaLabel={
+        {isSite ? <SiteImports connection={connection} /> : null}
+
+        {/* ═══ Muvaffaqiyat · 24 soat — saytda faqat o'lchangan bo'lsa (holat yuborilgan). ═══ */}
+        {isSite && !measured ? null : (
+          <ChartBlock
+            id={`ovw-rate-${connection.uid}`}
+            title={t("console.rateTitle")}
+            subtitle={
               measured
-                ? t("console.rateAria", { rate: pct(rate), delivered: num(delivered), failed: num(failed) })
-                : t("console.rateNoneAria", { queued: num(queued) })
+                ? prevSuccessRate !== null
+                  ? t("console.rateYesterday", { rate: pct(prevSuccessRate) })
+                  : t("console.rateSub")
+                : t("console.rateNotMeasuredSub")
             }
-            stats={[
-              {
-                key: "delivered",
-                tone: measured ? "success" : "neutral",
-                icon: <CircleCheck size={16} aria-hidden="true" />,
-                value: t("console.countTa", { count: num(delivered) }),
-                label: t("deliveryDelivered"),
-              },
-              {
-                key: "failed",
-                tone: measured ? "danger" : "neutral",
-                icon: <CircleX size={16} aria-hidden="true" />,
-                value: t("console.countTa", { count: num(failed) }),
-                label: t("deliveryFailed"),
-              },
-            ]}
-          />
-        </ChartBlock>
+            controls={
+              rateDelta !== null ? (
+                <Badge tone={Math.abs(rateDelta) < 0.05 ? "neutral" : rateDelta > 0 ? "success" : "danger"}>
+                  {t("console.deltaPp", {
+                    value: `${rateDelta > 0 ? "+" : rateDelta < 0 ? MINUS_SIGN : ""}${formatNumberLocalized(Math.abs(rateDelta), { language, fractionDigits: 1 })}`,
+                  })}
+                </Badge>
+              ) : null
+            }
+          >
+            <SuccessGauge
+              value={rate}
+              valueText={measured ? pct(rate) : "—"}
+              label={measured ? t("console.rateLabel") : t("console.rateNoneLabel")}
+              badge={
+                zoneKey ? (
+                  <Badge tone={zone}>{t(zoneKey)}</Badge>
+                ) : (
+                  <Badge icon={CircleMinus}>{t("console.rateNotMeasured")}</Badge>
+                )
+              }
+              ariaLabel={
+                measured
+                  ? t("console.rateAria", { rate: pct(rate), delivered: num(delivered), failed: num(failed) })
+                  : t("console.rateNoneAria", { queued: num(queued) })
+              }
+              stats={[
+                {
+                  key: "delivered",
+                  tone: measured ? "success" : "neutral",
+                  icon: <CircleCheck size={16} aria-hidden="true" />,
+                  value: t("console.countTa", { count: num(delivered) }),
+                  label: t("deliveryDelivered"),
+                },
+                {
+                  key: "failed",
+                  tone: measured ? "danger" : "neutral",
+                  icon: <CircleX size={16} aria-hidden="true" />,
+                  value: t("console.countTa", { count: num(failed) }),
+                  label: t("deliveryFailed"),
+                },
+              ]}
+            />
+          </ChartBlock>
+        )}
 
         {/* ═══ Hodisalar tarkibi ═══ */}
         <ChartBlock
           id={`ovw-mix-${connection.uid}`}
-          title={t("console.mixTitle")}
+          title={t(isSite ? "conn.mixSiteTitle" : "console.mixTitle")}
           subtitle={t("console.mixSub", { count: num(events) })}
           controls={
             onFix && hasTab("log") ? (
@@ -543,7 +585,9 @@ const ConnectionOverview = ({
             <div className="flex flex-col items-center gap-2 rounded-xl bg-sunken px-4 py-6 text-center">
               <StateIcon icon={Clock} size="chart" />
               <p className="text-base font-bold text-text">{t("ovwNoEvents24h")}</p>
-              <p className="max-w-[320px] text-sm text-text-muted">{t("ovwNoEventsDesc")}</p>
+              <p className="max-w-[320px] text-sm text-text-muted">
+                {t(isSite ? "conn.mixSiteEmpty" : "ovwNoEventsDesc")}
+              </p>
             </div>
           ) : (
             <>

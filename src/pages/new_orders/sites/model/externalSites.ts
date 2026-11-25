@@ -5,6 +5,7 @@ import {
   type IntegrationParams,
   type IntegrationsResponse,
 } from "../../../../entities/integrations";
+import { isExternalSite } from "../../../../entities/integrations/siteSource";
 
 /** «Tashqi saytlar» tabidagi qator — QR bo'yicha buyurtma olinadigan ulanish. */
 export type ExternalSite = {
@@ -15,17 +16,6 @@ export type ExternalSite = {
 
 /** Faqat faol ulanishlar; ro'yxat kichik (o'nlab), shuning uchun bitta sahifa. */
 export const EXTERNAL_SITES_PARAMS: IntegrationParams = { is_active: "true", page: 1, limit: 100 };
-
-/**
- * QAYSI ULANISH «SAYT».
- *
- * Buyurtma yaratish uchun ulanishda market bo'lishi SHART — backend `market_id` siz 400 beradi. Rol bo'yicha
- * qat'iy (`source`) tanlanmadi: migratsiya eski yozuvlarga sukut `carrier` qo'ygan va Donoxon kabi saytlar
- * hali shunday turibdi (`pages/integrations/connections.ts` dagi izoh) — ular ro'yxatdan tushib qolardi.
- * To'lov tizimi buyurtma bermaydi — chiqariladi.
- */
-export const isExternalSite = (integration: Integration): boolean =>
-  Boolean(integration.is_active) && Boolean(integration.market_id) && integration.role !== "payment";
 
 const marketNameOf = (market: unknown): string | null => {
   const record = market as { name?: unknown; username?: unknown } | null | undefined;

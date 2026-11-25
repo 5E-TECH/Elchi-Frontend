@@ -5,7 +5,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Check, CircleX, RefreshCw } from "lucide-react";
 import { usePartnerActions, type WebhookTestResult } from "../../../entities/partners";
 import { useCreateIntegration } from "../../../entities/integrations";
+import { healthcheckErrorText } from "../../../entities/integrations/healthReason";
 import { useIntegrationHealthcheck } from "../../../entities/integrations/healthcheck";
+import { connectionPath } from "../connectionMeta";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { cx } from "../../../shared/lib/cx";
 import { Badge, Button, Card, EmptyState, PageHeader, type Tone } from "../../../shared/ui/primitives";
@@ -225,7 +227,7 @@ const ConnectWizard = () => {
         const res = await healthcheck.mutateAsync(created.id);
         setOutboundResult({ ok: res.ok, status: res.status ?? undefined, response_time_ms: res.response_time_ms ?? undefined });
         // Backend yiqilganda HTTP xato BERMAYDI — sababni shu yerdan olamiz.
-        if (!res.ok && res.message) setTestError(res.message);
+        if (!res.ok) setTestError(healthcheckErrorText(res, t));
       }
     } catch (err) {
       setTestError(getBackendErrorMessage(err) || t("wzTestFailed"));
@@ -394,7 +396,7 @@ const ConnectWizard = () => {
               <Button
                 onClick={() =>
                   navigate(
-                    `/integrations/connections?c=${encodeURIComponent(`${isPartner ? "partner" : "integration"}:${created?.id ?? ""}`)}`,
+                    connectionPath(`${isPartner ? "partner" : "integration"}:${created?.id ?? ""}`),
                   )
                 }
               >
