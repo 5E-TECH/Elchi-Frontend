@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 /**
- * KM-3 — rejalashtirish siyosati, tarix qatori, hisobot, «Yetkazilmaganlar» va CSV eksport (backend H7kpCman /
+ * KM-3 — rejalashtirish siyosati, tarix qatori, hisobot, «Yetkazilmaganlar» va Excel eksport (backend H7kpCman /
  * WIsb9Ytq kontrakti, `Elchi-Backend` `docs/frontend/FRONTEND_CHANGELOG.md` N1).
  */
 describe("campaignApi (KM-3)", () => {
@@ -154,7 +154,7 @@ describe("campaignListRefetchInterval (tarix)", () => {
   });
 });
 
-describe("useExportCampaignUndelivered (CSV)", () => {
+describe("useExportCampaignUndelivered (Excel)", () => {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
   );
@@ -164,7 +164,7 @@ describe("useExportCampaignUndelivered (CSV)", () => {
     vi.spyOn(api, "get").mockResolvedValue({
       status: 200,
       data: blob,
-      headers: { "content-disposition": 'attachment; filename="kampaniya-14.csv"' },
+      headers: { "content-disposition": 'attachment; filename="kampaniya-14.xlsx"' },
     });
     const save = vi.fn();
     const { result } = renderHook(() => useExportCampaignUndelivered(save), { wrapper });
@@ -172,8 +172,8 @@ describe("useExportCampaignUndelivered (CSV)", () => {
     await act(async () => {
       outcome = await result.current.mutateAsync("14");
     });
-    expect(outcome).toEqual({ kind: "saved", fileName: "kampaniya-14.csv" });
-    expect(save).toHaveBeenCalledWith(blob, "kampaniya-14.csv");
+    expect(outcome).toEqual({ kind: "saved", fileName: "kampaniya-14.xlsx" });
+    expect(save).toHaveBeenCalledWith(blob, "kampaniya-14.xlsx");
   });
 
   it("katta — fon vazifasi: holat so'raladi, tayyor bo'lgach yuklab olinadi", async () => {
@@ -196,7 +196,7 @@ describe("useExportCampaignUndelivered (CSV)", () => {
       responseType: "blob",
       timeout: LONG_REQUEST_TIMEOUT_MS,
     });
-    expect(save).toHaveBeenCalledWith(file, "kampaniya-14-yetkazilmaganlar.csv");
+    expect(save).toHaveBeenCalledWith(file, "kampaniya-14-yetkazilmaganlar.xlsx");
   });
 
   it("fon vazifasi xato bilan tugasa yoki kutish oshsa — fayl yo'q", async () => {
@@ -239,8 +239,8 @@ describe("useExportCampaignUndelivered (CSV)", () => {
     await act(async () => {
       await result.current.mutateAsync("14");
     });
-    expect(onOutcome).toHaveBeenLastCalledWith({ kind: "saved", fileName: "kampaniya-14-yetkazilmaganlar.csv" });
-    expect(save).toHaveBeenCalledWith(file, "kampaniya-14-yetkazilmaganlar.csv");
+    expect(onOutcome).toHaveBeenLastCalledWith({ kind: "saved", fileName: "kampaniya-14-yetkazilmaganlar.xlsx" });
+    expect(save).toHaveBeenCalledWith(file, "kampaniya-14-yetkazilmaganlar.xlsx");
     expect(get.mock.calls.filter(([url]) => String(url).endsWith("/undelivered/export"))).toHaveLength(1);
   });
 
@@ -277,7 +277,7 @@ describe("useExportCampaignUndelivered (CSV)", () => {
       outcome = await result.current.mutateAsync("14");
     });
     expect(exports).toBe(2);
-    expect(outcome).toEqual({ kind: "saved", fileName: "kampaniya-14-yetkazilmaganlar.csv" });
+    expect(outcome).toEqual({ kind: "saved", fileName: "kampaniya-14-yetkazilmaganlar.xlsx" });
   });
 });
 
@@ -513,7 +513,7 @@ describe("hisobot: SMS bloki, narx, SMS kampaniyasi, reason_code, requested_at",
     expect(page.items[1].failures[0].reason_code).toBeNull();
   });
 
-  it("SMS kampaniyasi CSV — SMS eksport manzili; fon vazifasi kaliti bildirishnomanikidan alohida", async () => {
+  it("SMS kampaniyasi Excel — SMS eksport manzili; fon vazifasi kaliti bildirishnomanikidan alohida", async () => {
     const blob = new Blob(["a,b"]);
     const get = vi.spyOn(api, "get").mockResolvedValue({ status: 200, data: blob, headers: {} });
     const save = vi.fn();
@@ -529,6 +529,6 @@ describe("hisobot: SMS bloki, narx, SMS kampaniyasi, reason_code, requested_at",
       responseType: "blob",
       timeout: LONG_REQUEST_TIMEOUT_MS,
     });
-    expect(save).toHaveBeenCalledWith(blob, "sms-kampaniya-7-yetkazilmaganlar.csv");
+    expect(save).toHaveBeenCalledWith(blob, "sms-kampaniya-7-yetkazilmaganlar.xlsx");
   });
 });

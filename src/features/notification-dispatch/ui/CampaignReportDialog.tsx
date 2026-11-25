@@ -88,7 +88,7 @@ const isFailedStatus = (status: string) =>
  * kesimi yig'indisi, izohida qaysi kanal / sabab; «Yetkazildi» — DLR o'lchanmagan bo'lsa «—», HECH QACHON 0; narx
  * yonida «taxminiy»); «Kanallar bo'yicha» jadvali (telefonda — ro'yxat); SMS bloki (bo'laklar, kodlash, operator
  * hisoboti, tarif) — FAQAT `sms !== null`; «Yetkazilmaganlar» (ism, rol, maskalangan telefon — N9, «Push — xato» + sabab
- * `reason_code` xaritasidan; sahifalab); «Yopish» · «CSV yuklab olish» (faqat `can_export` — superadmin; katta eksport
+ * `reason_code` xaritasidan; sahifalab); «Yopish» · «Excel yuklab olish» (faqat `can_export` — superadmin; katta eksport
  * fonda tayyorlanadi). SMS kampaniyasi (`kind: 'sms'`) ham shu oynada. Yuborilayotgan kampaniyada hisobot har 3 s
  * yangilanadi. 390px: kataklar 2 ustun, jadval — kartalar.
  */

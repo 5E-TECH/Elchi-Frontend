@@ -17,7 +17,7 @@ import ShiftSummaryList, { type ShiftSummaryRow } from "./ShiftSummaryList";
  * Qiymatlar faqat `POST finance/shift/close` javobidan (yakuniy kutilgan summa backendda hisoblanadi): naqd va
  * karta bo'yicha «Ochilishda · Kirim · Chiqim · Kutilgan · Sanalgan · Farq» — desktop/planshetda jadval, telefonda
  * ikki blok (Naqd, Karta). Karta sanalmagan (`discrepancy_card === null`) — «Sanalmadi» va izoh. Ostida ochgan /
- * yopgan xodim va izoh, «Excel hisobot yuklab olindi» eslatmasi; «Excelga yuklash» (qayta) va «Tayyor».
+ * yopgan xodim va izoh, «Excel hisobot avtomatik yuklab olinadi» eslatmasi; «Excelga yuklash» (qayta) va «Tayyor».
  *
  * Sahifa qayta yuklangandan keyin natijani ko'rsatish (`last_closed`) — Taklif · backend kerak (CB-3).
  *

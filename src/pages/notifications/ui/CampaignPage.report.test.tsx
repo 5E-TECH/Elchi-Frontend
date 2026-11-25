@@ -107,8 +107,8 @@ describe("CampaignPage — SMS kampaniya hisoboti (H7kpCman)", () => {
     expect(sms).toHaveTextContent("Operator hisobotiHali kelmagan · kutilmoqda 64 ta");
     expect(sms).toHaveTextContent("Yuborilganlar narxi30 100 so'm");
     expect(api.get).toHaveBeenCalledWith("notifications/sms/campaigns/5/report");
-    // CSV — faqat superadmin (`can_export`).
-    expect(within(dialog).queryByRole("button", { name: "CSV yuklab olish" })).toBeNull();
+    // Excel — faqat superadmin (`can_export`).
+    expect(within(dialog).queryByRole("button", { name: "Excel yuklab olish" })).toBeNull();
     expect(await within(dialog).findByText("Yetkazilmaganlar yo'q")).toBeVisible();
     await user.click(within(dialog).getAllByRole("button", { name: "Yopish" }).at(-1)!);
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Kampaniya hisoboti" })).toBeNull());

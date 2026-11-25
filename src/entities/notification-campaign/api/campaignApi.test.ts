@@ -225,7 +225,7 @@ describe("campaignApi (KM-2)", () => {
     });
   });
 
-  it("CSV export: small — the file, big — a background job id", async () => {
+  it("Excel export: small — the file, big — a background job id", async () => {
     const blob = new Blob(["a,b"]);
     const get = vi.spyOn(api, "get").mockResolvedValueOnce({ status: 200, data: blob });
     await expect(exportCampaignUndelivered("7")).resolves.toEqual({ kind: "file", blob, fileName: null });

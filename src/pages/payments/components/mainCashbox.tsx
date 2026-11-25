@@ -29,6 +29,7 @@ import { useTranslation } from "react-i18next";
 import PopupSelect from "../../../shared/components/popupSelect";
 import { cx } from "../../../shared/lib/cx";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { getExportErrorMessage } from "../../../shared/lib/exportFile";
 import { formatDateTimeLocalized, formatTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
   CURRENCY_LABEL,
@@ -107,7 +108,7 @@ import {
   showsPaymentMethod,
 } from "./paymentSourceType";
 import { getExpenseCategoryName } from "./lib/expenseCategory";
-import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
+import { exportMainCashboxReport, type CashboxReportParams } from "./lib/exportMainCashboxReport";
 import { useCashboxShift } from "./lib/useCashboxShift";
 import {
   buildDailyBalanceSeries,
@@ -648,52 +649,32 @@ const MainCashbox = () => {
     [navigate],
   );
 
-  const handleExportExcel = useCallback(() => {
-    exportMainCashboxReport({
-      rows: historyRows,
-      totalBalance,
-      cashBalance,
-      cardBalance: transferBalance,
-      fromDate: draftHistoryFrom || undefined,
-      toDate: draftHistoryTo || undefined,
-      labels: {
-        defaultReportTitle: t("report"),
-        // Menejer — filial kassasi hisoboti (P0 63HO6cBU): sarlavha «Asosiy kassa» emas.
-        mainCashbox: isManagerRole
-          ? ownBranchName
-            ? t("v2MainCashbox.shift.branchCashbox", { branch: ownBranchName })
-            : t("v2MainCashbox.shift.branchCashboxFallback")
-          : t("mainCashbox"),
-        income: t("income"),
-        expense: t("expense"),
-        expenseSection: t("expenseSection"),
-        balance: t("balance"),
-        cash: t("cash"),
-        card: t("card"),
-        total: t("total"),
-        no: t("no"),
-        fromWhere: t("fromWhere"),
-        toWhere: t("toWhere"),
-        other: t("other"),
-        comment: t("comment"),
-        summaryIncome: t("summaryIncome"),
-        summaryExpense: t("summaryExpense"),
-      },
-      // Filial kassasi bitta jami (P0 63HO6cBU) — menejer hisobotida balans bitta jami (naqd/karta qoldig'i yo'q);
-      // operatsiyalardagi to'lov turi ustunlari qoladi (ega Q2).
-      singleTotal: isManagerRole,
-    });
-  }, [
-    historyRows,
-    totalBalance,
-    cashBalance,
-    transferBalance,
-    draftHistoryFrom,
-    draftHistoryTo,
-    isManagerRole,
-    ownBranchName,
-    t,
-  ]);
+  // Hisobot serverda yasaladi (doira — JWT: asosiy kassa yoki menejerning filiali). Bir vaqtda bitta yuklash.
+  const [isExportingReport, setIsExportingReport] = useState(false);
+  const exportingReportRef = useRef(false);
+  const downloadReport = useCallback(
+    async (params: CashboxReportParams) => {
+      if (exportingReportRef.current) return;
+      exportingReportRef.current = true;
+      setIsExportingReport(true);
+      try {
+        await exportMainCashboxReport(params);
+      } catch (error) {
+        notify.error(t("common:error"), {
+          description: (await getExportErrorMessage(error)) ?? t("excelExportError"),
+        });
+      } finally {
+        exportingReportRef.current = false;
+        setIsExportingReport(false);
+      }
+    },
+    [t],
+  );
+  // Tugma — tarixdagi sana filtri bo'yicha; filtr yo'q — bugun (butun tarix emas).
+  const handleExportExcel = useCallback(
+    () => void downloadReport({ fromDate: draftHistoryFrom || undefined, toDate: draftHistoryTo || undefined }),
+    [downloadReport, draftHistoryFrom, draftHistoryTo],
+  );
 
   const refetchCashboxState = useCallback(async () => {
     await Promise.allSettled([
@@ -839,7 +820,8 @@ const MainCashbox = () => {
         return accountMessage ? { error: accountMessage } : undefined;
       }
       setClosingShiftId(null);
-      handleExportExcel();
+      // Hisobot — AYNAN yopilgan smena davri (fonda: natija oynasi kutmaydi).
+      void downloadReport({ shiftId: closed?.id ?? closingShiftId });
       if (closed) {
         // Natija oynasida «Smena hisoboti» havolasi — har smenada (ega 2026-11-25; ilgari faqat kartalar tekshirilganda).
         setShiftResult({ shift: closed, openedByName, reportHref: `/payments/shifts/${closed.id}` });
@@ -849,7 +831,7 @@ const MainCashbox = () => {
       }
       return undefined;
     },
-    [closeShift, closingShiftId, handleExportExcel, refetchShift, shiftState.openedByName, t],
+    [closeShift, closingShiftId, downloadReport, refetchShift, shiftState.openedByName, t],
   );
 
   const setHistoryRange = useCallback((from: string, to: string) => {
@@ -1756,7 +1738,7 @@ const MainCashbox = () => {
         description={headerDescription}
         actions={
           <>
-            <Button variant="secondary" leftIcon={Download} onClick={handleExportExcel}>
+            <Button variant="secondary" leftIcon={Download} loading={isExportingReport} onClick={handleExportExcel}>
               {t("v2MainCashbox.exportExcel")}
             </Button>
             {shiftState.canManage ? (
@@ -1881,7 +1863,7 @@ const MainCashbox = () => {
         cashboxLabel={shiftCashboxLabel}
         cardLabel={shiftCardLabel}
         singleTotal={isManagerRole}
-        onExport={handleExportExcel}
+        onExport={() => void downloadReport({ shiftId: shiftResult?.shift.id })}
       />
 
       <ShiftHistoryDialog
