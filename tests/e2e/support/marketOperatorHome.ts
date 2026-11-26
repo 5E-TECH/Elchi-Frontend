@@ -170,6 +170,9 @@ const ALLOWED_GET = new Set([
   "analytics/dashboard",
   "orders/extra-cost-approvals",
   "notifications/inbox/unread-count",
+  // xhiXv3w3: ish kuni soati (`BusinessDaySync`) — har kirgan rol so'raydi (BE: faqat JWT); umumiy «Kun tartibi»
+  // holati, boshqa foydalanuvchi yoki pul ma'lumoti yo'q.
+  "orders/intake-settings",
   ...MY_EARNINGS_GET,
 ]);
 /** Ruxsat ro'yxatidagi yo'l ham bosh sahifa bo'lmasa so'ralmasligi kerak (`/my-earnings` — profil va o'z hisobi). */
