@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack, superadmin-payments-history-detail-dialog-receipt, manager-payments-history-detail-dialog-receipt, superadmin-payments-history-detail-dialog-corrected, superadmin-payments-history-detail-dialog-replacement, admin-payments-history-detail-dialog-corrected, manager-payments-history-detail-dialog-corrected, market-cashbox-history-detail-dialog-corrected, courier-cashbox-history-detail-corrected, superadmin-payments-history-detail-dialog-correctable, superadmin-payments-history-detail-dialog-locked
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -60,6 +60,7 @@ import { PaymentAckBadge } from "./PaymentAckBadge";
 import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
 import { PaymentCorrectionSection } from "./PaymentCorrectionSection";
 import { getExpenseCategoryName } from "./lib/expenseCategory";
+import { isPassThroughRow, passThroughView } from "./lib/passThrough";
 import { paymentAckAudienceOf, toPaymentAck } from "./paymentAck";
 import ReceiptSection from "./receipt/ReceiptSection";
 
@@ -258,6 +259,8 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
 
   const direction = getViewerOperationType(display, viewerRole);
   const isIncome = direction === "income";
+  // O'tkazma izi (ega 2026-11-26): pul kassaga kirmagan — sarlavha, summa neytral; ikkala yozuv blokda.
+  const passThrough = current && isPassThroughRow(current) ? passThroughView(current, t) : null;
 
   // Qarshi tomon: manba foydalanuvchisi (kuryer/market — `courier_payment`, `market_payment`), bo'lmasa yozuvni
   // yaratgan, so'ng kassa egasi.
@@ -291,13 +294,32 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
 
   const amount = Math.abs(toFiniteNumber(display.amount) ?? 0);
   const signedAmount = direction === "expense" ? -amount : amount;
-  const amountText = formatSignedMoneyLocalized(signedAmount, { language, withCurrency: false });
+  const amountText = passThrough
+    ? formatMoneyLocalized(amount, { language, withCurrency: false })
+    : formatSignedMoneyLocalized(signedAmount, { language, withCurrency: false });
   const currency = CURRENCY_LABEL[resolveMoneyLanguage(language)];
-  const balanceAfter = toFiniteNumber(display.balance_after);
+  // Iz jufti qoldiqni o'zgartirmaydi — juftdan keyingi qoldiq (oyoqning oraliq qoldig'i emas).
+  const balanceAfter = passThrough
+    ? (passThrough.balanceAfter ?? null)
+    : toFiniteNumber(display.balance_after);
   const dateText = dateTime(display.payment_date);
-  const title = direction
-    ? t(isIncome ? "v2HistoryDetail.incomeTitle" : "v2HistoryDetail.expenseTitle")
-    : t("v2HistoryDetail.operationTitle");
+  const title = passThrough
+    ? t("v2Common.passThrough.detailTitle")
+    : direction
+      ? t(isIncome ? "v2HistoryDetail.incomeTitle" : "v2HistoryDetail.expenseTitle")
+      : t("v2HistoryDetail.operationTitle");
+  // Kassadagi ikki yozuv: juft sahifada bo'lmasa ham ma'lum — teng summa, teskari amal (`pass_through_pair_id`).
+  const passThroughLegs = passThrough
+    ? [
+        { id: String(current.id), income: normalizeKey(current.operation_type) === "income" },
+        {
+          id: String(current.pass_through_partner?.id ?? current.pass_through_pair_id ?? ""),
+          income: normalizeKey(current.operation_type) !== "income",
+        },
+      ]
+        .filter((leg) => leg.id)
+        .sort((left, right) => Number(right.income) - Number(left.income))
+    : [];
 
   // «Filialdan HQ'ga o'tkazma» kirimi (asosiy kassa): pul FILIALdan keldi — backend `source_branch` beradi
   // (2026-11-14). Ilgari bu yerda yozuvni kiritgan xodim chiqardi. Filial kassasidagi chiqim oyog'ida filialning
@@ -591,7 +613,15 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
           setRelatedRow(null);
         }}
         size="lg"
-        icon={direction === "expense" ? ArrowUpRight : direction === "income" ? ArrowDownLeft : Receipt}
+        icon={
+          passThrough
+            ? ArrowLeftRight
+            : direction === "expense"
+              ? ArrowUpRight
+              : direction === "income"
+                ? ArrowDownLeft
+                : Receipt
+        }
         title={title}
         // Sana bir qatorda (telefonda «Bugun, 13:05» bo'linmaydi — maket).
         description={
@@ -632,7 +662,13 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
               data-history-amount=""
               className={cx(
                 "whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] proportional-nums max-md:text-[22px] max-md:leading-[30px]",
-                direction === "income" ? "text-success-fg" : direction === "expense" ? "text-danger-fg" : "text-text",
+                passThrough
+                  ? "text-text"
+                  : direction === "income"
+                    ? "text-success-fg"
+                    : direction === "expense"
+                      ? "text-danger-fg"
+                      : "text-text",
               )}
             >
               {amountText}
@@ -646,6 +682,39 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false,
             </div>
           ) : null}
         </div>
+
+        {passThrough ? (
+          <section
+            aria-labelledby="history-detail-pass-through"
+            className="flex flex-col gap-2 rounded-xl border border-border px-5 py-4 max-md:px-4"
+          >
+            <h3
+              id="history-detail-pass-through"
+              className="m-0 inline-flex items-center gap-2 text-sm font-semibold text-text"
+            >
+              <ArrowLeftRight aria-hidden="true" size={18} className="shrink-0 text-text-muted" />
+              {t("v2Common.passThrough.badge")}
+            </h3>
+            <p className="m-0 text-sm text-text-muted">
+              {t("v2Common.passThrough.detailNote", { from: passThrough.from, to: passThrough.to })}
+            </p>
+            <ul aria-label={t("v2Common.passThrough.legs")} className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
+              {passThroughLegs.map((leg) => (
+                <li key={leg.id} className="flex min-w-0 justify-between gap-3">
+                  <span className="text-text-muted">
+                    {t("v2Common.passThrough.leg", {
+                      id: leg.id,
+                      direction: t(leg.income ? "v2Common.income" : "v2Common.expense"),
+                    })}
+                  </span>
+                  <span className="whitespace-nowrap font-semibold text-text">
+                    {formatSignedMoneyLocalized(leg.income ? amount : -amount, { language })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {correction ? (
           <PaymentCorrectionSection

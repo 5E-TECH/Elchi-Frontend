@@ -78,13 +78,20 @@ const methodBadgeOf = ({ t }: Ctx, shape: CorrectionShape) =>
 const kindTitleOf = ({ t }: Ctx, shape: CorrectionShape, target: CorrectionTarget) =>
   shape.kind === "market"
     ? t("v2Common.sourceType.marketPayment")
-    : shape.kind
-      ? t("v2Common.sourceType.courierPayment")
-      : target.title;
+    : shape.kind === "branchToMarket"
+      ? t("v2Common.sourceType.branchToMarket")
+      : shape.kind
+        ? t("v2Common.sourceType.courierPayment")
+        : target.title;
 
 /** Tavsifdagi kontragent: market to'lovida — market, kuryer to'lovida — kuryer (faqat nom kelgan bo'lsa). */
 const counterpartyOf = (shape: CorrectionShape) =>
-  (shape.kind === "market" ? shape.market?.name : shape.courier?.name) ?? null;
+  (shape.kind === "market" || shape.kind === "branchToMarket" ? shape.market?.name : shape.courier?.name) ?? null;
+
+/** Filial ishtirokidagi to'lov (menejer ham xabar oladi): filial kassasidan / orqali marketga. */
+const viaBranch = (shape: CorrectionShape) =>
+  shape.kind === "branchToMarket" ||
+  ((shape.kind === "market" || shape.kind === "clickToMarket") && shape.receiver === "branch");
 
 /**
  * Tavsif (maket A4): qaytarish oynasi va tasdig'i — `#id · tur · vaqt`; tahrirlash oynasi — `#id · tur · kontragent ·
@@ -115,9 +122,11 @@ const transferOf = ({ t }: Ctx, shape: CorrectionShape): ConfirmTransfer | undef
     case "courier":
       return { from: courier, to: shape.receiver === "branch" ? branch : main };
     case "market":
-      return { from: main, to: market };
+      return { from: shape.receiver === "branch" ? branch : main, to: market };
     case "clickToMarket":
       return { from: courier, to: market };
+    case "branchToMarket":
+      return { from: branch, to: market };
     default:
       return undefined;
   }
@@ -132,9 +141,10 @@ const reasonHintOf = ({ t }: Ctx, shape: CorrectionShape) => {
     case "courier":
       return t("paymentCorrection.reason.hintCourier");
     case "market":
-      return t("paymentCorrection.reason.hintMarket");
+    case "branchToMarket":
+      return viaBranch(shape) ? t("paymentCorrection.reason.hintMarketBranch") : t("paymentCorrection.reason.hintMarket");
     case "clickToMarket":
-      return t("paymentCorrection.reason.hintBoth");
+      return viaBranch(shape) ? t("paymentCorrection.reason.hintAll") : t("paymentCorrection.reason.hintBoth");
     default:
       return t("paymentCorrection.reason.hintGeneric");
   }
@@ -169,9 +179,18 @@ const reverseNoteOf = (ctx: Ctx, shape: CorrectionShape) => {
         ? t("paymentCorrection.reverse.note.courierBranch", { courier: p.courier, branch: p.branch })
         : t("paymentCorrection.reverse.note.courierMain", { courier: p.courier });
     case "market":
-      return t("paymentCorrection.reverse.note.market", { market: p.market, amount });
+      return shape.receiver === "branch"
+        ? capitalize(t("paymentCorrection.reverse.note.marketBranch", { branch: p.branch, market: p.market, amount }), language)
+        : t("paymentCorrection.reverse.note.market", { market: p.market, amount });
     case "clickToMarket":
-      return capitalize(t("paymentCorrection.reverse.note.clickToMarket", { courier: p.courier, market: p.market, amount }), language);
+      return capitalize(
+        shape.receiver === "branch"
+          ? t("paymentCorrection.reverse.note.clickToMarketBranch", { courier: p.courier, market: p.market, branch: p.branch, amount })
+          : t("paymentCorrection.reverse.note.clickToMarket", { courier: p.courier, market: p.market, amount }),
+        language,
+      );
+    case "branchToMarket":
+      return capitalize(t("paymentCorrection.reverse.note.branchToMarket", { branch: p.branch, market: p.market, amount }), language);
     default:
       return t("paymentCorrection.reverse.note.generic");
   }
@@ -206,18 +225,40 @@ const reverseConsequencesOf = (ctx: Ctx, shape: CorrectionShape): CorrectionCons
           ];
     case "market":
       return [
-        { text: t("paymentCorrection.reverse.consequence.mainIn", { amount }), icon: Wallet },
+        shape.receiver === "branch"
+          ? { text: cap(t("paymentCorrection.reverse.consequence.branchIn", { branch: p.branch, amount })), icon: Building2 }
+          : { text: t("paymentCorrection.reverse.consequence.mainIn", { amount }), icon: Wallet },
         { text: cap(t("paymentCorrection.consequence.marketOwedUp", { market: p.market, amount })), icon: Store },
         { text: t("paymentCorrection.reverse.consequence.marketOrders"), icon: ShoppingBag },
-        { text: t("paymentCorrection.consequence.notifyMarket"), icon: Bell },
+        {
+          text: viaBranch(shape)
+            ? t("paymentCorrection.consequence.notifyMarketBranch")
+            : t("paymentCorrection.consequence.notifyMarket"),
+          icon: Bell,
+        },
         history,
       ];
     case "clickToMarket":
       return [
         { text: cap(t("paymentCorrection.consequence.courierBack", { courier: p.courier, amount })), icon: Truck },
         { text: cap(t("paymentCorrection.consequence.marketOwedUp", { market: p.market, amount })), icon: Store },
+        shape.receiver === "branch"
+          ? { text: cap(t("paymentCorrection.consequence.branchUnchanged", { branch: p.branch })), icon: Building2 }
+          : { text: t("paymentCorrection.consequence.mainUnchanged"), icon: Wallet },
+        {
+          text: viaBranch(shape) ? t("paymentCorrection.consequence.notifyAll") : t("paymentCorrection.consequence.notifyBoth"),
+          icon: Bell,
+        },
+        history,
+      ];
+    case "branchToMarket":
+      return [
+        { text: cap(t("paymentCorrection.reverse.consequence.branchIn", { branch: p.branch, amount })), icon: Building2 },
+        { text: cap(t("paymentCorrection.reverse.consequence.branchOwesHq", { branch: p.branch, amount })), icon: Building2 },
+        { text: cap(t("paymentCorrection.consequence.marketOwedUp", { market: p.market, amount })), icon: Store },
         { text: t("paymentCorrection.consequence.mainUnchanged"), icon: Wallet },
-        { text: t("paymentCorrection.consequence.notifyBoth"), icon: Bell },
+        { text: t("paymentCorrection.reverse.consequence.marketOrders"), icon: ShoppingBag },
+        { text: t("paymentCorrection.consequence.notifyMarketBranch"), icon: Bell },
         history,
       ];
     default:
@@ -238,9 +279,15 @@ const reverseToastOf = (ctx: Ctx, target: CorrectionTarget, shape: CorrectionSha
       case "courier":
         return t("paymentCorrection.reverse.toast.courier", { amount, courier: p.courier });
       case "market":
-        return t("paymentCorrection.reverse.toast.market", { amount, market: p.market });
+        return shape.receiver === "branch"
+          ? t("paymentCorrection.reverse.toast.marketBranch", { amount, branch: p.branch })
+          : t("paymentCorrection.reverse.toast.market", { amount, market: p.market });
       case "clickToMarket":
-        return t("paymentCorrection.reverse.toast.clickToMarket", { amount, courier: p.courier });
+        return shape.receiver === "branch"
+          ? t("paymentCorrection.reverse.toast.clickToMarketBranch", { amount, courier: p.courier })
+          : t("paymentCorrection.reverse.toast.clickToMarket", { amount, courier: p.courier });
+      case "branchToMarket":
+        return t("paymentCorrection.reverse.toast.branchToMarket", { amount, branch: p.branch });
       default:
         return t("paymentCorrection.reverse.toast.generic", { id: target.id, amount });
     }
@@ -478,11 +525,12 @@ const buildCorrectTexts = (ctx: Ctx, target: CorrectionTarget, next: number | nu
 // ───────────────────────── Tafsilot oynasi pastki qismi ─────────────────────────
 
 /**
- * Muddat izohi (maket `-correctable`): «Qaytarish yoki tahrirlash mumkin: **{deadline} gacha** · muddat {n} kun»;
+ * Muddat izohi (maket `-correctable`): «Qaytarish yoki tahrirlash mumkin: **{deadline} gacha** · muddat {n} kun»
+ * (faqat qaytariladigan to'lovda — «Faqat qaytarish mumkin …»);
  * zanjir davomida (`root_history_id ≠ id`) — «… · muddat birinchi to'lovdan (#{root})». `until` — qalin, bo'linmas.
  */
 const deadlineHintOf = ({ t, language }: Ctx, state: Extract<CorrectionFooterState, { kind: "actions" }>) => ({
-  lead: t("paymentCorrection.deadline.lead"),
+  lead: state.editAllowed ? t("paymentCorrection.deadline.lead") : t("paymentCorrection.deadline.leadReverseOnly"),
   until: state.deadline
     ? nowrapText(
         t("paymentCorrection.deadline.until", {
@@ -543,7 +591,9 @@ const lockOf = (ctx: Ctx, correctable: PaymentCorrectable) => {
             ? t("paymentCorrection.errors.notCorrectable.reversalRow")
             : correctable.reason === "cashbox_deleted"
               ? cashboxDeletedText(t, deletedCashboxSubject(transferShapeOf(correctable.transfer), "detail"))
-              : t("paymentCorrection.errors.notCorrectable.unsupported"),
+              : correctable.reason === "reverse_only"
+                ? t("paymentCorrection.errors.notCorrectable.reverseOnly")
+                : t("paymentCorrection.errors.notCorrectable.unsupported"),
         changeWindow: null,
       };
     default:
@@ -564,6 +614,8 @@ export const createCorrectionTexts = (t: TFunction, language: MoneyLanguage) => 
     actions: {
       reverse: t("paymentCorrection.actions.reverse"),
       correct: t("paymentCorrection.actions.correct"),
+      /** «Summani tahrirlash» yo'q (filial ishtirokidagi to'lov) — sababi. */
+      reverseOnly: t("paymentCorrection.actions.reverseOnly"),
     },
     money: (value: number) => moneyOf(ctx, value),
   };

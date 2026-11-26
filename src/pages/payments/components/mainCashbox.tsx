@@ -100,6 +100,8 @@ import SettlementPickerDialog, {
   type SettlementPickerTarget,
 } from "./SettlementPickerDialog";
 import type { PaymentRow } from "./patmentHistoryTable";
+import { collapsePassThroughPairs, isPassThroughRow, passThroughView } from "./lib/passThrough";
+import { PassThroughAmount, PassThroughBadge } from "./PassThroughBadge";
 import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
 import {
   getPaymentMethodLabel,
@@ -615,11 +617,13 @@ const MainCashbox = () => {
     [cashboxHistory, draftHistoryFrom, draftHistoryTo],
   );
 
-  const pageCount = Math.max(1, Math.ceil(historyRows.length / historyPageSize));
+  // Ro'yxat: o'tkazma izi jufti — bitta qator (`lib/passThrough.ts`); davr hisoblari `historyRows` dan (iz kirmaydi).
+  const listRows = useMemo(() => collapsePassThroughPairs(historyRows), [historyRows]);
+  const pageCount = Math.max(1, Math.ceil(listRows.length / historyPageSize));
   const currentPage = Math.min(historyPage, pageCount);
   const pageRows = useMemo(
-    () => historyRows.slice((currentPage - 1) * historyPageSize, currentPage * historyPageSize),
-    [currentPage, historyPageSize, historyRows],
+    () => listRows.slice((currentPage - 1) * historyPageSize, currentPage * historyPageSize),
+    [currentPage, historyPageSize, listRows],
   );
 
   // ── Amallar ─────────────────────────────────────────────────────────────────
@@ -868,12 +872,14 @@ const MainCashbox = () => {
       cashboxType: viewerCashboxType,
     });
   const rowSourceTitle = (row: PaymentRow) =>
-    getPaymentSourceTitle(row.source_type, t, {
-      role: normalizedRole,
-      cashboxType: row.cashbox_type || row.cashbox?.cashbox_type || viewerCashboxType,
-      paymentMethod: row.payment_method,
-      branchLeg: row.branch_leg,
-    });
+    isPassThroughRow(row)
+      ? passThroughView(row, t).title
+      : getPaymentSourceTitle(row.source_type, t, {
+          role: normalizedRole,
+          cashboxType: row.cashbox_type || row.cashbox?.cashbox_type || viewerCashboxType,
+          paymentMethod: row.payment_method,
+          branchLeg: row.branch_leg,
+        });
   // Asosiy kassa sahifasida `click` — «Karta (Click)» (maket), qolganlari umumiy yorliq.
   const paymentMethodLabel = (value?: string | null) =>
     String(value ?? "").trim().toLowerCase() === "click"
@@ -900,6 +906,7 @@ const MainCashbox = () => {
    * «#4512 · Kuryer to'lovi qaytarildi», «Tuzatilgan» ostida qarshi tomon + «#4498 o'rniga».
    */
   const rowSubLine = (row: PaymentRow) => {
+    if (isPassThroughRow(row)) return { text: passThroughView(row, t).route, insteadOf: null };
     const reversal = reversalRefText(
       row,
       t,
@@ -932,12 +939,14 @@ const MainCashbox = () => {
     const receipt = isManagerRole ? null : toReceiptRef(row.receipt);
     return [
       sub ? `${title} (${sub})` : title,
-      direction
-        ? `${t(direction === "income" ? "v2Common.income" : "v2Common.expense")} ${formatSignedMoneyLocalized(
-            direction === "expense" ? -amount : amount,
-            { language },
-          )}`
-        : "",
+      isPassThroughRow(row)
+        ? `${t("v2Common.passThrough.badge")} ${formatMoneyLocalized(amount, { language })}`
+        : direction
+          ? `${t(direction === "income" ? "v2Common.income" : "v2Common.expense")} ${formatSignedMoneyLocalized(
+              direction === "expense" ? -amount : amount,
+              { language },
+            )}`
+          : "",
       `${rowDateText(row)} · ${actorName(row)}`,
       receipt ? t("receipt.status.aria", { status: t(`receipt.status.${receipt.ai_status}`) }) : "",
     ]
@@ -953,6 +962,7 @@ const MainCashbox = () => {
   const receiptBadge = (row: PaymentRow) => (isManagerRole ? null : <ReceiptRowBadge receipt={row.receipt} />);
 
   const operationBadge = (row: PaymentRow) => {
+    if (isPassThroughRow(row)) return <PassThroughBadge />;
     const direction = rowDirection(row);
     if (!direction) return <span className="text-text-muted">—</span>;
     return (
@@ -962,6 +972,7 @@ const MainCashbox = () => {
     );
   };
   const amountNode = (row: PaymentRow) => {
+    if (isPassThroughRow(row)) return <PassThroughAmount amount={row.amount} language={language} />;
     const direction = rowDirection(row);
     const amount = Math.abs(toNumber(row.amount));
     return (
@@ -976,7 +987,8 @@ const MainCashbox = () => {
     );
   };
   const balanceAfterText = (row: PaymentRow) => {
-    const value = row.balance_after;
+    // Iz jufti qoldiqni o'zgartirmaydi — juftdan keyingi (keyin yozilgan oyoq) qoldig'i.
+    const value = isPassThroughRow(row) ? passThroughView(row, t).balanceAfter : row.balance_after;
     if (value === undefined || value === null || !Number.isFinite(Number(value))) return null;
     return t("v2MainCashbox.history.balanceAfter", { amount: formatMoneyLocalized(value, { language }) });
   };
@@ -1592,7 +1604,7 @@ const MainCashbox = () => {
 
   // ── Operatsiyalar tarixi ────────────────────────────────────────────────────
   const historyCountText = t("v2MainCashbox.history.count", {
-    n: formatNumberLocalized(historyRows.length, { language }),
+    n: formatNumberLocalized(listRows.length, { language }),
   });
   const historyRangeText = hasDateFilter
     ? formatShortRange(draftHistoryFrom, draftHistoryTo)
@@ -1657,11 +1669,11 @@ const MainCashbox = () => {
         </div>
       }
       footer={
-        historyRows.length > 0 && !historyIsError ? (
+        listRows.length > 0 && !historyIsError ? (
           <Pagination
             page={currentPage}
             pageSize={historyPageSize}
-            total={historyRows.length}
+            total={listRows.length}
             onPageChange={(next) => {
               setHistoryPage(next);
               scrollShellContentToTop(historyCardRef.current);
