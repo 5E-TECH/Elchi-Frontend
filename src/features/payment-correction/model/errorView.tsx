@@ -146,7 +146,9 @@ export const describeCorrectionError = (
         : info.reason === "cashbox_deleted"
           ? // Backend qaysi kassa (yoki CLICK kartasi) ekanini aytmaydi — aniq bo'lsagina nomlanadi.
             cashboxDeletedText(t, deletedCashboxSubject(shape, "post"))
-          : t("paymentCorrection.errors.notCorrectable.unsupported"),
+          : info.reason === "reverse_only"
+            ? t("paymentCorrection.errors.notCorrectable.reverseOnly")
+            : t("paymentCorrection.errors.notCorrectable.unsupported"),
   });
 
   switch (info.code) {

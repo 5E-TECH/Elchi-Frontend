@@ -177,6 +177,7 @@ describe("toPaymentCorrectableTransfer", () => {
       }),
     ).toEqual({
       kind: "courier_payment",
+      variant: null,
       payment_method: "cash",
       amount: 1850000,
       receiver: { cashbox_type: "branch", branch_id: "15", name: "Urgut filiali" },
@@ -197,12 +198,38 @@ describe("toPaymentCorrectableTransfer", () => {
       }),
     ).toEqual({
       kind: "market_payment",
+      variant: null,
       payment_method: null,
       amount: 2400000,
       receiver: { cashbox_type: "main", branch_id: null, name: null },
       courier: null,
       market: { id: "77", name: null },
     });
+  });
+
+  it("2026-11-26: `variant` — ma'lum qiymat o'qiladi, noma'lum / yo'q — `null`; filial — pul qaytadigan kassa", () => {
+    const branchMarket = toPaymentCorrectableTransfer({
+      kind: "market_payment",
+      variant: "market_branch",
+      payment_method: "cash",
+      amount: 200000,
+      receiver: { cashbox_type: "branch", branch_id: 15, name: "Urgut filiali" },
+      courier: null,
+      market: { id: "77", name: "Baraka Shop" },
+    });
+    expect(branchMarket).toMatchObject({
+      variant: "market_branch",
+      receiver: { cashbox_type: "branch", branch_id: "15", name: "Urgut filiali" },
+    });
+    for (const variant of ["courier_click_branch", "branch_click_market", "COURIER"]) {
+      expect(
+        toPaymentCorrectableTransfer({ kind: "courier_payment", variant, receiver: { cashbox_type: "main" } })?.variant,
+      ).toBe(variant.toLowerCase());
+    }
+    expect(
+      toPaymentCorrectableTransfer({ kind: "courier_payment", variant: "to_the_moon", receiver: { cashbox_type: "main" } })
+        ?.variant,
+    ).toBeNull();
   });
 
   it("yaroqsiz: obyekt emas, noma'lum tur yoki qabul qiluvchi — `null`", () => {
@@ -246,13 +273,27 @@ describe("toPaymentCorrectable", () => {
       code: "COURIER_MOVED",
       deadline: null,
       window_days: 10,
+      edit_allowed: true,
       root_history_id: null,
       transfer: null,
     });
     const reversal = toPaymentCorrectable({ allowed: false, code: "NOT_CORRECTABLE", reason: "reversal_row" });
     expect(reversal).toMatchObject({ code: "NOT_CORRECTABLE", reason: "reversal_row", transfer: null });
     const odd = toPaymentCorrectable({ allowed: "true", code: "SOMETHING", reason: "other", window_days: 0 });
-    expect(odd).toEqual({ allowed: false, deadline: null, window_days: 30, root_history_id: null, transfer: null });
+    expect(odd).toEqual({
+      allowed: false,
+      deadline: null,
+      window_days: 30,
+      edit_allowed: true,
+      root_history_id: null,
+      transfer: null,
+    });
+    // 2026-11-26: `reverse_only` — ma'lum sabab; `edit_allowed` faqat aniq `false` bo'lsa o'chadi (eski backend — true).
+    expect(toPaymentCorrectable({ allowed: false, code: "NOT_CORRECTABLE", reason: "reverse_only" })).toMatchObject({
+      reason: "reverse_only",
+    });
+    expect(toPaymentCorrectable({ allowed: true, edit_allowed: false })?.edit_allowed).toBe(false);
+    expect(toPaymentCorrectable({ allowed: true, edit_allowed: "false" })?.edit_allowed).toBe(true);
   });
 
   it("`null` / obyekt emas — `null` (tugma ham, izoh ham yo'q); eski backend (`transfer` kaliti yo'q) — `transfer: null`", () => {

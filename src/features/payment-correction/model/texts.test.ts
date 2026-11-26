@@ -332,6 +332,99 @@ describe("«Summani tahrirlash»", () => {
   });
 });
 
+describe("2026-11-26 — filial ishtirokidagi to'lovni qaytarish (A, B, C)", () => {
+  const branch = { cashbox_type: "branch", branch_id: "15", name: "Urgut filiali" };
+  const market = { id: "77", name: "Baraka Shop" };
+
+  it("B — filial kassasidan marketga: «Filial kassasi → Market», pul filialga qaytadi, menejer ham xabar oladi", () => {
+    const texts = uz().reverse(
+      make({ kind: "market_payment", variant: "market_branch", payment_method: "cash", amount: 200000, receiver: branch, courier: null, market }),
+    );
+    expect(texts.transfer).toEqual({
+      from: { title: "Filial kassasi", meta: "Urgut filiali" },
+      to: { title: "Market kassasi", meta: "Baraka Shop" },
+    });
+    expect(plain(texts.note)).toBe("Pul Urgut filiali kassasiga qaytadi, Baraka Shopga berilishi kerak summa 200 000 so'mga ortadi.");
+    expect(plain(texts.confirm.consequences.map((item) => item.text))).toEqual([
+      "Urgut filiali kassasiga 200 000 so'm qaytadi",
+      "Baraka Shopga berilishi kerak summa 200 000 so'mga ortadi",
+      "Oxirgi to'langan buyurtmalar «Qisman to'langan» yoki «Sotilgan» holatiga qaytadi",
+      "Market egasi va filial menejeriga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
+      "Asl yozuv o'chirilmaydi — ro'yxatda «Qaytarildi» va «Teskari yozuv» bo'lib qoladi",
+    ]);
+    expect(texts.confirm.transfer?.to.title).toBe("Filial kassasi");
+    expect(plain(texts.toast.description)).toBe("200 000 so'm Urgut filiali kassasiga qaytdi. Market va filial menejeriga xabar yuborildi.");
+    expect(texts.reasonField("", false).hint).toBe("Kamida 5 ta belgi");
+    expect(texts.reasonField("Xato summa", false).hint).toBe(
+      "Jurnalga yoziladi; market va filial menejeri ilovada ko'radi, Telegram xabariga kirmaydi",
+    );
+  });
+
+  it("A — «Marketga o'tkazma» filial orqali: kuryerga qaytadi, filial kassasi o'zgarmaydi, uchalasiga xabar", () => {
+    const texts = uz().reverse(
+      make({
+        kind: "courier_payment",
+        variant: "courier_click_branch",
+        payment_method: "click_to_market",
+        amount: 300000,
+        receiver: branch,
+        courier: { id: "209", name: "Jasur Tursunov" },
+        market,
+      }),
+    );
+    expect(texts.transfer).toEqual({
+      from: { title: "Kuryer kassasi", meta: "Jasur Tursunov" },
+      to: { title: "Market kassasi", meta: "Baraka Shop" },
+    });
+    expect(plain(texts.note)).toBe(
+      "Jasur Tursunov kassasiga 300 000 so'm qaytadi, Baraka Shopga berilishi kerak summa ham shuncha ortadi; Urgut filiali kassasi o'zgarmaydi.",
+    );
+    expect(plain(texts.confirm.consequences.map((item) => item.text)).slice(0, 4)).toEqual([
+      "Jasur Tursunov kassasiga 300 000 so'm qaytadi",
+      "Baraka Shopga berilishi kerak summa 300 000 so'mga ortadi",
+      "Urgut filiali kassasi o'zgarmaydi",
+      "Kuryer, market egasi va filial menejeriga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
+    ]);
+    expect(plain(texts.toast.description)).toBe(
+      "300 000 so'm Jasur Tursunov kassasiga qaytdi. Kuryer, market va filial menejeriga xabar yuborildi.",
+    );
+  });
+
+  it("C — «Filialdan marketga o'tkazma»: sarlavha, «Filial kassasi → Market», filial HQ'ga yana qarzdor", () => {
+    const texts = uz().reverse(
+      make({
+        kind: "market_payment",
+        variant: "branch_click_market",
+        payment_method: "click_to_market",
+        amount: 250000,
+        receiver: branch,
+        courier: null,
+        market,
+      }),
+    );
+    expect(plain(texts.description)).toBe("#4512 · Filialdan marketga o'tkazma · 07.10.2026, 14:32");
+    expect(texts.transfer).toEqual({
+      from: { title: "Filial kassasi", meta: "Urgut filiali" },
+      to: { title: "Market kassasi", meta: "Baraka Shop" },
+    });
+    expect(plain(texts.note)).toBe(
+      "Pul Urgut filiali kassasiga qaytadi va filialning HQ'ga topshirishi kerak summasi 250 000 so'mga ortadi; Baraka Shopga berilishi kerak summa ham shuncha ortadi. Asosiy kassa o'zgarmaydi.",
+    );
+    expect(plain(texts.confirm.consequences.map((item) => item.text)).slice(0, 4)).toEqual([
+      "Urgut filiali kassasiga 250 000 so'm qaytadi",
+      "Urgut filiali HQ'ga yana 250 000 so'm topshirishi kerak bo'ladi",
+      "Baraka Shopga berilishi kerak summa 250 000 so'mga ortadi",
+      "Asosiy kassa o'zgarmaydi",
+    ]);
+    expect(plain(texts.toast.description)).toBe("250 000 so'm Urgut filiali kassasiga qaytdi. Market va filial menejeriga xabar yuborildi.");
+  });
+
+  it("eski backend (`variant` yo'q) — avvalgidek: marketga to'lov «Asosiy kassa → Market»", () => {
+    const texts = uz().reverse(make(marketTransfer));
+    expect(texts.transfer?.from.title).toBe("Asosiy kassa");
+  });
+});
+
 describe("tafsilot pastki qismi: muddat izohi va qulf", () => {
   it("muddat: «Qaytarish yoki tahrirlash mumkin: 07.11.2026, 14:32 gacha · muddat 30 kun»; zanjir davomi", () => {
     const texts = uz();
@@ -341,6 +434,7 @@ describe("tafsilot pastki qismi: muddat izohi va qulf", () => {
       windowDays: 30,
       rootHistoryId: "4512",
       chained: false,
+      editAllowed: true,
     });
     expect(plain(hint)).toEqual({
       lead: "Qaytarish yoki tahrirlash mumkin:",
@@ -354,9 +448,24 @@ describe("tafsilot pastki qismi: muddat izohi va qulf", () => {
       windowDays: 30,
       rootHistoryId: "4498",
       chained: true,
+      editAllowed: true,
     });
     expect(plain(chained.window)).toBe("muddat birinchi to'lovdan (#4498)");
-    expect(texts.actions).toEqual({ reverse: "Qaytarish", correct: "Summani tahrirlash" });
+    // 2026-11-26: faqat qaytariladigan to'lov.
+    const reverseOnly = texts.deadlineHint({
+      kind: "actions",
+      deadline: "2026-11-07T09:32:00.000Z",
+      windowDays: 30,
+      rootHistoryId: "4512",
+      chained: false,
+      editAllowed: false,
+    });
+    expect(reverseOnly.lead).toBe("Faqat qaytarish mumkin:");
+    expect(texts.actions).toEqual({
+      reverse: "Qaytarish",
+      correct: "Summani tahrirlash",
+      reverseOnly: "Summa xato bo'lsa — qaytaring va to'g'ri summani qayta kiriting.",
+    });
   });
 
   it("qulf: muddat tugagan (+ «Muddatni o'zgartirish»), eski yozuv, kuryer ko'chgan (ega qarori), teskari yozuv, kassa o'chirilgan", () => {
@@ -379,7 +488,7 @@ describe("tafsilot pastki qismi: muddat izohi va qulf", () => {
       changeWindow: null,
     });
     const notCorrectable = (
-      reason: "reversal_row" | "cashbox_deleted" | "unsupported_type",
+      reason: "reversal_row" | "cashbox_deleted" | "unsupported_type" | "reverse_only",
       kind?: "courier_payment" | "market_payment",
       options: { method?: "cash" | "click" | "click_to_market"; receiver?: "main" | "branch" } = {},
     ) =>
@@ -389,6 +498,7 @@ describe("tafsilot pastki qismi: muddat izohi va qulf", () => {
         reason,
         deadline: null,
         window_days: 30,
+        edit_allowed: true,
         root_history_id: null,
         transfer: kind
           ? {
@@ -413,8 +523,20 @@ describe("tafsilot pastki qismi: muddat izohi va qulf", () => {
     expect(notCorrectable("cashbox_deleted", "courier_payment", { receiver: "branch" })).toBe("Kassa o'chirilgan.");
     expect(notCorrectable("cashbox_deleted", "courier_payment", { method: "click_to_market" })).toBe("Kassa o'chirilgan.");
     expect(notCorrectable("cashbox_deleted")).toBe("Kassa o'chirilgan.");
-    expect(notCorrectable("unsupported_type")).toBe("To'lovning kassalardagi yozuvlari to'liq emas.");
-    expect(texts.lock({ allowed: false, code: "ALREADY_CORRECTED", deadline: null, window_days: 30, root_history_id: null })).toBeNull();
+    expect(notCorrectable("unsupported_type")).toBe("Bu turdagi yozuvni qaytarib ham, tahrirlab ham bo'lmaydi.");
+    expect(notCorrectable("reverse_only")).toBe(
+      "Bu to'lovni faqat qaytarish mumkin — summasini tahrirlab bo'lmaydi. Qaytaring va to'g'ri summani qayta kiriting.",
+    );
+    expect(
+      texts.lock({
+        allowed: false,
+        code: "ALREADY_CORRECTED",
+        deadline: null,
+        window_days: 30,
+        edit_allowed: true,
+        root_history_id: null,
+      }),
+    ).toBeNull();
   });
 });
 
@@ -432,7 +554,7 @@ describe("ru / en", () => {
     );
     expect(plain(texts.toast)).toEqual({ title: "Платёж отменён", description: "1 850 000 сум вернулось в кассу курьера Jasur Tursunov. Курьер уведомлён." });
     const windowOf = (count: number) =>
-      ru.deadlineHint({ kind: "actions", deadline: null, windowDays: count, rootHistoryId: null, chained: false }).window;
+      ru.deadlineHint({ kind: "actions", deadline: null, windowDays: count, rootHistoryId: null, chained: false, editAllowed: true }).window;
     expect([windowOf(1), windowOf(3), windowOf(5)]).toEqual(["срок 1 день", "срок 3 дня", "срок 5 дней"]);
   });
 
@@ -443,7 +565,7 @@ describe("ru / en", () => {
       "The money goes back the other way: from the main cashbox to the cashbox of the courier. The original entry is kept — a reversal entry is added.",
     );
     const windowOf = (count: number) =>
-      en.deadlineHint({ kind: "actions", deadline: null, windowDays: count, rootHistoryId: null, chained: false }).window;
+      en.deadlineHint({ kind: "actions", deadline: null, windowDays: count, rootHistoryId: null, chained: false, editAllowed: true }).window;
     expect([windowOf(1), windowOf(30)]).toEqual(["window 1 day", "window 30 days"]);
   });
 });

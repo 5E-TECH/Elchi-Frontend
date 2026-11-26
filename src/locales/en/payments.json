@@ -1685,7 +1685,8 @@
     },
     "actions": {
       "reverse": "Reverse",
-      "correct": "Correct amount"
+      "correct": "Correct amount",
+      "reverseOnly": "If the amount is wrong, reverse the payment and enter the correct amount again."
     },
     "cancel": "Cancel",
     "continue": "Continue",
@@ -1708,7 +1709,9 @@
       "hintCourier": "Saved to the log; the courier sees it in the app, it is not sent to Telegram",
       "hintMarket": "Saved to the log; the market sees it in the app, it is not sent to Telegram",
       "hintBoth": "Saved to the log; the courier and the market see it in the app, it is not sent to Telegram",
-      "hintGeneric": "Saved to the log, it is not sent to Telegram"
+      "hintGeneric": "Saved to the log, it is not sent to Telegram",
+      "hintMarketBranch": "Saved to the log; the market and the branch manager see it in the app, not in Telegram",
+      "hintAll": "Saved to the log; the courier, the market and the branch manager see it in the app, not in Telegram"
     },
     "consequence": {
       "courierBack": "{{amount}} goes back to the cashbox of {{courier}}",
@@ -1718,7 +1721,10 @@
       "notifyCourierBranch": "The courier and the branch head are notified",
       "notifyMarket": "The market owner is notified in the app, and in Telegram if connected. The reason is shown only in the app",
       "notifyBoth": "The courier and the market owner are notified in the app, and in Telegram if connected. The reason is shown only in the app",
-      "notifyGeneric": "The parties of the payment are notified in the app, and in Telegram if connected. The reason is shown only in the app"
+      "notifyGeneric": "The parties of the payment are notified in the app, and in Telegram if connected. The reason is shown only in the app",
+      "branchUnchanged": "The {{branch}} cashbox does not change",
+      "notifyMarketBranch": "The market owner and the branch manager get a notification: in the app, and in Telegram if connected. The reason is only shown in the app",
+      "notifyAll": "The courier, the market owner and the branch manager get a notification: in the app, and in Telegram if connected. The reason is only shown in the app"
     },
     "reverse": {
       "title": "Reverse payment",
@@ -1732,7 +1738,10 @@
         "courierBranch": "The money goes back the other way: from the cashbox of {{branch}} to the cashbox of {{courier}}. The original entry is kept — a reversal entry is added.",
         "market": "The money goes back to the main cashbox, the amount owed to {{market}} grows by {{amount}}.",
         "clickToMarket": "{{amount}} goes back to the cashbox of {{courier}}, the amount owed to {{market}} grows by the same; the main cashbox does not change.",
-        "generic": "The money goes back the other way. The original entry is kept — a reversal entry is added."
+        "generic": "The money goes back the other way. The original entry is kept — a reversal entry is added.",
+        "marketBranch": "The money returns to the {{branch}} cashbox; the amount owed to {{market}} grows by {{amount}}.",
+        "clickToMarketBranch": "{{amount}} returns to {{courier}}'s cashbox; the amount owed to {{market}} grows by the same; the {{branch}} cashbox does not change.",
+        "branchToMarket": "The money returns to the {{branch}} cashbox and the amount the branch must hand over to HQ grows by {{amount}}; the amount owed to {{market}} grows by the same. The main cashbox does not change."
       },
       "consequence": {
         "mainOutCash": "{{amount}} in cash is written off the main cashbox — in the current shift",
@@ -1742,14 +1751,19 @@
         "mainIn": "{{amount}} goes back to the main cashbox",
         "marketOrders": "The last paid orders go back to «Partly paid» or «Sold»",
         "generic": "The money goes back between the cashboxes — in the current shift",
-        "history": "The original entry is kept — the list shows «Reversed» and «Reversal entry»"
+        "history": "The original entry is kept — the list shows «Reversed» and «Reversal entry»",
+        "branchIn": "{{amount}} returns to the {{branch}} cashbox",
+        "branchOwesHq": "{{branch}} will have to hand over {{amount}} to HQ again"
       },
       "toast": {
         "title": "Payment reversed",
         "courier": "{{amount}} went back to the cashbox of {{courier}}. The courier has been notified.",
         "market": "The amount owed to {{market}} grew by {{amount}}. The market has been notified.",
         "clickToMarket": "{{amount}} went back to the cashbox of {{courier}}. The courier and the market have been notified.",
-        "generic": "#{{id}}: {{amount}} went back."
+        "generic": "#{{id}}: {{amount}} went back.",
+        "marketBranch": "{{amount}} returned to the {{branch}} cashbox. The market and the branch manager were notified.",
+        "clickToMarketBranch": "{{amount}} returned to {{courier}}'s cashbox. The courier, the market and the branch manager were notified.",
+        "branchToMarket": "{{amount}} returned to the {{branch}} cashbox. The market and the branch manager were notified."
       }
     },
     "correct": {
@@ -1802,7 +1816,8 @@
       "until": "until {{deadline}}",
       "window_one": "window {{count}} day",
       "window_other": "window {{count}} days",
-      "fromRoot": "window from the first payment (#{{id}})"
+      "fromRoot": "window from the first payment (#{{id}})",
+      "leadReverseOnly": "Can only be reversed:"
     },
     "lock": {
       "windowExpiredTitle": "The window ended: {{deadline}}",
@@ -1860,9 +1875,10 @@
         "marketCashboxDeleted": "The market cashbox has been deleted.",
         "cashboxDeleted": "The cashbox has been deleted.",
         "cashboxOrCardDeleted": "A cashbox or card used in this payment has been deleted.",
-        "unsupported": "The payment's cashbox entries are incomplete.",
+        "unsupported": "This kind of record can be neither reversed nor edited.",
         "amountTitle": "The amount can't be corrected",
-        "amountBody": "The courier can't hand over this amount now — reverse the payment in full."
+        "amountBody": "The courier can't hand over this amount now — reverse the payment in full.",
+        "reverseOnly": "This payment can only be reversed — its amount cannot be edited. Reverse it and enter the correct amount again."
       },
       "legacy": {
         "title": "Old entry",

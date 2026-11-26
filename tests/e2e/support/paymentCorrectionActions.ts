@@ -75,6 +75,24 @@ const movedCourierPayment = () =>
     createdAt: minutesAgo(240),
   });
 
+/**
+ * (2026-11-26) «Filialdan marketga o'tkazma» — asosiy kassadagi iz oyog'i (`branch_to_main` kirim, click_to_market):
+ * faqat QAYTARILADI (`edit_allowed: false`).
+ */
+const branchToMarketTransfer = () =>
+  leg({
+    id: "4530",
+    amount: 250_000,
+    operation_type: "income",
+    source_type: "branch_to_main",
+    payment_method: "click_to_market",
+    comment: "Filial marketga o'zi o'tkazdi",
+    source_user_id: "15",
+    source_branch: { id: "15", name: "Urgut filiali" },
+    payment_date: minutesAgo(20),
+    createdAt: minutesAgo(20),
+  });
+
 export const CORRECTION_DEADLINE = daysFromNow(30);
 
 /** `GET finance/history/:id` — superadmin tafsiloti `correctable` bilan. */
@@ -113,6 +131,25 @@ export const correctionDetails = () => ({
       },
     },
   },
+  "finance/history/4530": {
+    ...branchToMarketTransfer(),
+    correctable: {
+      allowed: true,
+      deadline: CORRECTION_DEADLINE,
+      window_days: 30,
+      edit_allowed: false,
+      root_history_id: "4530",
+      transfer: {
+        kind: "market_payment",
+        variant: "branch_click_market",
+        payment_method: "click_to_market",
+        amount: 250_000,
+        receiver: { cashbox_type: "branch", branch_id: "15", name: "Urgut filiali" },
+        courier: null,
+        market: { id: MARKET.id, name: MARKET.name },
+      },
+    },
+  },
   "finance/history/3987": {
     ...lockedPayment(),
     correctable: {
@@ -137,9 +174,9 @@ export const correctionDetails = () => ({
   },
 });
 
-/** `/payments` sahifasi: KPI, grafik, tarix (to'rt to'lov) va tafsilotlar. */
+/** `/payments` sahifasi: KPI, grafik, tarix (besh to'lov) va tafsilotlar. */
 export const correctionPageData = () => {
-  const items = [courierPayment(), marketPayment(), movedCourierPayment(), lockedPayment()];
+  const items = [branchToMarketTransfer(), courierPayment(), marketPayment(), movedCourierPayment(), lockedPayment()];
   return {
     ...OVERVIEW_PAGE_DATA,
     "finance/history": { items, meta: { page: 1, limit: 10, total: items.length, totalPages: 1 } },

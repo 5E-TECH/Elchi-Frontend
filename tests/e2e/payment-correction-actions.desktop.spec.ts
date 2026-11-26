@@ -84,6 +84,38 @@ test("«Qaytarish»: forma, tasdiq, tana va kalit, «To'lov qaytarildi», hamma 
   expect(leaked).toEqual([]);
 });
 
+test("⭐ 2026-11-26: «Filialdan marketga o'tkazma» — faqat «Qaytarish»; «Filial kassasi → Market», tana va kalit", async ({ page }) => {
+  const { leaked } = await setupShellSession(page, "superadmin", "Shodiyor Ergashev", correctionPageData());
+  const { posts } = await mockCorrectionPosts(page);
+  await page.goto("/payments");
+  await openDetail(page, "Filialdan marketga o'tkazma");
+
+  const detail = page.getByRole("dialog", { name: "Kirim operatsiyasi" });
+  await expect(detail).toContainText(/Faqat qaytarish mumkin: \d\d\.\d\d\.\d{4},\s\d\d:\d\d\sgacha · muddat 30 kun/);
+  await expect(detail).toContainText("Summa xato bo'lsa — qaytaring va to'g'ri summani qayta kiriting.");
+  await expect(detail.getByRole("button", { name: "Summani tahrirlash" })).toHaveCount(0);
+  await detail.getByRole("button", { name: "Qaytarish" }).click();
+
+  const form = page.getByRole("dialog", { name: "To'lovni qaytarish" });
+  await expect(form).toContainText("Filialdan marketga o'tkazma");
+  await expect(form).toContainText("Filial kassasi");
+  await expect(form).toContainText("Pul Urgut filiali kassasiga qaytadi");
+  await form.getByRole("textbox", { name: /^Sabab/ }).fill(REASON);
+  await form.getByRole("button", { name: "Davom etish" }).click();
+
+  const confirm = page.getByRole("alertdialog", { name: "To'lovni qaytarishni tasdiqlang" });
+  await expect(confirm).toContainText("Urgut filiali kassasiga 250 000 so'm qaytadi");
+  await expect(confirm).toContainText("Urgut filiali HQ'ga yana 250 000 so'm topshirishi kerak bo'ladi");
+  await confirm.getByRole("button", { name: "Qaytarish" }).click();
+
+  await expect(page.getByText("To'lov qaytarildi", { exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(posts).toHaveLength(1);
+  expect(posts[0].path).toBe("finance/history/4530/reverse");
+  expect(posts[0].body).toEqual({ reason: REASON });
+  expect(leaked).toEqual([]);
+});
+
 test("SHIFT_REQUIRED, 504 va javobsiz POST tasdiq oynasida qoladi; qayta bosish — o'sha `Idempotency-Key` va tana, 200 `idempotent`", async ({ page }) => {
   const { leaked } = await setupShellSession(page, "superadmin", "Shodiyor Ergashev", correctionPageData());
   const { posts } = await mockCorrectionPosts(page, [
