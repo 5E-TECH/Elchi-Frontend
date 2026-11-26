@@ -61,13 +61,19 @@ export const buildCorrectionTarget = (input: BuildCorrectionTargetInput): Correc
   };
 };
 
-/** To'lov shakli: oddiy kuryer to'lovi, marketga to'lov, kuryerdan marketga o'tkazma (click_to_market). */
-export type CorrectionKind = "courier" | "market" | "clickToMarket";
+/**
+ * To'lov shakli: oddiy kuryer to'lovi, marketga to'lov (asosiy yoki filial kassasidan — `receiver`), kuryerdan marketga
+ * o'tkazma (click_to_market; HQ yoki filial orqali — `receiver`), filialdan marketga o'tkazma (2026-11-26).
+ */
+export type CorrectionKind = "courier" | "market" | "clickToMarket" | "branchToMarket";
 
 export type CorrectionShape = {
   /** `null` — shakl noma'lum (eski backend, `transfer` yo'q): umumiy matn. */
   kind: CorrectionKind | null;
-  /** Pulni olgan kassa: kuryer to'lovida MAIN yoki filial, marketga to'lovda — MAIN; noma'lum — `null`. */
+  /**
+   * Pul qaytadigan kassa: kuryer to'lovida pulni olgan kassa (asosiy / filial), marketga to'lovda to'lagan kassa,
+   * filialdan marketga o'tkazmada — filial; noma'lum — `null`.
+   */
   receiver: "main" | "branch" | null;
   method: PaymentCorrectionMethod | null;
   /** To'lov summasi (`transfer.amount`, bo'lmasa oyoq summasi). */
@@ -81,11 +87,22 @@ export type CorrectionShape = {
 const methodOf = (value: string | null | undefined): PaymentCorrectionMethod | null =>
   value && (PAYMENT_CORRECTION_METHODS as readonly string[]).includes(value) ? (value as PaymentCorrectionMethod) : null;
 
-/** `transfer.kind` + usul → shakl (click_to_market ning MAIN `market_payment` oyog'i ham `courier_payment`). */
+/**
+ * `transfer.kind` + usul (+ `variant`) → shakl (click_to_market ning MAIN `market_payment` oyog'i ham
+ * `courier_payment`). «Filialdan marketga o'tkazma» — faqat `variant` dan (`kind` u yerda `market_payment`).
+ */
 export const correctionKindOf = (
   kind: PaymentCorrectableTransfer["kind"],
   method: PaymentCorrectionMethod | null,
-): CorrectionKind => (kind === "market_payment" ? "market" : method === "click_to_market" ? "clickToMarket" : "courier");
+  variant?: PaymentCorrectableTransfer["variant"],
+): CorrectionKind =>
+  variant === "branch_click_market"
+    ? "branchToMarket"
+    : kind === "market_payment"
+      ? "market"
+      : method === "click_to_market"
+        ? "clickToMarket"
+        : "courier";
 
 /**
  * `NOT_CORRECTABLE` + `cashbox_deleted`: backend QAYSI kassa (yoki karta) o'chirilganini aytmaydi
@@ -103,7 +120,8 @@ export const deletedCashboxSubject = (
   source: "detail" | "post",
 ): DeletedCashboxSubject => {
   if (source === "post" && shape.method === "click") return "cashboxOrCard";
-  if (shape.kind === "market") return "market";
+  // Filial kassasidan to'lovda ikkinchi oyoq — filial kassasi (u ham o'chirilishi mumkin): umumiy.
+  if (shape.kind === "market" && shape.receiver !== "branch") return "market";
   if (shape.kind === "courier" && shape.receiver === "main") return "courier";
   return "generic";
 };
@@ -114,7 +132,7 @@ export const transferShapeOf = (
 ): Pick<CorrectionShape, "kind" | "receiver" | "method"> =>
   transfer
     ? {
-        kind: correctionKindOf(transfer.kind, transfer.payment_method),
+        kind: correctionKindOf(transfer.kind, transfer.payment_method, transfer.variant),
         receiver: transfer.receiver.cashbox_type,
         method: transfer.payment_method,
       }
@@ -135,7 +153,7 @@ export const deriveCorrectionShape = (target: CorrectionTarget): CorrectionShape
     };
   }
   const method = transfer.payment_method ?? methodOf(target.paymentMethod);
-  const kind = correctionKindOf(transfer.kind, method);
+  const kind = correctionKindOf(transfer.kind, method, transfer.variant);
   return {
     kind,
     receiver: transfer.receiver.cashbox_type,
@@ -153,6 +171,7 @@ export const deriveCorrectionShape = (target: CorrectionTarget): CorrectionShape
 /**
  * Tafsilot oynasi pastki qismi (superadmin):
  *  - `actions` — «Qaytarish» va «Summani tahrirlash» + muddat izohi (`chained` — zanjirning birinchi to'lovidan);
+ *    `editAllowed: false` (filial ishtirokidagi to'lov) — faqat «Qaytarish»;
  *  - `lock` — tushuntirish (`Lock`), faqat «Yopish» (`WINDOW_EXPIRED`, `LEGACY_UNLINKED`, `NOT_CORRECTABLE`,
  *    `COURIER_MOVED`);
  *  - `none` — hech narsa, faqat «Yopish»: `canCorrect` yo'q (admin — tasodifiy `correctable` bo'lsa ham), `correctable`
@@ -160,7 +179,15 @@ export const deriveCorrectionShape = (target: CorrectionTarget): CorrectionShape
  */
 export type CorrectionFooterState =
   | { kind: "none" }
-  | { kind: "actions"; deadline: string | null; windowDays: number; rootHistoryId: string | null; chained: boolean }
+  | {
+      kind: "actions";
+      deadline: string | null;
+      windowDays: number;
+      rootHistoryId: string | null;
+      chained: boolean;
+      /** `false` — faqat «Qaytarish» (filial ishtirokidagi to'lov, 2026-11-26). */
+      editAllowed: boolean;
+    }
   | { kind: "lock"; correctable: PaymentCorrectable };
 
 export const correctionFooterState = (
@@ -179,6 +206,7 @@ export const correctionFooterState = (
       windowDays: correctable.window_days,
       rootHistoryId: correctable.root_history_id,
       chained: Boolean(correctable.root_history_id) && correctable.root_history_id !== id,
+      editAllowed: correctable.edit_allowed !== false,
     };
   }
   if (!correctable.code || correctable.code === "ALREADY_CORRECTED") return { kind: "none" };

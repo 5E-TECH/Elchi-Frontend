@@ -1,5 +1,6 @@
 import type { PaymentRow } from "../patmentHistoryTable";
 import { historyRowDate } from "../../../../entities/payments/paymentCorrection";
+import { isPassThroughRow } from "./passThrough";
 
 /**
  * «ASOSIY KASSA» HISOBLARI — sahifadagi davr kartalari («Bugun / Bu hafta / Bu oy»), «Pul qayerdan keldi,
@@ -67,10 +68,11 @@ export const buildRangeStart = (type: PeriodKey, now: Date = new Date()) => {
   return toIsoDate(new Date(today.getFullYear(), today.getMonth(), 1));
 };
 
-/** Kirim / chiqim yig'indisi (`|amount|`, `operation_type` bo'yicha). */
+/** Kirim / chiqim yig'indisi (`|amount|`, `operation_type` bo'yicha). O'tkazma izi (`pass_through`) kirmaydi. */
 export const summarizeHistory = (items: readonly PaymentRow[] = []): FlowTotals =>
   items.reduce(
     (accumulator, item) => {
+      if (isPassThroughRow(item)) return accumulator;
       const amount = Math.abs(toNumber(item.amount));
       if (item.operation_type === "income") accumulator.income += amount;
       else if (item.operation_type === "expense") accumulator.expense += amount;
@@ -118,12 +120,12 @@ export type SourceBucket = {
 /**
  * «Pul qayerdan keldi, qayerga ketdi»: berilgan yo'nalishdagi qatorlar `source_type` bo'yicha, kamayish
  * tartibida. Kassalar orasidagi o'tkazmalar (`courier_payment`, `market_payment`, `branch_to_main`) o'z nomi
- * bilan qoladi — «xarajat» guruhiga qo'shilmaydi.
+ * bilan qoladi — «xarajat» guruhiga qo'shilmaydi. O'tkazma izi (`pass_through` — pul kassaga kirmagan) kirmaydi.
  */
 export const groupBySource = (rows: readonly PaymentRow[], operation: "income" | "expense"): SourceBucket[] => {
   const totals = new Map<string, number>();
   for (const row of rows) {
-    if (row.operation_type !== operation) continue;
+    if (row.operation_type !== operation || isPassThroughRow(row)) continue;
     const key = String(row.source_type ?? "").trim().toLowerCase() || "unknown";
     totals.set(key, (totals.get(key) ?? 0) + Math.abs(toNumber(row.amount)));
   }
@@ -143,7 +145,15 @@ export type DailyBalancePoint = {
   expense: number;
 };
 
-type HistoryEntry = { time: number; order: number; balance: number | null; operation: string; amount: number };
+type HistoryEntry = {
+  time: number;
+  order: number;
+  balance: number | null;
+  operation: string;
+  amount: number;
+  /** O'tkazma izi — kunlik kirim / chiqimga qo'shilmaydi (qoldiq zanjiri baribir yuradi). */
+  passThrough: boolean;
+};
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
@@ -164,6 +174,7 @@ const toHistoryEntry = (value: unknown, index: number): HistoryEntry | null => {
     balance: balance !== null && Number.isFinite(balance) ? balance : null,
     operation: String(row.operation_type ?? ""),
     amount: Math.abs(toNumber(row.amount)),
+    passThrough: row.pass_through === true,
   };
 };
 
@@ -218,8 +229,9 @@ export const buildDailyBalanceSeries = (
     let income = 0;
     let expense = 0;
     for (const entry of dayEntries) {
-      if (entry.operation === "income") income += entry.amount;
-      else if (entry.operation === "expense") expense += entry.amount;
+      // O'tkazma izi — kirim ham, chiqim ham emas.
+      if (entry.operation === "income" && !entry.passThrough) income += entry.amount;
+      else if (entry.operation === "expense" && !entry.passThrough) expense += entry.amount;
       if (entry.balance !== null) carry = entry.balance;
     }
     if (carry === null) continue;

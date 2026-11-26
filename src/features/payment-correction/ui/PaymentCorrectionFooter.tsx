@@ -12,7 +12,8 @@ import { usePaymentCorrectionTexts } from "../model/texts";
  *  - `actions` (maket `superadmin-payments-history-detail-dialog-correctable`): muddat izohi («Qaytarish yoki
  *    tahrirlash mumkin: **{sana} gacha** · muddat {n} kun» / «… · muddat birinchi to'lovdan (#id)»), chapda
  *    «Qaytarish» (`danger-soft`), o'ngda «Summani tahrirlash» va «Yopish». Telefonda ustma-ust: «Summani tahrirlash»,
- *    so'ng «Qaytarish»; «Yopish» yo'q (X, tutqich, fon).
+ *    so'ng «Qaytarish»; «Yopish» yo'q (X, tutqich, fon). Filial ishtirokidagi to'lov (`editAllowed: false`, 2026-11-26)
+ *    — «Summani tahrirlash» yo'q, izohda «Faqat qaytarish mumkin» va nima qilish kerakligi.
  *  - `lock` (maket `…-detail-dialog-locked`): neytral izoh (`role="note"`, `Lock`) — sarlavha (bo'lmasligi mumkin) va
  *    matn; `WINDOW_EXPIRED` da «Muddatni o'zgartirish» → sozlamalar. Faqat «Yopish» (telefonda to'liq en).
  *  - `none` — faqat «Yopish».
@@ -57,6 +58,11 @@ export const PaymentCorrectionFooter = ({
               </>
             ) : null}
             {hint.window}
+            {state.editAllowed ? null : (
+              <span data-correction-reverse-only className="mt-0.5 block">
+                {texts.actions.reverseOnly}
+              </span>
+            )}
           </span>
         </p>
         <Button
@@ -68,9 +74,11 @@ export const PaymentCorrectionFooter = ({
         >
           {texts.actions.reverse}
         </Button>
-        <Button variant="secondary" leftIcon={Pencil} aria-haspopup="dialog" onClick={onCorrect} className="max-md:order-1">
-          {texts.actions.correct}
-        </Button>
+        {state.editAllowed ? (
+          <Button variant="secondary" leftIcon={Pencil} aria-haspopup="dialog" onClick={onCorrect} className="max-md:order-1">
+            {texts.actions.correct}
+          </Button>
+        ) : null}
         <Button variant="secondary" onClick={onClose} className="max-md:hidden">
           {closeLabel}
         </Button>
