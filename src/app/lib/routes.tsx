@@ -21,6 +21,7 @@ import {
   canCreateOrders,
   canReceiveExternalOrders,
   canUseExternalSites,
+  canViewBranchPackages,
   canViewPaymentsPage,
   canManageShiftSettings,
   canHandoverCancelledToMarket,
@@ -249,11 +250,6 @@ const canViewOps = (state: RootState) => {
 const canManageUsers = canViewUsers;
 const canCreateOrdersByRoleAndBranchType = canCreateOrders;
 const canManageExternalIntegrations = canReceiveExternalOrders;
-
-const canViewAdminNewOrderTabs = (state: RootState) => {
-  const role = state.role.role;
-  return role === "admin" || role === "superadmin";
-};
 
 // Ops vositalari — `/ops` (hub) va to'g'ridan-to'g'ri `*-ops`: FAQAT superadmin (maketlar
 // `superadmin-ops-*`; admin menyusida «Ops vositalari» yo'q). Ichki dev/texnik shakllar — URL orqali ham yopiq.
@@ -961,7 +957,7 @@ const AppRouter = () => {
                 {
                   path: "branches",
                   element: (
-                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                    <ProtectedRoute canActivate={canViewBranchPackages}>
                       <NewOrdersBranches />
                     </ProtectedRoute>
                   ),
@@ -969,7 +965,7 @@ const AppRouter = () => {
                 {
                   path: "branches/:branchId",
                   element: (
-                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                    <ProtectedRoute canActivate={canViewBranchPackages}>
                       <NewOrdersBranchBatches />
                     </ProtectedRoute>
                   ),
@@ -977,7 +973,7 @@ const AppRouter = () => {
                 {
                   path: "branches/:branchId/batches/:batchId",
                   element: (
-                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                    <ProtectedRoute canActivate={canViewBranchPackages}>
                       <NewOrdersBranchBatchDetail />
                     </ProtectedRoute>
                   ),
@@ -985,7 +981,7 @@ const AppRouter = () => {
                 {
                   path: "branches/:branchId/:batchId",
                   element: (
-                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                    <ProtectedRoute canActivate={canViewBranchPackages}>
                       <LegacyBranchBatchRedirect />
                     </ProtectedRoute>
                   ),

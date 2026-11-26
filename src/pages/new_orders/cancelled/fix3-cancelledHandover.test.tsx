@@ -62,6 +62,12 @@ vi.mock("../../../entities/incoming-orders", async (importOriginal) => ({
   useIncomingSources: () => idleQuery(),
 }));
 
+// «Filial paketlari» tabi registratorga ham ochiq (9rzmWFVm) — tab soni so'rovi mock (bu testda son kerak emas).
+vi.mock("../../../entities/branch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/branch")>()),
+  useBranchesWithSentBatches: () => idleQuery(),
+}));
+
 vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
   useOrderQrScanner: () => undefined,
 }));

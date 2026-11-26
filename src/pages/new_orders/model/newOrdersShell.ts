@@ -93,11 +93,12 @@ export type NewOrdersTabKey =
  *  - market: «Yangi buyurtmalar» va (market id ma'lum bo'lsa) «Bekor qilinganlar»;
  *  - xodim: «Marketlar» doim; «Kiruvchi posilkalar» — posilka qabul qiladigan hamma xodimga
  *    (`canReceiveIncoming` = `canReceiveExternalOrders`, route guard bilan bir xil: superadmin, admin, registrator,
- *    `intake` li menejer — HQ · PICKUP · HYBRID; ega qarori S1, 2026-10-19); «Filial paketlari» — faqat
- *    superadmin/admin; «Tashqi saytlar» — `canUseSites` (`canUseExternalSites`: superadmin/admin — saytlar ro'yxati
- *    `GET /integrations` faqat ularda); «Bekor qilinganlar» — `canHandoverCancelledToMarket` (superadmin/admin va HQ
- *    registratori).
- * Natija: menejer va registrator — «Marketlar · Kiruvchi posilkalar», HQ registratorida yana «Bekor qilinganlar».
+ *    `intake` li menejer — HQ · PICKUP · HYBRID; ega qarori S1, 2026-10-19); «Tashqi saytlar» — `canUseSites`
+ *    (`canUseExternalSites`: superadmin, admin, registrator — 9rzmWFVm); «Filial paketlari» — `canSeeBranches`
+ *    (`canViewBranchPackages`: superadmin, admin, registrator — 9rzmWFVm); «Bekor qilinganlar» —
+ *    `canHandoverCancelledToMarket` (superadmin/admin va HQ registratori).
+ * Natija: menejer — «Marketlar · Kiruvchi posilkalar»; registrator — «Marketlar · Kiruvchi posilkalar · Tashqi
+ * saytlar · Filial paketlari», HQ registratorida yana «Bekor qilinganlar».
  * Qobiqqa kiradigan har xodimda (`canCreateOrders` — registrator va `intake` li menejer) tablar ikkita va undan ko'p.
  */
 export const resolveNewOrdersTabKeys = ({
@@ -106,20 +107,21 @@ export const resolveNewOrdersTabKeys = ({
   canReceiveIncoming,
   canSeeCancelled,
   canUseSites = false,
+  canSeeBranches = false,
 }: {
   role: string | null | undefined;
   roleId: string | null | undefined;
   canReceiveIncoming: boolean;
   canSeeCancelled: boolean;
   canUseSites?: boolean;
+  canSeeBranches?: boolean;
 }): NewOrdersTabKey[] => {
   if (role === "market") return roleId ? ["marketNew", "marketCancelled"] : ["marketNew"];
 
-  const isAdmin = role === "superadmin" || role === "admin";
   const keys: NewOrdersTabKey[] = ["markets"];
   if (canReceiveIncoming) keys.push("incoming");
   if (canUseSites) keys.push("sites");
-  if (isAdmin) keys.push("branches");
+  if (canSeeBranches) keys.push("branches");
   if (canSeeCancelled) keys.push("cancelled");
   return keys;
 };
