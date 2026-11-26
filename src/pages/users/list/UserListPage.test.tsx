@@ -498,3 +498,31 @@ describe("UserListPage — investor kabineti xaritasi (LIuf0DcD)", () => {
     expect(mocks.useInvestorIdsByUser).toHaveBeenLastCalledWith(false);
   });
 });
+
+describe("UserListPage — «Faollik» (pe71yf8L)", () => {
+  const listOptions = () => listCalls().at(-1)?.[2] as { refetchInterval?: number | false } | undefined;
+
+  it("⭐ «Marketlar» va «Market operatorlari» tablari — «Faollik» ustuni va 60 s da yangilanish", () => {
+    mocks.useGetUser.mockReset().mockReturnValue(listResponse());
+    const { unmount } = render("/all-users?role=market");
+    expect(listOptions()?.refetchInterval).toBe(60_000);
+    expect(screen.getByRole("columnheader", { name: /Faollik/ })).toBeInTheDocument();
+    unmount();
+
+    mocks.useGetUser.mockReset().mockReturnValue(listResponse());
+    render("/all-users?role=market_operator");
+    expect(listOptions()?.refetchInterval).toBe(60_000);
+  });
+
+  it("⭐ TC9: «Hammasi» va xodim tablari — ustun yo'q, yangilanish yo'q", () => {
+    mocks.useGetUser.mockReset().mockReturnValue(listResponse());
+    const { unmount } = render("/all-users");
+    expect(listOptions()?.refetchInterval).toBe(false);
+    expect(screen.queryByRole("columnheader", { name: /Faollik/ })).not.toBeInTheDocument();
+    unmount();
+
+    mocks.useGetUser.mockReset().mockReturnValue(listResponse());
+    render("/all-users?role=courier");
+    expect(listOptions()?.refetchInterval).toBe(false);
+  });
+});

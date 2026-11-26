@@ -673,6 +673,19 @@
     "filterAll": "Barchasi",
     "unavailable": "Ulab bo'lmaydi"
   },
+  "activity": {
+    "column": "Faollik",
+    "columnHint": "Hozir ilovada (online) yoki yo'q va oxirgi faollik",
+    "online": "Online",
+    "offline": "Offline",
+    "never": "Hali kirmagan",
+    "now": "Hozir",
+    "label": "Faollik",
+    "lastLogin": "Oxirgi kirish",
+    "lastSeen": "Oxirgi faollik",
+    "lastSeenShort": "Oxirgi: {{time}}",
+    "unknown": "Ma'lumot yo'q"
+  },
   "operatorAccount": {
     "title": "Hisob",
     "description": "Operatorga market o'zi to'laydi va yozib boradi — Elchi kassasiga ta'sir qilmaydi. Bu yerda faqat ko'rish mumkin.",

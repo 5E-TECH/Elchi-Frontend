@@ -673,6 +673,19 @@
     "filterAll": "All",
     "unavailable": "Cannot be connected"
   },
+  "activity": {
+    "column": "Activity",
+    "columnHint": "In the app now (online) or not, and last activity",
+    "online": "Online",
+    "offline": "Offline",
+    "never": "Never logged in",
+    "now": "Now",
+    "label": "Activity",
+    "lastLogin": "Last login",
+    "lastSeen": "Last active",
+    "lastSeenShort": "Last: {{time}}",
+    "unknown": "No data"
+  },
   "operatorAccount": {
     "title": "Account",
     "description": "The market pays the operator itself and records it — the Elchi cashbox is not affected. View only.",

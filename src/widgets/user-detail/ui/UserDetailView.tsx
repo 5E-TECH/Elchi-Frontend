@@ -2,12 +2,14 @@
 import { memo, useId, useMemo, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, History, Pencil, Phone, type LucideIcon } from "lucide-react";
+import { Activity, Calendar, Clock, History, LogIn, Pencil, Phone, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { OrderStatusBadge } from "../../../entities/order";
 import { useUser } from "../../../entities/user/api/userApi";
+import { hasActivity, lastActivityAt } from "../../../entities/user/lib/activity";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import { ActivityTime, UserOnlineBadge, useActivityNow } from "../../../entities/user/ui/UserActivityStatus";
 import type { ExpenseProofCondition, Order, User, UserStatus } from "../../../entities/user/types/user";
 import { TransferCourierButton } from "../../../features/courier-transfer-branch";
 import { canManagePasswordSms } from "../../../features/user/password-sms/model/passwordSms";
@@ -216,6 +218,22 @@ const ContactItem = ({ icon: Icon, label, value }: { icon: LucideIcon; label: st
   </div>
 );
 
+/**
+ * pe71yf8L — «Oxirgi kirish» / «Oxirgi faollik» qiymati: to'liq sana-vaqt + ostida nisbiy («2 soat oldin»). `null` —
+ * hech kirmagan; `undefined` — faollik ma'lumoti kelmadi («—»).
+ */
+const ActivityMoment = ({ value, now }: { value: string | null | undefined; now: number }) => {
+  const { t, i18n } = useTranslation("users");
+  if (value === undefined) return <>—</>;
+  if (value === null) return <>{t("activity.never")}</>;
+  return (
+    <span className="flex flex-col gap-0.5">
+      <span>{formatDateTimeLocalized(value, { language: i18n.resolvedLanguage ?? i18n.language })}</span>
+      <ActivityTime value={value} now={now} className="text-[13px] font-normal text-text-muted" />
+    </span>
+  );
+};
+
 /** Ta'rif ro'yxati qatori (Tarif, Profil ma'lumotlari): nom chapda, qiymat o'ngda (desktopda ustunda). */
 const InfoRow = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 py-1.5 text-sm">
@@ -317,6 +335,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const money = (value: number | null | undefined) => formatMoneyLocalized(Number(value ?? 0), { language });
   const date = (value: string | null | undefined) => (value ? formatDateLocalized(value, { language }) : "—");
   const phone = formatPhone(user.phone_number);
+  // pe71yf8L: market / market operatori — «Faollik», «Oxirgi kirish», «Oxirgi faollik» (backend `GET /users/:id`).
+  const showActivity = hasActivity(user);
+  const now = useActivityNow(showActivity);
 
   // ─── Mutatsiyalar ─────────────────
   const editError = t("editUserError");
@@ -674,6 +695,25 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
           <ContactItem icon={Phone} label={t("v2.detail.phone")} value={phone} />
           <ContactItem icon={Calendar} label={t("v2.detail.registered")} value={date(user.createdAt)} />
           <ContactItem icon={History} label={t("v2.detail.updated")} value={date(user.updatedAt)} />
+          {showActivity ? (
+            <>
+              <ContactItem
+                icon={Activity}
+                label={t("activity.label")}
+                value={<UserOnlineBadge online={Boolean(user.is_online)} />}
+              />
+              <ContactItem
+                icon={LogIn}
+                label={t("activity.lastLogin")}
+                value={<ActivityMoment value={user.last_login_at} now={now} />}
+              />
+              <ContactItem
+                icon={Clock}
+                label={t("activity.lastSeen")}
+                value={user.is_online ? t("activity.now") : <ActivityMoment value={lastActivityAt(user)} now={now} />}
+              />
+            </>
+          ) : null}
         </div>
       </Card>
 
