@@ -46,6 +46,17 @@ type RejectedScan = { key: string; title: string; reason: string; at: number };
 const REJECTED_LIMIT = 10;
 
 /**
+ * `GET /couriers` parametrlari — BARCHA rollar uchun faqat FAOL kuryerlar (revMyIKg): nofaol kuryerga biriktirish
+ * backendda 400 «Kuryer faol emas» beradi, shuning uchun u tanlovda umuman chiqmaydi (ilgari SA/admin ro'yxatida
+ * nofaol kuryerlar ham bor edi). Rolga bog'liq emas, shuning uchun modul darajasidagi doimiy qiymat.
+ *
+ * Menejer/registrator uchun region_id YUBORILMAYDI: GET /couriers so'rovchining filialiga o'zi cheklaydi (filial
+ * kuryerlari bo'yicha, sahifalashdan oldin). Avvalgi viloyat filtri HQ registratorida ro'yxatni butunlay bo'sh
+ * qoldirardi — HQ ning viloyati yo'q (region_id NULL). SA/admin — barcha filiallarning faol kuryerlari.
+ */
+const COURIER_PARAMS = { page: 1, limit: 100, status: "active" } as const;
+
+/**
  * «KURYERGA BIRIKTIRISH» — `/dispatch` (superadmin, admin, filialda jo'natish bor registrator, REGIONAL/HYBRID
  * menejer). Buyurtma QR kodlari USB skaner yoki kamera bilan ro'yxatga qo'shiladi (qo'shilgani darhol tanlanadi),
  * so'ng tanlanganlar bitta kuryerga biriktiriladi (`POST orders/assign-to-courier`).
@@ -88,20 +99,12 @@ const DispatchPage = () => {
   const branchFullName = isBranchScopedRole ? readBranchName(user) : null;
   const branchName = getBranchStem(branchFullName);
 
-  // Menejer/registrator uchun region_id YUBORILMAYDI: GET /couriers so'rovchining
-  // filialiga o'zi cheklaydi (filial kuryerlari bo'yicha, sahifalashdan oldin).
-  // Avvalgi viloyat filtri HQ registratorida ro'yxatni butunlay bo'sh
-  // qoldirardi — HQ ning viloyati yo'q (region_id NULL).
-  const courierParams = useMemo(
-    () => (isBranchScopedRole ? { page: 1, limit: 100, status: "active" } : { page: 1, limit: 100 }),
-    [isBranchScopedRole],
-  );
   const {
     data: couriersResponse,
     isLoading: isCouriersLoading,
     isError: isCouriersError,
     refetch: refetchCouriers,
-  } = useGetCouriers(courierParams, true);
+  } = useGetCouriers(COURIER_PARAMS, true);
 
   const couriers = useMemo(() => extractCouriers(couriersResponse), [couriersResponse]);
 

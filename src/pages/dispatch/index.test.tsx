@@ -67,6 +67,10 @@ const hqRegistrator = stateFor("registrator", {
   branch: { id: "1", type: "HQ", region_id: null },
 });
 
+// Superadmin: filialsiz (savat kaliti — foydalanuvchi + filial yo'q).
+const SA_SCOPE = { userId: "1", branchId: null };
+const superadmin = stateFor("superadmin", { id: "1", role: "superadmin" });
+
 type CourierItem = { id: string; name: string; phone_number?: string; region?: { name: string } | null };
 
 const couriersResponse = (items: CourierItem[]) => ({
@@ -142,14 +146,53 @@ describe("DispatchPage — kuryerlar ro'yxati", () => {
     expect(params).toEqual({ page: 1, limit: 100, status: "active" });
   });
 
-  it("superadmin parametrlari o'zgarmagan", () => {
+  // revMyIKg: nofaol kuryer SA/admin ro'yxatida ham chiqmaydi (unga biriktirish backendda 400 «Kuryer faol emas»).
+  it.each(["superadmin", "admin"])("%s ham faqat faol kuryerlarni so'raydi (status: active)", (role) => {
     renderWithProviders(<DispatchPage />, {
-      preloadedState: stateFor("superadmin", { id: "1", role: "superadmin" }),
+      preloadedState: stateFor(role, { id: "1", role }),
     });
 
     const [params, enabled] = lastCourierQuery();
     expect(enabled).toBe(true);
-    expect(params).toEqual({ page: 1, limit: 100 });
+    expect(params).toEqual({ page: 1, limit: 100, status: "active" });
+    expect(params).not.toHaveProperty("region_id");
+    expect(params).not.toHaveProperty("branch_id");
+  });
+
+  it("superadmin: tanlov oynasida faqat backend qaytargan faol kuryerlar, nofaoli yo'q", async () => {
+    // Backend `status: "active"` bo'yicha saralaydi: parametrsiz so'rov nofaol kuryerni ham qaytarardi.
+    mocks.useGetCouriers.mockImplementation((params: Record<string, unknown>) =>
+      couriersResponse([
+        { id: "263", name: "Faol kuryer A" },
+        { id: "264", name: "Faol kuryer B" },
+        ...(params.status === "active" ? [] : [{ id: "265", name: "Nofaol kuryer" }]),
+      ]),
+    );
+    addToDispatchBasket(SA_SCOPE, BASKET_ORDER);
+    const user = userEvent.setup();
+    renderWithProviders(<DispatchPage />, { preloadedState: superadmin });
+
+    await user.click(await screen.findByRole("button", { name: "Kuryerga biriktirish — 1 ta" }));
+    const dialog = await screen.findByRole("dialog", { name: "Kuryerni tanlang" });
+    expect(within(dialog).getByRole("radio", { name: /Faol kuryer A/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole("radio", { name: /Faol kuryer B/ })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("radio", { name: /Nofaol kuryer/ })).not.toBeInTheDocument();
+  });
+
+  it("superadmin: holat o'zgarib qayta chizilganda ham so'rov faqat faol kuryerlar uchun", async () => {
+    addToDispatchBasket(SA_SCOPE, BASKET_ORDER);
+    const user = userEvent.setup();
+    renderWithProviders(<DispatchPage />, { preloadedState: superadmin });
+
+    const before = mocks.useGetCouriers.mock.calls.length;
+    // Tanlovni o'zgartirish sahifani qayta chizadi.
+    await user.click(await screen.findByRole("checkbox", { name: "№10316 ni tanlash" }));
+    const calls = mocks.useGetCouriers.mock.calls;
+    expect(calls.length).toBeGreaterThan(before);
+    // Har bir chaqiruvda — eski SA shakli ({ page, limit }, status'siz) hech qachon qaytmaydi.
+    for (const [params] of calls) {
+      expect(params).toEqual({ page: 1, limit: 100, status: "active" });
+    }
   });
 
   it("kuryer bo'lmasa — bo'sh holat matni chiqadi va biriktirish tugmasi o'chiq", () => {
