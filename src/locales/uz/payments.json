@@ -735,6 +735,21 @@
       "customer": "Mijoz",
       "branch": "Filial kassasi",
       "main": "Asosiy kassa"
+    },
+    "passThrough": {
+      "title": "Marketga o'tkazma",
+      "titleBranch": "Filialdan marketga o'tkazma",
+      "badge": "Kassaga kirmadi",
+      "route": "{{from}} → {{to}}",
+      "party": {
+        "courier": "Kuryer",
+        "branch": "Filial",
+        "market": "Market"
+      },
+      "detailTitle": "O'tkazma izi",
+      "detailNote": "Pul bu kassaga kirmadi: {{from}} → {{to}} to'g'ridan-to'g'ri o'tkazildi. Kassada ikki yozuv bor — kirim va chiqim; qoldiq o'zgarmadi, ular «Kirim» / «Chiqim» jamilariga qo'shilmaydi.",
+      "legs": "Kassadagi yozuvlar",
+      "leg": "#{{id}} · {{direction}}"
     }
   }
   ,"v2HistoryDetail": {

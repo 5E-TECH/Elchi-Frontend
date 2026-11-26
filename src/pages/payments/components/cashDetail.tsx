@@ -69,6 +69,7 @@ import CashboxActionFormCard, {
   type CashboxActionFormValues,
 } from "./CashboxActionFormCard";
 import PaymentHistoryList, { historyRowView } from "./PaymentHistoryList";
+import { isPassThroughRow } from "./lib/passThrough";
 import OpenShiftFlow from "./OpenShiftFlow";
 import ShiftLockedCard from "./ShiftLockedCard";
 import { useCashboxShift } from "./lib/useCashboxShift";
@@ -225,6 +226,30 @@ const toOptionalNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === "") return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+/**
+ * O'tkazma izining juft oyog'i — ekran ro'yxatida server uni kirim oyog'iga biriktiradi (`pass_through_partner`,
+ * BE #800): ro'yxatda yo'q, lekin «Kuryer → Market» va tafsilot uchun kerak.
+ */
+const toPassThroughPartner = (value: unknown): PaymentRow | null => {
+  const item = asRecord(value);
+  const id = toOptionalString(item["id"]);
+  if (!id) return null;
+  return {
+    id,
+    amount: toNumber(item["amount"]),
+    operation_type: toOptionalString(item["operation_type"]),
+    source_type: toOptionalString(item["source_type"]),
+    payment_method: toOptionalString(item["payment_method"]),
+    balance_after: toOptionalNumber(item["balance_after"]),
+    source_user: toActor(item["source_user"]),
+    transfer_id: toOptionalString(item["transfer_id"]) ?? null,
+    pass_through: true,
+    pass_through_pair_id: toOptionalString(item["pass_through_pair_id"]) ?? null,
+    payment_date: toOptionalString(item["payment_date"]),
+    createdAt: toOptionalString(item["createdAt"]),
+  };
 };
 
 /**
@@ -1107,6 +1132,10 @@ const CashDetail = () => {
         correction: toPaymentCorrection(item["correction"]),
         // P0 63HO6cBU (BE PR-A): filial kassasi oyog'i — tafsilotda karta va o'tkazma manbasi chiqmaydi.
         branch_leg: item["branch_leg"] === true ? true : undefined,
+        // O'tkazma izi (BE #800): jamilarga kirmaydi, ro'yxatda juft — bitta qator.
+        pass_through: item["pass_through"] === true ? true : undefined,
+        pass_through_pair_id: toOptionalString(item["pass_through_pair_id"]) ?? null,
+        pass_through_partner: toPassThroughPartner(item["pass_through_partner"]),
         createdAt: toOptionalString(item["createdAt"]),
         created_at: toOptionalString(item["created_at"]),
         cashbox: item["cashbox"] as PaymentRow["cashbox"],
@@ -1125,12 +1154,16 @@ const CashDetail = () => {
   // «Balans harakati» — faqat ko'rilayotgan kassaning qatorlari. Superadmin/admin filial sahifasida tarix ikki
   // manbadan yig'iladi (asosiy kassadagi filial to'lovlari + filialning o'z kassasi): asosiy kassa qatorining
   // qoldig'i (`balance_after`) filial kassasiniki emas. Kuryer, market va menejer sahifalarida — barcha qatorlar.
+  // O'tkazma izi (`pass_through`, ega 2026-11-26) kirmaydi: pul kassaga kirmagan, juft qoldiqni o'zgartirmaydi —
+  // qolgan qatorlarning `balance_after` zanjiri buzilmaydi, «Kirim» / «Chiqim» esa shishmaydi.
   const viewedCashboxId = toOptionalString(cashbox?.id);
   const movementRows = useMemo(
     () =>
-      viewedCashboxId
-        ? historyRows.filter((row) => !row.cashbox_id || String(row.cashbox_id) === viewedCashboxId)
-        : historyRows,
+      historyRows.filter(
+        (row) =>
+          !isPassThroughRow(row) &&
+          (!viewedCashboxId || !row.cashbox_id || String(row.cashbox_id) === viewedCashboxId),
+      ),
     [historyRows, viewedCashboxId],
   );
 

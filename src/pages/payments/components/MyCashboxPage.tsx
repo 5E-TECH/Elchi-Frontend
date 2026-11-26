@@ -64,6 +64,8 @@ import { ViewToggle, type ChartView } from "../../../shared/ui/charts";
 import { formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import { readBranchName, readDisplayName } from "../../../widgets/header/model/userIdentity";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { collapsePassThroughPairs, isPassThroughRow, passThroughView } from "./lib/passThrough";
+import { PassThroughAmount, PassThroughBadge } from "./PassThroughBadge";
 import type { PaymentHistoryActor, PaymentRow } from "./patmentHistoryTable";
 import { getPaymentActorName } from "./paymentHistoryActor";
 import {
@@ -250,6 +252,9 @@ const toPaymentRows = (response: CashboxResponse | undefined, role: CashboxRole)
         correction: toPaymentCorrection(item["correction"]),
         // P0 63HO6cBU (BE PR-A): filial kassasi oyog'i — sarlavha (usul yashirilgan bo'lsa) uchun.
         branch_leg: item["branch_leg"] === true ? true : undefined,
+        // O'tkazma izi (BE #800; menejer filial kassasida): jamilarga kirmaydi, ro'yxatda juft — bitta qator.
+        pass_through: item["pass_through"] === true ? true : undefined,
+        pass_through_pair_id: toOptionalString(item["pass_through_pair_id"]) ?? null,
         // Menejer (filial kassasi) qo'lda chiqimining xarajat kategoriyasi — Elchi Pochta №1.
         expense_category_id: toOptionalString(item["expense_category_id"]) ?? null,
         expense_category_name: toOptionalString(item["expense_category_name"]) ?? null,
@@ -272,10 +277,11 @@ const rowDay = (row: PaymentRow) => {
 
 type TodayTotals = { income: number; expense: number };
 
+/** «Bugun» kirim / chiqimi. O'tkazma izi (`pass_through` — pul kassaga kirmagan) kirmaydi. */
 const sumToday = (rows: PaymentRow[], today: string): TodayTotals =>
   rows.reduce<TodayTotals>(
     (acc, row) => {
-      if (rowDay(row) !== today) return acc;
+      if (rowDay(row) !== today || isPassThroughRow(row)) return acc;
       const amount = Math.abs(toNumber(row.amount));
       if (row.operation_type === "income") acc.income += amount;
       else if (row.operation_type === "expense") acc.expense += amount;
@@ -616,12 +622,14 @@ const MyCashboxPage = () => {
   );
   const sourceTitle = useCallback(
     (row: PaymentRow) =>
-      getPaymentSourceTitle(row.source_type, t, {
-        role,
-        cashboxType: row.cashbox_type,
-        paymentMethod: row.payment_method,
-        branchLeg: row.branch_leg,
-      }),
+      isPassThroughRow(row)
+        ? passThroughView(row, t).title
+        : getPaymentSourceTitle(row.source_type, t, {
+            role,
+            cashboxType: row.cashbox_type,
+            paymentMethod: row.payment_method,
+            branchLeg: row.branch_leg,
+          }),
     [role, t],
   );
   const orderId = (row: PaymentRow) =>
@@ -633,17 +641,28 @@ const MyCashboxPage = () => {
       ? getPaymentActorName(row.created_by_user ?? row.createdByUser)
       : "";
   const direction = (row: PaymentRow): Direction | null =>
-    row.operation_type === "income" || row.operation_type === "expense" ? row.operation_type : null;
+    isPassThroughRow(row)
+      ? null
+      : row.operation_type === "income" || row.operation_type === "expense"
+        ? row.operation_type
+        : null;
   const signedAmount = (row: PaymentRow) => {
     const amount = Math.abs(toNumber(row.amount));
     return direction(row) === "expense" ? -amount : amount;
   };
-  const amountText = (row: PaymentRow) => formatSignedMoneyLocalized(signedAmount(row), { language });
-  const balanceText = (row: PaymentRow) =>
-    row.balance_after === undefined ? "—" : formatMoneyLocalized(row.balance_after, { language });
+  const amountText = (row: PaymentRow) =>
+    isPassThroughRow(row)
+      ? formatMoneyLocalized(Math.abs(toNumber(row.amount)), { language })
+      : formatSignedMoneyLocalized(signedAmount(row), { language });
+  // O'tkazma izi jufti qoldiqni o'zgartirmaydi — juftdan keyingi (keyin yozilgan oyoq) qoldig'i.
+  const balanceText = (row: PaymentRow) => {
+    const value = isPassThroughRow(row) ? passThroughView(row, t).balanceAfter : row.balance_after;
+    return value === undefined ? "—" : formatMoneyLocalized(value, { language });
+  };
   const isCorrection = (row: PaymentRow) => row.source_type === "cancel";
 
   const amountNode = (row: PaymentRow) => {
+    if (isPassThroughRow(row)) return <PassThroughAmount amount={row.amount} language={language} />;
     const value = direction(row);
     return (
       <span
@@ -658,6 +677,7 @@ const MyCashboxPage = () => {
   };
 
   const operationBadge = (row: PaymentRow) => {
+    if (isPassThroughRow(row)) return <PassThroughBadge />;
     const value = direction(row);
     if (!value) return <span className="text-text-muted">—</span>;
     return (
@@ -719,6 +739,10 @@ const MyCashboxPage = () => {
    */
   const subParts = (row: PaymentRow) => {
     const parts: ReactNode[] = [];
+    if (isPassThroughRow(row)) {
+      parts.push(passThroughView(row, t).route);
+      return parts;
+    }
     const reversal = reversalRef(row);
     if (reversal) {
       parts.push(reversal);
@@ -753,6 +777,7 @@ const MyCashboxPage = () => {
     const ack = ackText(row);
     const reversal = reversalRef(row);
     const comment = reversal ? "" : (row.comment?.trim() ?? "");
+    if (isPassThroughRow(row)) return passThroughView(row, t).route;
     return [
       isCorrection(row) ? t("v2MyCashbox.history.correction") : "",
       isCourier ? "" : ack,
@@ -784,7 +809,11 @@ const MyCashboxPage = () => {
     return t("v2MyCashbox.history.cardLabel", {
       title: sub ? `${title} (${sub})` : title,
       method: methodText(row),
-      direction: value ? t(value === "income" ? "v2Common.income" : "v2Common.expense") : "",
+      direction: isPassThroughRow(row)
+        ? t("v2Common.passThrough.badge")
+        : value
+          ? t(value === "income" ? "v2Common.income" : "v2Common.expense")
+          : "",
       amount: amountText(row),
       balance: balanceText(row),
       date: dateText(row),
@@ -1099,7 +1128,10 @@ const MyCashboxPage = () => {
         className="flex min-w-0 flex-col gap-6 max-md:gap-4"
       >
         {(response, { isRefetching }) => {
-          const rows = sortRows(response === historyData ? historyRows : toPaymentRows(response, role));
+          // O'tkazma izi jufti — bitta qator (`lib/passThrough.ts`); tafsilot `historyRows` dan izlaydi.
+          const rows = sortRows(
+            collapsePassThroughPairs(response === historyData ? historyRows : toPaymentRows(response, role)),
+          );
           const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
           const currentPage = Math.min(page, totalPages);
           const pageRows = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
