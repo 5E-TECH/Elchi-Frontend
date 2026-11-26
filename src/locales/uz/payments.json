@@ -1681,7 +1681,8 @@
     },
     "actions": {
       "reverse": "Qaytarish",
-      "correct": "Summani tahrirlash"
+      "correct": "Summani tahrirlash",
+      "reverseOnly": "Summa xato bo'lsa — qaytaring va to'g'ri summani qayta kiriting."
     },
     "cancel": "Bekor qilish",
     "continue": "Davom etish",
@@ -1704,7 +1705,9 @@
       "hintCourier": "Jurnalga yoziladi; kuryer ilovada ko'radi, Telegram xabariga kirmaydi",
       "hintMarket": "Jurnalga yoziladi; market ilovada ko'radi, Telegram xabariga kirmaydi",
       "hintBoth": "Jurnalga yoziladi; kuryer va market ilovada ko'radi, Telegram xabariga kirmaydi",
-      "hintGeneric": "Jurnalga yoziladi, Telegram xabariga kirmaydi"
+      "hintGeneric": "Jurnalga yoziladi, Telegram xabariga kirmaydi",
+      "hintMarketBranch": "Jurnalga yoziladi; market va filial menejeri ilovada ko'radi, Telegram xabariga kirmaydi",
+      "hintAll": "Jurnalga yoziladi; kuryer, market va filial menejeri ilovada ko'radi, Telegram xabariga kirmaydi"
     },
     "consequence": {
       "courierBack": "{{courier}} kassasiga {{amount}} qaytadi",
@@ -1714,7 +1717,10 @@
       "notifyCourierBranch": "Kuryerga va filial boshlig'iga xabar boradi",
       "notifyMarket": "Market egasiga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
       "notifyBoth": "Kuryer va market egasiga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
-      "notifyGeneric": "To'lov tomonlariga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi"
+      "notifyGeneric": "To'lov tomonlariga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
+      "branchUnchanged": "{{branch}} kassasi o'zgarmaydi",
+      "notifyMarketBranch": "Market egasi va filial menejeriga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi",
+      "notifyAll": "Kuryer, market egasi va filial menejeriga xabar boradi: ilovada, Telegram ulangan bo'lsa unda ham. Sabab faqat ilovada ko'rinadi"
     },
     "reverse": {
       "title": "To'lovni qaytarish",
@@ -1728,7 +1734,10 @@
         "courierBranch": "Pul teskari yo'nalishda qaytadi: {{branch}} kassasidan {{courier}} kassasiga. Asl yozuv o'chirilmaydi — teskari yozuv qo'shiladi.",
         "market": "Pul asosiy kassaga qaytadi, {{market}}ga berilishi kerak summa {{amount}}ga ortadi.",
         "clickToMarket": "{{courier}} kassasiga {{amount}} qaytadi, {{market}}ga berilishi kerak summa ham shuncha ortadi; asosiy kassa o'zgarmaydi.",
-        "generic": "Pul teskari yo'nalishda qaytadi. Asl yozuv o'chirilmaydi — teskari yozuv qo'shiladi."
+        "generic": "Pul teskari yo'nalishda qaytadi. Asl yozuv o'chirilmaydi — teskari yozuv qo'shiladi.",
+        "marketBranch": "Pul {{branch}} kassasiga qaytadi, {{market}}ga berilishi kerak summa {{amount}}ga ortadi.",
+        "clickToMarketBranch": "{{courier}} kassasiga {{amount}} qaytadi, {{market}}ga berilishi kerak summa ham shuncha ortadi; {{branch}} kassasi o'zgarmaydi.",
+        "branchToMarket": "Pul {{branch}} kassasiga qaytadi va filialning HQ'ga topshirishi kerak summasi {{amount}}ga ortadi; {{market}}ga berilishi kerak summa ham shuncha ortadi. Asosiy kassa o'zgarmaydi."
       },
       "consequence": {
         "mainOutCash": "Asosiy kassadan {{amount}} naqd chiqim yoziladi — joriy smenaga",
@@ -1738,14 +1747,19 @@
         "mainIn": "Asosiy kassaga {{amount}} qaytadi",
         "marketOrders": "Oxirgi to'langan buyurtmalar «Qisman to'langan» yoki «Sotilgan» holatiga qaytadi",
         "generic": "Pul kassalarga teskari yo'nalishda qaytadi — joriy smenaga",
-        "history": "Asl yozuv o'chirilmaydi — ro'yxatda «Qaytarildi» va «Teskari yozuv» bo'lib qoladi"
+        "history": "Asl yozuv o'chirilmaydi — ro'yxatda «Qaytarildi» va «Teskari yozuv» bo'lib qoladi",
+        "branchIn": "{{branch}} kassasiga {{amount}} qaytadi",
+        "branchOwesHq": "{{branch}} HQ'ga yana {{amount}} topshirishi kerak bo'ladi"
       },
       "toast": {
         "title": "To'lov qaytarildi",
         "courier": "{{amount}} {{courier}} kassasiga qaytdi. Kuryerga xabar yuborildi.",
         "market": "{{market}}ga berilishi kerak summa {{amount}}ga ortdi. Marketga xabar yuborildi.",
         "clickToMarket": "{{amount}} {{courier}} kassasiga qaytdi. Kuryer va marketga xabar yuborildi.",
-        "generic": "#{{id}}: {{amount}} teskari yo'nalishda qaytdi."
+        "generic": "#{{id}}: {{amount}} teskari yo'nalishda qaytdi.",
+        "marketBranch": "{{amount}} {{branch}} kassasiga qaytdi. Market va filial menejeriga xabar yuborildi.",
+        "clickToMarketBranch": "{{amount}} {{courier}} kassasiga qaytdi. Kuryer, market va filial menejeriga xabar yuborildi.",
+        "branchToMarket": "{{amount}} {{branch}} kassasiga qaytdi. Market va filial menejeriga xabar yuborildi."
       }
     },
     "correct": {
@@ -1797,7 +1811,8 @@
       "lead": "Qaytarish yoki tahrirlash mumkin:",
       "until": "{{deadline}} gacha",
       "window": "muddat {{count}} kun",
-      "fromRoot": "muddat birinchi to'lovdan (#{{id}})"
+      "fromRoot": "muddat birinchi to'lovdan (#{{id}})",
+      "leadReverseOnly": "Faqat qaytarish mumkin:"
     },
     "lock": {
       "windowExpiredTitle": "Muddat tugagan: {{deadline}}",
@@ -1853,9 +1868,10 @@
         "marketCashboxDeleted": "Market kassasi o'chirilgan.",
         "cashboxDeleted": "Kassa o'chirilgan.",
         "cashboxOrCardDeleted": "To'lovdagi kassa yoki karta o'chirilgan.",
-        "unsupported": "To'lovning kassalardagi yozuvlari to'liq emas.",
+        "unsupported": "Bu turdagi yozuvni qaytarib ham, tahrirlab ham bo'lmaydi.",
         "amountTitle": "Summani tuzatib bo'lmaydi",
-        "amountBody": "Kuryer bu summani hozir topshira olmaydi — to'lovni to'liq qaytaring."
+        "amountBody": "Kuryer bu summani hozir topshira olmaydi — to'lovni to'liq qaytaring.",
+        "reverseOnly": "Bu to'lovni faqat qaytarish mumkin — summasini tahrirlab bo'lmaydi. Qaytaring va to'g'ri summani qayta kiriting."
       },
       "legacy": {
         "title": "Eski yozuv",

@@ -153,6 +153,31 @@ describe("FinanceHistoryDetailPopup — tuzatish pastki qismi (superadmin)", () 
     expect(footer.querySelector("[data-correction-footer=actions]")).toHaveClass("max-md:flex-col");
   });
 
+  it("⭐ 2026-11-26: filial ishtirokidagi to'lov (`edit_allowed: false`) — faqat «Qaytarish» · «Yopish», izohda nima qilish kerakligi", async () => {
+    withDetail({
+      ...allowed,
+      edit_allowed: false,
+      transfer: {
+        kind: "market_payment",
+        variant: "market_branch",
+        payment_method: "cash",
+        amount: 200_000,
+        receiver: { cashbox_type: "branch", branch_id: "15", name: "Urgut filiali" },
+        courier: null,
+        market: { id: "77", name: "Baraka Shop" },
+      },
+    });
+    const { user } = open();
+    const footer = footerOf(detail());
+    const text = footer.textContent?.replace(/\s+/g, " ") ?? "";
+    expect(text).toContain("Faqat qaytarish mumkin: 07.11.2026, 14:32 gacha · muddat 30 kun");
+    expect(text).toContain("Summa xato bo'lsa — qaytaring va to'g'ri summani qayta kiriting.");
+    expect(buttonNames(footer)).toEqual(["Qaytarish", "Yopish"]);
+    await user.click(within(footer).getByRole("button", { name: "Qaytarish" }));
+    const dialog = await screen.findByRole("dialog", { name: "To'lovni qaytarish" });
+    expect(dialog.textContent?.replace(/\s+/g, " ")).toContain("Pul Urgut filiali kassasiga qaytadi");
+  });
+
   it("zanjir davomi (`root_history_id` ≠ id): «muddat birinchi to'lovdan (#4498)»", () => {
     withDetail({ ...allowed, root_history_id: "4498" }, "4522");
     open("superadmin", { ...row, id: "4522" });

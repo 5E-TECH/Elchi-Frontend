@@ -117,6 +117,12 @@ describe("correctionFooterState", () => {
       windowDays: 30,
       rootHistoryId: "4512",
       chained: false,
+      editAllowed: true,
+    });
+    // 2026-11-26: filial ishtirokidagi to'lov — faqat «Qaytarish».
+    expect(correctionFooterState(true, { ...allowed, edit_allowed: false }, "4512")).toMatchObject({
+      kind: "actions",
+      editAllowed: false,
     });
     expect(correctionFooterState(true, { ...allowed, root_history_id: "4498" }, "4522")).toMatchObject({
       kind: "actions",

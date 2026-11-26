@@ -66,11 +66,28 @@ export const PAYMENT_CORRECTABLE_CODES = [
 export type PaymentCorrectableCode = (typeof PAYMENT_CORRECTABLE_CODES)[number];
 
 /** `NOT_CORRECTABLE` sababi (backend `PAYMENT_CORRECTION_NOT_CORRECTABLE_REASONS`). */
-export const PAYMENT_NOT_CORRECTABLE_REASONS = ["unsupported_type", "reversal_row", "cashbox_deleted"] as const;
+/** `reverse_only` (2026-11-26) — filial ishtirokidagi to'lov: faqat qaytariladi, summa tahrirlanmaydi. */
+export const PAYMENT_NOT_CORRECTABLE_REASONS = ["unsupported_type", "reversal_row", "cashbox_deleted", "reverse_only"] as const;
 export type PaymentNotCorrectableReason = (typeof PAYMENT_NOT_CORRECTABLE_REASONS)[number];
 
 /** To'lov turi (backend `PaymentCorrectionKind`): click_to_market ning MAIN `market_payment` oyog'i ham `courier_payment`. */
 export const PAYMENT_CORRECTION_KINDS = ["courier_payment", "market_payment"] as const;
+
+/**
+ * To'lov yo'li (backend `transfer.variant`, 2026-11-26): `courier` — kuryer → asosiy / filial kassa; `courier_click` —
+ * «Marketga o'tkazma» (HQ yozgan); `courier_click_branch` — «Marketga o'tkazma» (menejer yozgan, filial orqali);
+ * `market` — asosiy kassadan marketga; `market_branch` — filial kassasidan marketga; `branch_click_market` — «Filialdan
+ * marketga o'tkazma». Eski backend / noma'lum — `null` (shakl `kind` va usuldan).
+ */
+export const PAYMENT_CORRECTION_VARIANTS = [
+  "courier",
+  "courier_click",
+  "courier_click_branch",
+  "market",
+  "market_branch",
+  "branch_click_market",
+] as const;
+export type PaymentCorrectionVariant = (typeof PAYMENT_CORRECTION_VARIANTS)[number];
 export type PaymentCorrectionKind = (typeof PAYMENT_CORRECTION_KINDS)[number];
 
 /** To'lov usuli (barcha oyoqlarda bir xil). */
@@ -90,10 +107,15 @@ export interface PaymentCorrectableParty {
  */
 export interface PaymentCorrectableTransfer {
   kind: PaymentCorrectionKind;
+  /** To'lov yo'li; eski backend / noma'lum — `null` (yoki kalit yo'q). */
+  variant?: PaymentCorrectionVariant | null;
   /** Noma'lum qiymat — `null` (matnda usul aytilmaydi). */
   payment_method: PaymentCorrectionMethod | null;
   amount: number | null;
-  /** Kuryer to'lovida pulni olgan kassa; marketga to'lovda — MAIN. MAIN da `branch_id` va `name` — `null`. */
+  /**
+   * Pul QAYTADIGAN kassa: kuryer to'lovida pulni olgan kassa; marketga to'lovda to'lagan kassa (asosiy yoki filial);
+   * «Filialdan marketga o'tkazma» da — filial. MAIN da `branch_id` va `name` — `null`.
+   */
   receiver: { cashbox_type: "main" | "branch"; branch_id: string | null; name: string | null };
   /** Kuryer to'lovida — kuryer; marketga to'lovda — `null`. */
   courier: PaymentCorrectableParty | null;
@@ -108,6 +130,11 @@ export interface PaymentCorrectable {
   reason?: PaymentNotCorrectableReason;
   deadline: string | null;
   window_days: number;
+  /**
+   * (2026-11-26) «Summani tahrirlash» mumkinmi: filial ishtirokidagi to'lov — `false` (faqat «Qaytarish»). Eski
+   * backendda kalit yo'q — `true` (`undefined` ham ruxsat deb o'qiladi).
+   */
+  edit_allowed?: boolean;
   root_history_id: string | null;
   /** #623 dan; eski backendda kalit yo'q. */
   transfer?: PaymentCorrectableTransfer | null;
@@ -202,6 +229,7 @@ export const toPaymentCorrectableTransfer = (raw: unknown): PaymentCorrectableTr
   const sum = amount(value.amount);
   return {
     kind,
+    variant: oneOf(PAYMENT_CORRECTION_VARIANTS, value.variant),
     payment_method: oneOf(PAYMENT_CORRECTION_METHODS, value.payment_method),
     amount: sum === null ? null : Math.abs(sum),
     receiver:
@@ -232,6 +260,7 @@ export const toPaymentCorrectable = (raw: unknown): PaymentCorrectable | null =>
     ...(reason ? { reason } : {}),
     deadline: text(value.deadline),
     window_days: days !== null && Number.isInteger(days) && days > 0 ? days : 30,
+    edit_allowed: value.edit_allowed !== false,
     root_history_id: text(value.root_history_id),
     transfer: toPaymentCorrectableTransfer(value.transfer),
   };
