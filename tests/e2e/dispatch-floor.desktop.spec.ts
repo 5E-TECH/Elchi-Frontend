@@ -20,7 +20,7 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
   test("⭐ /dispatch: USB skan qo'shadi va tanlaydi, takror — ogohlantirish; kuryer oynasi → POST faqat tanlanganlar", async ({ page }) => {
     const api = await mockDispatchApi(page);
     await openDispatch(page);
-    await expect.poll(() => api.courierQueries[0]).toEqual({ page: "1", limit: "100", status: "active" });
+    await expect.poll(() => api.courierQueries[0]).toEqual({ page: "1", limit: "10000", status: "active" });
 
     for (const token of ["tok-10285", "tok-10316", "tok-10342"]) {
       await hidScan(page, token);

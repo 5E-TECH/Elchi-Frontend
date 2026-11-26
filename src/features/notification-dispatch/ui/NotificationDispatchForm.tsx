@@ -88,6 +88,7 @@ import { CampaignScheduleCard, type CampaignScheduleErrors } from "./CampaignSch
 import { CHOICE_CARD, CHOICE_INPUT } from "./choiceCard";
 import { DispatchResultCard } from "./DispatchResultCard";
 import { DispatchUnknownCard } from "./DispatchUnknownCard";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 /** «Hamma» soni — backend o'zi sanaydi (`POST notifications/audience/preview`). */
 const BROADCAST_TARGET = { broadcast: true as const };
@@ -393,8 +394,9 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
             : { count: null, loading: !(audiencePreview.settled && audiencePreview.isError) }
           : { count: null, loading: false };
   const { useGetMarkets } = useMarkets();
+  // «Telegram guruhi (market)» — to'liq ro'yxat (ilgari `limit: 100`: 101-market tanlovda yo'q edi).
   const marketsQuery = useGetMarkets(
-    { status: "active", limit: 100 },
+    { status: "active", limit: FULL_LIST_LIMIT },
     Boolean(values.telegram) && values.mode !== "audience",
   );
   const markets = toMarkets(marketsQuery.data);

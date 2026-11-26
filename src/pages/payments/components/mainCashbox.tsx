@@ -133,6 +133,7 @@ import {
   settlePaymentKey,
   takePaymentKey,
 } from "./lib/paymentIdempotency";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 /**
  * «ASOSIY KASSA» — /payments/main-cashbox (dizayn v2; maketlar `superadmin-payments-main-cashbox` =
@@ -173,7 +174,6 @@ import {
  * (Taklif · backend kerak, CB-3) — chizilmaydi.
  */
 
-const FULL_LIST_LIMIT = 10000;
 const HISTORY_PAGE_SIZES = [10, 25, 50, 100] as const;
 const MASK = "••••••";
 

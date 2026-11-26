@@ -66,6 +66,7 @@ import ShiftBanner from "./components/ShiftBanner";
 import { getCashboxTypeLabel, getPaymentSourceTitle } from "./components/paymentSourceType";
 import CashFlowCard from "./components/CashFlowCard";
 import CashStateCard from "./components/CashStateCard";
+import { FULL_LIST_LIMIT } from "../../shared/config/listLimits";
 
 const DEFAULT_PAYMENTS_LIMIT = 10;
 
@@ -647,8 +648,9 @@ const Payments = () => {
 
   const historyQuery = useGetFinanceHistory(queryParams);
   const { data: historyData, isLoading: historyLoading, isError: historyError, refetch: refetchHistory } = historyQuery;
+  // «Yaratuvchi» filtri — barcha xodimlar (ilgari `limit: 100`: 101-xodim ro'yxatda va qidiruvda yo'q edi).
   const { data: creatorsData, isLoading: creatorsLoading } = useGetUser({
-    limit: 100,
+    limit: FULL_LIST_LIMIT,
   });
 
   const creatorOptions = useMemo<SelectOption[]>(

@@ -912,7 +912,7 @@ describe("OldMails — kuryer (page)", () => {
 
     // `courier_id` kuryerda yuborilmaydi (backend — JWT egasi).
     expect(mocks.useGetOldMails).toHaveBeenCalledWith(true, { page: 1, limit: 8, has_orders: true, region_id: "2" }, LIST_OPTIONS);
-    expect(mocks.useGetCouriers).toHaveBeenCalledWith({ status: "active", limit: 100 }, false);
+    expect(mocks.useGetCouriers).toHaveBeenCalledWith({ status: "active", limit: 10_000 }, false);
     expect(screen.queryByRole("combobox", { name: "Kuryer" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Ko'rinish" })).not.toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();

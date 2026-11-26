@@ -131,12 +131,12 @@ describe("BranchListWidget — daraxt", () => {
     });
   });
 
-  it("bitta so'rov (limit 100), sahifalashsiz; HQ ochiq, viloyat guruhi chevron bilan ochiladi/yopiladi", async () => {
+  it("bitta so'rov (to'liq ro'yxat, limit 10 000), sahifalashsiz; HQ ochiq, viloyat guruhi chevron bilan ochiladi/yopiladi", async () => {
     const user = userEvent.setup();
     renderWithProviders(<BranchListWidget viewMode="tree" onViewModeChange={vi.fn()} onEdit={vi.fn()} />);
 
     const tree = await screen.findByRole("table", { name: "Filiallar daraxti" });
-    expect(lastParams()).toMatchObject({ page: 1, limit: 100 });
+    expect(lastParams()).toMatchObject({ page: 1, limit: 10_000 });
     expect(screen.queryByRole("navigation", { name: "Sahifalar" })).not.toBeInTheDocument();
     expect(within(tree).getByRole("link", { name: "HQ Toshkent" })).toBeInTheDocument();
     expect(within(tree).getByText("TSH-HQ · 0-daraja · 12 ta ichki filial")).toBeInTheDocument();

@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useMarkets } from "../../markets";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import type { SelectOption } from "../../../shared/ui/primitives";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 type MarketItem = {
   id?: string | number;
@@ -26,8 +27,11 @@ const getMarketItems = (value: unknown): MarketItem[] => {
   return [];
 };
 
-/** Sahifa va oynalar bitta so'rovni ulashadi (bir xil kalit — bitta kesh). */
-const MARKET_PARAMS = { status: "active", limit: 100 } as const;
+/**
+ * Sahifa va oynalar bitta so'rovni ulashadi (bir xil kalit — bitta kesh). To'liq ro'yxat: ilgari `limit: 100` —
+ * 101-market «Market» tanlovida (va qidiruvida) yo'q, jadvalda nomi o'rniga `#id` edi.
+ */
+const MARKET_PARAMS = { status: "active", limit: FULL_LIST_LIMIT } as const;
 
 /**
  * Faol marketlar: oynadagi tanlov variantlari va jadvaldagi nom (`GET /notifications` qatorida market nomi

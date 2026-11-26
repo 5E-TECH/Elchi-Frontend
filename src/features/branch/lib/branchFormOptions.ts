@@ -3,11 +3,13 @@ import type { TFunction } from "i18next";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import { getBranches } from "../../../entities/branch/api/branchApi";
 import type { Branch } from "../../../entities/branch";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 export const useParentBranchOptions = (enabled: boolean) =>
   useQuery({
-    queryKey: queryKeys.branches.list({ page: 1, limit: 200, status: "active" }),
-    queryFn: () => getBranches({ page: 1, limit: 200, status: "active" }),
+    // To'liq ro'yxat (ilgari `limit: 200`, backend 100 ga kesardi — 101-filial «Yuqori filial» tanlovida yo'q edi).
+    queryKey: queryKeys.branches.list({ page: 1, limit: FULL_LIST_LIMIT, status: "active" }),
+    queryFn: () => getBranches({ page: 1, limit: FULL_LIST_LIMIT, status: "active" }),
     enabled,
   });
 

@@ -446,6 +446,22 @@ export const useBatches = (
   });
 
 /**
+ * Barcha sahifalar (`fetchAllTransferBatches`) — ro'yxat ichida qidiruv/skan qiladigan sahifalar uchun (masalan filialdan
+ * kelgan «Jo'natilgan» paketlar). Qidiruv limitlari (2026-11-27): ilgari bitta sahifa (`limit=100`) — 101-paket
+ * qidiruvda ham, skanda ham topilmasdi. Javob shakli `useBatches` bilan bir xil (`data`), kalit `BATCH_KEY` ostida.
+ */
+export const useAllBatches = (
+  params?: Omit<BatchListParams, "page" | "limit">,
+  options?: { enabled?: boolean; refetchInterval?: number | false },
+) =>
+  useQuery<{ data: Batch[]; capped: boolean }>({
+    queryKey: [BATCH_KEY, "all-pages", params],
+    queryFn: () => fetchAllTransferBatches(params),
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval,
+  });
+
+/**
  * `silentError` — ixtiyoriy so'rov (masalan skaner natijasida paket nomlarini to'ldirish): xato global xabar
  * bermaydi, sahifa skan javobi bilan chizilaveradi. Sukut bo'yicha xulq o'zgarmagan (`/batches/:id` xatoni ko'radi).
  */

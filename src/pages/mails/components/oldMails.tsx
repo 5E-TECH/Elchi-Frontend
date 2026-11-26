@@ -77,6 +77,7 @@ import { exportOldMailsToExcel } from "./lib/exportOldMailsToExcel";
 import { MailCardsGrid, MailCardsGridSkeleton } from "./MailCardsGrid";
 import { MailsTable, type MailsTableRow } from "./MailsTable";
 import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 /**
  * «Pochta → Eski» (`/mails/old`) — dizayn v2. Maketlar: `admin-mails-old` / `superadmin-mails-old`,
@@ -215,8 +216,9 @@ const OldMails = ({ layout }: OldMailsProps) => {
     enabled: isAllBatchMode,
   });
   const { data: regionsData, isLoading: regionsLoading } = useGetRegions(true);
+  // «Kuryer» filtri — to'liq ro'yxat (ilgari `limit: 100`: 101-kuryer filtrda va uning qidiruvida yo'q edi).
   const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
-    { status: "active", limit: 100 },
+    { status: "active", limit: FULL_LIST_LIMIT },
     !isCourier,
   );
 

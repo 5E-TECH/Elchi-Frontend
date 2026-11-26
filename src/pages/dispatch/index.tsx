@@ -35,6 +35,7 @@ import { CourierPickerDialog } from "./ui/CourierPickerDialog";
 import { DispatchAlert } from "./ui/DispatchAlert";
 import { DispatchOrdersTable } from "./ui/DispatchOrdersTable";
 import { DispatchStats } from "./ui/DispatchStats";
+import { FULL_LIST_LIMIT } from "../../shared/config/listLimits";
 
 /** Skan xabari: takror — ogohlantirish, qolganlari — xato (maket «Sahifa holatlari»). */
 type ScanNotice = { tone: "warning" | "danger"; text: string };
@@ -54,7 +55,8 @@ const REJECTED_LIMIT = 10;
  * kuryerlari bo'yicha, sahifalashdan oldin). Avvalgi viloyat filtri HQ registratorida ro'yxatni butunlay bo'sh
  * qoldirardi — HQ ning viloyati yo'q (region_id NULL). SA/admin — barcha filiallarning faol kuryerlari.
  */
-const COURIER_PARAMS = { page: 1, limit: 100, status: "active" } as const;
+/** «Kuryerni tanlang» — to'liq ro'yxat (ilgari `limit: 100`: SA/admin'da 101-kuryer qidiruvda ham yo'q edi). */
+const COURIER_PARAMS = { page: 1, limit: FULL_LIST_LIMIT, status: "active" } as const;
 
 /**
  * «KURYERGA BIRIKTIRISH» — `/dispatch` (superadmin, admin, filialda jo'natish bor registrator, REGIONAL/HYBRID

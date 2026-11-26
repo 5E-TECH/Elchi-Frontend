@@ -56,6 +56,7 @@ import {
   legacyAuthLabelKey,
   toLegacyAuthType,
 } from "./legacyAuth";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 /**
  * ESKI TASHQI MANBALAR (zaxira sahifa) — maket `*-integrations-legacy-sources`.
@@ -70,6 +71,7 @@ import {
  */
 
 const DEFAULT_LIMIT = 10;
+const SEARCH_DEBOUNCE_MS = 400;
 const PAGE_SIZES = [10, 20, 50] as const;
 const INTEGRATION_VIEW_MODE_KEY = "elchi_integrations_view_mode";
 type IntegrationViewMode = "table" | "cards";
@@ -143,7 +145,7 @@ const ExternalOrdersPage = () => {
    * ROL FILTRI — serverga yuboriladi (`?role=`), mijozda emas: sahifalash to'g'ri ishlashi kerak.
    */
   const [role, setRole] = useState<RoleTab>("all");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -152,8 +154,30 @@ const ExternalOrdersPage = () => {
   const [viewMode, setViewMode] = useState<IntegrationViewMode>(readViewMode);
   const page = Math.max(1, Number(searchParams.get("page") || 1));
   const limit = Math.max(1, Number(searchParams.get("limit") || DEFAULT_LIMIT));
+  // Qidiruv serverda (`?search=`, nomi yoki slug): ilgari faqat joriy sahifa (sukut 10 ta) ichida edi — 11-integratsiya
+  // topilmasdi. Yozish to'xtagach URL'ga (`?q=`) yoziladi va shu BITTA navigatsiyada sahifa 1 ga qaytadi — eski sahifa
+  // raqami bilan ortiqcha so'rov ketmaydi (router URL'ni transition'da yangilaydi, alohida holat undan oldin chiqardi).
+  const appliedSearch = (searchParams.get("q") ?? "").trim();
+  useEffect(() => {
+    const nextSearch = search.trim();
+    if (nextSearch === appliedSearch) return;
+    const timer = window.setTimeout(() => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (nextSearch) next.set("q", nextSearch);
+          else next.delete("q");
+          next.set("page", "1");
+          return next;
+        },
+        { replace: true },
+      );
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [appliedSearch, search, setSearchParams]);
   const { useGetMarkets } = useMarkets();
-  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, true);
+  // To'liq ro'yxat (ilgari `limit: 100`: 101-market «Market» tanlovida yo'q edi).
+  const marketsQuery = useGetMarkets({ status: "active", limit: FULL_LIST_LIMIT }, true);
 
   const params = useMemo<IntegrationParams>(() => {
     const next: IntegrationParams = { page, limit };
@@ -161,8 +185,9 @@ const ExternalOrdersPage = () => {
     if (role !== "all") next.role = role;
     if (dateFrom) next.from_date = dateFrom;
     if (dateTo) next.to_date = dateTo;
+    if (appliedSearch) next.search = appliedSearch;
     return next;
-  }, [dateFrom, dateTo, limit, page, role, status]);
+  }, [appliedSearch, dateFrom, dateTo, limit, page, role, status]);
 
   const query = useGetIntegrations(params, { silentError: true });
   const deleteIntegration = useDeleteIntegration();

@@ -10,6 +10,7 @@ import type { ConnectionField } from "./connections";
 import StatusMapField from "./StatusMapField";
 import type { StatusMapValue } from "./statusMap";
 import { SecretInput, Switch, TagsInput } from "./ui";
+import { FULL_LIST_LIMIT } from "../../shared/config/listLimits";
 
 /**
  * UMUMIY ULANISH FORMASI — maydon ro'yxatidan o'zini yasaydi (dizayn v2: `Field` + `TextInput` /
@@ -233,7 +234,8 @@ const MarketField = ({
 }) => {
   const { t } = useTranslation("integrations");
   const { useGetMarkets } = useMarkets();
-  const query = useGetMarkets({ limit: 200 });
+  // To'liq ro'yxat: ilgari `limit: 200` (backend 100 ga kesardi) — 101-market tanlovda yo'q, tahrirda maydon bo'sh edi.
+  const query = useGetMarkets({ limit: FULL_LIST_LIMIT });
   const options: SelectOption[] = marketList(query.data).map((m) => ({
     value: String(m.id),
     label: String(m.name ?? m.username ?? `#${m.id}`),

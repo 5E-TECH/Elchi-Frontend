@@ -47,8 +47,30 @@ beforeEach(() => {
   api.patch.mockReset().mockResolvedValue({ data: { statusCode: 200, data: SOURCE } });
 });
 
-const render = () =>
-  renderWithProviders(<ExternalOrdersPage />, { route: "/integrations/sources", preloadedState: adminState });
+const render = (route = "/integrations/sources") =>
+  renderWithProviders(<ExternalOrdersPage />, { route, preloadedState: adminState });
+
+/**
+ * Qidiruv limitlari (2026-11-27): «Integratsiya nomi bo'yicha qidirish» ilgari faqat yuklangan sahifa (sukut 10)
+ * ichida edi — 11-integratsiya topilmasdi. Endi qidiruv serverda (`?search=`, nomi / slug), 1-sahifadan.
+ */
+describe("Tashqi manbalar — server qidiruvi", () => {
+  it("⭐ qidiruv `search` sifatida GET integrations ga ketadi va sahifa 1 ga qaytadi", async () => {
+    const user = userEvent.setup();
+    render("/integrations/sources?page=3");
+
+    await screen.findAllByRole("button", { name: "Uzum Market — o'chirish" });
+    const listCalls = () =>
+      api.get.mock.calls.filter(([url]) => url === "integrations").map(([, config]) => (config as { params: Record<string, unknown> }).params);
+    expect(listCalls()[0]).toMatchObject({ page: 3 });
+    expect(listCalls()[0]).not.toHaveProperty("search");
+
+    await user.type(screen.getByRole("searchbox", { name: "Integratsiyalarni qidirish" }), "  uzum ");
+
+    await waitFor(() => expect(listCalls().some((params) => params.search === "uzum" && params.page === 1)).toBe(true));
+    expect(listCalls().some((params) => params.search === "uzum" && params.page !== 1)).toBe(false);
+  });
+});
 
 describe("Tashqi manbalar — o'chirish va tahrirlash", () => {
   it("o'chirish avval tasdiq so'raydi; «Bekor qilish» — DELETE ketmaydi", async () => {

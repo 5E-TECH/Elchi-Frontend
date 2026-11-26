@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useCashBox } from "../../../../entities/payments";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useBranches } from "../../../../entities/branch/api/useBranches";
+import { FULL_LIST_LIMIT } from "../../../../shared/config/listLimits";
 
 /**
  * "QABUL QILINISHI KERAK" OYNASI QATORLARI — /payments kartasi va "Asosiy
@@ -73,7 +74,6 @@ export const RECEIVE_SEARCH_KEYS: (keyof ReceiveOption)[] = [
 type Translate = TFunction<"payments">;
 type UnknownRecord = Record<string, unknown>;
 
-const FULL_LIST_LIMIT = 10000;
 
 const MANAGER_AMOUNT_KEYS = ["berilishi_kerak", "payable_to_hq", "payableToHq", "amount"];
 const COURIER_AMOUNT_KEYS = [
@@ -338,9 +338,10 @@ type UseReceiveOptionsParams = {
 /**
  * Karta summasi (`cashbox/all-info` → `branch_managers_receivable`) bilan bir
  * xil manba: faol filiallar ro'yxati. Kalit kassa sahifasidagi so'rov bilan bir
- * xil — kesh ulashiladi va to'lovdan keyin ["branches"] bilan yangilanadi.
+ * xil — kesh ulashiladi va to'lovdan keyin ["branches"] bilan yangilanadi. `limit` — to'liq ro'yxat (ilgari 100:
+ * 101-filial «Qabul qilinishi kerak» oynasida chiqmasdi).
  */
-export const RECEIVE_BRANCHES_PARAMS = { status: "active", page: 1, limit: 100 } as const;
+export const RECEIVE_BRANCHES_PARAMS = { status: "active", page: 1, limit: FULL_LIST_LIMIT } as const;
 
 /**
  * Bitta kuryerning «Qabul qilinishi kerak» summasi `GET /couriers` javobidan (T2VHX1Y7) — `toBranchCourierOptions`

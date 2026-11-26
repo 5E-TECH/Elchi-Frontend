@@ -7,6 +7,7 @@ import { useMarkets } from "../../../entities/markets";
 import { useUser } from "../../../entities/user/api/userApi";
 import { isMarketSideRole } from "../../../entities/user/lib/role";
 import { getOrderFilterScope } from "./orderFilterModel";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 export type FilterOption = { value: string; label: string };
 
@@ -68,8 +69,9 @@ export const useOrderFilterOptions = (role: string | null, courierRegionId: stri
   const { useGetDistricts } = useLogistics();
   const { useGetMarkets } = useMarkets();
 
-  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, canLoadRoleDependentOptions);
-  const branchesQuery = useBranches({ status: "active", limit: 100, page: 1 }, canUseBranchFilter);
+  // To'liq ro'yxatlar (ilgari `limit: 100`: 101-market / filial / kuryer filtrda va uning qidiruvida yo'q edi).
+  const marketsQuery = useGetMarkets({ status: "active", limit: FULL_LIST_LIMIT }, canLoadRoleDependentOptions);
+  const branchesQuery = useBranches({ status: "active", limit: FULL_LIST_LIMIT, page: 1 }, canUseBranchFilter);
   const { data: myProfileData } = useGetMyProfile();
 
   const managerRegionId = useMemo(() => {
@@ -82,7 +84,7 @@ export const useOrderFilterOptions = (role: string | null, courierRegionId: stri
   const couriersQuery = useGetCouriers(
     {
       status: "active",
-      limit: 100,
+      limit: FULL_LIST_LIMIT,
       ...(regionForCouriers ? { region_id: regionForCouriers } : {}),
     },
     canLoadRoleDependentOptions && (!isManagerRole || Boolean(managerRegionId)),

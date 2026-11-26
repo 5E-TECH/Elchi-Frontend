@@ -28,13 +28,14 @@ import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import BranchCards from "./BranchCards";
 import BranchTable from "./BranchTable";
 import BranchTree from "./BranchTree";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 export type BranchViewMode = "table" | "card" | "tree";
 
-/** Sahifa hajmlari (e2e `branch-list.*.spec.ts`): jadval 12, kartalar 8; daraxt — bitta so'rovda 100 tagacha. */
+/** Sahifa hajmlari (e2e `branch-list.*.spec.ts`): jadval 12, kartalar 8; daraxt — bitta so'rovda barcha filiallar. */
 const TABLE_PAGE_SIZE = 12;
 const CARD_PAGE_SIZE = 8;
-const TREE_LIMIT = 100;
+const TREE_LIMIT = FULL_LIST_LIMIT;
 const TABLE_PAGE_SIZES = [12, 24, 48, 96] as const;
 const CARD_PAGE_SIZES = [8, 16, 32, 64] as const;
 const SEARCH_DEBOUNCE_MS = 400;
