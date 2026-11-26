@@ -63,11 +63,11 @@
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 48 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
 | `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 21 | v2 |
-| `/new-orders/sites` | Qabul va yaratish | `src/pages/new_orders/sites/index.tsx` | superadmin, admin | 0 | v2 |
-| `/new-orders/sites/:integrationId` | Qabul va yaratish | `src/pages/new_orders/sites/scan.tsx` | superadmin, admin | 0 | v2 |
-| `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | v2 |
-| `/new-orders/branches/:branchId` | Qabul va yaratish | `src/pages/new_orders/branches/batches.tsx` | superadmin, admin | 2 | v2 |
-| `/new-orders/branches/:branchId/batches/:batchId` | Qabul va yaratish | `src/pages/new_orders/branches/batchDetail.tsx` | superadmin, admin | 5 | v2 |
+| `/new-orders/sites` | Qabul va yaratish | `src/pages/new_orders/sites/index.tsx` | superadmin, admin, registrator (sozlamasiz sayt ko'rinishi (9rzmWFVm)) | 0 | v2 |
+| `/new-orders/sites/:integrationId` | Qabul va yaratish | `src/pages/new_orders/sites/scan.tsx` | superadmin, admin, registrator (sozlamasiz sayt ko'rinishi (9rzmWFVm)) | 0 | v2 |
+| `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin, registrator (faqat o'z filialiga kelgan FORWARD paketlar (9rzmWFVm)) | 2 | v2 |
+| `/new-orders/branches/:branchId` | Qabul va yaratish | `src/pages/new_orders/branches/batches.tsx` | superadmin, admin, registrator (faqat o'z filialiga kelgan FORWARD paketlar (9rzmWFVm)) | 2 | v2 |
+| `/new-orders/branches/:branchId/batches/:batchId` | Qabul va yaratish | `src/pages/new_orders/branches/batchDetail.tsx` | superadmin, admin, registrator (faqat o'z filialiga kelgan FORWARD paketlar (9rzmWFVm)) | 5 | v2 |
 | `/new-orders/cancelled` | Qabul va yaratish | `src/pages/new_orders/cancelled/index.tsx` | superadmin, admin, registrator (faqat HQ) | 3 | v2 |
 | `/new-orders/cancelled/handovers/:batchId` | Qabul va yaratish | `src/pages/new_orders/cancelled/handover.tsx` | superadmin, admin, registrator (faqat HQ) | 0 | v2 |
 | `/new-orders/cancelled/:marketId` | Qabul va yaratish | `src/pages/new_orders/cancelled/detail.tsx` | superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi) | 18 | v2 |
@@ -577,7 +577,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/new_orders/sites/index.tsx` · `src/pages/new_orders/sites/model/externalSites.ts`
 - **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canUseExternalSites` (access.ts → canUseExternalSites)
-- **Rollar:** superadmin, admin
+- **Rollar:** superadmin, admin, registrator (sozlamasiz sayt ko'rinishi (9rzmWFVm))
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** «Qabul va yaratish» qobig'idagi «Tashqi saytlar» tabi (BeePost «Bugungi buyurtmalar → Tashqi buyurtmalar» naqshi). Ro'yxat — GET /integrations (faol, marketga bog'langan, to'lov tizimi emas); backendda faqat SUPERADMIN, ADMIN — registrator va menejerda tab yo'q (ular uchun backendda alohida ro'yxat kerak). Maket so'raladi.
@@ -591,7 +591,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/new_orders/sites/scan.tsx` · `src/pages/new_orders/sites/ui/SiteOrdersTable.tsx` · `src/pages/new_orders/sites/model/siteOrder.ts` · `src/entities/integrations/siteIntake.ts`
 - **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canUseExternalSites` (access.ts → canUseExternalSites)
-- **Rollar:** superadmin, admin
+- **Rollar:** superadmin, admin, registrator (sozlamasiz sayt ko'rinishi (9rzmWFVm))
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Skan faqat ko'rsatadi: POST integrations/:slug/search-by-qr (endpoint sozlanmagan bo'lsa /qrorder/find). «Qabul qilish» (tasdiq bilan): POST orders/external/receive (10 talab) → POST orders/external/receive-by-scan (QR). O'tmagan qator sababi bilan qoladi. Kamera — markaziy «Skaner» tugmasi (useScanTarget).
@@ -604,8 +604,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/branches` — Filial paketlari — filiallar
 
 - **Fayllar:** `src/pages/new_orders/branches/index.tsx` · `src/pages/new_orders/ui/SourceListCard.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
-- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
-- **Rollar:** superadmin, admin
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewBranchPackages` (access.ts → canViewBranchPackages)
+- **Rollar:** superadmin, admin, registrator (faqat o'z filialiga kelgan FORWARD paketlar (9rzmWFVm))
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 
@@ -613,12 +613,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 |---|---|---|---|---|---|
 | `/new-orders/branches` | superadmin | `superadmin-neworders-branches` — Filial batchlari — filiallar | [design/fragments/superadmin--neworders-branches.html](fragments/superadmin--neworders-branches.html) | sahifa | v2 |
 | `/new-orders/branches` | admin | `admin-neworders-branches` — Filial batchlari tabi | [design/fragments/admin--neworders-branches.html](fragments/admin--neworders-branches.html) | sahifa | v2 |
+| `/new-orders/branches` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 
 #### `/new-orders/branches/:branchId` — Filial paketlari ro'yxati
 
 - **Fayllar:** `src/pages/new_orders/branches/batches.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
-- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
-- **Rollar:** superadmin, admin
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewBranchPackages` (access.ts → canViewBranchPackages)
+- **Rollar:** superadmin, admin, registrator (faqat o'z filialiga kelgan FORWARD paketlar (9rzmWFVm))
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 
@@ -626,12 +627,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 |---|---|---|---|---|---|
 | `/new-orders/branches/:branchId` | superadmin | `superadmin-neworders-branch-batches` — Filial batchlari ro'yxati | [design/fragments/superadmin--neworders-branch-batches.html](fragments/superadmin--neworders-branch-batches.html) | sahifa | v2 |
 | `/new-orders/branches/:branchId` | admin | `admin-neworders-branch-batches` — Filial batchlari ro'yxati | [design/fragments/superadmin--neworders-branch-batches.html](fragments/superadmin--neworders-branch-batches.html) | sahifa | v2 |
+| `/new-orders/branches/:branchId` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 
 #### `/new-orders/branches/:branchId/batches/:batchId` — Filial paketi tafsiloti (qabul)
 
 - **Fayllar:** `src/pages/new_orders/branches/batchDetail.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
-- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
-- **Rollar:** superadmin, admin
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewBranchPackages` (access.ts → canViewBranchPackages)
+- **Rollar:** superadmin, admin, registrator (faqat o'z filialiga kelgan FORWARD paketlar (9rzmWFVm))
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). «Qabul qilish» uzun ro'yxatda doim ko'rinadi (ndKkHjhe): ≥ 768 sarlavha yopishqoq, telefonda tugma pastki menyu ustidagi panelda (/dispatch naqshi, Q7); maketdagi «Kamera bilan skanerlash» paneli yo'q (ega qarori 2026-10-19).
@@ -642,6 +644,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | qisman |
 | `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | v2 |
 | `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | qisman |
+| `/new-orders/branches/:branchId/batches/:batchId` | registrator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 | `/new-orders/branches/:branchId/batches/:batchId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/new-orders/cancelled` — Bekor qilinganlar — marketlar
@@ -2265,7 +2268,7 @@ Bu yo'llar sahifa emas — routes.tsx ularni yangi joyga yo'naltiradi (xatcho'p 
 | `/new-orders/integrations` | `/integrations/sources` | `canCreateOrdersByRoleAndBranchType` |
 | `/new-orders/integrations/incoming` | `/new-orders/incoming` | `canCreateOrdersByRoleAndBranchType` |
 | `/new-orders/integrations/create` | `/integrations/sources/create` | `canCreateOrdersByRoleAndBranchType` |
-| `/new-orders/branches/:branchId/:batchId` | `/new-orders/branches/:branchId/batches/:batchId` | `canCreateOrdersByRoleAndBranchType` → `canViewAdminNewOrderTabs` |
+| `/new-orders/branches/:branchId/:batchId` | `/new-orders/branches/:branchId/batches/:batchId` | `canCreateOrdersByRoleAndBranchType` → `canViewBranchPackages` |
 | `/new-orders/integrations/:id` | `/integrations/sources/:id` | `canCreateOrdersByRoleAndBranchType` |
 | `/payments/shift-report/:id` | `/payments/shifts/:id` | — |
 | `/payments/shift-settings` | `opsTabPath(SHIFT_SETTINGS_TAB)` | `canManageShiftSettings` |

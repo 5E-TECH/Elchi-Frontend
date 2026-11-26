@@ -128,21 +128,19 @@ describe("SourcePicker — kiruvchi posilkalar manbalari (dizayn v2)", () => {
   });
 
   it.each([
-    ["manager", "HQ"],
-    ["manager", "PICKUP"],
-    ["registrator", "REGIONAL"],
+    ["manager", "HQ", ["/new-orders", "/new-orders/incoming"]],
+    ["manager", "PICKUP", ["/new-orders", "/new-orders/incoming"]],
+    // 9rzmWFVm: registratorda «Tashqi saytlar» va «Filial paketlari» ham (tablar soni so'rovsiz / o'z so'rovi bilan).
+    ["registrator", "REGIONAL", ["/new-orders", "/new-orders/incoming", "/new-orders/sites", "/new-orders/branches"]],
   ])(
-    "⭐ %s (%s): «Marketlar · Kiruvchi posilkalar» tablari; ulanishlar (admin/partners, integrations) so'ralmaydi — 403 yo'q",
-    async (role, branchType) => {
+    "⭐ %s (%s): qabul tablari; ulanishlar (admin/partners, integrations) so'ralmaydi — 403 yo'q",
+    async (role, branchType, hrefs) => {
       mockApi();
       renderPicker(role, branchType);
       await screen.findByRole("table", { name: "Manbalar" });
 
       const tabs = screen.getByRole("navigation", { name: "Qabul manbalari" });
-      expect(within(tabs).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-        "/new-orders",
-        "/new-orders/incoming",
-      ]);
+      expect(within(tabs).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(hrefs);
       expect(within(tabs).getByRole("link", { name: /Kiruvchi posilkalar/ })).toHaveAttribute("aria-current", "page");
       expect(screen.queryByRole("heading", { level: 2, name: "Kiruvchi posilkalar" })).not.toBeInTheDocument();
       expect(requestedUrls()).not.toContain("admin/partners");
