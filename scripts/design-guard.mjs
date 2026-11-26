@@ -117,6 +117,8 @@ export const V2_SCOPES = Object.freeze([
   "src/entities/order",
   "src/entities/orders",
   "src/entities/product",
+  // pe71yf8L: market «Online / Offline» va oxirgi faollik — belgi + vaqt (rangsiz, Badge tone).
+  "src/entities/user",
   "src/entities/warehouse",
   // F7PWp6cK: AI suhbati — SSE oqimi va holat mashinasi (rangsiz).
   "src/features/ai-chat",

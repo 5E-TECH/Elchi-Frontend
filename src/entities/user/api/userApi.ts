@@ -206,14 +206,22 @@ export const useUser = () => {
    */
   const invalidateOwnSessions = () => void client.invalidateQueries({ queryKey: queryKeys.accountSessions.all });
 
-  /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
-  const useGetUser = (params?: IUserFilter, enabled: boolean = true, options?: { silentError?: boolean }) =>
+  /**
+   * `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi.
+   * `refetchInterval` (pe71yf8L) — «Marketlar» tablarida «Online / Offline» yangilanib tursin (fon tabida to'xtaydi).
+   */
+  const useGetUser = (
+    params?: IUserFilter,
+    enabled: boolean = true,
+    options?: { silentError?: boolean; refetchInterval?: number | false },
+  ) =>
     useQuery({
       queryKey: [user, params],
       queryFn: () => fetchUserList(params),
       enabled,
       placeholderData: (prev) => prev,
       ...(options?.silentError ? { meta: { silentError: true } } : {}),
+      ...(options?.refetchInterval ? { refetchInterval: options.refetchInterval } : {}),
     });
 
   const useGetCouriers = (params?: IUserFilter, enabled: boolean = true) =>
@@ -279,15 +287,22 @@ export const useUser = () => {
       enabled,
     });
 
+  /**
+   * `refetchInterval` (pe71yf8L) — javobga qarab: market / market operatori tafsilotida «Online / Offline» yangilanib
+   * tursin (`(data) => ms | false`; fon tabida to'xtaydi).
+   */
   const useGetUserById = (
     id: string,
     params?: Pick<IUserFilter, "fromDate" | "toDate">,
-    options?: { silentError?: boolean },
+    options?: { silentError?: boolean; refetchInterval?: (data: unknown) => number | false },
   ) =>
     useQuery({
       ...userDetailQuery(id, params),
       enabled: !!id,
       ...(options?.silentError ? { meta: { silentError: true } } : {}),
+      ...(options?.refetchInterval
+        ? { refetchInterval: (query: { state: { data?: unknown } }) => options.refetchInterval!(query.state.data) }
+        : {}),
     });
 
   /**

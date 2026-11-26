@@ -2,6 +2,7 @@
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../../../entities/user/api/userApi";
+import { ACTIVITY_REFETCH_MS, isActivityRole } from "../../../entities/user/lib/activity";
 import { unwrapUserResponse } from "../../../entities/user/lib/normalizeUser";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { buttonClasses, ErrorState, QueryBoundary, Skeleton, SkeletonLines } from "../../../shared/ui/primitives";
@@ -35,7 +36,11 @@ export const UserDetailPage = () => {
   const { t } = useTranslation("users");
   const { useGetUserById } = useUser();
   // Xato / «Topilmadi» sahifada (`ErrorState size="page"`) — global xabar takrorlanmaydi.
-  const query = useGetUserById(id || "", undefined, { silentError: true });
+  // pe71yf8L: market / market operatori — «Online / Offline» 60 s da yangilanadi (fon tabida to'xtaydi).
+  const query = useGetUserById(id || "", undefined, {
+    silentError: true,
+    refetchInterval: (data) => (isActivityRole(unwrapUserResponse(data)?.role) ? ACTIVITY_REFETCH_MS : false),
+  });
   const user = unwrapUserResponse(query.data);
   const fromNewOrders = pathname.startsWith("/new-orders");
   const back = fromNewOrders ? (true as const) : "/all-users";

@@ -30,6 +30,7 @@ import {
 } from "../../../shared/ui/primitives";
 import { UserListKpi } from "../../../widgets/user-list/ui/UserListKpi";
 import { UserListTable } from "../../../widgets/user-list/ui/UserListTable";
+import { ACTIVITY_REFETCH_MS, isActivityRole } from "../../../entities/user/lib/activity";
 import { EXTERNAL_ROLES, getManagerTabs, STAFF_ROLES, STAFF_TABS } from "./roleTabs";
 
 /** Qidiruv URL'ga yozilishidan oldin kutish (avvalgi `FilterSearch` kabi). */
@@ -190,7 +191,12 @@ const UserListPage = memo(() => {
 
   const { useGetUser } = useUser();
   // Ikkala so'rov xatosi sahifada (`ErrorState`) — global xabar takrorlanmaydi.
-  const listQuery = useGetUser(apiParams, !hasLegacyKeys, { silentError: true });
+  // pe71yf8L: «Marketlar» / «Market operatorlari» — «Faollik» ustuni va 60 s da yangilanish (Online / Offline).
+  const showActivity = isActivityRole(role);
+  const listQuery = useGetUser(apiParams, !hasLegacyKeys, {
+    silentError: true,
+    refetchInterval: showActivity ? ACTIVITY_REFETCH_MS : false,
+  });
   // KPI — filtrsiz jami (qidiruv/holat o'zgarsa ham «Barcha foydalanuvchilar» o'zgarmaydi); faqat superadmin/admin.
   const kpiQuery = useGetUser({ page: 1, limit: 1 }, canManageUsers, { silentError: true });
   const kpiMeta = kpiQuery.data?.data?.meta;
@@ -420,6 +426,7 @@ const UserListPage = memo(() => {
                 t("v2.list.columns.status"),
                 // TG-B: «Telegram boti» ustuni (superadmin/admin) — skelet ham shu tartibda.
                 ...(canManageUsers ? [t("tgBot.column")] : []),
+                ...(showActivity ? [t("activity.column")] : []),
                 t("v2.list.columns.joined"),
               ]}
               rows={6}
@@ -447,7 +454,13 @@ const UserListPage = memo(() => {
           className="border-t border-border"
         >
           {(list, { isRefetching }) => (
-            <UserListTable users={list} canManage={canManageUsers} busy={isRefetching} investorIds={investorIds} />
+            <UserListTable
+              users={list}
+              canManage={canManageUsers}
+              showActivity={showActivity}
+              busy={isRefetching}
+              investorIds={investorIds}
+            />
           )}
         </QueryBoundary>
       </Card>

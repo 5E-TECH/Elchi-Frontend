@@ -22,6 +22,7 @@ import {
   type DataTableColumn,
   type Tone,
 } from "../../../shared/ui/primitives";
+import { UserActivityStatus, useActivityNow } from "../../../entities/user/ui/UserActivityStatus";
 import { UserRowMenu, type UserRowMenuItem } from "./UserRowMenu";
 
 interface UserListTableProps {
@@ -38,6 +39,11 @@ interface UserListTableProps {
    * login id → investor yozuvi id (`useInvestorIdsByUser`). Berilmasa yoki qator xaritada yo'q bo'lsa — band yo'q.
    */
   investorIds?: ReadonlyMap<string, string>;
+  /**
+   * pe71yf8L: «Faollik» ustuni (Online / Offline + oxirgi faollik) — sahifa «Marketlar» va «Market operatorlari»
+   * tablarida yoqadi (menejerda ham). Boshqa tablarda ustun yo'q.
+   */
+  showActivity?: boolean;
   /** Fonda yangilanmoqda — ro'yxat xiralashadi. */
   busy?: boolean;
   /** Jadval yoki kartalar o'rami klassi (karta ichida — `border-t border-border`). */
@@ -104,9 +110,12 @@ const telegramBotState = (user: User): TelegramBotState => {
  * Xulq (o'zgarmagan): nofaol qilish — tasdiq oynasi (`useConfirm`), so'ng `updateUserStatus.mutate`, xabarlar
  * va qatordagi kutish; faol qilish — tasdiqsiz; o'chirish — `ConfirmDialog` (maket `*-users-delete-dialog`),
  * so'ng `deleteUser.mutate` + xabarlar. Qator bosilsa — `/all-users/:id`.
+ * pe71yf8L: `showActivity` (sahifa: «Marketlar» / «Market operatorlari» tablari) — «Telegram boti» dan keyin (menejerda
+ * «Holat» dan keyin) «Faollik»: «Online» yoki «Offline» + oxirgi faollik; telefon kartasida belgilar qatorida.
  */
-export const UserListTable = memo(({ users, canManage = false, busy = false, investorIds, className }: UserListTableProps) => {
+export const UserListTable = memo(({ users, canManage = false, showActivity = false, busy = false, investorIds, className }: UserListTableProps) => {
   const { t, i18n } = useTranslation(["users", "common"]);
+  const now = useActivityNow(showActivity);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
   const { updateUserStatus, deleteUser } = useUser();
@@ -354,6 +363,20 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, inv
             } satisfies DataTableColumn<User>,
           ]
         : []),
+      ...(showActivity
+        ? [
+            {
+              id: "activity",
+              header: (
+                <abbr title={t("activity.columnHint")} className="no-underline">
+                  {t("activity.column")}
+                </abbr>
+              ),
+              className: "whitespace-nowrap",
+              cell: (user: User) => <UserActivityStatus user={user} now={now} />,
+            } satisfies DataTableColumn<User>,
+          ]
+        : []),
       {
         id: "joined",
         header: t("v2.list.columns.joined"),
@@ -369,7 +392,7 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, inv
         cell: renderActions,
       },
     ],
-    [branchName, canManage, joined, phone, renderActions, roleLabel, statusBadge, t, telegramBadge],
+    [branchName, canManage, joined, now, phone, renderActions, roleLabel, showActivity, statusBadge, t, telegramBadge],
   );
 
   // Telefon kartasi (maket `.el-list-item`): avatar, ism, «telefon · filial» (superadmin/admin), rol + holat, kebab yoki ›.
@@ -390,12 +413,13 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, inv
             <Badge>{roleLabel(user)}</Badge>
             {statusBadge(user)}
             {canManage ? telegramBadge(user, "card") : null}
+            {showActivity ? <UserActivityStatus user={user} now={now} variant="card" /> : null}
           </span>
         </Link>
         {canManage ? renderActions(user) : <ChevronRight aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />}
       </div>
     ),
-    [branchName, canManage, phone, renderActions, roleLabel, statusBadge, t, telegramBadge],
+    [branchName, canManage, now, phone, renderActions, roleLabel, showActivity, statusBadge, t, telegramBadge],
   );
 
   const deletePhone = deleteTarget ? phone(deleteTarget) : "";

@@ -151,6 +151,15 @@ export interface User {
   can_manage?: boolean;
   /** x6IO746K: market operatori marketi (`GET /users`, `/users/:id`); boshqa rollarda yo'q. */
   market?: { id: string | number; name: string; add_order?: boolean } | null;
+  /**
+   * pe71yf8L: faqat `market` va `market_operator` qatorlarida (`GET /users`, `GET /users/:id`; SA / admin /
+   * menejer). `is_online` — kamida bitta realtime ulanish (yoki oxirgisi 45 s dan kam oldin uzilgan);
+   * `last_login_at` — oxirgi kirish, `last_seen_at` — oxirgi faollik (ISO; hech kirmagan — `null`; faollik xizmati
+   * javob bermasa kalitlar yo'q). Boshqa rollarda kalit yo'q.
+   */
+  is_online?: boolean;
+  last_login_at?: string | null;
+  last_seen_at?: string | null;
   avatar?: string;
   balance?: number;
   orders?: Order[];

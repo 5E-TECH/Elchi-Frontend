@@ -225,6 +225,9 @@ export const UpdateUserModal = memo(({
   // Forma oxirgi marta qaysi foydalanuvchi uchun to'ldirilgan: shu foydalanuvchi ma'lumoti qayta kelsa (rol
   // o'zgargach `[user]` qayta so'raladi) — kiritilganlar saqlanadi, faqat tegilmagan maydonlar yangilanadi.
   const filledForUserRef = useRef<string | null>(null);
+  // pe71yf8L: forma oxirgi marta qaysi qiymatlar bilan to'ldirilgan. Ro'yxat / tafsilot market qatorini har 60 s
+  // qayta so'raydi («Online / Offline»): faqat faollik o'zgargan bo'lsa forma (xatolar, kiritilganlar) tegilmaydi.
+  const filledValuesRef = useRef<string | null>(null);
   // Ikki marta tez bosish (yoki Enter) ikki oqim boshlamasin — `isPending` keyingi chizishgacha kechikadi.
   const submittingRef = useRef(false);
   // O'z hisobi: profil sahifasi yoki ro'yxatdan o'zini tahrirlash.
@@ -316,11 +319,7 @@ export const UpdateUserModal = memo(({
 
   useEffect(() => {
     if (!userData) return;
-    // Yangi ochilish yoki boshqa foydalanuvchi — to'liq to'ldirish; o'sha foydalanuvchi qayta kelsa (masalan rol
-    // o'zgargach tafsilot qayta so'raldi) — o'zgartirilgan maydonlar joyida qoladi.
-    const sameUser = filledForUserRef.current === String(userData.id);
-    filledForUserRef.current = String(userData.id);
-    reset({
+    const values: UpdateUserFormValues = {
       name: userData.name ?? "",
       phone: userData.phone_number ? toUzbekistanPhoneValue(userData.phone_number) : "",
       password: "",
@@ -334,7 +333,20 @@ export const UpdateUserModal = memo(({
       default_tariff: toTariffOption(userData.default_tariff),
       ai_price: userData.ai_price_per_order != null ? toDigits(userData.ai_price_per_order) : "",
       role: userData.role ?? "",
-    }, sameUser ? { keepDirtyValues: true } : undefined);
+    };
+    // Yangi ochilish yoki boshqa foydalanuvchi — to'liq to'ldirish; o'sha foydalanuvchi qayta kelsa (masalan rol
+    // o'zgargach tafsilot qayta so'raldi) — o'zgartirilgan maydonlar, xatolar va «tegilgan» holati joyida qoladi.
+    const sameUser = filledForUserRef.current === String(userData.id);
+    const filledKey = `${String(userData.id)}\u0000${JSON.stringify(values)}`;
+    if (sameUser && filledValuesRef.current === filledKey) return;
+    filledForUserRef.current = String(userData.id);
+    filledValuesRef.current = filledKey;
+    reset(
+      values,
+      sameUser
+        ? { keepDirtyValues: true, keepErrors: true, keepTouched: true, keepIsSubmitted: true, keepSubmitCount: true }
+        : undefined,
+    );
   }, [reset, userData]);
 
   // Oyna yopilganda parol yana yashirin; boshqa foydalanuvchi yoki yopilish — rol holati tozalanadi.
@@ -347,6 +359,7 @@ export const UpdateUserModal = memo(({
     if (!userId) {
       setShowPassword(false);
       filledForUserRef.current = null;
+      filledValuesRef.current = null;
     }
   }, [userId]);
 
