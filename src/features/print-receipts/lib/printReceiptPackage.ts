@@ -21,10 +21,12 @@ import { cleanReceiptValue, formatReceiptPhone } from "./receiptContact";
 /**
  * PAKET VA POCHTA CHEKI (HJ5sLHiz, maket `tizim-receipts` 02, TZ F8): qop yoki paket ustiga yopishtiriladi. Termal
  * 100×60 (1 mm = 5 px) va ofis printeri uchun A5 (chekka 10 mm, 1 mm = 3 px) — maydonlar va tartib bir xil:
- * qora yorliq (turi) + vaqt, raqam, «Qayerdan» / «Qayerga», «Buyurtmalar» va «Jami summa», haydovchi (avtomobil) yoki
- * kuryer, QR (faqat token) va «Qabul qilishda skanerlang», pastda «Qabul qildi / Imzo».
+ * qora yorliq (turi) + vaqt, raqam, «Qayerdan» / «Qayerga», «Buyurtmalar» va «Jami summa», haydovchi (avtomobil),
+ * kuryer yoki — kuryersiz pochtada — qabul qiluvchi filial (sZxxo98G, «Filial: Nomi · telefon»), QR (faqat token) va
+ * «Qabul qilishda skanerlang», pastda «Qabul qildi / Imzo».
  *
- * Bo'sh maydon chiqmaydi: «Qayerdan» (pochtada BE-2 — `post.branch`), haydovchi, avtomobil, kuryer, jami summa.
+ * Bo'sh maydon chiqmaydi: «Qayerdan» (pochtada BE-2 — `post.branch`), haydovchi, avtomobil, kuryer, qabul qiluvchi
+ * filial, jami summa; telefon bo'lmasa qatorda faqat ism.
  */
 
 export interface ReceiptPersonSource {
@@ -53,10 +55,15 @@ export interface ReceiptPackageSource {
   vehiclePlate?: string | null;
   /** Pochta kuryeri. */
   courier?: ReceiptPersonSource | null;
+  /**
+   * sZxxo98G — filial o'tkazmasi (kuryersiz pochta) qabul qiluvchisi: filial nomi va raqami («Filial: Nomi · telefon»).
+   * Kuryer bo'lsa — kuryer qatori ustun, bu chiqmaydi.
+   */
+  recipientBranch?: ReceiptPersonSource | null;
 }
 
 export interface ReceiptPackagePerson {
-  /** «Haydovchi» / «Kuryer». */
+  /** «Haydovchi» / «Kuryer» / «Filial» (filial o'tkazmasi qabul qiluvchisi). */
   role: string;
   name: string;
   phone: string;
@@ -92,6 +99,7 @@ export const RECEIPT_PACKAGE_TEXT = Object.freeze({
   driver: "Haydovchi",
   vehicle: "Avtomobil",
   courier: "Kuryer",
+  branch: "Filial",
   scan: ["Qabul qilishda", "skanerlang"] as const,
   received: "Qabul qildi:",
   signature: "Imzo:",
@@ -144,8 +152,10 @@ export const toReceiptPackageModel = (source: ReceiptPackageSource): ReceiptPack
     to: textOf(source.to),
     orders: `${formatNumberLocalized(count, { language: "uz" })} ta`,
     total: total === null ? null : formatMoneyLocalized(Math.max(0, total), { language: "uz" }),
+    // sZxxo98G: kuryersiz pochta (filial o'tkazmasi) — qabul qiluvchi filial va uning raqami.
     person: isPost
-      ? personOf(RECEIPT_PACKAGE_TEXT.courier, source.courier)
+      ? (personOf(RECEIPT_PACKAGE_TEXT.courier, source.courier) ??
+        personOf(RECEIPT_PACKAGE_TEXT.branch, source.recipientBranch))
       : personOf(RECEIPT_PACKAGE_TEXT.driver, source.driver),
     vehicle: isPost ? "" : textOf(source.vehiclePlate),
     qrToken: token || null,

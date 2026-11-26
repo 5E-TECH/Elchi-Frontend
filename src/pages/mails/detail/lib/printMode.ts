@@ -59,10 +59,28 @@ const totalOf = (totals?: PostTotals | null): number | null => {
   return (Number(home) || 0) + (Number(center) || 0);
 };
 
+const filledText = (value: unknown): string | null =>
+  typeof value === "string" && value.trim() ? value : null;
+
+/**
+ * sZxxo98G — filial o'tkazmasining qabul qiluvchisi: filial nomi va raqami — filialning o'z raqami, bo'sh bo'lsa faol
+ * menejer raqami (BE `postRecipientBranchPhone` bilan bir xil qaror). Yo'q — `undefined` (chekda qator chiqmaydi).
+ */
+const recipientBranchOf = (
+  branch: MailDetailPost["recipient_branch"],
+): { name: string | null; phone_number: string | null } | undefined =>
+  branch
+    ? {
+        name: filledText(branch.name),
+        phone_number: filledText(branch.phone_number) ?? filledText(branch.manager?.phone_number),
+      }
+    : undefined;
+
 /**
  * Pochta → pochta cheki manbasi (TZ F8): №{post.id}, vaqt, «Qayerdan» — `post.branch` (BE-2, kelmasa qator yo'q),
  * «Qayerga» — pochta viloyati, «Buyurtmalar» — pochtadagi qatorlar soni, «Jami summa» — `homeOrders` + `centerOrders`,
- * kuryer, QR — `post.qr_code_token`.
+ * kuryer yoki (kuryersiz filial o'tkazmasida) qabul qiluvchi filial — `post.recipient_branch` (sZxxo98G),
+ * QR — `post.qr_code_token`.
  */
 export const toPostReceiptSource = (input: {
   postId: string;
@@ -90,6 +108,7 @@ export const toPostReceiptSource = (input: {
     ordersCount: orders.length,
     totalPrice: totalOf(input.totals),
     courier: post?.courier ?? input.courier ?? null,
+    recipientBranch: recipientBranchOf(post?.recipient_branch),
   };
 };
 

@@ -107,6 +107,49 @@ describe("pochta chop etish usullari → features/print-receipts (HJ5sLHiz, TZ F
     expect(mocks.printOrderReceipts).not.toHaveBeenCalled();
   });
 
+  it("sZxxo98G: filial o'tkazmasi — qabul qiluvchi filial (raqami, bo'sh bo'lsa faol menejer raqami)", () => {
+    const transfer = post({
+      id: "74",
+      courier_id: "0",
+      courier: null,
+      branch_id: "12",
+      recipient_branch: {
+        id: "12",
+        name: "Shahriyor Xorazm",
+        phone_number: "+998912222222",
+        manager: { id: "522", name: "Ali", phone_number: "+998935550101" },
+      },
+    });
+    const source = toPostReceiptSource({ postId: "74", post: transfer, orders: [order()] });
+    expect(source.courier).toBeNull();
+    expect(source.recipientBranch).toEqual({ name: "Shahriyor Xorazm", phone_number: "+998912222222" });
+    const noOwnPhone = toPostReceiptSource({
+      postId: "74",
+      post: post({
+        courier: null,
+        recipient_branch: {
+          id: "12",
+          name: "Shahriyor Xorazm",
+          phone_number: " ",
+          manager: { id: "522", name: "Ali", phone_number: "+998935550101" },
+        },
+      }),
+      orders: [order()],
+    });
+    expect(noOwnPhone.recipientBranch).toEqual({ name: "Shahriyor Xorazm", phone_number: "+998935550101" });
+    const nothing = toPostReceiptSource({
+      postId: "74",
+      post: post({ courier: null, recipient_branch: { id: "12", name: null, phone_number: null, manager: null } }),
+      orders: [order()],
+    });
+    expect(nothing.recipientBranch).toEqual({ name: null, phone_number: null });
+    // Kuryer pochtasi / eski backend (`recipient_branch` yo'q) — manba avvalgidek.
+    expect(toPostReceiptSource({ postId: "2493", post: post(), orders: [order()] }).recipientBranch).toBeUndefined();
+    expect(
+      toPostReceiptSource({ postId: "2493", post: post({ recipient_branch: null }), orders: [order()] }).recipientBranch,
+    ).toBeUndefined();
+  });
+
   it("qatorlardan jamlar (vaICniE4): uy — `address`, qolgani — markaz (backend hisobi); bo'sh ro'yxat — 0", () => {
     const totals = postTotalsFromOrders([
       order({ total_price: 185_000 }),
