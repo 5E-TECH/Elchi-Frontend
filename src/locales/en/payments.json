@@ -735,6 +735,21 @@
       "customer": "Customer",
       "branch": "Branch cashbox",
       "main": "Main cashbox"
+    },
+    "passThrough": {
+      "title": "Transfer to market",
+      "titleBranch": "Branch to market transfer",
+      "badge": "Bypassed cashbox",
+      "route": "{{from}} → {{to}}",
+      "party": {
+        "courier": "Courier",
+        "branch": "Branch",
+        "market": "Market"
+      },
+      "detailTitle": "Pass-through record",
+      "detailNote": "The money did not enter this cashbox: {{from}} → {{to}}, transferred directly. The cashbox has two records — income and expense; the balance did not change and they are not counted in the Income / Expense totals.",
+      "legs": "Cashbox records",
+      "leg": "#{{id}} · {{direction}}"
     }
   }
   ,"v2HistoryDetail": {

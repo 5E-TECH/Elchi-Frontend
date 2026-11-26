@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-ack, superadmin-payments-cash-detail-courier-receipt, superadmin-payments-cash-detail-branch-receipt, superadmin-payments-cash-detail-courier-corrected
-import { memo, useRef, useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, ReceiptText } from "lucide-react";
+import { memo, useMemo, useRef, useState } from "react";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ReceiptText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -16,7 +16,7 @@ import {
   isOrderLinkedSource,
   showsPaymentMethod,
 } from "./paymentSourceType";
-import { formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { cx } from "../../../shared/lib/cx";
 import { scrollShellContentToTop } from "../../../shared/lib/usePagination";
@@ -36,6 +36,8 @@ import { toReceiptRef } from "../../../entities/payments/receipt";
 import { historyRowDate, paymentCorrectionBadgeKind } from "../../../entities/payments/paymentCorrection";
 import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
 import { correctionLabelTitle, replacementRefText, reversalRefText } from "./lib/paymentCorrectionView";
+import { collapsePassThroughPairs, isPassThroughRow, passThroughView } from "./lib/passThrough";
+import { PassThroughBadge } from "./PassThroughBadge";
 
 /**
  * KASSA OPERATSIYALARI RO'YXATI — dizayn v2 (maket `*-payments-cash-detail-*`, «Operatsiyalar tarixi»
@@ -53,11 +55,16 @@ import { correctionLabelTitle, replacementRefText, reversalRefText } from "./lib
  * yaqini shu): tuzatish belgisi belgilar qatorida (birinchi), teskari yozuvda izoh (= sabab) o'rniga «#4512 qaytarildi»,
  * «Tuzatilgan» da izohdan keyin « · #4498 o'rniga»; tugma nomida «{sarlavha}, {belgi}, {havola}». Summa o'zgarmaydi.
  *
+ * O'tkazma izi (ega 2026-11-26, `lib/passThrough.ts`): bir to'lovdagi «Kirim +X» / «Chiqim −X» jufti — bitta kulrang
+ * qator (ikkala yo'nalish ikonkasi, «Marketga o'tkazma», «Kuryer → Market», «Kassaga kirmadi», ishorasiz summa).
+ *
  * `pageSize` dan ko'p qator bo'lsa — mijoz tomonida sahifalash (`Pagination`).
  * `withContainer` (sukut) — o'z kartasi bilan; `false` — ota karta ichida (cash-detail).
  */
 
 const ROLLBACK_TOKEN = "[ROLLBACK]";
+
+const EMPTY_ROWS: PaymentRow[] = [];
 
 const normalize = (value?: string | null) => (value ?? "").trim().toLowerCase();
 
@@ -127,9 +134,12 @@ const HistoryRow = memo(
     onOpen: (row: PaymentRow) => void;
   }) => {
     const { t } = useTranslation("payments");
+    const passThrough = isPassThroughRow(row) ? passThroughView(row, t) : null;
     const isIncome = getHistoryRowDirection(row, viewerRole) === "income";
-    const signedAmount = formatSignedMoneyLocalized(getHistoryRowSignedAmount(row, viewerRole));
-    const title = getHistoryRowTitle(row, t, viewerRole);
+    const signedAmount = passThrough
+      ? formatMoneyLocalized(Math.abs(toAmount(row.amount)))
+      : formatSignedMoneyLocalized(getHistoryRowSignedAmount(row, viewerRole));
+    const title = passThrough ? passThrough.title : getHistoryRowTitle(row, t, viewerRole);
     const actor = resolvePaymentActorName(row);
     // P0 63HO6cBU: kuryer filial kassasi qatorida usulni ko'rmaydi; menejer ko'radi (ega Q2) — `showsPaymentMethod`.
     const method =
@@ -149,8 +159,9 @@ const HistoryRow = memo(
     const correctionKind = paymentCorrectionBadgeKind(row);
     const baseExtra = sourceUserName ? t("v2CashDetail.list.courier", { name: sourceUserName }) : comment.text;
     // «#4498 o'rniga» bo'linmaydi (maket — `white-space: nowrap`).
-    const extra =
-      reversalRef ??
+    const extra = passThrough
+      ? passThrough.route
+      : reversalRef ??
       (baseExtra || insteadOf ? (
         <>
           {baseExtra}
@@ -163,7 +174,7 @@ const HistoryRow = memo(
         </>
       ) : null);
     const date = formatDateTimeLocalized(getHistoryRowDate(row));
-    const Icon = isIncome ? ArrowDownLeft : ArrowUpRight;
+    const Icon = passThrough ? ArrowLeftRight : isIncome ? ArrowDownLeft : ArrowUpRight;
     // Tugma nomi (aria-label) qator belgilarini ham aytsin: «Tuzatish» — sarlavhadan keyin qavsda; kvitansiya
     // javobi (2crjWf7v, KI-S1) — maketdagidek oxirida: «…, Bugun, 09:10, Kuryer: noto'g'ri».
     const ackAudience = paymentAckAudienceOf(viewerRole);
@@ -185,7 +196,9 @@ const HistoryRow = memo(
           aria-label={[
             t("v2CashDetail.list.rowLabel", {
               title: labelTitle,
-              direction: t(isIncome ? "v2Common.income" : "v2Common.expense"),
+              direction: passThrough
+                ? t("v2Common.passThrough.badge")
+                : t(isIncome ? "v2Common.income" : "v2Common.expense"),
               amount: signedAmount,
               date,
             }),
@@ -215,8 +228,9 @@ const HistoryRow = memo(
             {/* Belgilar: «Tuzatish» (`[ROLLBACK]`, maket `courier-cashbox-my-all` → `.el-badge-outline`) va
                 kuryer kvitansiyasi javobi (2crjWf7v, KI-S1: «Kuryer: noto'g'ri» / «Kuryer tasdiqladi»). Ikkalasi ham maketdagi
                 `.el-badge` — 24px (`md`). */}
-            {comment.isRollback || row.payment_ack || category || receipt || correctionKind ? (
+            {passThrough || comment.isRollback || row.payment_ack || category || receipt || correctionKind ? (
               <span className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                {passThrough ? <PassThroughBadge /> : null}
                 <PaymentCorrectionBadge kind={correctionKind} />
                 {category ? <ExpenseCategoryBadge name={category} /> : null}
                 <ReceiptRowBadge receipt={row.receipt} />
@@ -230,7 +244,12 @@ const HistoryRow = memo(
             ) : null}
           </span>
           <span className="flex shrink-0 flex-col items-end gap-0.5">
-            <span className={cx("whitespace-nowrap font-semibold", isIncome ? "text-success-fg" : "text-danger-fg")}>
+            <span
+              className={cx(
+                "whitespace-nowrap font-semibold",
+                passThrough ? "text-text-muted" : isIncome ? "text-success-fg" : "text-danger-fg",
+              )}
+            >
               {signedAmount}
             </span>
             <span className="whitespace-nowrap text-[13px] text-text-muted">{date}</span>
@@ -277,7 +296,8 @@ const PaymentHistoryList = ({
     setPage(next);
     scrollShellContentToTop(listRef.current);
   };
-  const rows = data ?? [];
+  // O'tkazma izi jufti — bitta qator (iz yo'q bo'lsa — aynan `data`, havola o'zgarmaydi).
+  const rows = useMemo(() => collapsePassThroughPairs(data ?? EMPTY_ROWS), [data]);
   // Ro'yxat almashsa (filtr, tab, to'lovdan keyin yangilanish) — 1-sahifa (effektsiz, render paytida).
   const [seenRows, setSeenRows] = useState(rows);
   if (seenRows !== rows && data !== undefined) {
@@ -323,7 +343,10 @@ const PaymentHistoryList = ({
       />
     ) : null;
 
-  const detail = <FinanceHistoryDetailPopup row={selectedRow} rows={rows} onClose={() => setSelectedRow(null)} />;
+  // Tafsilot «Bog'liq yozuv» ni barcha qatorlardan izlaydi (birlashtirilgan iz oyog'i ham).
+  const detail = (
+    <FinanceHistoryDetailPopup row={selectedRow} rows={data ?? EMPTY_ROWS} onClose={() => setSelectedRow(null)} />
+  );
 
   if (withContainer) {
     return (

@@ -4,7 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, ChevronRight, Inbox, ListFilter } from "lu
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
-import { formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
 import {
   Badge,
   Button,
@@ -33,6 +33,8 @@ import {
 } from "../../../entities/payments/paymentCorrection";
 import { PaymentCorrectionBadge } from "./PaymentCorrectionBadge";
 import { correctionLabelTitle, replacementRefText, reversalRefText } from "./lib/paymentCorrectionView";
+import { collapsePassThroughPairs, isPassThroughRow, passThroughView } from "./lib/passThrough";
+import { PassThroughAmount, PassThroughBadge } from "./PassThroughBadge";
 
 // ─── Types (boshqa «Moliya» fayllari import qiladi — o'zgarmaydi, faqat additiv) ───────────────
 
@@ -78,6 +80,15 @@ export interface PaymentRow {
   correction?: PaymentCorrection | null;
   /** P0 63HO6cBU (BE PR-A): filial kassasi oyog'i — karta va o'tkazma manbasi ko'rsatilmaydi. */
   branch_leg?: boolean | null;
+  /**
+   * O'tkazma izi (ega 2026-11-26, BE #800): pul kassaga kirmagan — bitta to'lovda shu kassada teng «Kirim» va
+   * «Chiqim» juft qator. Jamilarga kirmaydi; ro'yxatda bitta kulrang qator (`lib/passThrough.ts`).
+   */
+  pass_through?: boolean | null;
+  /** Iz qatorining shu kassadagi jufti (ID). */
+  pass_through_pair_id?: string | null;
+  /** Ro'yxatda birlashtirilgan juft qator — faqat mijozda (`collapsePassThroughPairs`). */
+  pass_through_partner?: PaymentRow | null;
   createdAt?: string;
   created_at?: string;
   cashbox?: {
@@ -155,6 +166,9 @@ const actorName = (row: PaymentRow) => {
  * tuzatish belgisi «Manba» da sarlavhadan keyin (telefonda — «Kirim/Chiqim» belgisidan keyin), teskari yozuv
  * ostida sabab o'rniga «#4512 · Kuryer to'lovi qaytarildi», «Tuzatilgan» ostida « · #4498 o'rniga». Summa
  * o'zgarmaydi (ega qarori — chizilmaydi, xiralashmaydi).
+ *
+ * O'tkazma izi (ega 2026-11-26, `lib/passThrough.ts`): bir to'lovdagi «Kirim +X» / «Chiqim −X» jufti — bitta kulrang
+ * qator: «Marketga o'tkazma» · «Kuryer → Market» · «Kassaga kirmadi» · ishorasiz summa.
  */
 const PaymentHistoryTable = ({
   data,
@@ -175,6 +189,7 @@ const PaymentHistoryTable = ({
   const language = i18n.resolvedLanguage ?? i18n.language;
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
   const isManager = String(viewerRole ?? "").toLowerCase() === "manager";
+  const rowsData = useMemo(() => (data ? collapsePassThroughPairs(data) : data), [data]);
 
   const dateText = useCallback(
     (row: PaymentRow) => {
@@ -185,12 +200,14 @@ const PaymentHistoryTable = ({
   );
   const sourceTitle = useCallback(
     (row: PaymentRow) =>
-      getPaymentSourceTitle(row.source_type, t, {
-        role: viewerRole,
-        cashboxType: rowCashboxType(row),
-        paymentMethod: row.payment_method,
-        branchLeg: row.branch_leg,
-      }),
+      isPassThroughRow(row)
+        ? passThroughView(row, t).title
+        : getPaymentSourceTitle(row.source_type, t, {
+            role: viewerRole,
+            cashboxType: rowCashboxType(row),
+            paymentMethod: row.payment_method,
+            branchLeg: row.branch_leg,
+          }),
     [t, viewerRole],
   );
   const cashboxLabel = useCallback(
@@ -208,6 +225,7 @@ const PaymentHistoryTable = ({
    */
   const subLine = useCallback(
     (row: PaymentRow) => {
+      if (isPassThroughRow(row)) return { text: passThroughView(row, t).route, insteadOf: null };
       const reversal = reversalRefText(row, t, { role: viewerRole, cashboxType: rowCashboxType(row) }, "overview");
       return reversal
         ? { text: reversal, insteadOf: null }
@@ -218,6 +236,7 @@ const PaymentHistoryTable = ({
 
   const operationBadge = useCallback(
     (row: PaymentRow) => {
+      if (isPassThroughRow(row)) return <PassThroughBadge />;
       const value = direction(row);
       if (!value) return <span className="text-text-muted">—</span>;
       return (
@@ -231,6 +250,7 @@ const PaymentHistoryTable = ({
 
   const amountNode = useCallback(
     (row: PaymentRow) => {
+      if (isPassThroughRow(row)) return <PassThroughAmount amount={row.amount} language={language} />;
       const value = direction(row);
       const amount = Math.abs(Number(row.amount) || 0);
       return (
@@ -278,12 +298,14 @@ const PaymentHistoryTable = ({
       const receipt = toReceiptRef(row.receipt);
       return [
         sub ? `${title} (${sub})` : title,
-        value
-          ? `${t(value === "income" ? "v2Common.income" : "v2Common.expense")} ${formatSignedMoneyLocalized(
-              value === "expense" ? -amount : amount,
-              { language },
-            )}`
-          : "",
+        isPassThroughRow(row)
+          ? `${t("v2Common.passThrough.badge")} ${formatMoneyLocalized(amount, { language })}`
+          : value
+            ? `${t(value === "income" ? "v2Common.income" : "v2Common.expense")} ${formatSignedMoneyLocalized(
+                value === "expense" ? -amount : amount,
+                { language },
+              )}`
+            : "",
         `${dateText(row)} · ${actorName(row)}`,
         receipt ? t("receipt.status.aria", { status: t(`receipt.status.${receipt.ai_status}`) }) : "",
       ]
@@ -477,7 +499,7 @@ const PaymentHistoryTable = ({
   return (
     <>
       <QueryBoundary
-        query={{ data, isLoading, isError, error, refetch: onRetry, isFetching }}
+        query={{ data: rowsData, isLoading, isError, error, refetch: onRetry, isFetching }}
         loadingLabel={t("v2Overview.history.loading")}
         loading={
           <SkeletonTable
