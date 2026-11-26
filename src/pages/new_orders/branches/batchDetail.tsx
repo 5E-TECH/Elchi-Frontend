@@ -10,6 +10,8 @@ import {
   type BatchDetail,
   type BatchOrder,
 } from "../../../entities/batch";
+import { useSelector } from "react-redux";
+import { canViewBranches } from "../../../app/lib/access";
 import { useBranchDetail } from "../../../entities/branch";
 import { OrderStatusBadge } from "../../../entities/order";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
@@ -76,7 +78,9 @@ const BranchBatchDetailPage = () => {
   const receiveBatchOrders = useReceiveTransferBatchOrders();
   const detailQuery = useBatchDetail(batchId);
   const remainingQuery = useBatchRemainingDetail(batchId);
-  const sourceBranchQuery = useBranchDetail(branchId);
+  // Filial kartasi (`GET branches/:id`) — faqat superadmin/admin; registrator (9rzmWFVm) nomlarni paketdan oladi.
+  const canReadBranch = useSelector(canViewBranches);
+  const sourceBranchQuery = useBranchDetail(canReadBranch ? branchId : undefined);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
   const { recent: recentScanIds, touch: touchRecentScan } = useRecentScans();
@@ -91,7 +95,9 @@ const BranchBatchDetailPage = () => {
 
   // Manzil filial nomi tafsilotda yo'q (faqat `destination_branch_id`) — `GET branches/:id` dan.
   const destinationName = readBranchName(data?.to_branch);
-  const destinationQuery = useBranchDetail(destinationName ? undefined : readBranchId(data?.to_branch));
+  const destinationQuery = useBranchDetail(
+    destinationName || !canReadBranch ? undefined : readBranchId(data?.to_branch),
+  );
 
   const orders = useMemo(
     () => (data?.orders ?? []).filter((order) => !receivedOrderIds.has(order.id)),

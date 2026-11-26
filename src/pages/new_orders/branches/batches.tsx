@@ -4,7 +4,9 @@ import { Check, ChevronRight, Inbox, ListChecks, SearchX } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useBatches, useReceiveTransferBatch, type Batch } from "../../../entities/batch";
-import { useBranchDetail } from "../../../entities/branch";
+import { useSelector } from "react-redux";
+import { canViewBranches } from "../../../app/lib/access";
+import { useBranchDetail, useBranchesWithSentBatches } from "../../../entities/branch";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
@@ -35,6 +37,7 @@ import {
   readBatchRegion,
   readBranchName,
   sumBatchesTotal,
+  toBranchSourceRows,
   toScannableBatches,
 } from "./branchBatchesModel";
 
@@ -76,7 +79,11 @@ const BranchSentBatchesPage = () => {
   const [search, setSearch] = useState("");
   const { recent: recentScanIds, touch: touchRecentScan } = useRecentScans();
   const receiveTransferBatch = useReceiveTransferBatch();
-  const branchQuery = useBranchDetail(branchId);
+  // Filial kartasi (`GET branches/:id`) — faqat superadmin/admin; registrator (9rzmWFVm) nomni paketdan oladi.
+  const canReadBranch = useSelector(canViewBranches);
+  const branchQuery = useBranchDetail(canReadBranch ? branchId : undefined);
+  // Registratorda nom — «Filial paketlari» ro'yxatidan (o'sha kalit, kesh umumiy: ro'yxatdan kelganda so'rov yo'q).
+  const sentBranchesQuery = useBranchesWithSentBatches(undefined, { enabled: !canReadBranch });
 
   const batchesQuery = useBatches(
     {
@@ -97,8 +104,11 @@ const BranchSentBatchesPage = () => {
   const visibleRows = useMemo(() => rows.filter((row) => matchesBatchSearch(row, search)), [rows, search]);
   const scannableRows = useMemo<ScannableBatch[]>(() => toScannableBatches(rows), [rows]);
   const isAllSelected = visibleRows.length > 0 && visibleRows.every((row) => selectedBatchIds.has(row.id));
-  const knownBranchName = readBranchName(branchQuery.data) ?? readBranchName(rows[0]?.from_branch);
-  const isNameLoading = !knownBranchName && (branchQuery.isLoading || isLoading);
+  const knownBranchName =
+    readBranchName(branchQuery.data) ??
+    readBranchName(rows[0]?.from_branch) ??
+    readBranchName(toBranchSourceRows(sentBranchesQuery.data).find((row) => row.id === branchId));
+  const isNameLoading = !knownBranchName && (branchQuery.isLoading || isLoading || sentBranchesQuery.isLoading);
   const branchName = knownBranchName ?? t("branchBatches.batches.branchFallback", { id: branchId });
 
   // Skaner chaqiruvlari joriy tanlovni o'qiydi: yon ta'sir (ovoz, xabar) `setState` ichida emas.

@@ -355,10 +355,20 @@ export const canReceiveExternalOrders: Predicate = anyOf(
 
 /**
  * «Tashqi saytlar» — «Qabul va yaratish» tabi (`/new-orders/sites*`): sayt tanlanadi, posilka QR'i bo'yicha buyurtma
- * saytdan olinadi va qabul qilinadi (BeePost «Tashqi buyurtmalar» naqshi). Saytlar ro'yxati (`GET /integrations`)
- * backendda faqat SUPERADMIN, ADMIN — registrator va menejerda tab chizilmaydi (aks holda ro'yxat 403 berardi).
+ * saytdan olinadi va qabul qilinadi (BeePost «Tashqi buyurtmalar» naqshi). Backend `GET /integrations`, `/:id`,
+ * `search-by-qr`, `orders/external/receive` — SUPERADMIN, ADMIN, REGISTRATOR (9rzmWFVm, ega 2026-11-26: registratorga
+ * ham; uning javobida faqat saytlar, ulanish sozlamasiz). Menejerda tab yo'q (saytlar ro'yxati unga 403).
  */
-export const canUseExternalSites: Predicate = hasRole("superadmin", "admin");
+export const canUseExternalSites: Predicate = hasRole("superadmin", "admin", "registrator");
+
+/**
+ * «Filial paketlari» — «Qabul va yaratish» tabi (`/new-orders/branches*`): filiallardan HQ ga (ota filialga) kelgan
+ * paketlarni ko'rish va qabul qilish. Superadmin/admin — hamma paketlar; registrator (9rzmWFVm, ega 2026-11-26) —
+ * backend doirasi bilan faqat O'Z filialiga kelgan paketlar (`with-sent-batches`, `transfer-batches`), qabul —
+ * manzil filialda ishlasa. Filial kartasi (`GET /branches/:id`, pul maydonlari bilan) registratorga ochilmaydi —
+ * sahifalar nomni paket javobidan oladi (`canViewBranches` bo'lmasa so'ralmaydi).
+ */
+export const canViewBranchPackages: Predicate = hasRole("superadmin", "admin", "registrator");
 
 /**
  * Carrier API akkauntlari — «Tashqi yetkazuvchilar» tabi (`/integrations/connections?scope=carrier`) va katalog

@@ -42,7 +42,8 @@ const ROW_LINK =
  *
  * Maket yo'q — eng yaqini `superadmin-neworders-incoming-sources` (qobiq tablari bilan boshlanadigan karta, izoh +
  * «Yangilash», manbalar jadvali) va `superadmin-integrations-legacy-sources` (ulanish nomi + slug). Ro'yxat
- * `GET /integrations` dan (faqat superadmin, admin — tab ham faqat ularda): faol, marketga bog'langan ulanishlar.
+ * `GET /integrations` dan (superadmin, admin; 9rzmWFVm dan registrator ham — unga backend sozlamasiz sayt
+ * ko'rinishini beradi): faol, marketga bog'langan ulanishlar.
  */
 const ExternalSitesPage = () => {
   const { t, i18n } = useTranslation("newOrders");

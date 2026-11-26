@@ -3,7 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
-import { canHandoverCancelledToMarket, canReceiveExternalOrders, canUseExternalSites } from "../../../app/lib/access";
+import {
+  canHandoverCancelledToMarket,
+  canReceiveExternalOrders,
+  canUseExternalSites,
+  canViewBranchPackages,
+} from "../../../app/lib/access";
 import { useBranchesWithSentBatches } from "../../../entities/branch";
 import { useIncomingSources } from "../../../entities/incoming-orders";
 import { useOrders } from "../../../entities/orders";
@@ -26,9 +31,11 @@ export const useNewOrdersTabKeys = (): NewOrdersTabKey[] => {
   const canReceiveIncoming = useSelector(canReceiveExternalOrders);
   // «Tashqi saytlar» — `/new-orders/sites*` route guard bilan bir xil.
   const canUseSites = useSelector(canUseExternalSites);
+  // «Filial paketlari» — `/new-orders/branches*` route guard bilan bir xil.
+  const canSeeBranches = useSelector(canViewBranchPackages);
   return useMemo(
-    () => resolveNewOrdersTabKeys({ role, roleId, canReceiveIncoming, canSeeCancelled, canUseSites }),
-    [canReceiveIncoming, canSeeCancelled, canUseSites, role, roleId],
+    () => resolveNewOrdersTabKeys({ role, roleId, canReceiveIncoming, canSeeCancelled, canUseSites, canSeeBranches }),
+    [canReceiveIncoming, canSeeBranches, canSeeCancelled, canUseSites, role, roleId],
   );
 };
 

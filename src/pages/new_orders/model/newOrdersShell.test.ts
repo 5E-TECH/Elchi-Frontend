@@ -89,20 +89,27 @@ describe("resolveNewOrdersShellMode — qobiq rejimi", () => {
 });
 
 describe("resolveNewOrdersTabKeys — ko'rinadigan tablar", () => {
-  it("superadmin/admin: 4 ta tab", () => {
+  it("superadmin/admin: 5 ta tab", () => {
     for (const role of ["superadmin", "admin"]) {
       expect(
-        resolveNewOrdersTabKeys({ role, roleId: "1", canReceiveIncoming: true, canSeeCancelled: true }),
-      ).toEqual(["markets", "incoming", "branches", "cancelled"]);
+        resolveNewOrdersTabKeys({
+          role,
+          roleId: "1",
+          canReceiveIncoming: true,
+          canSeeCancelled: true,
+          canUseSites: true,
+          canSeeBranches: true,
+        }),
+      ).toEqual(["markets", "incoming", "sites", "branches", "cancelled"]);
     }
   });
 
-  it("⭐ «Tashqi saytlar» — «Kiruvchi posilkalar» dan keyin, faqat ruxsat bo'lsa (superadmin, admin)", () => {
+  it("⭐ «Tashqi saytlar» — «Kiruvchi posilkalar» dan keyin, faqat ruxsat bo'lsa (superadmin, admin, registrator)", () => {
     expect(
       resolveNewOrdersTabKeys({ role: "admin", roleId: "1", canReceiveIncoming: true, canSeeCancelled: true, canUseSites: true }),
-    ).toEqual(["markets", "incoming", "sites", "branches", "cancelled"]);
+    ).toEqual(["markets", "incoming", "sites", "cancelled"]);
     expect(
-      resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canReceiveIncoming: true, canSeeCancelled: false, canUseSites: false }),
+      resolveNewOrdersTabKeys({ role: "manager", roleId: "2", canReceiveIncoming: true, canSeeCancelled: false, canUseSites: false }),
     ).toEqual(["markets", "incoming"]);
     expect(
       resolveNewOrdersTabKeys({ role: "market", roleId: "121", canReceiveIncoming: false, canSeeCancelled: false, canUseSites: true }),
@@ -115,21 +122,29 @@ describe("resolveNewOrdersTabKeys — ko'rinadigan tablar", () => {
     ).toEqual(["markets", "incoming"]);
   });
 
-  it("⭐ registrator: «Marketlar · Kiruvchi posilkalar», HQ registratorida yana «Bekor qilinganlar»", () => {
-    expect(
-      resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canReceiveIncoming: true, canSeeCancelled: true }),
-    ).toEqual(["markets", "incoming", "cancelled"]);
-    expect(
-      resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canReceiveIncoming: true, canSeeCancelled: false }),
-    ).toEqual(["markets", "incoming"]);
+  it("⭐ registrator (9rzmWFVm): «Marketlar · Kiruvchi posilkalar · Tashqi saytlar · Filial paketlari», HQ registratorida yana «Bekor qilinganlar»", () => {
+    const registrator = { role: "registrator", roleId: "3", canReceiveIncoming: true, canUseSites: true, canSeeBranches: true };
+    expect(resolveNewOrdersTabKeys({ ...registrator, canSeeCancelled: true })).toEqual([
+      "markets",
+      "incoming",
+      "sites",
+      "branches",
+      "cancelled",
+    ]);
+    expect(resolveNewOrdersTabKeys({ ...registrator, canSeeCancelled: false })).toEqual([
+      "markets",
+      "incoming",
+      "sites",
+      "branches",
+    ]);
   });
 
-  it("qabul huquqi yo'q xodim — «Kiruvchi posilkalar» yo'q; «Filial paketlari» faqat superadmin/admin", () => {
+  it("qabul huquqi yo'q xodim — «Kiruvchi posilkalar» yo'q; «Filial paketlari» faqat ruxsat bo'lsa", () => {
     expect(
       resolveNewOrdersTabKeys({ role: "manager", roleId: "2", canReceiveIncoming: false, canSeeCancelled: false }),
     ).toEqual(["markets"]);
     expect(
-      resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canReceiveIncoming: true, canSeeCancelled: true }),
+      resolveNewOrdersTabKeys({ role: "admin", roleId: "1", canReceiveIncoming: true, canSeeCancelled: true }),
     ).not.toContain("branches");
   });
 

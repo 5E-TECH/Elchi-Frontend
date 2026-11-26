@@ -180,13 +180,28 @@ describe("Qabul va yaratish — tablar (v1 shartlari) va sonlar", () => {
     expect(incoming).toHaveTextContent(/^Kiruvchi posilkalar$/);
   });
 
-  it("HQ registratori: Marketlar · Kiruvchi posilkalar · Bekor qilinganlar", () => {
+  it("HQ registratori (9rzmWFVm): Marketlar · Kiruvchi posilkalar · Tashqi saytlar · Filial paketlari · Bekor qilinganlar", async () => {
     renderShell("/new-orders", "registrator", "HQ");
     const links = within(tabsNav()).getAllByRole("link");
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       "/new-orders",
       "/new-orders/incoming",
+      "/new-orders/sites",
+      "/new-orders/branches",
       "/new-orders/cancelled",
+    ]);
+    // «Filial paketlari» soni — backend doirasidagi (registratorga kelgan) filiallar soni.
+    await waitFor(() => expect(links[3]).toHaveTextContent("Filial paketlari 3"));
+  });
+
+  it("REGIONAL registratori (9rzmWFVm): Marketlar · Kiruvchi posilkalar · Tashqi saytlar · Filial paketlari", () => {
+    renderShell("/new-orders", "registrator", "REGIONAL");
+    const links = within(tabsNav()).getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      "/new-orders",
+      "/new-orders/incoming",
+      "/new-orders/sites",
+      "/new-orders/branches",
     ]);
   });
 
@@ -194,7 +209,6 @@ describe("Qabul va yaratish — tablar (v1 shartlari) va sonlar", () => {
     ["manager", "HQ"],
     ["manager", "PICKUP"],
     ["manager", "HYBRID"],
-    ["registrator", "REGIONAL"],
   ])(
     "⭐ %s (%s): «Marketlar · Kiruvchi posilkalar» tablari, posilkalar soni; filial va bekor so'ralmaydi (ega S1)",
     async (role, branchType) => {

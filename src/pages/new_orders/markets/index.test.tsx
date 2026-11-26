@@ -112,17 +112,17 @@ describe("Marketlar — jadval va xulosa", () => {
   });
 
   it.each([
-    ["manager", "HQ"],
-    ["registrator", "REGIONAL"],
-  ])("%s (%s): karta tablar bilan (alohida «Marketlar» sarlavhasi yo'q), «Bugun: …» qidiruv yonida", async (role, branchType) => {
+    ["manager", "HQ", ["Marketlar", "Kiruvchi posilkalar"]],
+    // 9rzmWFVm: registratorda «Tashqi saytlar» va «Filial paketlari» ham.
+    ["registrator", "REGIONAL", ["Marketlar", "Kiruvchi posilkalar", "Tashqi saytlar", "Filial paketlari"]],
+  ])("%s (%s): karta tablar bilan (alohida «Marketlar» sarlavhasi yo'q), «Bugun: …» qidiruv yonida", async (role, branchType, tabNames) => {
     renderMarkets(role, branchType);
 
     const card = screen.getByRole("region", { name: "Qabul kutayotgan buyurtmalar" });
     const tabs = within(card).getByRole("navigation", { name: "Qabul manbalari" });
-    expect(within(tabs).getAllByRole("link").map((link) => link.textContent?.replace(/\s*\d+$/, ""))).toEqual([
-      "Marketlar",
-      "Kiruvchi posilkalar",
-    ]);
+    expect(within(tabs).getAllByRole("link").map((link) => link.textContent?.replace(/\s*\d+$/, ""))).toEqual(
+      tabNames,
+    );
     expect(within(card).queryByRole("heading", { level: 2, name: "Marketlar" })).not.toBeInTheDocument();
     await waitFor(() =>
       expect(within(card).getByText(/ta market/).closest("p")).toHaveTextContent(
