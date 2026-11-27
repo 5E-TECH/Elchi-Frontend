@@ -470,6 +470,22 @@ describe("Profil — Telegram'ni ulash", () => {
     },
   );
 
+  // Ega 2026-11-27: bot orqali AI buyurtma faqat market / market operatoriga — ko'rsatma faqat ularda.
+  it.each([
+    ["market", true],
+    ["market_operator", true],
+    ["courier", false],
+    ["admin", false],
+    ["superadmin", false],
+  ] as const)("%s: Telegram kartasida bot orqali buyurtma ko'rsatmasi — %s", async (role, shown) => {
+    serveProfile(() => makeUser(role));
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState(role) });
+
+    const card = await screen.findByRole("region", { name: "Telegram" });
+    const hint = within(card).queryByText(/Botga buyurtma matni yoki rasmini yuborsangiz/);
+    expect(hint !== null).toBe(shown);
+  });
+
   it("boshqa foydalanuvchining sahifasida (superadmin kuryerni ko'rmoqda) karta yo'q", () => {
     renderWithProviders(<UserDetailView user={makeUser("courier", { telegram_linked: true })} />, {
       preloadedState: roleState("superadmin"),

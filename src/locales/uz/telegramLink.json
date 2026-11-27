@@ -5,6 +5,7 @@
   "statusUnlinked": "Ulanmagan",
   "unlinkedDescription": "Ulasangiz, bot buyurtma kartalari, kassa xabarlari va bildirishnomalarni Telegram'ga yuboradi.",
   "linkedDescription": "Buyurtma kartalari, kassa xabarlari va bildirishnomalar shu Telegram akkauntga keladi.",
+  "orderHint": "📝 Botga buyurtma matni yoki rasmini yuborsangiz, AI buyurtmani tayyorlab, tasdiqlashga ko'rsatadi.",
   "linkedSince": "{{date}} da ulangan",
   "link": "Telegram'ni ulash",
   "linkLoading": "Havola olinmoqda…",

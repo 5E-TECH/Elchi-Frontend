@@ -11,7 +11,9 @@ test.describe("Profil — shaxsiy Telegram (1440px)", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 120_000 });
 
-  test("⭐ havola oynasi: QR, sanoq va progress; bot ulagach oyna yopiladi, karta «Ulangan»", async ({ page }) => {
+  test("⭐ havola oynasi: QR, sanoq va progress; bot ulagach oyna yopiladi, karta «Ulangan»", async ({
+    page,
+  }) => {
     const state = await mockProfileTelegramApi(page, { linkAfterPolls: 1 });
     await page.goto("/profile");
 
@@ -22,12 +24,19 @@ test.describe("Profil — shaxsiy Telegram (1440px)", () => {
     await card.getByRole("button", { name: "Telegram'ni ulash" }).click();
     const dialog = page.getByRole("dialog", { name: "Telegram'ni ulash" });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" })).toBeVisible();
+    await expect(
+      dialog.getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" }),
+    ).toBeVisible();
     await expect(dialog.getByRole("timer")).toHaveText(/^(10:00|9:5\d) qoldi$/);
     await expect(dialog.getByRole("progressbar")).toHaveAttribute("aria-valuemax", "600");
     await expect(dialog.getByText("Ulanish kutilmoqda…")).toBeVisible();
-    await expect(dialog.getByRole("list", { name: "Qanday ulanadi" }).getByRole("listitem")).toHaveCount(3);
-    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute("href", TG_DEEP_LINK);
+    await expect(
+      dialog.getByRole("list", { name: "Qanday ulanadi" }).getByRole("listitem"),
+    ).toHaveCount(3);
+    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute(
+      "href",
+      TG_DEEP_LINK,
+    );
     await expect(dialog.getByRole("button", { name: "Boshqa telefondan — QR kod" })).toHaveCount(0);
 
     // Profil har 3 s qayta o'qiladi — bot ulagach oyna o'zi yopiladi.
@@ -39,9 +48,13 @@ test.describe("Profil — shaxsiy Telegram (1440px)", () => {
     expect(state.codeRequests).toBe(1);
   });
 
-  test("⭐ muddat tugadi: «Havola eskirdi», «Yangi havola olish» yangi kod so'raydi va sanoq qaytadi", async ({ page }) => {
+  test("⭐ muddat tugadi: «Havola eskirdi», «Yangi havola olish» yangi kod so'raydi va sanoq qaytadi", async ({
+    page,
+  }) => {
     // Birinchi kod 3 s da eskiradi, ikkinchisi — odatdagi 10 daqiqa.
-    const state = await mockProfileTelegramApi(page, { expiresInMs: (n) => (n === 1 ? 3_000 : 10 * 60_000) });
+    const state = await mockProfileTelegramApi(page, {
+      expiresInMs: (n) => (n === 1 ? 3_000 : 10 * 60_000),
+    });
     await page.goto("/profile");
 
     const card = page.getByRole("region", { name: "Telegram" });
@@ -52,22 +65,33 @@ test.describe("Profil — shaxsiy Telegram (1440px)", () => {
     await expect(dialog.getByRole("timer")).toBeVisible();
     await expect(dialog.getByText("Havola eskirdi")).toBeVisible({ timeout: 10_000 });
     await expect(
-      dialog.getByText("Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Ulash uchun yangisini oling."),
+      dialog.getByText(
+        "Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Ulash uchun yangisini oling.",
+      ),
     ).toBeVisible();
     await expect(dialog.getByRole("timer")).toHaveCount(0);
-    await expect(dialog.getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" })).toHaveCount(0);
+    await expect(
+      dialog.getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" }),
+    ).toHaveCount(0);
     await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveCount(0);
     expect(state.codeRequests).toBe(1);
 
     await dialog.getByRole("button", { name: "Yangi havola olish" }).click();
-    await expect(dialog.getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" })).toBeVisible();
+    await expect(
+      dialog.getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" }),
+    ).toBeVisible();
     await expect(dialog.getByRole("timer")).toHaveText(/^(10:00|9:5\d) qoldi$/);
     await expect(dialog.getByText("Havola eskirdi")).toHaveCount(0);
-    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute("href", TG_DEEP_LINK);
+    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute(
+      "href",
+      TG_DEEP_LINK,
+    );
     expect(state.codeRequests).toBe(2);
   });
 
-  test("⭐ buyruq rejimi (deep_link yo'q): buyruq va o'z qadamlari, sanoqsiz, faqat «Yopish»", async ({ page }) => {
+  test("⭐ buyruq rejimi (deep_link yo'q): buyruq va o'z qadamlari, sanoqsiz, faqat «Yopish»", async ({
+    page,
+  }) => {
     await mockProfileTelegramApi(page, { deepLink: null });
     await page.goto("/profile");
 
@@ -88,6 +112,22 @@ test.describe("Profil — shaxsiy Telegram (1440px)", () => {
     await expect(dialog).toBeHidden();
   });
 
+  test("⭐ market: kartada bot orqali buyurtma ko'rsatmasi", async ({ page }) => {
+    await mockProfileTelegramApi(page, { role: "market" });
+    await page.goto("/profile");
+
+    const card = page.getByRole("region", { name: "Telegram", exact: true });
+    await expect(card.getByText("Ulanmagan")).toBeVisible({ timeout: 90_000 });
+    await expect(
+      card.getByText(
+        "📝 Botga buyurtma matni yoki rasmini yuborsangiz, AI buyurtmani tayyorlab, tasdiqlashga ko'rsatadi.",
+      ),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  });
+
   test("⭐ uzish: tasdiq oynasi, so'ng DELETE va «Telegram uzildi»", async ({ page }) => {
     const state = await mockProfileTelegramApi(page, { linked: true });
     await page.goto("/profile");
@@ -98,7 +138,9 @@ test.describe("Profil — shaxsiy Telegram (1440px)", () => {
 
     const confirm = page.getByRole("alertdialog", { name: "Telegram'ni uzish" });
     await expect(
-      confirm.getByText("Bot xabarlari va tugmalari bu akkauntga endi kelmaydi. Istalgan vaqtda qayta ulashingiz mumkin."),
+      confirm.getByText(
+        "Bot xabarlari va tugmalari bu akkauntga endi kelmaydi. Istalgan vaqtda qayta ulashingiz mumkin.",
+      ),
     ).toBeVisible();
     expect(state.unlinkRequests).toBe(0);
     await confirm.getByRole("button", { name: "Uzish" }).click();

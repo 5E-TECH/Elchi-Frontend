@@ -33,6 +33,11 @@ export type TelegramLinkCardProps = {
   linked: boolean;
   username?: string | null;
   linkedAt?: string | null;
+  /**
+   * Market va market operatori: bot orqali AI buyurtma ko'rsatmasi (ega 2026-11-27 — imkoniyat hech qayerda
+   * aytilmagan, topilmagan edi). Boshqa rollarga bot buyurtma yaratmaydi.
+   */
+  orderHint?: boolean;
 };
 
 /**
@@ -41,7 +46,7 @@ export type TelegramLinkCardProps = {
  * xabari), `-unlink-dialog` (tasdiq): qator = neytral ikonka + qalin nom + holat belgisi + 13 px izoh, o'ngda
  * ikkinchi darajali tugma (telefonda — matn ostida, to'liq en). Oynalar — `TelegramLinkDialog`.
  */
-export const TelegramLinkCard = ({ linked, username, linkedAt }: TelegramLinkCardProps) => {
+export const TelegramLinkCard = ({ linked, username, linkedAt, orderHint = false }: TelegramLinkCardProps) => {
   const { t } = useTranslation("telegramLink");
   const confirm = useConfirm();
   const linkCode = useTelegramLinkCode();
@@ -149,6 +154,11 @@ export const TelegramLinkCard = ({ linked, username, linkedAt }: TelegramLinkCar
             <p className="m-0 text-[13px] leading-[18px] text-text-muted">
               {linked ? t("linkedDescription") : t("unlinkedDescription")}
             </p>
+            {orderHint ? (
+              <p className="m-0 text-[13px] leading-[18px] text-text" data-testid="telegram-order-hint">
+                {t("orderHint")}
+              </p>
+            ) : null}
             {linkedHandle || linkedSince ? (
               <p className="m-0 flex flex-wrap gap-x-1.5 text-[13px] leading-[18px] text-text-muted">
                 {linkedHandle ? <span className="font-semibold text-text">{linkedHandle}</span> : null}

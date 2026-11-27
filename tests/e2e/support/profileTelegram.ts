@@ -13,7 +13,12 @@ const cors = {
   "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
 };
 const reply = (route: Route, body: unknown, status = 200) =>
-  route.fulfill({ status, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
+  route.fulfill({
+    status,
+    contentType: "application/json",
+    headers: cors,
+    body: JSON.stringify(body),
+  });
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 export const TG_DEEP_LINK = "https://t.me/elchi_test_bot?start=Kod123";
@@ -29,11 +34,20 @@ export type ProfileTelegramOptions = {
   linkAfterPolls?: number | null;
   /** Server sozlamasidagi mavzu (foydalanuvchi o'zi tanlagan — `themeChosen`). */
   theme?: "light" | "dark";
+  /** Profil roli (sukut — kuryer). */
+  role?: string;
 };
 
 export const mockProfileTelegramApi = async (
   page: Page,
-  { linked = false, expiresInMs = 10 * 60_000, deepLink = TG_DEEP_LINK, linkAfterPolls = null, theme }: ProfileTelegramOptions = {},
+  {
+    linked = false,
+    expiresInMs = 10 * 60_000,
+    deepLink = TG_DEEP_LINK,
+    linkAfterPolls = null,
+    theme,
+    role = "courier",
+  }: ProfileTelegramOptions = {},
 ) => {
   const state = { linked, codeRequests: 0, unlinkRequests: 0, pollsAfterCode: 0 };
   await page.context().route("**/*", async (route) => {
@@ -53,7 +67,7 @@ export const mockProfileTelegramApi = async (
         route,
         wrap({
           id: "7",
-          role: "courier",
+          role,
           name: "Ali Valiyev",
           username: "ali",
           phone_number: "+998901234567",
@@ -77,7 +91,8 @@ export const mockProfileTelegramApi = async (
           token: `Kod${state.codeRequests}`,
           purpose: "user",
           expires_at: new Date(
-            Date.now() + (typeof expiresInMs === "function" ? expiresInMs(state.codeRequests) : expiresInMs),
+            Date.now() +
+              (typeof expiresInMs === "function" ? expiresInMs(state.codeRequests) : expiresInMs),
           ).toISOString(),
           deep_link: deepLink,
           command: "/start Kod123",
@@ -97,7 +112,11 @@ export const mockProfileTelegramApi = async (
     window.sessionStorage.setItem("accessToken", "e2e.local.token");
     window.sessionStorage.setItem(
       "authSessionMetadata",
-      JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
+      JSON.stringify({
+        accessTokenExpiresAt: far,
+        refreshTokenExpiresAt: far,
+        refreshTokenWarnAt: far,
+      }),
     );
   });
   return state;
