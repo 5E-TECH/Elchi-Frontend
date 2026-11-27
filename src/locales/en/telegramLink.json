@@ -5,6 +5,7 @@
   "statusUnlinked": "Not linked",
   "unlinkedDescription": "Once linked, the bot sends order cards, cash desk messages and notifications to your Telegram.",
   "linkedDescription": "Order cards, cash desk messages and notifications go to this Telegram account.",
+  "orderHint": "📝 Send the bot an order's text or photo — AI prepares the order and shows it for confirmation.",
   "linkedSince": "linked on {{date}}",
   "link": "Link Telegram",
   "linkLoading": "Getting the link…",
