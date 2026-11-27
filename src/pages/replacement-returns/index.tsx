@@ -48,6 +48,7 @@ import {
   writeReplacementFilters,
   type ReplacementFilters,
 } from "./model/replacementReturnsView";
+import { FULL_LIST_LIMIT } from "../../shared/config/listLimits";
 
 const LINK = "whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline";
 
@@ -91,7 +92,8 @@ const ReplacementReturnsPage = () => {
   const { data, isLoading, isPending, isFetching, isPaused, isError, error, refetch } = useReplacementReturns(params);
 
   const { useGetMarkets } = useMarkets();
-  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, canFilterMarket);
+  // To'liq ro'yxat (ilgari `limit: 100`: 101-market filtrda yo'q, qatorda nomi o'rniga zaxira matn edi).
+  const marketsQuery = useGetMarkets({ status: "active", limit: FULL_LIST_LIMIT }, canFilterMarket);
   const marketOptions = useMemo(() => toFilterOptions(marketsQuery.data), [marketsQuery.data]);
   const marketNames = useMemo(
     () => new Map(marketOptions.map((option) => [option.value, option.label])),

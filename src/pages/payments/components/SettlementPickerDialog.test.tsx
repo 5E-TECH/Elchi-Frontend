@@ -297,6 +297,37 @@ describe("SettlementPickerDialog", () => {
     const dialog = await screen.findByRole("dialog", { name: "Kuryerni tanlang" });
     expect(within(dialog).getByText("Kuryerlar · 1 ta")).toBeInTheDocument();
   });
+
+  /**
+   * Qidiruv limitlari (2026-11-27, Dilshod: «to'lovlarga kirib marketga to'lov qilmoqchi bo'lsam shu market
+   * chiqmiyabdi»): backend ilgari 100 tadan ortig'ini qaytarmasdi. Endi 150 marketdan oxirgisi (0 so'm — sukut
+   * bo'yicha yashirin) nomi, telefoni yoki ID si bo'yicha topiladi.
+   */
+  it("⭐ give: 150 market — 101-dan keyingi market nomi, telefoni yoki ID si bo'yicha topiladi", async () => {
+    const items = Array.from({ length: 149 }, (_, index) => ({
+      id: String(index + 1),
+      name: `Do'kon ${index + 1}`,
+      phone_number: `+99890000${String(index + 1).padStart(4, "0")}`,
+      status: "active",
+      cashbox: { balance: 1000 },
+    }));
+    items.push({ id: "9150", name: "Eski Baraka", phone_number: "+998937771122", status: "active", cashbox: { balance: 0 } });
+    state.markets = { data: { data: { items } }, isLoading: false, isError: false };
+    open("give");
+
+    const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
+    expect(state.marketParams.at(-1)).toEqual({ limit: 10000 });
+    expect(within(dialog).getAllByRole("option")).toHaveLength(149);
+    expect(within(dialog).queryByRole("option", { name: /Eski Baraka/ })).not.toBeInTheDocument();
+
+    const user = userEvent.setup();
+    const search = within(dialog).getByRole("combobox", { name: "Marketni nomi bo'yicha qidirish" });
+    for (const query of ["eski bar", "93 777 11 22", "9150"]) {
+      await user.clear(search);
+      await user.type(search, query);
+      expect(within(dialog).getByRole("option", { name: /Eski Baraka/ })).toBeInTheDocument();
+    }
+  });
 });
 
 /**

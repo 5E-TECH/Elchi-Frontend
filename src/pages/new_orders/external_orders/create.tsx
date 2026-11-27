@@ -14,6 +14,7 @@ import { notify } from "../../../shared/lib/notify";
 import { Button, Card, Field, PageHeader, Select, TextInput, type SelectOption } from "../../../shared/ui/primitives";
 import { SecretInput, Switch } from "../../integrations/ui";
 import { LEGACY_AUTH_LABEL_KEY, LEGACY_AUTH_TYPES, buildLegacyAuthCreate } from "./legacyAuth";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 /**
  * ESKI TASHQI MANBA — yaratish (maket `*-integrations-legacy-source-create`; admin/menejer/registrator — shu).
@@ -54,7 +55,8 @@ const ExternalIntegrationCreatePage = () => {
   const { t } = useTranslation("integrations");
   const navigate = useNavigate();
   const { useGetMarkets } = useMarkets();
-  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, true);
+  // To'liq ro'yxat (ilgari `limit: 100`: 101-market «Market» tanlovida yo'q edi).
+  const marketsQuery = useGetMarkets({ status: "active", limit: FULL_LIST_LIMIT }, true);
   const createIntegration = useCreateIntegration();
 
   const [form, setForm] = useState({

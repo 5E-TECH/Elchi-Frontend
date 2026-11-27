@@ -27,6 +27,7 @@ import {
   useReceiveOptions,
   type ReceiveOption,
 } from "./lib/receiveOptions";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 /**
  * HISOB-KITOB TANLASH OYNASI — /payments va «Asosiy kassa» uchun umumiy (dizayn v2, eski `PopupSelect` o'rniga).
@@ -44,6 +45,9 @@ import {
  * Ma'lumot faqat oyna ochiqligida: receive/courier — `useReceiveOptions` (`status=active` YO'Q, FE-PAY-13 —
  * bloklangan, lekin puli qolgan qator «Nofaol» belgisi bilan chiqadi); give — superadmin/admin: `GET /markets?limit=10000`
  * (`status` YO'Q, puli yo'q bloklangan market chiqmaydi). Tanlov navigatsiyasini chaqiruvchi qiladi.
+ *
+ * Qidiruv limitlari (2026-11-27): backend ilgari `limit` ni 100 bilan kesardi — 101-market na ro'yxatda, na qidiruvda
+ * chiqardi. Endi backend `FULL_LIST_LIMIT` (10 000) gacha beradi; qidiruv — market nomi, telefoni yoki ID si.
  *
  * Maketdan farq (Spt8Cj7m, TC matni): «Berilishi kerak» da 0 so'mli market sukut bo'yicha ko'rinmaydi, faqat qidiruvda.
  *
@@ -103,7 +107,6 @@ type PickerRow = {
   target: SettlementPickerTarget;
 };
 
-const FULL_LIST_LIMIT = 10000;
 
 const asRecord = (value: unknown): UnknownRecord =>
   value && typeof value === "object" ? (value as UnknownRecord) : {};
@@ -278,7 +281,8 @@ const SettlementPickerDialog = ({
         subtitle: "",
         amount: market.amount,
         inactive: market.is_inactive,
-        search: searchText([market.name]),
+        // «Foydalanuvchilar» qidiruvi kabi: nomi, telefoni yoki ID si.
+        search: searchText([market.name, market.phone_number, market.id]),
         target: {
           path: `/payments/cash-detail/${market.id}?type=market`,
           state: { type: "market", entity: market },

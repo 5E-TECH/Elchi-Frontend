@@ -1,11 +1,12 @@
 // dizayn-v2: (maket yo'q) superadmin-orders-detail-edit-order-dialog
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../../app/config/store";
 import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../../entities/product";
 import { isMarketSideRole } from "../../../../entities/user/lib/role";
 import { Select, type SelectOption } from "../../../../shared/ui/primitives";
+import { useCatalogSearch } from "../../../orders/create/ui/useCatalogSearch";
 import { toCatalogItems, type CatalogItem } from "./addOrderItemModel";
 
 /**
@@ -16,6 +17,9 @@ import { toCatalogItems, type CatalogItem } from "./addOrderItemModel";
  * market tomoni: `product/my-products`; kesh umumiy). Tanlangach qiymat bo'shaydi — keyingisini tanlash mumkin.
  *
  * Backend qo'shilgan mahsulot aynan shu marketniki ekanini tekshiradi (`PATCH orders/:id/full`).
+ *
+ * Qidiruv serverda (`useCatalogSearch`, `?search=`): ilgari yuklangan katalog (≤ 500) ichida edi — 501-mahsulot
+ * topilmasdi. Qidiruv bo'sh — to'liq katalog.
  */
 
 const CATALOG_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
@@ -38,21 +42,27 @@ export const AddOrderItemPicker = memo(({ marketId, usedProductIds, disabled = f
   const query = isMarketRole ? mine : byMarket;
 
   const catalog = useMemo(() => toCatalogItems(query.data), [query.data]);
+  const [search, setSearch] = useState("");
+  const found = useCatalogSearch({ marketId, isMarketRole, search, catalog });
+  const shown = useMemo(() => toCatalogItems(found.products), [found.products]);
   const options = useMemo<SelectOption[]>(
     () =>
-      catalog
+      shown
         .filter((product) => !usedProductIds.has(product.id))
         .map((product) => ({ value: product.id, label: product.name, searchText: product.name })),
-    [catalog, usedProductIds],
+    [shown, usedProductIds],
   );
   const noMarket = !isMarketRole && !marketId;
 
   return (
     <Select
       searchable
+      filter={false}
+      searchValue={search}
+      onSearchChange={setSearch}
       value={null}
       disabled={disabled || noMarket || query.isError}
-      loading={query.isLoading}
+      loading={query.isLoading || found.isLoading}
       placeholder={
         query.isError
           ? t("editDialog.addItemError")
@@ -63,8 +73,11 @@ export const AddOrderItemPicker = memo(({ marketId, usedProductIds, disabled = f
       noOptionsText={t("editDialog.addItemEmpty")}
       options={options}
       onChange={(value) => {
-        const product = value ? catalog.find((item) => item.id === value) : undefined;
-        if (product) onAdd(product);
+        const product = value ? shown.find((item) => item.id === value) : undefined;
+        if (product) {
+          onAdd(product);
+          setSearch("");
+        }
       }}
     />
   );

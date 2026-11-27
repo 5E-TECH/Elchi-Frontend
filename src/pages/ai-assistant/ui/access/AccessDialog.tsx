@@ -31,12 +31,13 @@ import {
   type AccessLimitError,
   type AccessRow,
 } from "../../model/accessForm";
+import { FULL_LIST_LIMIT } from "../../../../shared/config/listLimits";
 
 /**
- * Adminlar ro'yxati — bitta sahifa (adminlar soni kichik; backend `limit` chegarasi 100). Kalit `users` ildizida
+ * Adminlar ro'yxati — bitta sahifa, to'liq (`FULL_LIST_LIMIT`; ilgari backend 100 ga kesardi). Kalit `users` ildizida
  * (`queryKeys.users.list`): foydalanuvchi yaratilsa / o'zgarsa `useUser` uni ham eskirtiradi.
  */
-const ADMINS_QUERY = { role: "admin", page: 1, limit: 100 } as const;
+const ADMINS_QUERY = { role: "admin", page: 1, limit: FULL_LIST_LIMIT } as const;
 
 const toAdmin = (user: { id: string; fullName: string; phone?: string }): AccessAdmin | null =>
   user.id

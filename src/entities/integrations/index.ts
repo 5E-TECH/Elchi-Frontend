@@ -138,6 +138,8 @@ export type IntegrationParams = {
   to_date?: string;
   page?: number;
   limit?: number;
+  /** Server qidiruvi — integratsiya nomi yoki slug (sahifalashdan oldin). */
+  search?: string;
 };
 
 /**

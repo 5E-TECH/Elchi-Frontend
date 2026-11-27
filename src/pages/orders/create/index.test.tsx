@@ -1199,7 +1199,7 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     await waitFor(() => expect(radio(/Markazgacha/)).toBeChecked());
     expect(deliveryGroup()).not.toHaveTextContent(/so'm|Narx yo'q|standart/);
     expect(deliveryPrice()).not.toBeInTheDocument();
-    expect(mocks.get).toHaveBeenCalledWith("markets", { params: { search: "Baraka Shop", limit: 20 } });
+    expect(mocks.get).toHaveBeenCalledWith("markets", { params: { search: "Baraka Shop", limit: 10_000 } });
     expect(mocks.get).not.toHaveBeenCalledWith("users/3");
     expect(mocks.get).not.toHaveBeenCalledWith("auth/my-profile");
   });
@@ -1221,7 +1221,7 @@ describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi",
     expect(card(/Markazgacha/)).toHaveTextContent("25 000 so'm");
     expect(radio(/Uygacha/)).toBeChecked();
     expect(deliveryPrice()).toHaveTextContent("35 000 so'm");
-    expect(mocks.get).toHaveBeenCalledWith("markets", { params: { search: "Baraka Shop", limit: 20 } });
+    expect(mocks.get).toHaveBeenCalledWith("markets", { params: { search: "Baraka Shop", limit: 10_000 } });
     expect(mocks.get).not.toHaveBeenCalledWith("users/3");
     expect(mocks.get).not.toHaveBeenCalledWith("auth/my-profile");
   });

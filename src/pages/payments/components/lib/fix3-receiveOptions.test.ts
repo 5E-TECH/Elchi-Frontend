@@ -141,7 +141,7 @@ describe("useReceiveOptions requests", () => {
     const { result } = renderHook(() => useReceiveOptions({ isManagerRole: false, enabled: true }));
 
     expect(queries.params.managers.at(-1)).not.toHaveProperty("status");
-    expect(queries.params.branches.at(-1)).toEqual({ status: "active", page: 1, limit: 100 });
+    expect(queries.params.branches.at(-1)).toEqual({ status: "active", page: 1, limit: 10_000 });
     expect(result.current.options.map((option) => option.key)).toEqual(["branch:15", "branch:19"]);
   });
 

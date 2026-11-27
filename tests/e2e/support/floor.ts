@@ -3,7 +3,7 @@ import { expect, type Page, type Route } from "@playwright/test";
 /**
  * «Biriktirish» (`/dispatch`) va «Tezkor amal» (`/courier-bulk`) — soxta backend (dizayn v2, G3).
  *
- * `/dispatch` — HQ registratori: `GET couriers?page=1&limit=100&status=active` (filialga cheklangan rol,
+ * `/dispatch` — HQ registratori: `GET couriers?page=1&limit=10000&status=active` (filialga cheklangan rol,
  * `region_id` siz), `GET orders/qr-code/:token` (USB skaner → buyurtma; `FOREIGN_TOKEN` — 403 begona QR),
  * `POST orders/assign-to-courier { courier_id, order_ids }`.
  * `/courier-bulk` — kuryer: `GET orders/courier/orders?status=waiting` (100 talik sahifalar), «Kunni yakunlash» →

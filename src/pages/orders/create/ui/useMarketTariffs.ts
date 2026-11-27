@@ -10,6 +10,7 @@ import { API_ENDPOINTS } from "../../../../shared/api";
 import { toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
 import type { DeliveryType } from "../../../../entities/order/types/order";
 import { canSeeMarketTariffs, hasTariffFields, readMarketTariffs, type MarketTariffs } from "../model/orderPricing";
+import { FULL_LIST_LIMIT } from "../../../../shared/config/listLimits";
 
 export type MarketTariffsState = {
   /** Rol narxni ko'radimi (superadmin, admin, market, registrator). `false` — narx umuman chizilmaydi. */
@@ -53,7 +54,8 @@ export const useMarketTariffs = (control: Control<OrderCreateFormValues>): Marke
   const listQuery = useQuery({
     queryKey: [markets, "tariffs", marketId, marketName],
     queryFn: async () => {
-      const { data } = await api.get(API_ENDPOINTS.MARKETS.BASE, { params: { search: marketName, limit: 20 } });
+      // Nomi bo'yicha qidiruvdan id ni topadi — 20 dan ortiq nomdosh bo'lsa ham kerakli market qolib ketmasin.
+      const { data } = await api.get(API_ENDPOINTS.MARKETS.BASE, { params: { search: marketName, limit: FULL_LIST_LIMIT } });
       const rows = toApiList<Record<string, unknown>>(data);
       const list = rows.length ? rows : toApiList<Record<string, unknown>>((data as { data?: unknown } | null)?.data);
       return list.find((row) => String(row.id) === String(marketId)) ?? null;

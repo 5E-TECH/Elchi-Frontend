@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronRight, Inbox, ListChecks, SearchX } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useBatches, useReceiveTransferBatch, type Batch } from "../../../entities/batch";
+import { useAllBatches, useReceiveTransferBatch, type Batch } from "../../../entities/batch";
 import { useSelector } from "react-redux";
 import { canViewBranches } from "../../../app/lib/access";
 import { useBranchDetail, useBranchesWithSentBatches } from "../../../entities/branch";
@@ -60,8 +60,8 @@ const BATCHES_POLL_MS = 30_000;
  * Karta: qidiruv (viloyat, paket raqami, token) + «Skaner tayyor» qatori, tanlov paneli, jadval (telefonda
  * kartalar). USB skaner (klaviatura) paket QR'ini o'qisa — paket ro'yxatda tanlanadi (qabul qilinmaydi).
  *
- * So'rov: `transfer-batches?source_branch_id&status=SENT&direction=FORWARD&page=1&limit=100` (sahifalash yo'q,
- * 100 ta bilan cheklangan — v1 dagidek). Qabul: har paketga `POST transfer-batches/:id/receive`
+ * So'rov: `transfer-batches?source_branch_id&status=SENT&direction=FORWARD&page=N&limit=100` — barcha sahifalar
+ * (`useAllBatches`; ilgari faqat 1-sahifa, 100 ta). Qabul: har paketga `POST transfer-batches/:id/receive`
  * (`Promise.allSettled`) — qabul qilinganlar ro'yxatdan yashiriladi, muvaffaqiyat va xato alohida xabar.
  *
  * KAMERA (Trello v1eLN2tV 2-bosqich): sahifada kamera tugmasi yo'q — markaziy «Skaner» tugmasi (desktopda
@@ -85,13 +85,12 @@ const BranchSentBatchesPage = () => {
   // Registratorda nom — «Filial paketlari» ro'yxatidan (o'sha kalit, kesh umumiy: ro'yxatdan kelganda so'rov yo'q).
   const sentBranchesQuery = useBranchesWithSentBatches(undefined, { enabled: !canReadBranch });
 
-  const batchesQuery = useBatches(
+  // Barcha sahifalar (ilgari `page=1&limit=100`: 101-paket ro'yxatda, qidiruvda va skanda yo'q edi).
+  const batchesQuery = useAllBatches(
     {
       sourceBranchId: branchId,
       statusRaw: "SENT",
       directionRaw: "FORWARD",
-      page: 1,
-      limit: 100,
     },
     { refetchInterval: BATCHES_POLL_MS },
   );

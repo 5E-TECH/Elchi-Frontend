@@ -54,6 +54,7 @@ import { MarketWarehouseStock } from "../warehouse-stock/MarketWarehouseStock";
 import { MARKET_WAREHOUSE_VIEW } from "../warehouse-stock/marketStockView";
 import { EditProductDialog } from "./ui/EditProductDialog";
 import { SelectMarketDialog } from "./ui/SelectMarketDialog";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 // Qidiruv URL'ga (va so'rovga) yozishdan oldingi kutish — avvalgidek (GlobalSearchInput global rejimi).
 const SEARCH_DEBOUNCE_MS = 1000;
@@ -104,7 +105,8 @@ const ProductTable = () => {
 
   // ─── Faol marketlar (faqat xodim: filtr va tanlash oynasi) ───────────────────
   const { useGetMarkets } = useMarkets();
-  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, isRoleResolved && !isMarketSide);
+  // To'liq ro'yxat (ilgari `limit: 100`: 101-market filtrda va «Market tanlang» oynasida yo'q edi).
+  const marketsQuery = useGetMarkets({ status: "active", limit: FULL_LIST_LIMIT }, isRoleResolved && !isMarketSide);
   const markets = useMemo<ProductMarket[]>(
     () => toProductMarkets(marketsQuery.data).filter((market) => !isInactiveMarketStatus(market.status)),
     [marketsQuery.data],

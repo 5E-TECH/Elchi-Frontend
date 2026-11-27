@@ -14,6 +14,7 @@ import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Button, Dialog, Field, Select, type SelectOption } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { countSentFilters, EMPTY_SENT_FILTERS, type SentFilters as SentFilterValues } from "../model/sentSearch";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 /** «Filtrlar 2» soni (`.el-tab-count` + `action-soft`; namuna — faoliyat jurnali). */
 const COUNT_PILL =
@@ -21,7 +22,7 @@ const COUNT_PILL =
 
 /** Qo'lda xabarni faqat superadmin va admin yuboradi (`canSendNotifications`). */
 const AUTHOR_ROLES = ["superadmin", "admin"] as const;
-const AUTHOR_LIMIT = 100;
+const AUTHOR_LIMIT = FULL_LIST_LIMIT;
 const SEARCHABLE_FROM = 8;
 
 type Props = {

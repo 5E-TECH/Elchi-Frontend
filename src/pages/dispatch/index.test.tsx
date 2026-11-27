@@ -127,7 +127,7 @@ describe("DispatchPage — kuryerlar ro'yxati", () => {
 
     const [params, enabled] = lastCourierQuery();
     expect(enabled).toBe(true);
-    expect(params).toEqual({ page: 1, limit: 100, status: "active" });
+    expect(params).toEqual({ page: 1, limit: 10_000, status: "active" });
     expect(params).not.toHaveProperty("region_id");
   });
 
@@ -143,7 +143,7 @@ describe("DispatchPage — kuryerlar ro'yxati", () => {
 
     const [params, enabled] = lastCourierQuery();
     expect(enabled).toBe(true);
-    expect(params).toEqual({ page: 1, limit: 100, status: "active" });
+    expect(params).toEqual({ page: 1, limit: 10_000, status: "active" });
   });
 
   // revMyIKg: nofaol kuryer SA/admin ro'yxatida ham chiqmaydi (unga biriktirish backendda 400 «Kuryer faol emas»).
@@ -154,7 +154,7 @@ describe("DispatchPage — kuryerlar ro'yxati", () => {
 
     const [params, enabled] = lastCourierQuery();
     expect(enabled).toBe(true);
-    expect(params).toEqual({ page: 1, limit: 100, status: "active" });
+    expect(params).toEqual({ page: 1, limit: 10_000, status: "active" });
     expect(params).not.toHaveProperty("region_id");
     expect(params).not.toHaveProperty("branch_id");
   });
@@ -191,7 +191,7 @@ describe("DispatchPage — kuryerlar ro'yxati", () => {
     expect(calls.length).toBeGreaterThan(before);
     // Har bir chaqiruvda — eski SA shakli ({ page, limit }, status'siz) hech qachon qaytmaydi.
     for (const [params] of calls) {
-      expect(params).toEqual({ page: 1, limit: 100, status: "active" });
+      expect(params).toEqual({ page: 1, limit: 10_000, status: "active" });
     }
   });
 

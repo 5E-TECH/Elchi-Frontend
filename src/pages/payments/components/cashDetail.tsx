@@ -117,12 +117,12 @@ import {
   type ConfirmTransfer,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
-const FULL_LIST_LIMIT = 10000;
 /** Tafsilot tarixi bitta sahifasi: qatorlar shu songa yetsa ro'yxat kesilgan bo'lishi mumkin (M5). */
 const HISTORY_PAGE_LIMIT = 100;
 /** Menejer kuryer kartasidagi chiziq davri (maket: 7 kun). */

@@ -175,7 +175,7 @@ describe("CreateUserForm — sahifa (maket `superadmin-users-create`)", () => {
 
   it("superadmin uchun filiallar so'raladi", () => {
     renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
-    expect(mocks.useBranches).toHaveBeenCalledWith({ page: 1, limit: 500 }, true);
+    expect(mocks.useBranches).toHaveBeenCalledWith({ page: 1, limit: 10_000 }, true);
   });
 });
 
@@ -390,7 +390,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
     const user = userEvent.setup();
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: managerState("REGIONAL") });
 
-    expect(mocks.useBranches).toHaveBeenCalledWith({ page: 1, limit: 500 }, false);
+    expect(mocks.useBranches).toHaveBeenCalledWith({ page: 1, limit: 10_000 }, false);
     expect(screen.queryByRole("group", { name: "Foydalanuvchi roli" })).not.toBeInTheDocument();
     expect(screen.getByText("Filialingiz uchun kuryer qo'shing · majburiy maydonlar * bilan")).toBeInTheDocument();
     expect(screen.getByText("Biriktirish")).toBeInTheDocument();
@@ -453,7 +453,7 @@ describe("CreateUserForm — menejer (maketlar `manager-users-create-courier`, `
       "marketing",
     ]);
     expect(screen.queryByText(/avtomatik biriktiriladi/)).not.toBeInTheDocument();
-    expect(mocks.useBranches).toHaveBeenCalledWith({ page: 1, limit: 500 }, false);
+    expect(mocks.useBranches).toHaveBeenCalledWith({ page: 1, limit: 10_000 }, false);
   });
 
   it("2026-11-12: HQ menejeri — avvalgidek faqat kuryer (rol tanlanmaydi, market yo'q)", () => {

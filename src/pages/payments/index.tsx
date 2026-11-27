@@ -66,6 +66,7 @@ import ShiftBanner from "./components/ShiftBanner";
 import { getCashboxTypeLabel, getPaymentSourceTitle } from "./components/paymentSourceType";
 import CashFlowCard from "./components/CashFlowCard";
 import CashStateCard from "./components/CashStateCard";
+import { FULL_LIST_LIMIT } from "../../shared/config/listLimits";
 
 const DEFAULT_PAYMENTS_LIMIT = 10;
 
@@ -647,9 +648,15 @@ const Payments = () => {
 
   const historyQuery = useGetFinanceHistory(queryParams);
   const { data: historyData, isLoading: historyLoading, isError: historyError, refetch: refetchHistory } = historyQuery;
-  const { data: creatorsData, isLoading: creatorsLoading } = useGetUser({
-    limit: 100,
-  });
+  // «Yaratuvchi» filtri — barcha xodimlar (ilgari `limit: 100`: 101-xodim ro'yxatda va qidiruvda yo'q edi). To'liq
+  // ro'yxat sahifa ochilganda SO'RALMAYDI (sahifa 10 000 lik ro'yxatsiz ochiladi): faqat tanlov ochilganda yoki URL'da
+  // yaratuvchi tanlangan bo'lsa (chip / maydon nomi uchun) — «Karta» filtri bilan bir xil.
+  const [creatorsOpened, setCreatorsOpened] = useState(false);
+  const openCreators = useCallback(() => setCreatorsOpened(true), []);
+  const { data: creatorsData, isLoading: creatorsLoading } = useGetUser(
+    { limit: FULL_LIST_LIMIT },
+    creatorsOpened || Boolean(filtersFromUrl.created_by),
+  );
 
   const creatorOptions = useMemo<SelectOption[]>(
     () =>
@@ -746,7 +753,9 @@ const Payments = () => {
       icon: User,
       options: creatorOptions,
       loading: creatorsLoading,
-      searchable: creatorOptions.length > 8,
+      // Doim qidiruvli: ro'yxat ochilganda yuklanadi — maydon tugmadan qidiruvga almashsa fokus yo'qolardi.
+      searchable: true,
+      onOpen: openCreators,
     },
     // «Chek holati» — faqat superadmin va admin (menejerda belgilar bor, filtr yo'q).
     ...(isManagerRole

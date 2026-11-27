@@ -81,6 +81,7 @@ import {
   PasswordSmsResultDialog,
   type PasswordSmsResultUser,
 } from "../../password-sms/ui/PasswordSmsResultDialog";
+import { FULL_LIST_LIMIT } from "../../../../shared/config/listLimits";
 
 const parseAmount = (value: string): number => Number(value.replace(/\D/g, ""));
 /** «Ulush (%)»: `12`, `12.5`, `12,75` → son; noto'g'ri yoki 0..100 dan tashqari → `null`. */
@@ -341,8 +342,9 @@ export const CreateUserForm = memo(() => {
   const { createInvestment } = useInvestors();
   // Filial tanlovi faqat superadmin/admin formasida — menejer uchun `GET branches` 403 (BatchesPage naqshi).
   const canLoadBranches = authRole === "superadmin" || authRole === "admin";
+  // To'liq ro'yxat (ilgari `limit: 500`, backend 100 ga kesardi — 101-filial «Filial» tanlovida yo'q edi).
   const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches(
-    { page: 1, limit: 500 },
+    { page: 1, limit: FULL_LIST_LIMIT },
     canLoadBranches,
   );
 

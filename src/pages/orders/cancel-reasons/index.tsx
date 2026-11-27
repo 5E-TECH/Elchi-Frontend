@@ -25,6 +25,7 @@ import {
 } from "../../../shared/ui/primitives";
 import { formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import { toFilterOptions } from "../list/useOrderFilterOptions";
+import { FULL_LIST_LIMIT } from "../../../shared/config/listLimits";
 
 /**
  * «BEKOR QILISH SABABLARI» (GNWDKvmZ, PUvKXWVw) — `/orders/cancel-reasons`, kirish `/orders` sarlavhasidan.
@@ -44,8 +45,9 @@ const CancelReasonsPage = () => {
   const [branch, setBranch] = useState("");
 
   const { useGetMarkets } = useMarkets();
-  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, canFilter);
-  const branchesQuery = useBranches({ status: "active", limit: 100, page: 1 }, canFilter);
+  // To'liq ro'yxat (ilgari `limit: 100`: 101-market / filial filtrda yo'q edi).
+  const marketsQuery = useGetMarkets({ status: "active", limit: FULL_LIST_LIMIT }, canFilter);
+  const branchesQuery = useBranches({ status: "active", limit: FULL_LIST_LIMIT, page: 1 }, canFilter);
 
   const stats = useCancelReasonStats({
     ...(range.from ? { startDate: range.from } : {}),
