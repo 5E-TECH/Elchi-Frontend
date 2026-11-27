@@ -648,10 +648,15 @@ const Payments = () => {
 
   const historyQuery = useGetFinanceHistory(queryParams);
   const { data: historyData, isLoading: historyLoading, isError: historyError, refetch: refetchHistory } = historyQuery;
-  // «Yaratuvchi» filtri — barcha xodimlar (ilgari `limit: 100`: 101-xodim ro'yxatda va qidiruvda yo'q edi).
-  const { data: creatorsData, isLoading: creatorsLoading } = useGetUser({
-    limit: FULL_LIST_LIMIT,
-  });
+  // «Yaratuvchi» filtri — barcha xodimlar (ilgari `limit: 100`: 101-xodim ro'yxatda va qidiruvda yo'q edi). To'liq
+  // ro'yxat sahifa ochilganda SO'RALMAYDI (sahifa 10 000 lik ro'yxatsiz ochiladi): faqat tanlov ochilganda yoki URL'da
+  // yaratuvchi tanlangan bo'lsa (chip / maydon nomi uchun) — «Karta» filtri bilan bir xil.
+  const [creatorsOpened, setCreatorsOpened] = useState(false);
+  const openCreators = useCallback(() => setCreatorsOpened(true), []);
+  const { data: creatorsData, isLoading: creatorsLoading } = useGetUser(
+    { limit: FULL_LIST_LIMIT },
+    creatorsOpened || Boolean(filtersFromUrl.created_by),
+  );
 
   const creatorOptions = useMemo<SelectOption[]>(
     () =>
@@ -749,6 +754,7 @@ const Payments = () => {
       options: creatorOptions,
       loading: creatorsLoading,
       searchable: creatorOptions.length > 8,
+      onOpen: openCreators,
     },
     // «Chek holati» — faqat superadmin va admin (menejerda belgilar bor, filtr yo'q).
     ...(isManagerRole
