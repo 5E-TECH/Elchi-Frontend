@@ -1113,6 +1113,8 @@
       "devTitle": "For the company's developer",
       "devBaseUrl": "Base URL",
       "devKeyHeader": "Key header",
+      "devLogin": "Login (username)",
+      "devLoginHint": "For Olcha-style POST /auth/token · password is the API key",
       "devPing": "Check",
       "devRate": "Rate limit",
       "devRateValue": "120 per minute by default — for the whole account",
@@ -1229,6 +1231,13 @@
       "closeHintCreated": "The window stays open until you tick this",
       "closeHintRotated": "Once closed, the key is not shown again",
       "done": "Finish"
+    },
+    "login": {
+      "label": "Login (username) — for Olcha-style sign-in",
+      "hintCreated": "POST /auth/token: username is this number, password is the key above. The number never changes.",
+      "hintRotated": "For Olcha-style clients: the login stays the same, the password is the new key.",
+      "copyAria": "Copy login",
+      "copiedStatus": "Login copied"
     },
     "rotate": {
       "title": "Rotate key",

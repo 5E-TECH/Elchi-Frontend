@@ -32,7 +32,7 @@ import { IP_ALLOWLIST_MAX_ENTRIES } from "./ipAllowlist";
 import { accountState, initialsOf, type CourierInfo } from "./carrierModel";
 import { carrierDocsUrl, carrierPublicBaseUrl } from "./carrierLinks";
 import { useCourierName } from "./carrierFormat";
-import { CarrierStateBadge, CourierStatusBadge } from "./carrierParts";
+import { CarrierLoginValue, CarrierStateBadge, CourierStatusBadge } from "./carrierParts";
 import { CarrierRollbackToggle } from "./CarrierRollbackToggle";
 import { useCourierReceivable } from "./useCarrierCouriers";
 
@@ -455,6 +455,17 @@ export const CarrierAccountDetail = ({
             rows={[
               { label: t("carrier.detail.devBaseUrl"), value: carrierPublicBaseUrl() },
               { label: t("carrier.detail.devKeyHeader"), value: "X-Api-Key: elc_…" },
+              {
+                label: t("carrier.detail.devLogin"),
+                value: (
+                  <>
+                    <CarrierLoginValue key={account.id} id={account.id} />
+                    <span className="block text-xs font-medium text-text-muted">
+                      {t("carrier.detail.devLoginHint")}
+                    </span>
+                  </>
+                ),
+              },
               { label: t("carrier.detail.devPing"), value: "GET /carrier/ping" },
               {
                 label: t("carrier.detail.devRate"),

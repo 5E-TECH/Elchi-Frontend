@@ -231,6 +231,7 @@ const CreateForm = ({
         accountId: result.id,
         reveal: {
           variant: "created",
+          accountId: result.id,
           accountName: result.name || dto.name,
           courierName: result.courier_name ?? courier.name,
           apiKey: result.api_key,

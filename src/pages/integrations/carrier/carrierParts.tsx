@@ -1,10 +1,21 @@
 // dizayn-v2: superadmin-integrations-carrier-console, superadmin-integrations-carrier-create-dialog, superadmin-integrations-carrier-rotate-dialog, superadmin-integrations-carrier-status-dialog, admin-integrations-carrier-console, admin-integrations-carrier-create-dialog, admin-integrations-carrier-rotate-dialog, admin-integrations-carrier-status-dialog
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { CircleCheck, CircleX, Info, PackageCheck, User, type LucideIcon } from "lucide-react";
+import {
+  Check,
+  CircleCheck,
+  CircleX,
+  Copy,
+  Info,
+  PackageCheck,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 import type { CarrierAccount } from "../../../entities/integrations/carriers";
+import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
-import { StatusBadge, type Tone } from "../../../shared/ui/primitives";
+import { notify } from "../../../shared/lib/notify";
+import { Button, StatusBadge, type Tone } from "../../../shared/ui/primitives";
 import {
   STATE_LABEL,
   STATE_TONE,
@@ -160,6 +171,42 @@ export const MutedNote = ({ children }: { children: ReactNode }) => (
     <span>{children}</span>
   </p>
 );
+
+/**
+ * OLCHA USLUBIDAGI LOGIN — akkaunt ID'si (backend `POST /auth/token`, `/carrier/auth/token`: `username` = akkaunt
+ * ID, `password` = API kalit). Qiymat + «Nusxalash». Maxfiy emas (kalit emas), shuning uchun tafsilotda ham, kalit
+ * oynasida ham ko'rinadi. Chaqiruvchi `key={id}` beradi — akkaunt almashsa «Nusxalandi» belgisi qolmasin.
+ */
+export const CarrierLoginValue = ({ id }: { id: string }) => {
+  const { t } = useTranslation("integrations");
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    void copyToClipboard(id).then((ok) => {
+      if (ok) setCopied(true);
+      else notify.error(t("console.copyFailed"));
+    });
+  };
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span data-testid="carrier-login-id" className="font-mono text-[13px] font-semibold text-text">
+        {id}
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        leftIcon={copied ? Check : Copy}
+        onClick={copy}
+        aria-label={t("carrier.login.copyAria")}
+        className={cx("-my-1", copied ? "text-success-fg" : undefined, "max-md:min-h-11")}
+      >
+        {t(copied ? "carrier.key.copied" : "carrier.key.copy")}
+      </Button>
+      <span className="sr-only" role="status">
+        {copied ? t("carrier.login.copiedStatus") : ""}
+      </span>
+    </span>
+  );
+};
 
 /** Raqamli qadamlar (bo'sh holat, «Javob kelmadi»). */
 export const NumberedSteps = ({ steps, className }: { steps: ReactNode[]; className?: string }) => (

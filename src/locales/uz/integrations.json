@@ -1113,6 +1113,8 @@
       "devTitle": "Kompaniya dasturchisi uchun",
       "devBaseUrl": "Asosiy manzil (Base URL)",
       "devKeyHeader": "Kalit sarlavhasi",
+      "devLogin": "Login (username)",
+      "devLoginHint": "Olcha uslubidagi POST /auth/token uchun · parol — API kalit",
       "devPing": "Tekshirish",
       "devRate": "So'rov cheklovi",
       "devRateValue": "Sukut bo'yicha daqiqasiga 120 ta — butun akkaunt uchun",
@@ -1229,6 +1231,13 @@
       "closeHintCreated": "Belgilamaguncha oyna yopilmaydi",
       "closeHintRotated": "Yopilgach kalit qayta ko'rsatilmaydi",
       "done": "Yakunlash"
+    },
+    "login": {
+      "label": "Login (username) — Olcha uslubida kirish uchun",
+      "hintCreated": "POST /auth/token: username — shu raqam, password — yuqoridagi kalit. Raqam o'zgarmaydi.",
+      "hintRotated": "Olcha uslubida ishlasa: login o'zgarmaydi, parol (password) — yangi kalit.",
+      "copyAria": "Loginni nusxalash",
+      "copiedStatus": "Login nusxalandi"
     },
     "rotate": {
       "title": "Kalitni yangilash",

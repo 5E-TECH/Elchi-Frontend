@@ -8,6 +8,7 @@ import { Button, Dialog, Field, TextInput } from "../../../shared/ui/primitives"
 import { InlineAlert } from "../ui";
 import { carrierDocsUrl, carrierPublicBaseUrl } from "./carrierLinks";
 import { useLeaveGuard } from "./carrierHooks";
+import { CarrierLoginValue } from "./carrierParts";
 
 /**
  * API KALIT — BIR MARTA ko'rsatiladi (maket `*-carrier-key-dialog`): yaratilgandan keyin va kalit yangilangandan
@@ -20,6 +21,8 @@ import { useLeaveGuard } from "./carrierHooks";
  */
 export type CarrierKeyReveal = {
   variant: "created" | "rotated";
+  /** Akkaunt ID — Olcha uslubidagi `POST /auth/token` dagi `username` (maxfiy emas; bo'sh bo'lsa blok chiqmaydi). */
+  accountId: string;
   accountName: string;
   courierName?: string | null;
   apiKey: string;
@@ -30,6 +33,7 @@ type RevealMeta = Omit<CarrierKeyReveal, "apiKey"> & { keyLength: number };
 
 const metaOf = (reveal: CarrierKeyReveal): RevealMeta => ({
   variant: reveal.variant,
+  accountId: reveal.accountId,
   accountName: reveal.accountName,
   courierName: reveal.courierName,
   keyLength: reveal.apiKey.length,
@@ -162,6 +166,18 @@ export const CarrierKeyDialog = ({
               {copied ? t("carrier.key.copiedStatus") : ""}
             </span>
           </Field>
+          {shown.accountId ? (
+            <div
+              data-testid="carrier-key-login"
+              className="flex flex-col gap-1 rounded-xl border border-border px-3.5 py-3"
+            >
+              <span className="text-[13px] text-text-muted">{t("carrier.login.label")}</span>
+              <CarrierLoginValue key={shown.accountId} id={shown.accountId} />
+              <span className="text-xs text-text-muted">
+                {t(created ? "carrier.login.hintCreated" : "carrier.login.hintRotated")}
+              </span>
+            </div>
+          ) : null}
           {created ? (
             <DeveloperSteps />
           ) : (
