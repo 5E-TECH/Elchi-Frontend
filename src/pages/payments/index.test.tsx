@@ -59,6 +59,8 @@ const pageState = vi.hoisted(() => ({
   marketsEnabledCalls: 0,
   /** 63HO6cBU (BE PR-C): `GET /finance/cashbox/manager/markets` (normallashgan). */
   managerMarkets: undefined as unknown,
+  /** 6UNlduny: `useGetUser` chaqiruvlari («Yaratgan» filtri — ro'yxat faqat ochilganda). */
+  userListCalls: [] as Array<{ params: unknown; enabled: unknown }>,
 }));
 /** CB-2: `POST finance/shift/open` (menejer «To'lovlar» — smena yopiq). */
 const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
@@ -136,10 +138,12 @@ vi.mock("../../entities/payments/financeCoverage", () => ({
 
 vi.mock("../../entities/user/api/userApi", () => ({
   useUser: () => ({
-    useGetUser: () => ({
-      data: { data: { items: [{ id: "7", name: "Shodiyor Ergashev" }] } },
-      isLoading: false,
-    }),
+    useGetUser: (params: unknown, enabled?: boolean) => {
+      pageState.userListCalls.push({ params, enabled });
+      return enabled === false
+        ? { data: undefined, isLoading: false }
+        : { data: { data: { items: [{ id: "7", name: "Shodiyor Ergashev" }] } }, isLoading: false };
+    },
     useGetManagers: (_params: unknown, enabled: boolean) => ({
       data: enabled ? pageState.managers : undefined,
       isLoading: false,
@@ -268,6 +272,7 @@ beforeEach(() => {
   pageState.mainCashboxParams = [];
   pageState.paymentsMeta = { data: undefined, isLoading: false, isError: false };
   pageState.paymentsMetaEnabled = [];
+  pageState.userListCalls = [];
 });
 
 describe("Payments filters", () => {
@@ -286,6 +291,31 @@ describe("Payments filters", () => {
     );
 
   const currentSearch = () => screen.getByTestId("search").textContent ?? "";
+
+  /**
+   * 6UNlduny (qidiruv limitlari): «Yaratgan» — barcha xodimlar (ilgari `limit: 100`). `/payments` 10 000 lik
+   * ro'yxatsiz ochiladi: ro'yxat faqat filtr ochilganda (yoki URL'da yaratuvchi bo'lsa) so'raladi; maydon doim qidiruvli —
+   * ochilgach darhol yozish mumkin.
+   */
+  it("6UNlduny: «Yaratgan» — ro'yxat sahifa ochilganda so'ralmaydi; ochilganda to'liq (limit 10 000), darhol qidiriladi", async () => {
+    const user = userEvent.setup();
+    open("/payments");
+
+    await waitFor(() => expect(pageState.userListCalls.length).toBeGreaterThan(0));
+    expect(pageState.userListCalls.every((call) => call.enabled === false)).toBe(true);
+
+    await user.click(screen.getByLabelText("Yaratgan"));
+    await waitFor(() => expect(pageState.userListCalls.at(-1)).toEqual({ params: { limit: 10_000 }, enabled: true }));
+    await user.keyboard("Shodiyor");
+    expect(await screen.findByRole("option", { name: "Shodiyor Ergashev" })).toBeInTheDocument();
+  });
+
+  it("6UNlduny: URL'da `created_by` bo'lsa — ro'yxat darhol so'raladi (maydonda nomi ko'rinadi)", async () => {
+    open("/payments?created_by=7");
+
+    await waitFor(() => expect(pageState.userListCalls.at(-1)).toEqual({ params: { limit: 10_000 }, enabled: true }));
+    expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(expect.objectContaining({ created_by: "7" }));
+  });
 
   it("restores the operation_type filter (tab) from the URL after a refresh", async () => {
     open("/payments?operation_type=income");

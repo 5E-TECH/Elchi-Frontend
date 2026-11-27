@@ -753,7 +753,8 @@ const Payments = () => {
       icon: User,
       options: creatorOptions,
       loading: creatorsLoading,
-      searchable: creatorOptions.length > 8,
+      // Doim qidiruvli: ro'yxat ochilganda yuklanadi — maydon tugmadan qidiruvga almashsa fokus yo'qolardi.
+      searchable: true,
       onOpen: openCreators,
     },
     // «Chek holati» — faqat superadmin va admin (menejerda belgilar bor, filtr yo'q).
