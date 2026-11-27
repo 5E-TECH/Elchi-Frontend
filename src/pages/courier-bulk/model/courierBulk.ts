@@ -1,6 +1,7 @@
 import { readOrderReplacement } from "../../../entities/order/model/orderReplacement";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { isProofRequiredByConditions, toKnownAmount } from "../../../entities/orders/proofRequirement";
+import { isCourierHeldOrder } from "../../../entities/orders/custody";
 
 export type CourierBulkAction = "sold" | "cancel" | "tomorrow";
 
@@ -196,6 +197,152 @@ export const getCourierBulkCancelOnlyTasks = <T extends { id: string }>(
   actions: Record<string, CourierBulkAction>,
 ): Array<CourierBulkFinalizeTask<T>> =>
   orders.flatMap((order) => (actions[order.id] === "cancel" ? [{ order, action: "cancel" as const }] : []));
+
+/** Kuryer id: bo'sh va `'0'` — kuryer emas (custody `normalizeCourierId` bilan bir xil). */
+const realCourierId = (value: unknown) => {
+  const id = typeof value === "string" || typeof value === "number" ? String(value).trim() : "";
+  return id === "0" ? "" : id;
+};
+
+/** Kuryerlar jadvali uchun kerakli maydonlar (`OrderListItem` dan). */
+export type CourierBulkGroupOrder = {
+  id: string;
+  total_price?: number | string | null;
+  holder_type?: string | null;
+  holder_courier_id?: string | null;
+  courier_id?: string | null;
+  courier?: { id?: string | number | null; name?: string | null } | null;
+};
+
+/** Filialda turgan (kuryer qo'lida emas) buyurtmalar — menejer sotuvi, naqd filial kassasiga. */
+export const COURIER_BULK_BRANCH_GROUP = "branch";
+/** Kuryerning o'z sahifasi — hammasi o'z nomidan, bitta guruh. */
+export const COURIER_BULK_SELF_GROUP = "self";
+/** Kuryer qo'lida, lekin kuryeri aniqlanmadi (backend bunday buyurtmani sotmaydi — LC-04 xatosi). */
+export const COURIER_BULK_UNKNOWN_COURIER_GROUP = "courier:?";
+const COURIER_GROUP_PREFIX = "courier:";
+
+/**
+ * Yakunlashda buyurtma KIMNING NOMIDAN bajariladi — tasdiq oynasidagi kuryerlar jadvali kaliti (#4: menejer filialdagi
+ * barcha kuryerlarning buyurtmalarini bir bosishda yakunlaydi — kimning kassasiga nima yozilishi ko'rinsin). Backend
+ * `resolveManagerOnBehalfCourierId` (LC-04) bilan AYNAN bir xil tartib: kuryer qo'lida bo'lsa — custody egasi
+ * (`holder_courier_id`), keyin biriktirilgan kuryer (`courier_id`), keyin pochta kuryeri (`courier.id`,
+ * `enrichOrders`); kuryer qo'lida bo'lmasa — filial guruhi. Kuryer o'z sahifasida — doim o'zi.
+ */
+export const getCourierBulkGroupKey = (order: CourierBulkGroupOrder, viewer: CourierBulkViewer): string => {
+  if (viewer === "courier") return COURIER_BULK_SELF_GROUP;
+  if (!isCourierHeldOrder(order)) return COURIER_BULK_BRANCH_GROUP;
+  const courierId =
+    realCourierId(order.holder_courier_id) || realCourierId(order.courier_id) || realCourierId(order.courier?.id);
+  return courierId ? `${COURIER_GROUP_PREFIX}${courierId}` : COURIER_BULK_UNKNOWN_COURIER_GROUP;
+};
+
+/** Tasdiq oynasidagi kuryerlar jadvalining bir qatori. */
+export type CourierBulkFinalizeGroup = {
+  key: string;
+  kind: "courier" | "branch" | "self";
+  /** Kuryer id (`kind: "courier"`); aniqlanmagan kuryer va boshqa guruhlarda `null`. */
+  courierId: string | null;
+  /** Kuryer ismi ro'yxatdagi `courier.name` dan; topilmasa `null`. */
+  name: string | null;
+  sold: number;
+  cancel: number;
+  /** So'rov ketmaydiganlar — «Ertaga» va almashtirish: kutilmoqda qoladi. */
+  kept: number;
+  /** Sotiladiganlar summasi (`total_price` yig'indisi) — kassaga tushadigan naqd. */
+  soldAmount: number;
+};
+
+const groupKindOf = (key: string): CourierBulkFinalizeGroup["kind"] =>
+  key === COURIER_BULK_BRANCH_GROUP ? "branch" : key === COURIER_BULK_SELF_GROUP ? "self" : "courier";
+
+const GROUP_RANK: Record<CourierBulkFinalizeGroup["kind"], number> = { self: 0, courier: 1, branch: 2 };
+
+/**
+ * Kuryerlar jadvali: har guruhda nechta sotiladi / bekor qilinadi / kutilmoqda qoladi va sotiladiganlar summasi.
+ * Tartib: kuryerlar ism bo'yicha (ismsizlari oxirida), filialda turganlar eng oxirida.
+ */
+export const getCourierBulkFinalizeGroups = <T extends CourierBulkGroupOrder>(
+  tasks: ReadonlyArray<CourierBulkFinalizeTask<T>>,
+  keptOrders: ReadonlyArray<T>,
+  viewer: CourierBulkViewer,
+): CourierBulkFinalizeGroup[] => {
+  const names = new Map<string, string>();
+  const remember = (order: T) => {
+    const id = realCourierId(order.courier?.id);
+    const name = order.courier?.name?.trim();
+    if (id && name && !names.has(id)) names.set(id, name);
+  };
+  tasks.forEach(({ order }) => remember(order));
+  keptOrders.forEach(remember);
+
+  const groups = new Map<string, CourierBulkFinalizeGroup & { cents: number }>();
+  const groupOf = (order: T) => {
+    const key = getCourierBulkGroupKey(order, viewer);
+    let group = groups.get(key);
+    if (!group) {
+      const courierId =
+        key.startsWith(COURIER_GROUP_PREFIX) && key !== COURIER_BULK_UNKNOWN_COURIER_GROUP
+          ? key.slice(COURIER_GROUP_PREFIX.length)
+          : null;
+      group = {
+        key,
+        kind: groupKindOf(key),
+        courierId,
+        name: courierId ? (names.get(courierId) ?? null) : null,
+        sold: 0,
+        cancel: 0,
+        kept: 0,
+        soldAmount: 0,
+        cents: 0,
+      };
+      groups.set(key, group);
+    }
+    return group;
+  };
+
+  tasks.forEach(({ order, action }) => {
+    const group = groupOf(order);
+    if (action === "sold") {
+      group.sold += 1;
+      // Tiyinda yig'iladi — `0.1 + 0.2` xatosi summaga o'tmasin.
+      group.cents += Math.round((Number(order.total_price) || 0) * 100);
+    } else {
+      group.cancel += 1;
+    }
+  });
+  keptOrders.forEach((order) => {
+    groupOf(order).kept += 1;
+  });
+
+  return [...groups.values()]
+    .map(({ cents, ...group }) => ({ ...group, soldAmount: cents / 100 }))
+    .sort(
+      (a, b) =>
+        GROUP_RANK[a.kind] - GROUP_RANK[b.kind] ||
+        Number(a.name === null) - Number(b.name === null) ||
+        (a.name ?? "").localeCompare(b.name ?? "", "uz") ||
+        a.key.localeCompare(b.key),
+    );
+};
+
+/** Tanlanmagan (katagi olib tashlangan) guruhlarni ajratadi: ularning buyurtmalariga so'rov ketmaydi. */
+export const splitCourierBulkByGroups = <T extends CourierBulkGroupOrder>(
+  tasks: ReadonlyArray<CourierBulkFinalizeTask<T>>,
+  keptOrders: CourierBulkKept<T>,
+  excluded: ReadonlySet<string>,
+  viewer: CourierBulkViewer,
+) => {
+  const included = (order: T) => !excluded.has(getCourierBulkGroupKey(order, viewer));
+  return {
+    tasks: tasks.filter(({ order }) => included(order)),
+    kept: {
+      tomorrow: keptOrders.tomorrow.filter(included),
+      replacement: keptOrders.replacement.filter(included),
+    } satisfies CourierBulkKept<T>,
+    skipped: tasks.filter(({ order }) => !included(order)).length,
+  };
+};
 
 /**
  * Yakunlashdan keyingi belgilar: muvaffaqiyatli bajarilganlar olib

@@ -326,6 +326,18 @@ describe("Tashqi yetkazuvchilar konsoli", () => {
     });
   });
 
+  it("⭐ Olcha uslubidagi login — akkaunt ID «Kompaniya dasturchisi uchun» blokida, «Nusxalash» uni buferga yozadi", async () => {
+    const user = userEvent.setup();
+    open();
+    const detail = await screen.findByRole("region", { name: /FastPost Logistics/ });
+    expect(within(detail).getByTestId("carrier-login-id")).toHaveTextContent(/^3$/);
+    expect(detail).toHaveTextContent("Login (username)");
+    expect(detail).toHaveTextContent("Olcha uslubidagi POST /auth/token uchun · parol — API kalit");
+    await user.click(within(detail).getByRole("button", { name: "Loginni nusxalash" }));
+    expect(await navigator.clipboard.readText()).toBe("3");
+    expect(await within(detail).findByText("Login nusxalandi")).toBeInTheDocument();
+  });
+
   it("⭐ yaratish → kalit BIR MARTA: «nusxaladim» belgisisiz yopilmaydi, yopilgach kalit DOM'da va keshda qolmaydi", async () => {
     const user = userEvent.setup();
     mocks.post.mockResolvedValue({
@@ -409,6 +421,12 @@ describe("Tashqi yetkazuvchilar konsoli", () => {
       name: "API kalit — bir marta ko'rsatiladi",
     });
     expect(within(keyDialog).getByDisplayValue("elc_secret_key_value")).toBeInTheDocument();
+    // Olcha uslubidagi login — yangi akkaunt ID'si kalit bilan birga beriladi.
+    const login = within(keyDialog).getByTestId("carrier-key-login");
+    expect(within(login).getByTestId("carrier-login-id")).toHaveTextContent(/^4$/);
+    expect(login).toHaveTextContent(
+      "POST /auth/token: username — shu raqam, password — yuqoridagi kalit",
+    );
     // Kalit faqat oynada: mutatsiya `reset()` + `gcTime: 0` — keshlarda yo'q (oyna ochiq turganda ham).
     await waitFor(() => expect(cached()).not.toContain("elc_secret_key_value"));
     const done = within(keyDialog).getByRole("button", { name: "Yakunlash" });
@@ -600,6 +618,10 @@ describe("Tashqi yetkazuvchilar konsoli", () => {
     });
     expect(within(keyDialog).getByDisplayValue("elc_rotated")).toBeInTheDocument();
     expect(keyDialog).toHaveTextContent("Eski kalit endi ishlamaydi");
+    // Login (akkaunt ID) o'zgarmaydi — faqat parol (kalit) yangi.
+    const login = within(keyDialog).getByTestId("carrier-key-login");
+    expect(within(login).getByTestId("carrier-login-id")).toHaveTextContent(/^3$/);
+    expect(login).toHaveTextContent("login o'zgarmaydi, parol (password) — yangi kalit");
     await user.click(within(keyDialog).getByRole("checkbox"));
     await user.click(within(keyDialog).getByRole("button", { name: "Yakunlash" }));
     await waitFor(() => expect(screen.queryByDisplayValue("elc_rotated")).not.toBeInTheDocument());

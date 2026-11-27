@@ -1135,6 +1135,8 @@
       "devTitle": "Для разработчика компании",
       "devBaseUrl": "Базовый адрес (Base URL)",
       "devKeyHeader": "Заголовок ключа",
+      "devLogin": "Логин (username)",
+      "devLoginHint": "Для POST /auth/token в стиле Olcha · пароль — API-ключ",
       "devPing": "Проверка",
       "devRate": "Лимит запросов",
       "devRateValue": "По умолчанию 120 в минуту — на весь аккаунт",
@@ -1251,6 +1253,13 @@
       "closeHintCreated": "Пока не отметите, окно не закроется",
       "closeHintRotated": "После закрытия ключ больше не покажется",
       "done": "Завершить"
+    },
+    "login": {
+      "label": "Логин (username) — для входа в стиле Olcha",
+      "hintCreated": "POST /auth/token: username — этот номер, password — ключ выше. Номер не меняется.",
+      "hintRotated": "Если работают в стиле Olcha: логин не меняется, пароль (password) — новый ключ.",
+      "copyAria": "Скопировать логин",
+      "copiedStatus": "Логин скопирован"
     },
     "rotate": {
       "title": "Обновить ключ",
