@@ -69,7 +69,7 @@ export const CarrierRotateDialog = ({
       // Kalit mutatsiya holatida qolmasin (`gcTime: 0` — kuzatuvchisiz darhol yig'iladi).
       rotateKey.reset();
       setPhase("confirm");
-      onRotated({ variant: "rotated", accountName: account.name, apiKey });
+      onRotated({ variant: "rotated", accountId: account.id, accountName: account.name, apiKey });
     } catch (error) {
       const kind = classifyCarrierError(error, { serverErrorUnknown: true });
       if (kind === "courier") {
