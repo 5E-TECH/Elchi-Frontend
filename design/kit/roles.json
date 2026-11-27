@@ -77,6 +77,17 @@
      }
     },
     {
+     "key": "courierHold",
+     "label": "Kuryerdagi buyurtmalar",
+     "icon": "Clock",
+     "group": "Ish",
+     "short": {
+      "uz": "Kuryerdagilar",
+      "ru": "У курьеров",
+      "en": "With couriers"
+     }
+    },
+    {
      "key": "payments",
      "label": "To'lovlar",
      "icon": "i7",
@@ -235,6 +246,17 @@
       "uz": "Paketlar",
       "ru": "Пакеты",
       "en": "Batches"
+     }
+    },
+    {
+     "key": "courierHold",
+     "label": "Kuryerdagi buyurtmalar",
+     "icon": "Clock",
+     "group": "Ish",
+     "short": {
+      "uz": "Kuryerdagilar",
+      "ru": "У курьеров",
+      "en": "With couriers"
      }
     },
     {
@@ -412,6 +434,17 @@
       "uz": "Xarajatlar",
       "ru": "Доп. расходы",
       "en": "Extra costs"
+     }
+    },
+    {
+     "key": "courierHold",
+     "label": "Kuryerdagi buyurtmalar",
+     "icon": "Clock",
+     "group": "Ish",
+     "short": {
+      "uz": "Kuryerdagilar",
+      "ru": "У курьеров",
+      "en": "With couriers"
      }
     },
     {

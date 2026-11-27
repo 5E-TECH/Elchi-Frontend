@@ -12,6 +12,7 @@ export type PaginationScope =
   | "returns"
   | "replacementReturns"
   | "extraCosts"
+  | "courierHold"
   | "cancelledHandovers";
 
 interface UsePaginationOptions {

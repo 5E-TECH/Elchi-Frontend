@@ -51,7 +51,8 @@
     "canViewInvestorCabinet": { "source": "access.ts → canViewInvestorCabinet", "roles": { "investor": "" } },
     "canViewInvestorControl": { "source": "access.ts → canViewInvestorControl", "roles": { "superadmin": "" } },
     "canViewReplacementReturns": { "source": "access.ts → canViewReplacementReturns", "roles": { "superadmin": "", "admin": "", "market": "o'z buyurtmalari (token); menyuda yo'q" } },
-    "canViewExtraCosts": { "source": "access.ts → canViewExtraCosts", "roles": { "manager": "o'z filiali kuryerlari va o'zi (token)", "market": "o'z marketi (token); tasdiqlash / rad etish", "market_operator": "o'z marketi, faqat ko'rish; telefonda — /orders sarlavhasidagi havola", "courier": "o'zi yozganlari (token)" } }
+    "canViewExtraCosts": { "source": "access.ts → canViewExtraCosts", "roles": { "manager": "o'z filiali kuryerlari va o'zi (token)", "market": "o'z marketi (token); tasdiqlash / rad etish", "market_operator": "o'z marketi, faqat ko'rish; telefonda — /orders sarlavhasidagi havola", "courier": "o'zi yozganlari (token)" } },
+    "canViewCourierHoldPage": { "source": "access.ts → canViewCourierHoldPage", "roles": { "superadmin": "hamma filiallar", "admin": "hamma filiallar", "manager": "o'z filiali (token)", "courier": "faqat o'zidagilar (token); menyuda yo'q — o'z «Buyurtmalar» sarlavhasidagi havola", "market": "o'z buyurtmalari (token), kuryer telefoni yashirin; menyuda yo'q — /orders sarlavhasidagi havola" } }
   },
   "sections": [
     { "id": "shell", "title": "Qobiq — yon menyu, yuqori panel, pastki menyu" },
@@ -933,6 +934,22 @@
         "courier": "Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Kutilmoqda · Tasdiqlangan · Bekor qilingan; faqat o'zi yozganlari."
       },
       "note": "GykuOz8f: GET orders/extra-costs?tab=all|pending|approved|cancelled&page&limit (doira faqat tokendan; admin/superadmin — 403). Tab va sahifa URL'da (?tab&page&limit), tab sonlari javobdagi counts dan. Ustunlar: buyurtma (EL-… havola, amal: Sotish / Bekor qilish / Qisman sotish), mijoz, summa va holat («Tasdiq kutilmoqda» + avtomatik tasdiq vaqti / «Tasdiqlandi» / «Avtomatik tasdiqlandi» / «Tasdiqsiz yozildi» / «Rad etildi» / «Bekor bo'ldi» / «Teskari qaytarildi»), «Kim yozgan» (menejer, market, operator), so'rov va qaror sanasi, sabab yoki izoh, «Isbot (N)» — GET orders/extra-costs/:id/proofs/:index galereya oynasida. Telefonda kartalar. «Bekor qilingan» = rad etilgan + o'zi yopilgan (void); «Teskari qaytarildi» faqat «Barchasi» da."
+    },
+    {
+      "path": "/courier-hold",
+      "entry": "yon menyu / telefonda «Menyu» varag'i → «Kuryerdagi buyurtmalar» (superadmin, admin, menejer — «Ish» guruhi); market — /orders sarlavhasidagi «Kuryerdagi buyurtmalar» havolasi; kuryer — o'z «Buyurtmalar» sarlavhasidagi havola; ogohlantirishdagi «Kabinetda ochish» → /courier-hold?tab=near_48",
+      "section": "orders",
+      "title": "Kuryerdagi buyurtmalar — 72 soatdan oshgan, 48 soatga yaqin, kuryerlar bo'yicha",
+      "components": ["src/pages/courier-hold/index.tsx", "src/pages/courier-hold/model/courierHoldView.ts", "src/entities/orders/courierHold.ts"],
+      "views": {},
+      "roleNotes": {
+        "superadmin": "Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Hamma filiallar; «Buyurtmalar ro'yxatida ochish» → /orders?courier_hold=…",
+        "admin": "Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Hamma filiallar.",
+        "manager": "Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Faqat o'z filiali (token).",
+        "market": "Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Menyu bandi yo'q (havola /orders sarlavhasida); o'z buyurtmalari, kuryer telefoni yashirin, «Market» ustuni yo'q.",
+        "courier": "Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Menyu bandi yo'q (havola o'z «Buyurtmalar» sarlavhasida); faqat o'zidagilar, «Kuryer» ustuni va /orders havolasi yo'q."
+      },
+      "note": "onXzDc5n: GET /orders?courier_hold=over_72|near_48|over_48|any&courier_id&page&limit (eng eskisi birinchi) va GET orders/courier-hold/summary (kuryer bo'yicha: jami, 36 gacha, 36–48, 48–72, 72+, eng eskisi, «Bekor, qaytarilmagan»). Soat — orders.last_handover_at dan (kuryerga topshirilgan payt). Tablar URL'da (?tab=over_72|near_48|couriers&courier=<id>&page&limit), sonlari jamlamadan; kuryer tanlansa — uning hamma ochiq buyurtmalari. «N soat» belgisi: 36–48 ogohlantirish, 48+ xavf toni. Telefonda kartalar. Registrator / operator / market operatori / logist — 403."
     },
     {
       "path": "/dispatch",

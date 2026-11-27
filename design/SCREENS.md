@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**86 ta route** (+ qobiq) · **889 ta maket** (518 sahifa, 349 oyna, 22 tizim taxtasi; 756 ta fragment fayli) · kodda yo'q: **143** · qisman: **190** · v2 ga ko'chirilgan route: **85 / 86**
+**87 ta route** (+ qobiq) · **889 ta maket** (518 sahifa, 349 oyna, 22 tizim taxtasi; 756 ta fragment fayli) · kodda yo'q: **143** · qisman: **190** · v2 ga ko'chirilgan route: **86 / 87**
 
 ## Qanday ishlatiladi
 
@@ -59,6 +59,7 @@
 | `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 35 | v2 |
 | `/replacement-returns` | Buyurtmalar | `src/pages/replacement-returns/index.tsx` | superadmin, admin, market (o'z buyurtmalari (token); menyuda yo'q) | 0 | v2 |
 | `/extra-costs` | Buyurtmalar | `src/pages/extra-costs/index.tsx` | manager (o'z filiali kuryerlari va o'zi (token)), market (o'z marketi (token); tasdiqlash / rad etish), market_operator (o'z marketi, faqat ko'rish; telefonda — /orders sarlavhasidagi havola), courier (o'zi yozganlari (token)) | 0 | v2 |
+| `/courier-hold` | Buyurtmalar | `src/pages/courier-hold/index.tsx` | superadmin (hamma filiallar), admin (hamma filiallar), manager (o'z filiali (token)), market (o'z buyurtmalari (token), kuryer telefoni yashirin; menyuda yo'q — /orders sarlavhasidagi havola), courier (faqat o'zidagilar (token); menyuda yo'q — o'z «Buyurtmalar» sarlavhasidagi havola) | 0 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 5 | v2 |
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 48 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
@@ -442,6 +443,23 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/extra-costs` | market | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Tasdiqlash kutilayotgan · Tasdiqlangan · Bekor qilingan; «Tasdiqlash kutilayotgan» tabida «Tasdiqlash» (tasdiq oynasi) va «Rad etish» (sabab oynasi). | — | — | v2 |
 | `/extra-costs` | market_operator | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Market tablari, faqat ko'rish (tugmalar yo'q); marketga biriktirilmagan — so'rov yo'q, bo'sh holat. | — | — | v2 |
 | `/extra-costs` | courier | — Maket yo'q — eng yaqini: superadmin-returns-list / market-dashboard-extra-cost-approvals. Tablar: Barchasi · Kutilmoqda · Tasdiqlangan · Bekor qilingan; faqat o'zi yozganlari. | — | — | v2 |
+
+#### `/courier-hold` — Kuryerdagi buyurtmalar — 72 soatdan oshgan, 48 soatga yaqin, kuryerlar bo'yicha
+
+- **Fayllar:** `src/pages/courier-hold/index.tsx` · `src/pages/courier-hold/model/courierHoldView.ts` · `src/entities/orders/courierHold.ts`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewCourierHoldPage` (access.ts → canViewCourierHoldPage)
+- **Rollar:** superadmin (hamma filiallar), admin (hamma filiallar), manager (o'z filiali (token)), market (o'z buyurtmalari (token), kuryer telefoni yashirin; menyuda yo'q — /orders sarlavhasidagi havola), courier (faqat o'zidagilar (token); menyuda yo'q — o'z «Buyurtmalar» sarlavhasidagi havola)
+- **Menyuda:** «Kuryerdagi buyurtmalar» (`courierHold`) — superadmin, admin, manager
+- **Holat:** v2
+- **Izoh:** onXzDc5n: GET /orders?courier_hold=over_72|near_48|over_48|any&courier_id&page&limit (eng eskisi birinchi) va GET orders/courier-hold/summary (kuryer bo'yicha: jami, 36 gacha, 36–48, 48–72, 72+, eng eskisi, «Bekor, qaytarilmagan»). Soat — orders.last_handover_at dan (kuryerga topshirilgan payt). Tablar URL'da (?tab=over_72|near_48|couriers&courier=<id>&page&limit), sonlari jamlamadan; kuryer tanlansa — uning hamma ochiq buyurtmalari. «N soat» belgisi: 36–48 ogohlantirish, 48+ xavf toni. Telefonda kartalar. Registrator / operator / market operatori / logist — 403.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/courier-hold` | superadmin | — Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Hamma filiallar; «Buyurtmalar ro'yxatida ochish» → /orders?courier_hold=… | — | — | v2 |
+| `/courier-hold` | admin | — Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Hamma filiallar. | — | — | v2 |
+| `/courier-hold` | manager | — Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Faqat o'z filiali (token). | — | — | v2 |
+| `/courier-hold` | market | — Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Menyu bandi yo'q (havola /orders sarlavhasida); o'z buyurtmalari, kuryer telefoni yashirin, «Market» ustuni yo'q. | — | — | v2 |
+| `/courier-hold` | courier | — Maket yo'q — eng yaqini: superadmin-returns-list (tablar + jadval / telefon kartasi). Menyu bandi yo'q (havola o'z «Buyurtmalar» sarlavhasida); faqat o'zidagilar, «Kuryer» ustuni va /orders havolasi yo'q. | — | — | v2 |
 
 ### Qabul va yaratish
 
@@ -3278,6 +3296,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
 | `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
 | `src/entities/orders/cancelledHandovers.ts` | `/new-orders/cancelled`, `/new-orders/cancelled/handovers/:batchId` |
+| `src/entities/orders/courierHold.ts` | `/courier-hold` |
 | `src/entities/orders/extraCosts.ts` | `/extra-costs` |
 | `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` | `/orders` |
 | `src/entities/orders/ui/ExtraCostApprovalTag.tsx` | `/orders` |
@@ -3417,6 +3436,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/courier-bulk/ui/ResultControl.tsx` | `/courier-bulk` |
 | `src/pages/courier-bulk/ui/ScanModeControl.tsx` | `/courier-bulk` |
 | `src/pages/courier-bulk/ui/segmentTint.ts` | `/courier-bulk` |
+| `src/pages/courier-hold/index.tsx` | `/courier-hold` |
+| `src/pages/courier-hold/model/courierHoldView.ts` | `/courier-hold` |
 | `src/pages/daily-schedule/index.tsx` | `/ops` |
 | `src/pages/daily-schedule/ui/IntakeCard.tsx` | `/ops` |
 | `src/pages/daily-schedule/ui/ShiftCards.tsx` | `/ops` |
@@ -3981,6 +4002,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `superadmin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+3) |
+| Kuryerdagi buyurtmalar | `courierHold` | `/courier-hold` | `/courier-hold` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+4) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `superadmin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+9) |
@@ -4003,6 +4025,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `admin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `admin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `admin-batches-new` (+2) |
+| Kuryerdagi buyurtmalar | `courierHold` | `/courier-hold` | `/courier-hold` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | — | `admin-warehouse-list` (+1) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+4) |
@@ -4026,6 +4049,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | HQ · PICKUP · HYBRID | `manager-new-orders-markets` (+1) |
 | Pochta | `mails` | `/mails` | `/mails/today` | HQ · REGIONAL · HYBRID | `manager-mails-today` |
 | Qo'shimcha xarajatli buyurtmalar | `extraCosts` | `/extra-costs` | `/extra-costs` | barchasi | izohga qarang |
+| Kuryerdagi buyurtmalar | `courierHold` | `/courier-hold` | `/courier-hold` | barchasi | izohga qarang |
 | Paketlar | `batches` | `/batches` | `/batches` | HQ · PICKUP · HYBRID | `manager-batches-new` (+2) |
 | Mahsulotlar | `products` | `/products` | `/products` | barchasi | `manager-products-list` (+3) |
 | Ombor | `warehouse` | `/warehouses` | `/warehouses` | REGIONAL · HYBRID | izohga qarang |

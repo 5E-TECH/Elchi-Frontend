@@ -45,6 +45,7 @@ import {
 import { OrderFiltersSheet } from "./OrderFiltersSheet";
 import { useOrderFilterOptions, type FilterOption } from "./useOrderFilterOptions";
 import { isMarketSideRole } from "../../../entities/user/lib/role";
+import { COURIER_HOLD_FILTERS, parseCourierHoldFilter } from "../../../entities/orders/courierHold";
 
 /**
  * «Buyurtmalar» ro'yxati filtrlari — dizayn v2 (maketlar `superadmin-orders-list`, `admin-orders-list`,
@@ -169,6 +170,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       courierId: getParam(ORDER_FILTER_KEYS.courierId) ?? "",
       deliveryType: isDeliveryType(deliveryType) ? deliveryType : "",
       fulfillmentSource: isFulfillmentSource(fulfillmentSource) ? fulfillmentSource : "",
+      courierHold: parseCourierHoldFilter(getParam(ORDER_FILTER_KEYS.courierHold)),
       statuses: parseStatusValues(urlStatus),
       // Noto'g'ri sana (`?startDay=falonchi`) — filtr yo'q (sahifa API'ga ham yubormaydi, D-08).
       dateFrom: sanitizeDayParam(getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam(LEGACY_DATE_FROM_KEY)),
@@ -218,7 +220,10 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
     setMultipleParams(params);
   };
 
-  const updateField = (key: "marketId" | "branchId" | "courierId" | "deliveryType" | "fulfillmentSource", value: string) =>
+  const updateField = (
+    key: "marketId" | "branchId" | "courierId" | "deliveryType" | "fulfillmentSource" | "courierHold",
+    value: string,
+  ) =>
     write({ [ORDER_FILTER_KEYS[key]]: value }, { [key]: value });
 
   // Viloyat (menejerda tuman) o'zgarsa kuryer tanlovi tozalanadi — kuryerlar ro'yxati shunga bog'liq.
@@ -290,6 +295,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       [ORDER_FILTER_KEYS.courierId]: "",
       [ORDER_FILTER_KEYS.deliveryType]: "",
       [ORDER_FILTER_KEYS.fulfillmentSource]: "",
+      [ORDER_FILTER_KEYS.courierHold]: "",
       ...(statusFromTab ? {} : { [ORDER_STATUS_URL_KEY]: "" }),
       [LEGACY_ORDER_STATUS_URL_KEY]: "",
       [ORDER_CANCEL_STAGE_URL_KEY]: "",
@@ -312,6 +318,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       [ORDER_FILTER_KEYS.courierId]: draft.courierId,
       [ORDER_FILTER_KEYS.deliveryType]: draft.deliveryType,
       [ORDER_FILTER_KEYS.fulfillmentSource]: scope.source ? (draft.fulfillmentSource ?? "") : "",
+      [ORDER_FILTER_KEYS.courierHold]: scope.courierHold ? (draft.courierHold ?? "") : "",
       [ORDER_STATUS_URL_KEY]: draft.statuses.join(","),
       [LEGACY_ORDER_STATUS_URL_KEY]: "",
       [ORDER_CANCEL_STAGE_URL_KEY]: "",
@@ -324,6 +331,7 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       courierId: draft.courierId,
       deliveryType: draft.deliveryType,
       fulfillmentSource: scope.source ? (draft.fulfillmentSource ?? "") : "",
+      courierHold: scope.courierHold ? (draft.courierHold ?? "") : "",
       status: draft.statuses,
     };
     if (dateInSheet) {
@@ -357,6 +365,12 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
     { value: "HQ", label: t("fulfillment.filterHq") },
   ];
   const sourceLabel = (value: string) => sourceOptions.find((item) => item.value === value)?.label ?? value;
+  // onXzDc5n: «Kuryerda turgan vaqti» — maket yo'q (eng yaqini «Manba» filtri).
+  const courierHoldOptions = [
+    { value: "", label: all },
+    ...COURIER_HOLD_FILTERS.map((value) => ({ value, label: t(`courierHold.option.${value}`) })),
+  ];
+  const courierHoldLabel = (value: string) => courierHoldOptions.find((item) => item.value === value)?.label ?? value;
 
   // ─── Chiplar (maket tartibi: sana · market · filial · viloyat/tuman · kuryer · yetkazish · holat · qidiruv) ───
   const chip = (label: string, value: string) => t("filters.chip", { ns: "ui", label, value });
@@ -429,6 +443,14 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       label: chip(t("fulfillment.filter"), sourceLabel(values.fulfillmentSource)),
       removeLabel: removeLabel(t("fulfillment.filter")),
       onRemove: () => updateField("fulfillmentSource", ""),
+    });
+  }
+  if (scope.courierHold && values.courierHold) {
+    chips.push({
+      key: "courier-hold",
+      label: chip(t("courierHold.filter"), courierHoldLabel(values.courierHold)),
+      removeLabel: removeLabel(t("courierHold.filter")),
+      onRemove: () => updateField("courierHold", ""),
     });
   }
   if (statusIsFilter) {
@@ -601,6 +623,16 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
                   options={sourceOptions}
                   value={values.fulfillmentSource ?? ""}
                   onChange={(next) => updateField("fulfillmentSource", next && isFulfillmentSource(next) ? next : "")}
+                  placeholder={all}
+                />
+              </Field>
+            ) : null}
+            {scope.courierHold ? (
+              <Field label={t("courierHold.filter")} labelAs="span">
+                <Select
+                  options={courierHoldOptions}
+                  value={values.courierHold ?? ""}
+                  onChange={(next) => updateField("courierHold", parseCourierHoldFilter(next))}
                   placeholder={all}
                 />
               </Field>

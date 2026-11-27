@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ORDER_STATUS_NS, ORDER_STATUS_REGISTRY } from "../../../entities/order";
 import { useOrders } from "../../../entities/order/api/orderApi";
 import type { DeliveryType, OrderFulfillmentSource } from "../../../entities/order/types/order";
+import { COURIER_HOLD_FILTERS } from "../../../entities/orders/courierHold";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import {
   Button,
@@ -319,6 +320,24 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
             value={draft.fulfillmentSource || ALL}
             onValueChange={(value) => patch({ fulfillmentSource: value === ALL ? "" : value })}
           />
+        </Section>
+      ) : null}
+
+      {/* onXzDc5n: «Kuryerda turgan vaqti» — bitta tanlov (holat chiplari kabi, tor ekranda qatorga o'tadi). */}
+      {scope.courierHold ? (
+        <Section labelId={`${idBase}-courier-hold`} label={t("courierHold.filter")}>
+          <div className="flex flex-wrap gap-2">
+            {COURIER_HOLD_FILTERS.map((value) => (
+              <Pressable
+                key={value}
+                aria-pressed={draft.courierHold === value}
+                onClick={() => patch({ courierHold: draft.courierHold === value ? "" : value })}
+                className={CHIP}
+              >
+                {t(`courierHold.option.${value}`)}
+              </Pressable>
+            ))}
+          </div>
         </Section>
       ) : null}
     </Dialog>

@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-orders-list, superadmin-orders-list-refreshing, superadmin-orders-list-refresh-error, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-all-refreshing, manager-orders-list-all-refresh-error, manager-orders-list-pending, manager-orders-list-cancelled, superadmin-orders-list-cancelled
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Info, ListX, Plus, Receipt, Repeat, Send } from "lucide-react";
+import { Download, Clock, Info, ListX, Plus, Receipt, Repeat, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,7 @@ import {
 } from "../../entities/orders/extraCostApproval";
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
 import { orderIdFromSearch } from "../../entities/order/model/orderNumber";
+import { canViewCourierHold, parseCourierHoldFilter } from "../../entities/orders/courierHold";
 import OrderFilters from "./list/OrderFilters";
 import CancelStageChips from "./list/CancelStageChips";
 import {
@@ -217,6 +218,9 @@ const Orders = () => {
   // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — market operatorida telefonda «Menyu» yo'q (pastki menyu to'la), shuning
   // uchun sahifaga kirish shu sarlavhadagi havola (boshqa rollarda — yon menyu va «Menyu» varag'ida).
   const canSeeExtraCostsLink = role === "market_operator";
+  // onXzDc5n: «Kuryerdagi buyurtmalar» — marketda yon menyu bandi yo'q (qisqa menyu o'zgarmasin), kirish shu havola;
+  // superadmin / admin / menejerda — yon menyu.
+  const canSeeCourierHoldLink = role === "market" && canViewCourierHold(role);
   const branchType = getUserBranchType(currentUser);
   // Menejerning sotish/bekor qilish (va shu oynadagi qisman sotish) hamda
   // qaytarish amallari endi per-menejer `can_sell_cancel` bayrog'iga ham bog'liq
@@ -267,6 +271,8 @@ const Orders = () => {
   const urlDeliveryType = urlParams[ORDER_FILTER_KEYS.deliveryType] ?? "";
   // 6kHnNH9j: «Manba» filtri (`?fulfillment_source=WAREHOUSE|HQ`).
   const urlFulfillmentSource = urlParams[ORDER_FILTER_KEYS.fulfillmentSource] ?? "";
+  // onXzDc5n: «Kuryerda turgan vaqti» (`?courier_hold=near_48|over_48|over_72|any`); noma'lumi — filtr yo'q.
+  const urlCourierHold = parseCourierHoldFilter(urlParams[ORDER_FILTER_KEYS.courierHold]);
   // Noto'g'ri sana (`?startDay=falonchi`) va bo'sh / «№53» qidiruv API'ga xom ketmaydi (D-08, D-11).
   const urlDateFrom = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[LEGACY_DATE_FROM_KEY]);
   const urlDateTo = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams[LEGACY_DATE_TO_KEY]);
@@ -335,6 +341,7 @@ const Orders = () => {
       courierId: urlCourierId,
       deliveryType: isDeliveryType(urlDeliveryType) ? urlDeliveryType : "",
       fulfillmentSource: isFulfillmentSource(urlFulfillmentSource) ? urlFulfillmentSource : "",
+      courierHold: urlCourierHold,
       statuses: urlStatuses,
       cancelStage: urlCancelStage,
       dateFrom: urlDateFrom,
@@ -349,6 +356,7 @@ const Orders = () => {
       urlCourierId,
       urlDeliveryType,
       urlFulfillmentSource,
+      urlCourierHold,
       urlStatuses,
       urlCancelStage,
       urlDateFrom,
@@ -1042,6 +1050,7 @@ const Orders = () => {
         urlCourierId ||
         urlDeliveryType ||
         isFulfillmentSource(urlFulfillmentSource) ||
+        urlCourierHold ||
         urlDateFrom ||
         urlDateTo ||
         urlSearch,
@@ -1058,6 +1067,7 @@ const Orders = () => {
       [ORDER_FILTER_KEYS.courierId]: "",
       [ORDER_FILTER_KEYS.deliveryType]: "",
       [ORDER_FILTER_KEYS.fulfillmentSource]: "",
+      [ORDER_FILTER_KEYS.courierHold]: "",
       [ORDER_FILTER_KEYS.dateFrom]: "",
       [ORDER_FILTER_KEYS.dateTo]: "",
       [ORDER_FILTER_KEYS.search]: "",
@@ -1212,6 +1222,12 @@ const Orders = () => {
               <Link to="/replacement-returns" className={buttonClasses({ variant: "secondary", compact: true })}>
                 <Repeat aria-hidden="true" size={16} strokeWidth={2} />
                 {t("ordersList.replacementReturns")}
+              </Link>
+            ) : null}
+            {canSeeCourierHoldLink ? (
+              <Link to="/courier-hold" className={buttonClasses({ variant: "secondary", compact: true })}>
+                <Clock aria-hidden="true" size={16} strokeWidth={2} />
+                {t("courierHold.link")}
               </Link>
             ) : null}
             {canSeeExtraCostsLink ? (

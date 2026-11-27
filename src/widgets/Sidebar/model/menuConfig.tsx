@@ -24,6 +24,7 @@ import {
   PiggyBank,
   HandCoins,
   Sparkles,
+  Clock,
   type LucideIcon,
 } from "lucide-react";
 import type { User } from "../../../entities/user/model/types";
@@ -90,6 +91,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     // fix3 CODE-21: marshrut guardi (`canViewBatchesPage`/`canViewReturnsPage`)
     // superadminga ochiq edi, lekin menyuda yo'q edi — faqat URL orqali.
     { to: "/batches", icon: Package, label: "batches" },
+    // onXzDc5n: «Kuryerdagi buyurtmalar» — 72 soatdan oshgan, 48 soatga yaqin va kuryerlar bo'yicha (kundalik nazorat).
+    { to: "/courier-hold", icon: Clock, label: "courierHold" },
     // Ega 2026-11-16: «Qaytarishlar» (/returns) yon menyuda yo'q — «Pochta» da ham bor. Sahifa URL va paket
     // tafsilotidagi «← Qaytarishlar» havolasi orqali ochiladi (superadmin, admin, menejer).
     // Ega 2026-11-16: «Almashtirishlar» (/replacement-returns, lQjt6sKP) yon menyuda yo'q — /orders sarlavhasidagi
@@ -119,6 +122,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/mails", icon: Mail, label: "mails" },
     { to: "/batches", icon: Package, label: "batches" },
+    // onXzDc5n: «Kuryerdagi buyurtmalar».
+    { to: "/courier-hold", icon: Clock, label: "courierHold" },
     { to: "/products", icon: Tag, label: "products" },
     // yXC91RRx: «Ombor» (maket `roles.json`).
     { to: "/warehouses", icon: Warehouse, label: "warehouse" },
@@ -180,6 +185,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/extra-costs", icon: Receipt, label: "extraCosts" },
+    { to: "/courier-hold", icon: Clock, label: "courierHold" },
     { to: "/products", icon: Tag, label: "products" },
     { to: "/regions", icon: MapIcon, label: "regions" },
   ],
@@ -295,6 +301,8 @@ const MANAGER_MENU_ORDER: { item: NavItem; capability: ManagerCapability | null 
   // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — «Buyurtmalar» / «Pochta» ostida, har filial turida (o'z filiali
   // kuryerlari va o'zi yozgan xarajatlar).
   { item: { to: "/extra-costs", icon: Receipt, label: "extraCosts" }, capability: null },
+  // onXzDc5n: «Kuryerdagi buyurtmalar» — har filial turida (o'z filiali; backend doirani tokendan oladi).
+  { item: { to: "/courier-hold", icon: Clock, label: "courierHold" }, capability: null },
   { item: { to: "/batches", icon: Package, label: "batches" }, capability: 'intake' },
   // Mahsulotlar — menejer filiali uchun mahsulot qo'sha oladi (registrator
   // menyusidagidek shartsiz; backend POST /product MANAGER ga ruxsat beradi).
@@ -450,6 +458,8 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/batches": 'work',
   // GykuOz8f: qo'shimcha xarajatli buyurtmalar.
   "/extra-costs": 'work',
+  // onXzDc5n: kuryerdagi buyurtmalar.
+  "/courier-hold": 'work',
   // Moliya
   "/payments": 'finance',
   "/cash-box": 'finance',

@@ -107,7 +107,15 @@ describe("orderFilterModel", () => {
 
   it("MO-3: market operatori — o'z marketi; market, kuryer va viloyat (GET /region 403, N11) parametrlari ketmaydi", () => {
     const scope = getOrderFilterScope("market_operator");
-    expect(scope).toEqual({ marketSelect: false, market: false, branch: false, area: "none", courier: false, source: false });
+    expect(scope).toEqual({
+      marketSelect: false,
+      market: false,
+      branch: false,
+      area: "none",
+      courier: false,
+      source: false,
+      courierHold: false,
+    });
     expect(buildOrderListParams({ ...filled, search: "Ali" }, "market_operator", { page: 1, limit: 10 })).toEqual({
       page: 1,
       limit: 10,
@@ -229,3 +237,30 @@ describe("BG4 `cancel_stage` — «Bekor qilingan» tabidagi bosqich chipi (vOcz
   });
 });
 
+describe("onXzDc5n `courier_hold` — «Kuryerda turgan vaqti» filtri", () => {
+  it("⭐ superadmin / admin / menejer / kuryer / market — filtr bor; registrator / operator / market operatori / logist — yo'q", () => {
+    for (const role of ["superadmin", "admin", "manager", "courier", "market"]) {
+      expect(getOrderFilterScope(role).courierHold, role).toBe(true);
+    }
+    for (const role of ["registrator", "operator", "market_operator", "logist", null]) {
+      expect(getOrderFilterScope(role).courierHold, String(role)).toBe(false);
+    }
+  });
+
+  it("⭐ API parametri: tanlangan qiymat `courier_hold` bo'lib ketadi, ruxsatsiz rolda va noma'lumida — yuborilmaydi", () => {
+    const values = { ...EMPTY_ORDER_FILTERS, courierHold: "over_72" as const };
+    expect(buildOrderListParams(values, "admin", { page: 1, limit: 25 })).toMatchObject({ courier_hold: "over_72" });
+    expect(buildOrderListParams(values, "market", { page: 1, limit: 25 })).toMatchObject({ courier_hold: "over_72" });
+    expect(buildOrderListParams(values, "registrator", { page: 1, limit: 25 })).not.toHaveProperty("courier_hold");
+    expect(buildOrderListParams(values, "market_operator", { page: 1, limit: 25 })).not.toHaveProperty("courier_hold");
+    expect(
+      buildOrderListParams({ ...EMPTY_ORDER_FILTERS, courierHold: "" }, "admin", { page: 1, limit: 25 }),
+    ).not.toHaveProperty("courier_hold");
+  });
+
+  it("«Filtrlar N» soniga kiradi (faqat ruxsatli rolda)", () => {
+    const values = { ...EMPTY_ORDER_FILTERS, courierHold: "near_48" as const };
+    expect(countPanelFilters(values, getOrderFilterScope("manager"))).toBe(1);
+    expect(countPanelFilters(values, getOrderFilterScope("registrator"))).toBe(0);
+  });
+});

@@ -118,7 +118,7 @@ describe("OrderFilters — desktop/planshet (superadmin-orders-list)", () => {
     const toggle = screen.getByRole("button", { name: "Filtrlar 2" });
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(document.getElementById(toggle.getAttribute("aria-controls") ?? "")).toBe(panel().parentElement);
-    expect(fieldLabels()).toEqual(["Market", "Filial", "Viloyat", "Kuryer", "Yetkazish turi", "Manba", "Holat"]);
+    expect(fieldLabels()).toEqual(["Market", "Filial", "Viloyat", "Kuryer", "Yetkazish turi", "Manba", "Kuryerda turgan vaqti", "Holat"]);
 
     const active = screen.getByRole("group", { name: "Faol filtrlar" });
     expect(within(active).getByText("Filial: Toshkent HQ")).toBeInTheDocument();
@@ -333,7 +333,7 @@ describe("OrderFilters — rollar", () => {
     open("market");
 
     await user.click(screen.getByRole("button", { name: "Filtrlar" }));
-    expect(fieldLabels()).toEqual(["Viloyat", "Yetkazish turi", "Holat"]);
+    expect(fieldLabels()).toEqual(["Viloyat", "Yetkazish turi", "Kuryerda turgan vaqti", "Holat"]);
     // Market rolida kuryer ro'yxati so'ralmaydi.
     expect(getCouriersMock).toHaveBeenCalledWith(expect.anything(), false);
   });
@@ -342,7 +342,7 @@ describe("OrderFilters — rollar", () => {
     const user = userEvent.setup();
     open("manager", "/orders?orderDistrictId=d1&orderCourierId=c1");
 
-    expect(fieldLabels()).toEqual(["Tuman", "Kuryer", "Yetkazish turi", "Manba", "Holat"]);
+    expect(fieldLabels()).toEqual(["Tuman", "Kuryer", "Yetkazish turi", "Manba", "Kuryerda turgan vaqti", "Holat"]);
     expect(screen.getByText("Tuman: Urgut tumani")).toBeInTheDocument();
     // Kuryerlar menejer filiali viloyati bo'yicha.
     expect(getCouriersMock).toHaveBeenLastCalledWith(expect.objectContaining({ region_id: "r9" }), true);

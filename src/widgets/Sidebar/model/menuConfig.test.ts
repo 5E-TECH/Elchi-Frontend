@@ -21,6 +21,7 @@ import {
   ScrollText,
   ShoppingBag,
   Sparkles,
+  Clock,
   Tag,
   Truck,
   Users,
@@ -63,6 +64,7 @@ describe("sidebar menu config", () => {
       "/branch-dashboard",
       "/orders",
       "/extra-costs",
+      "/courier-hold",
       "/products",
       "/regions",
     ]);
@@ -77,6 +79,7 @@ describe("sidebar menu config", () => {
       "/courier-bulk",
       "/mails",
       "/extra-costs",
+      "/courier-hold",
       "/products",
       "/warehouses",
       "/all-users",
@@ -92,6 +95,7 @@ describe("sidebar menu config", () => {
       "/new-orders",
       "/mails",
       "/extra-costs",
+      "/courier-hold",
       "/batches",
       "/products",
       "/warehouses",
@@ -105,6 +109,7 @@ describe("sidebar menu config", () => {
       "/orders",
       "/new-orders",
       "/extra-costs",
+      "/courier-hold",
       "/batches",
       "/products",
       "/all-users",
@@ -121,6 +126,7 @@ describe("sidebar menu config", () => {
       "/new-orders",
       "/mails",
       "/extra-costs",
+      "/courier-hold",
       "/batches",
       "/products",
       "/all-users",
@@ -334,6 +340,8 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     Receipt,
     // F7PWp6cK / T2: «AI yordamchi» (superadmin, «Moliya») — maketda lucide nomi bilan.
     Sparkles,
+    // onXzDc5n: «Kuryerdagi buyurtmalar» (superadmin, admin, menejer — «Ish») — maketda lucide nomi bilan.
+    Clock,
   };
   type DesignItem = { key: string; icon: string };
   // Maketdagi, kodda hali yo'q bandlar (`route-map.json` → `plannedMenu`) chiqariladi.

@@ -210,6 +210,10 @@ export const API_ENDPOINTS = {
     // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — kuryer / menejer / market / operator (doira tokendan).
     // GET ?tab=all|pending|approved|cancelled&page&limit → { items, total, page, limit, counts }
     EXTRA_COSTS: "orders/extra-costs",
+    // onXzDc5n: «Kuryerdagi buyurtmalar» — kuryer bo'yicha jamlama (SA/admin/menejer/kuryer/market, doira tokendan).
+    // GET ?market_id&branch_id&region_id&courier_id → { couriers[{ courier_id, total, under_36, near_48, over_48,
+    // over_72, oldest_since, oldest_hours, cancelled_held, courier{ id, name, phone_number } }], totals, now, thresholds }
+    COURIER_HOLD_SUMMARY: "orders/courier-hold/summary",
     // GykuOz8f: so'rov isboti (rasm/video) baytlari — ro'yxatdagi ko'rinish qoidasi bilan (pending/rad/void ham).
     EXTRA_COST_PROOF: (id: string | number, index: number) => `orders/extra-costs/${id}/proofs/${index}`,
     COULD_NOT_DELIVER: (id: string | number) => `orders/${id}/could-not-deliver`, // POST courier

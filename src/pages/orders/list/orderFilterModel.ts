@@ -1,6 +1,7 @@
 import { CANCEL_RETURN_STAGE_ORDER, ORDER_STATUSES, toOrderSearchTerm } from "../../../entities/order";
 import type { CancelReturnStage } from "../../../entities/order";
 import type {
+  CourierHoldFilter,
   DeliveryType,
   OrderFulfillmentSource,
   OrderListParams,
@@ -8,6 +9,7 @@ import type {
 } from "../../../entities/order/types/order";
 import { getThisMonthRange, getThisWeekRange, getTodayRange } from "../../../shared/lib/dateRange";
 import { isMarketSideRole } from "../../../entities/user/lib/role";
+import { canViewCourierHold, isCourierHoldFilter } from "../../../entities/orders/courierHold";
 
 /**
  * «Buyurtmalar» ro'yxati filtrlari — sof mantiq (UI'siz): URL kalitlari, holat tablari, API parametrlari,
@@ -29,6 +31,8 @@ export const ORDER_FILTER_KEYS = {
   search: "orderSearch",
   /** 6kHnNH9j: manba — `WAREHOUSE` (ombordan) yoki `HQ` (API param bilan bir xil nom). */
   fulfillmentSource: "fulfillment_source",
+  /** onXzDc5n: «Kuryerda turgan vaqti» — `near_48` · `over_48` · `over_72` · `any` (API param bilan bir xil nom). */
+  courierHold: "courier_hold",
 } as const;
 
 export const ORDER_STATUS_URL_KEY = "status";
@@ -179,6 +183,8 @@ export type OrderFilterValues = {
   fulfillmentSource?: "" | OrderFulfillmentSource;
   /** BG4: bekor bosqichi chipi (faqat «Bekor qilingan» tabida). */
   cancelStage?: "" | CancelReturnStage;
+  /** onXzDc5n: «Kuryerda turgan vaqti» (`scope.courierHold` bo'lgan rollarda). */
+  courierHold?: "" | CourierHoldFilter;
 };
 
 export const EMPTY_ORDER_FILTERS: OrderFilterValues = {
@@ -192,6 +198,7 @@ export const EMPTY_ORDER_FILTERS: OrderFilterValues = {
   dateFrom: "",
   dateTo: "",
   fulfillmentSource: "",
+  courierHold: "",
 };
 
 /** Rolga qarab qaysi filtrlar ishlaydi — `pages/orders/index.tsx` dagi API parametrlari bilan bir xil qoida. */
@@ -214,6 +221,11 @@ export type OrderFilterScope = {
    * registrator, menejer (ega qarori 10). Market tomonida yo'q — u «Ombordan» belgisini ro'yxatda ko'radi.
    */
   source: boolean;
+  /**
+   * onXzDc5n: «Kuryerda turgan vaqti» (36–48 · 48–72 · 72 soatdan oshgan · kuryerdagi hammasi) — superadmin, admin,
+   * menejer, kuryer, market (backend `COURIER_HOLD_ROLES`; boshqasiga 403).
+   */
+  courierHold: boolean;
 };
 
 /**
@@ -230,6 +242,7 @@ export const getOrderFilterScope = (role: string | null): OrderFilterScope => {
     area: role === "manager" ? "district" : role === "market_operator" ? "none" : "region",
     courier: !marketSide,
     source: isAdmin || role === "registrator" || role === "manager",
+    courierHold: canViewCourierHold(role),
   };
 };
 
@@ -275,6 +288,7 @@ export const buildOrderListParams = (
   if (scope.source && values.fulfillmentSource && isFulfillmentSource(values.fulfillmentSource)) {
     params.fulfillment_source = values.fulfillmentSource;
   }
+  if (scope.courierHold && isCourierHoldFilter(values.courierHold)) params.courier_hold = values.courierHold;
   if (values.dateFrom) params.start_day = values.dateFrom;
   if (values.dateTo) params.end_day = values.dateTo;
   // rwAy8Qyk: ro'yxatdagi raqam («EL-100081») bilan qidirish — backend hozircha faqat ichki id'ni oladi.
@@ -284,9 +298,9 @@ export const buildOrderListParams = (
 };
 
 /**
- * Panel filtrlari soni («Filtrlar N»): market, filial, viloyat/tuman, kuryer, yetkazish turi, manba va holat (bir nechta
- * holat — bitta filtr). `includeStatus=false` — holat tab bilan ko'rsatilgan (filtr emas). Sana va qidiruv bu
- * songa kirmaydi — ular asboblar qatorida ko'rinib turadi.
+ * Panel filtrlari soni («Filtrlar N»): market, filial, viloyat/tuman, kuryer, yetkazish turi, manba, kuryerda turgan
+ * vaqti va holat (bir nechta holat — bitta filtr). `includeStatus=false` — holat tab bilan ko'rsatilgan (filtr emas).
+ * Sana va qidiruv bu songa kirmaydi — ular asboblar qatorida ko'rinib turadi.
  */
 export const countPanelFilters = (
   values: OrderFilterValues,
@@ -299,6 +313,7 @@ export const countPanelFilters = (
   Number(scope.courier && Boolean(values.courierId)) +
   Number(Boolean(values.deliveryType)) +
   Number(scope.source && Boolean(values.fulfillmentSource)) +
+  Number(scope.courierHold && isCourierHoldFilter(values.courierHold)) +
   Number(includeStatus && values.statuses.length > 0);
 
 export const hasDateRange = (values: Pick<OrderFilterValues, "dateFrom" | "dateTo">) =>
