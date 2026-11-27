@@ -38,6 +38,7 @@ import {
   canViewWarehouses,
   canViewReplacementReturns,
   canViewExtraCosts,
+  canViewCourierHoldPage,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
@@ -93,6 +94,7 @@ const ReturnsPage = lazy(() => import("../../pages/returns"));
 const ReplacementReturnsPage = lazy(() => import("../../pages/replacement-returns"));
 // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» — kuryer, menejer, market, operator (admin/superadmin — yo'q).
 const ExtraCostsPage = lazy(() => import("../../pages/extra-costs"));
+const CourierHoldPage = lazy(() => import("../../pages/courier-hold"));
 const UserListPage = lazy(() => import("../../pages/users/list/UserListPage"));
 const CreateUserPage = lazy(
   () => import("../../pages/users/create/CreateUserPage"),
@@ -660,6 +662,16 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewExtraCosts}>
                   <ExtraCostsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              // onXzDc5n: kuryerdagi buyurtmalar (72 soatdan oshgan · 48 soatga yaqin · kuryerlar bo'yicha) —
+              // superadmin, admin, menejer (menyuda), market va kuryer (/orders sarlavhasidagi havola). Boshqasi — 403.
+              path: "courier-hold",
+              element: (
+                <ProtectedRoute canActivate={canViewCourierHoldPage}>
+                  <CourierHoldPage />
                 </ProtectedRoute>
               ),
             },

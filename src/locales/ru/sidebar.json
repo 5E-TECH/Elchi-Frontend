@@ -9,6 +9,8 @@
   "replacements": "Замены",
   "extraCosts": "Заказы с доп. расходами",
   "extraCostsShort": "Доп. расходы",
+  "courierHold": "Заказы у курьеров",
+  "courierHoldShort": "У курьеров",
   "products": "Товары",
   "warehouse": "Склад",
   "users": "Пользователи",

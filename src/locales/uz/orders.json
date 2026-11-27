@@ -1288,5 +1288,15 @@
     },
     "itemLine": "{{name}} — {{count}} ta",
     "close": "Yopish"
+  },
+  "courierHold": {
+    "filter": "Kuryerda turgan vaqti",
+    "link": "Kuryerdagi buyurtmalar",
+    "option": {
+      "any": "Kuryerdagi hammasi",
+      "near_48": "48 soatga yaqin (36–48)",
+      "over_48": "48–72 soat",
+      "over_72": "72 soatdan oshgan"
+    }
   }
 }

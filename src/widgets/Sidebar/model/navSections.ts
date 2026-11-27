@@ -88,6 +88,8 @@ const SHORT_LABEL_KEY_BY_PATH: Record<string, string> = {
   "/ops": "opsShort",
   // GykuOz8f: «Qo'shimcha xarajatli buyurtmalar» telefon varaqasi katagiga sig'maydi — «Xarajatlar» (maket `short`).
   "/extra-costs": "extraCostsShort",
+  // onXzDc5n: «Kuryerdagi buyurtmalar» — telefon varaqasida «Kuryerdagilar».
+  "/courier-hold": "courierHoldShort",
 };
 const SHORT_LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   // Market buyurtmani faqat yaratadi — maketda «Yaratish».

@@ -252,7 +252,7 @@
     {
      "concept": "Kutilmoqda, vaqt",
      "icon": "Clock",
-     "usage": "«Kutilmoqda» holati, qo'shimcha xarajat tasdig'ini kutish, sessiya tugashiga qolgan vaqt",
+     "usage": "«Kutilmoqda» holati, qo'shimcha xarajat tasdig'ini kutish, sessiya tugashiga qolgan vaqt, buyurtma kuryerda turgan vaqt («Kuryerdagi buyurtmalar», «N soat» belgisi, onXzDc5n)",
      "replaces": [
       "Clock3"
      ]

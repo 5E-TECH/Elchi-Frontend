@@ -1,0 +1,63 @@
+{
+  "title": "Orders with couriers",
+  "description": {
+    "admin": "Orders held by couriers that are not yet sold or returned — all branches",
+    "manager": "Orders held by your branch's couriers that are not yet sold or returned",
+    "courier": "Orders you hold that are not yet sold or returned",
+    "market": "Your shop's orders that are currently with couriers"
+  },
+  "hint": "Hours count from when the order was handed to the courier. At {{near}} h the courier and the shop get a warning; the deadline is {{deadline}} h.",
+  "tabs": {
+    "over_72": "Over 72 hours",
+    "near_48": "Nearing 48 hours",
+    "couriers": "By courier"
+  },
+  "tabsLabel": "List type",
+  "hours": "{{value}} h",
+  "since": "since {{date}}",
+  "columns": {
+    "order": "Order",
+    "held": "With courier",
+    "courier": "Courier",
+    "market": "Shop",
+    "customer": "Customer",
+    "address": "Address",
+    "status": "Status",
+    "amount": "Amount",
+    "total": "Total",
+    "under36": "Under 36 h",
+    "near48": "36–48 h",
+    "over48": "48–72 h",
+    "over72": "72+ h",
+    "oldest": "Oldest",
+    "cancelledHeld": "Cancelled, not returned",
+    "actions": "Actions"
+  },
+  "cancelledHeldHint": "Cancelled orders not yet handed back to the branch",
+  "courierTotal": "{{value}} orders in total",
+  "courierCancelledHeld": "cancelled, not returned: {{value}}",
+  "openCourier": "Orders",
+  "openCourierLabel": "Open orders of {{name}}",
+  "courierFilter": "Courier: {{name}}",
+  "clearCourier": "Clear courier selection",
+  "backToCouriers": "All couriers",
+  "unknownCourier": "Courier #{{id}}",
+  "openInOrders": "Open in the orders list",
+  "openOrder": "Open order {{ref}}",
+  "empty": {
+    "over_72": "No orders over 72 hours",
+    "over_72Description": "No open orders have been with a courier for more than 72 hours.",
+    "near_48": "No orders nearing 48 hours",
+    "near_48Description": "No orders have been with a courier for 36–48 hours.",
+    "couriers": "Couriers hold no open orders",
+    "couriersDescription": "No courier currently holds an unsold or unreturned order.",
+    "courier": "This courier holds no open orders",
+    "courierDescription": "The courier's orders were sold, returned or handed over."
+  },
+  "loading": "Loading orders with couriers",
+  "loadFailed": "Could not load orders with couriers",
+  "listLabel": "Orders with couriers",
+  "cardsLabel": "Orders with couriers",
+  "couriersLabel": "Summary by courier",
+  "pagination": "{{from}}–{{to}} of {{total}}"
+}

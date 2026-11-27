@@ -1,8 +1,8 @@
 // dizayn-v2: courier-orders-pending, courier-orders-pending-refreshing, courier-orders-pending-refresh-error, courier-orders-all, courier-orders-cancelled, courier-orders-tab-switcher-open
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Inbox, ScanLine, SearchX, Send } from "lucide-react";
+import { Clock, Inbox, ScanLine, SearchX, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../../app/config/store";
 import Tabs from "./list/tabs";
@@ -64,6 +64,7 @@ import { notify } from "../../../../shared/lib/notify";
 import {
   Badge,
   Button,
+  buttonClasses,
   Card,
   DateRange,
   EmptyState,
@@ -1015,8 +1016,17 @@ const CourierOrders = () => {
         grow
         meta={<OrdersRefreshTitleMeta refreshing={refresh.refreshing} onRefresh={handleRefresh} />}
         description={description}
-        // Telefonda amallar qatori bo'sh qolmasin — u yerda faqat ikonka tugma.
-        actions={isPhone ? undefined : <OrdersRefreshButton refreshing={refresh.refreshing} onRefresh={handleRefresh} />}
+        // Telefonda «Yangilash» — sarlavhadagi ikonka tugma; amallar qatorida faqat «Kuryerdagi buyurtmalar» havolasi
+        // (onXzDc5n: kuryer menyusi qisqa qoladi, sahifaga kirish shu havola va ogohlantirishdagi «Kabinetda ochish»).
+        actions={
+          <>
+            <Link to="/courier-hold" className={buttonClasses({ variant: "secondary", compact: true })}>
+              <Clock aria-hidden="true" size={16} strokeWidth={2} />
+              {t("courierHold.link")}
+            </Link>
+            {isPhone ? null : <OrdersRefreshButton refreshing={refresh.refreshing} onRefresh={handleRefresh} />}
+          </>
+        }
       />
 
       {isPhone ? (

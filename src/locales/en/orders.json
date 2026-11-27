@@ -1296,5 +1296,15 @@
     },
     "itemLine": "{{name}} — {{count}} pcs",
     "close": "Close"
+  },
+  "courierHold": {
+    "filter": "Time with courier",
+    "link": "Orders with couriers",
+    "option": {
+      "any": "All with couriers",
+      "near_48": "Nearing 48 h (36–48)",
+      "over_48": "48–72 h",
+      "over_72": "Over 72 h"
+    }
   }
 }

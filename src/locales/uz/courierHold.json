@@ -1,0 +1,63 @@
+{
+  "title": "Kuryerdagi buyurtmalar",
+  "description": {
+    "admin": "Kuryer qo'lida turgan, hali sotilmagan yoki qaytarilmagan buyurtmalar — barcha filiallar",
+    "manager": "Filialingiz kuryerlari qo'lida turgan, hali sotilmagan yoki qaytarilmagan buyurtmalar",
+    "courier": "Sizda turgan, hali sotilmagan yoki qaytarilmagan buyurtmalar",
+    "market": "Marketingiz buyurtmalaridan kuryer qo'lida turganlari"
+  },
+  "hint": "Soat buyurtma kuryerga topshirilgan paytdan hisoblanadi. {{near}} soatda kuryer va marketga ogohlantirish yuboriladi, muddat — {{deadline}} soat.",
+  "tabs": {
+    "over_72": "72 soatdan oshgan",
+    "near_48": "48 soatga yaqin",
+    "couriers": "Kuryerlar bo'yicha"
+  },
+  "tabsLabel": "Ro'yxat turi",
+  "hours": "{{value}} soat",
+  "since": "{{date}} dan beri",
+  "columns": {
+    "order": "Buyurtma",
+    "held": "Kuryerda",
+    "courier": "Kuryer",
+    "market": "Market",
+    "customer": "Mijoz",
+    "address": "Manzil",
+    "status": "Holat",
+    "amount": "Summa",
+    "total": "Jami",
+    "under36": "36 soatgacha",
+    "near48": "36–48 soat",
+    "over48": "48–72 soat",
+    "over72": "72+ soat",
+    "oldest": "Eng eskisi",
+    "cancelledHeld": "Bekor, qaytarilmagan",
+    "actions": "Amallar"
+  },
+  "cancelledHeldHint": "Bekor qilingan, lekin hali filialga topshirilmagan buyurtmalar",
+  "courierTotal": "Jami {{value}} ta buyurtma",
+  "courierCancelledHeld": "bekor, qaytarilmagan: {{value}}",
+  "openCourier": "Buyurtmalari",
+  "openCourierLabel": "{{name}} buyurtmalarini ochish",
+  "courierFilter": "Kuryer: {{name}}",
+  "clearCourier": "Kuryer tanlovini olib tashlash",
+  "backToCouriers": "Barcha kuryerlar",
+  "unknownCourier": "Kuryer #{{id}}",
+  "openInOrders": "Buyurtmalar ro'yxatida ochish",
+  "openOrder": "Buyurtma {{ref}} ni ochish",
+  "empty": {
+    "over_72": "72 soatdan oshgan buyurtma yo'q",
+    "over_72Description": "Kuryerlarda 72 soatdan ko'p turgan ochiq buyurtma qolmagan.",
+    "near_48": "48 soatga yaqinlashgan buyurtma yo'q",
+    "near_48Description": "Kuryerda 36–48 soatdan beri turgan buyurtma yo'q.",
+    "couriers": "Kuryerlarda ochiq buyurtma yo'q",
+    "couriersDescription": "Hozir hech bir kuryer qo'lida sotilmagan yoki qaytarilmagan buyurtma yo'q.",
+    "courier": "Bu kuryerda ochiq buyurtma yo'q",
+    "courierDescription": "Kuryerdagi buyurtmalar sotilgan, qaytarilgan yoki boshqaga topshirilgan."
+  },
+  "loading": "Kuryerdagi buyurtmalar yuklanmoqda",
+  "loadFailed": "Kuryerdagi buyurtmalarni yuklab bo'lmadi",
+  "listLabel": "Kuryerdagi buyurtmalar ro'yxati",
+  "cardsLabel": "Kuryerdagi buyurtmalar",
+  "couriersLabel": "Kuryerlar bo'yicha jamlama",
+  "pagination": "{{from}}–{{to}} / {{total}} ta"
+}

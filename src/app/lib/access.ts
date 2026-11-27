@@ -102,6 +102,14 @@ export const canViewReplacementReturns: Predicate = hasRole("superadmin", "admin
 export const canViewExtraCosts: Predicate = hasRole("courier", "manager", "market", "market_operator");
 
 /**
+ * «Kuryerdagi buyurtmalar» (`/courier-hold`, onXzDc5n) — backend `GET orders/courier-hold/summary` va
+ * `GET /orders?courier_hold=` `@Roles(SUPERADMIN, ADMIN, MANAGER, COURIER, MARKET)` bilan bir xil: superadmin / admin —
+ * hammasi, menejer — o'z filiali, kuryer — o'zi, market — o'z marketi (doira tokendan). Registrator, operator, market
+ * operatori, logist — 403. Menyu bandi — superadmin, admin, menejer; market va kuryer — /orders sarlavhasidagi havola.
+ */
+export const canViewCourierHoldPage: Predicate = hasRole("superadmin", "admin", "manager", "courier", "market");
+
+/**
  * Investor kabinetini nazorat uchun ko'rish (vpKijXce): `/investor/:id`. Backend `investors/:id/dashboard` adminga
  * ham ochiq, lekin kirish nuqtasi Ops «Investorlar» (faqat superadmin) edi, shuning uchun karta matnidagidek superadmin
  * (tab LIuf0DcD da olib tashlandi — hozir faqat URL orqali).

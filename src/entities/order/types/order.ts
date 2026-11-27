@@ -8,6 +8,9 @@ export interface OrderItem {
 
 export type DeliveryType = "center" | "address";
 
+/** onXzDc5n: `GET /orders?courier_hold=` — kuryerda turgan vaqt oralig'i (backend `COURIER_HOLD_FILTERS`). */
+export type CourierHoldFilter = "any" | "near_48" | "over_48" | "over_72";
+
 /**
  * 6kHnNH9j: buyurtma qayerdan ketadi — `HQ` (odatiy oqim: HQ qabuli, pochta) yoki `WAREHOUSE` (viloyat filiali
  * omboridan, HQ va pochtasiz — darhol filialda «qabul qilingan»).
@@ -289,6 +292,12 @@ export interface OrderListParams {
      * ta'rif qatordagi `return_stage` bilan bir xil. Berilsa `status` yuborilmaydi (`market` — `returned_to_market`).
      */
     cancel_stage?: OrderCancelReturnStage;
+    /**
+     * onXzDc5n: kuryerda turgan vaqt (`last_handover_at` dan, holder COURIER, holat yo'lda / kutilmoqda / mijoz
+     * kutilmoqda): `near_48` 36–48 soat, `over_48` 48–72, `over_72` 72+, `any` — kuryerdagi hammasi. Berilsa va
+     * saralash yo'q bo'lsa — eng eskisi birinchi. Registrator / operator / market operatori / logist — 403.
+     */
+    courier_hold?: CourierHoldFilter;
 }
 
 export interface ExternalOrderItem {
