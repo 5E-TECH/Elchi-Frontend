@@ -337,7 +337,7 @@
         "sampleSender": "Yuboruvchi"
       },
       "investor": {
-        "sectionNote": "Ixtiyoriy: kapital kiritilsa, investitsiya sifatida yoziladi",
+        "sectionNote": "Ulush investorlik sanasidan boshlab har kuni kompaniya foydasidan hisoblanadi",
         "capital": "Boshlang'ich kapital",
         "capitalPlaceholder": "Masalan: 100 000 000",
         "capitalHint": "Bo'sh qolsa, investitsiya yozilmaydi",
@@ -345,12 +345,17 @@
         "sharePercentPlaceholder": "Masalan: 10",
         "sharePercentHint": "0 dan 100 gacha; investor kabinetida ko'rinadi",
         "sharePercentInvalid": "Ulush 0 dan 100 gacha, ko'pi bilan 2 kasr xonali son bo'lsin",
-        "investedAt": "Boshlanish sanasi",
-        "investedAtHint": "Bo'sh qolsa, bugungi sana",
+        "investedAt": "Investorlik sanasi",
+        "investedAtHint": "Ulush shu kundan hisoblanadi; kapital ham shu sana bilan yoziladi. Bo'sh qolsa — bugun",
         "investedAtFuture": "Kelajakdagi sanani tanlab bo'lmaydi",
         "created": "Investor yaratildi",
         "capitalFailedTitle": "Kapital yozilmadi",
-        "capitalFailedText": "Investor va uning logini yaratildi, lekin boshlang'ich kapital saqlanmadi"
+        "capitalFailedText": "Investor va uning logini yaratildi, lekin boshlang'ich kapital saqlanmadi",
+        "profitBasis": "Ulush nimadan olinadi",
+        "profitBasisNet": "Sof foyda",
+        "profitBasisGross": "Daromad",
+        "profitBasisNetHint": "Ulush × (daromad − xarajatlar)",
+        "profitBasisGrossHint": "Ulush × daromad (sotuv foydasi), xarajat ayrilmaydi"
       }
     },
     "detail": {

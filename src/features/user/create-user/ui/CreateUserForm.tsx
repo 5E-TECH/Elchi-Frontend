@@ -114,10 +114,15 @@ interface CreateUserFormValues {
   mustChangePassword: boolean;
   /** Investor: boshlang'ich kapital (ixtiyoriy) — yaratilgach `POST /investments`. */
   capital: string;
-  /** Investor: kapital sanasi `YYYY-MM-DD` (bo'sh — bugun). */
+  /**
+   * Investor: «Investorlik sanasi» `YYYY-MM-DD` (bo'sh — bugun) — ulush shu kundan hisoblanadi, boshlang'ich kapital
+   * ham shu sana bilan yoziladi.
+   */
   investedAt: string;
   /** Investor: «Ulush (%)» — 0..100, ko'pi bilan 2 kasr (ixtiyoriy, BeePost formasi). */
   sharePercent: string;
+  /** Investor: foyda asosi — «Sof foyda» (`net`, sukut) yoki «Daromad» (`gross`), BeePost kabi. */
+  profitBasis: "net" | "gross";
 }
 
 const INITIAL_FORM: CreateUserFormValues = {
@@ -139,6 +144,7 @@ const INITIAL_FORM: CreateUserFormValues = {
   capital: "",
   investedAt: "",
   sharePercent: "",
+  profitBasis: "net",
 };
 
 /**
@@ -186,6 +192,8 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
   amount: "capital",
   invested_at: "investedAt",
   share_percent: "sharePercent",
+  share_started_at: "investedAt",
+  profit_basis: "profitBasis",
 };
 
 const getBranchOptionLabel = (branch: Branch) => {
@@ -736,6 +744,9 @@ export const CreateUserForm = memo(() => {
         phone_number: rawPhone,
         ...passwordPayload(values),
         ...(sharePercent === null ? {} : { share_percent: sharePercent }),
+        profit_basis: values.profitBasis,
+        // Ulush shu kundan hisoblanadi (ega 2026-11-28); bo'sh — bugun.
+        share_started_at: values.investedAt || todayISODay(),
       };
       const capital = parseAmount(values.capital);
       await submitRequest(
@@ -1364,6 +1375,32 @@ export const CreateUserForm = memo(() => {
                           inputMode="decimal"
                           suffix="%"
                           placeholder={t("v2.create.investor.sharePercentPlaceholder")}
+                        />
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="profitBasis"
+                    render={({ field }) => (
+                      <Field
+                        label={t("v2.create.investor.profitBasis")}
+                        labelAs="span"
+                        hint={
+                          field.value === "gross"
+                            ? t("v2.create.investor.profitBasisGrossHint")
+                            : t("v2.create.investor.profitBasisNetHint")
+                        }
+                      >
+                        <SegmentedControl
+                          ariaLabel={t("v2.create.investor.profitBasis")}
+                          value={field.value}
+                          onValueChange={(next) => field.onChange(next === "gross" ? "gross" : "net")}
+                          options={[
+                            { value: "net", label: t("v2.create.investor.profitBasisNet") },
+                            { value: "gross", label: t("v2.create.investor.profitBasisGross") },
+                          ]}
+                          className="self-start max-md:self-stretch"
                         />
                       </Field>
                     )}

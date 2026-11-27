@@ -1,9 +1,9 @@
 // dizayn-v2: investor-dashboard-home, investor-dashboard-home-table
 import { ChartColumn, CircleCheck, Hourglass } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { InvestorMonthlyPoint, InvestorMonthsWindow } from "../../../entities/investors";
+import type { InvestorMonthlyPoint, InvestorMonthsWindow, InvestorProfitBasis } from "../../../entities/investors";
 import { cx } from "../../../shared/lib/cx";
-import { formatCompactMoneyLocalized, formatMoneyLocalized } from "../../../shared/lib/formatMoney";
+import { formatCompactMoneyLocalized, formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import {
   ChartLegend,
   ChartNote,
@@ -46,6 +46,8 @@ export interface MonthlyProfitCardProps {
   error?: { error: unknown; onRetry: () => void; retrying?: boolean };
   /** «Hozir» — test uchun. */
   now?: Date;
+  /** Joriy foyda asosi — jadvaldagi asos ustuni sarlavhasi («Sof foyda» / «Daromad»). */
+  basis?: InvestorProfitBasis;
 }
 
 type MonthRow = InvestorMonthlyPoint & { current: boolean; isTotal?: boolean };
@@ -54,7 +56,9 @@ type MonthRow = InvestorMonthlyPoint & { current: boolean; isTotal?: boolean };
  * «OYLIK FOYDA» (maket `investor-dashboard-home` / `-home-table`): davr 6 · 12 · 24 oy, «Grafik | Jadval», yig'indi
  * qatori (Jami · To'langan · Kutilmoqda — telefonda ikki qatorda, ega IN-S3), steklangan ustunlar (To'langan — yashil
  * asos, Kutilmoqda — sariq ustida) yoki jadval egizagi (yangi oy tepada, oxirida «Jami»; telefonda kartalar).
- * Oy — foyda DAVRINING tugagan oyi; joriy oy hali yopilmagan bo'lsa — izoh.
+ * Ega 2026-11-28: har oy — shu oyda HISOBLANGAN ulush (kunlik, investorlik sanasidan); «To'langan» / «Kutilmoqda» —
+ * to'lovlar eski oydan boshlab taqsimlanganda. Jadvalda asos (sof foyda yoki daromad) va ulush foizi ustunlari; zarar
+ * oyi (manfiy ulush) grafikda 0, jadvalda qizil. Joriy oy — «har kuni yangilanadi» izohi.
  */
 export const MonthlyProfitCard = ({
   months,
@@ -66,6 +70,7 @@ export const MonthlyProfitCard = ({
   refreshing = false,
   error,
   now,
+  basis = "net",
 }: MonthlyProfitCardProps) => {
   const { t, i18n } = useTranslation(["investor", "ui"]);
   const language = i18n.language;
@@ -141,8 +146,13 @@ export const MonthlyProfitCard = ({
 
   const paid = items.reduce((sum, item) => sum + item.paid, 0);
   const unpaid = items.reduce((sum, item) => sum + item.unpaid, 0);
-  const total = paid + unpaid;
+  // Zarar oyida (sof foyda manfiy) ulush manfiy — jami ham shu bilan.
+  const total = items.reduce((sum, item) => sum + item.total, 0);
+  const basisTotal = items.reduce((sum, item) => sum + item.basis, 0);
   const count = items.length;
+  const basisLabel = basis === "gross" ? t("terms.basisGross") : t("terms.basisNet");
+  const percent = (value: number | null) =>
+    value === null ? "—" : `${formatNumberLocalized(value, { language, fractionDigits: 2 })} %`;
 
   const series: StackedBarsSeries[] = [
     { key: "paid", label: t("monthly.paid"), tone: "success" },
@@ -152,7 +162,8 @@ export const MonthlyProfitCard = ({
     key: item.month,
     label: names.short[parseMonthKey(item.month).month],
     title: monthTitle(item.month, names),
-    values: { paid: item.paid, unpaid: item.unpaid },
+    // Ustun manfiy bo'lmaydi: zarar oyi grafikda 0, jadvalda — haqiqiy qiymat.
+    values: { paid: Math.max(0, item.paid), unpaid: Math.max(0, item.unpaid) },
     current: item.month === thisMonth,
   }));
 
@@ -170,8 +181,8 @@ export const MonthlyProfitCard = ({
         })
       : t("monthly.title");
 
-  // Joriy oy hali yopilmagan: foyda davr tugagach hisoblanadi (maket izohi).
-  const openMonth = last && last.month === thisMonth && last.total === 0 ? last : null;
+  // Joriy oy davom etmoqda: ulush har kuni yangilanadi (ega 2026-11-28 — hisob kunlik).
+  const openMonth = last && last.month === thisMonth ? last : null;
 
   const summary = [
     { key: "total", label: t("monthly.total", { count }), value: compact(total) },
@@ -180,10 +191,24 @@ export const MonthlyProfitCard = ({
   ];
 
   const rows: MonthRow[] = [...items].reverse().map((item) => ({ ...item, current: item.month === thisMonth }));
-  const totalRow: MonthRow = { month: "total", paid, unpaid, total, current: false, isTotal: true };
+  const totalRow: MonthRow = {
+    month: "total",
+    paid,
+    unpaid,
+    total,
+    basis: basisTotal,
+    sharePercent: null,
+    profitBasis: null,
+    current: false,
+    isTotal: true,
+  };
   const dash = <span className="text-text-subtle">—</span>;
   const cellMoney = (value: number, strong = false) =>
-    value > 0 ? <span className={strong ? "font-semibold text-text" : undefined}>{money(value)}</span> : dash;
+    value !== 0 ? (
+      <span className={cx(strong && "font-semibold text-text", value < 0 && "text-danger-fg")}>{money(value)}</span>
+    ) : (
+      dash
+    );
 
   return (
     <Card divided={false} {...header} bodyClassName="flex flex-col gap-4">
@@ -223,6 +248,18 @@ export const MonthlyProfitCard = ({
                   ),
               },
               {
+                id: "basis",
+                header: t("monthly.colBasis", { basis: basisLabel }),
+                align: "end",
+                cell: (row) => cellMoney(row.basis, row.isTotal),
+              },
+              {
+                id: "share",
+                header: t("monthly.colShare"),
+                align: "end",
+                cell: (row) => (row.isTotal || row.sharePercent === null ? dash : percent(row.sharePercent)),
+              },
+              {
                 id: "paid",
                 header: t("monthly.colPaid"),
                 align: "end",
@@ -238,10 +275,19 @@ export const MonthlyProfitCard = ({
                 id: "total",
                 header: t("monthly.colTotal"),
                 align: "end",
-                cell: (row) => (row.total > 0 ? <span className="font-semibold text-text">{money(row.total)}</span> : dash),
+                cell: (row) =>
+                  row.total !== 0 ? (
+                    <span className={cx("font-semibold", row.total < 0 ? "text-danger-fg" : "text-text")}>
+                      {money(row.total)}
+                    </span>
+                  ) : (
+                    dash
+                  ),
               },
             ]}
-            renderCard={(row) => <MonthCard row={row} names={names} money={money} />}
+            renderCard={(row) => (
+              <MonthCard row={row} names={names} money={money} basisLabel={basisLabel} percent={percent} />
+            )}
           />
         )}
       </div>
@@ -278,10 +324,14 @@ const MonthCard = ({
   row,
   names,
   money,
+  basisLabel,
+  percent,
 }: {
   row: MonthRow;
   names: ReturnType<typeof monthNames>;
   money: (value: number) => string;
+  basisLabel: string;
+  percent: (value: number | null) => string;
 }) => {
   const { t } = useTranslation("investor");
   const title = monthTitle(row.month, names);
@@ -297,9 +347,15 @@ const MonthCard = ({
     <div className="flex min-w-0 flex-col gap-1 px-4 py-3">
       <span className="flex justify-between gap-2">
         <span className="font-semibold text-text">{title}</span>
-        <span className="whitespace-nowrap font-semibold text-text">{money(row.total)}</span>
+        <span className={cx("whitespace-nowrap font-semibold", row.total < 0 ? "text-danger-fg" : "text-text")}>
+          {money(row.total)}
+        </span>
       </span>
       <span className="flex flex-col gap-0.5 text-xs">
+        <span className="text-text-muted">
+          {t("monthly.basisLine", { basis: basisLabel, value: money(row.basis), share: percent(row.sharePercent) })}
+        </span>
+        {row.total < 0 ? <span className="text-danger-fg">{t("monthly.lossLine")}</span> : null}
         <span className={row.paid > 0 ? "text-text-muted" : "text-text-subtle"}>
           {t("monthly.paidLine", { value: row.paid > 0 ? money(row.paid) : "—" })}
         </span>

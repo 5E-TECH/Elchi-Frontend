@@ -56,13 +56,115 @@ afterEach(() => {
   logoutAndRedirect.mockClear();
 });
 
+const termsBody = {
+  statusCode: 200,
+  data: {
+    ...dashboardBody.data,
+    investor: { ...dashboardBody.data.investor, share_percent: 15, profit_basis: "gross" },
+    summary: {
+      ...dashboardBody.data.summary,
+      accrued_profit: 2_100_000,
+      accrued_through: "2026-10-21",
+      share_started_at: "2026-09-01",
+      profit_basis: "gross",
+    },
+    share_terms: [
+      { share_percent: 10, profit_basis: "net", effective_from: "2026-09-01", effective_to: "2026-10-01" },
+      { share_percent: 15, profit_basis: "gross", effective_from: "2026-10-01", effective_to: null },
+    ],
+  },
+};
+
+describe("Investor kabineti — «Ulush shartlari» (ega 2026-11-28)", () => {
+  it("⭐ joriy ulush, asos, investorlik sanasi, hisoblangan va shartlar tarixi", async () => {
+    mockApi(() => Promise.resolve({ data: termsBody }));
+    renderControl();
+
+    const card = await screen.findByRole("region", { name: "Ulush shartlari" });
+    const current = within(card).getByText("Joriy ulush").closest("div") as HTMLElement;
+    expect(current).toHaveTextContent("Joriy ulush15 %");
+    expect(within(card).getByText("Ulush nimadan olinadi").closest("div")).toHaveTextContent(
+      "Ulush nimadan olinadiDaromadXarajat ayrilmaydi",
+    );
+    expect(within(card).getByText("01.09.2026")).toBeInTheDocument();
+    expect(within(card).getByText("Hisoblangan · 21.10.2026 gacha")).toBeInTheDocument();
+    expect(within(card).getByText("2 100 000 so'm")).toBeInTheDocument();
+    const rows = within(within(card).getByRole("table", { name: "Shartlar tarixi" })).getAllByRole("row");
+    expect(rows[1]).toHaveTextContent("01.10.2026 dan hozirgacha15 %Daromad");
+    // `effective_to` eksklyuziv — oxirgi kun 30.09.
+    expect(rows[2]).toHaveTextContent("01.09.2026 – 30.09.202610 %Sof foyda");
+  });
+
+  it("⭐ «Shartni o'zgartirish» → PUT share-terms (foiz, asos, bugungi sana); dashboard qayta so'raladi", async () => {
+    const user = userEvent.setup();
+    mockApi(() => Promise.resolve({ data: termsBody }));
+    const put = vi.spyOn(api, "put").mockResolvedValue({ data: { statusCode: 200 } } as never);
+    renderControl();
+
+    const card = await screen.findByRole("region", { name: "Ulush shartlari" });
+    await user.click(within(card).getByRole("button", { name: "Shartni o'zgartirish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ulush shartini o'zgartirish" });
+    const share = within(dialog).getByRole("textbox", { name: "Ulush (%)" });
+    expect(share).toHaveValue("15");
+    expect(within(dialog).getByRole("radio", { name: "Daromad" })).toBeChecked();
+
+    await user.clear(share);
+    await user.type(share, "12,5");
+    await user.click(within(dialog).getByRole("radio", { name: "Sof foyda" }));
+    const before = calls.filter((call) => call.url === "investors/7/dashboard").length;
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+
+    await waitFor(() =>
+      expect(put).toHaveBeenCalledWith("investors/7/share-terms", {
+        share_percent: 12.5,
+        profit_basis: "net",
+        effective_from: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      }),
+    );
+    expect(await screen.findByText("Ulush sharti saqlandi")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(calls.filter((call) => call.url === "investors/7/dashboard").length).toBeGreaterThan(before),
+    );
+  });
+
+  it("noto'g'ri ulush — maydon ostida xato, so'rov ketmaydi", async () => {
+    const user = userEvent.setup();
+    mockApi(() => Promise.resolve({ data: termsBody }));
+    const put = vi.spyOn(api, "put");
+    renderControl();
+
+    const card = await screen.findByRole("region", { name: "Ulush shartlari" });
+    await user.click(within(card).getByRole("button", { name: "Shartni o'zgartirish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ulush shartini o'zgartirish" });
+    const share = within(dialog).getByRole("textbox", { name: "Ulush (%)" });
+    await user.clear(share);
+    await user.type(share, "101");
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+
+    expect(
+      await within(dialog).findByText("Ulush 0 dan 100 gacha, ko'pi bilan 2 kasr xonali son bo'lsin"),
+    ).toBeInTheDocument();
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it("ulush hali yo'q — «Ulush belgilash», izoh «hisob hali boshlanmagan»", async () => {
+    mockApi();
+    renderControl();
+
+    const card = await screen.findByRole("region", { name: "Ulush shartlari" });
+    expect(within(card).getByText("Ulush kiritilmagan — hisob hali boshlanmagan")).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "Ulush belgilash" })).toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: "Sanani tuzatish" })).toBeNull();
+  });
+});
+
 describe("Investor kabineti — superadmin nazorati (vpKijXce)", () => {
-  it("⭐ `investors/7/dashboard` so'raladi, `investors/me/*` hech qachon; sarlavhada investor nomi va «faqat o'qish»", async () => {
+  it("⭐ `investors/7/dashboard` so'raladi, `investors/me/*` hech qachon; sarlavhada investor nomi va «Nazorat»", async () => {
     mockApi();
     renderControl();
 
     expect(await screen.findByRole("heading", { level: 1, name: "Investor kabineti · Habibulla Nazirov" })).toBeInTheDocument();
-    expect(screen.getByText("Nazorat · faqat o'qish")).toBeInTheDocument();
+    expect(screen.getByText("Nazorat")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Investorlar/ })).toHaveAttribute("href", "/all-users?role=investor");
     expect(calls.find((call) => call.url === "investors/7/dashboard")?.params).toEqual({ months: 12 });
     expect(calls.some((call) => call.url.startsWith("investors/me"))).toBe(false);
@@ -143,7 +245,7 @@ describe("Investor kabineti — superadmin nazorati (vpKijXce)", () => {
     });
 
     expect(await screen.findByRole("heading", { level: 1, name: "Bosh sahifa" })).toBeInTheDocument();
-    expect(screen.queryByText("Nazorat · faqat o'qish")).toBeNull();
+    expect(screen.queryByText("Nazorat")).toBeNull();
     expect(calls.some((call) => call.url === "investors/me/dashboard")).toBe(true);
     expect(calls.some((call) => /^investors\/\d+\/dashboard$/.test(call.url))).toBe(false);
   });
