@@ -270,6 +270,34 @@ describe("ConfirmDialog — xatti-harakat", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Xato");
   });
+
+  it("`acknowledge` matni o'zgarsa (son) — katak qayta belgilanadi, tugma yana o'chiq", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const dialog = (count: number) => (
+      <ConfirmDialog
+        open
+        title="A"
+        confirmLabel="Tasdiqlash"
+        acknowledge={`${count} ta buyurtma SOTILISHINI tushunaman`}
+        onCancel={() => {}}
+        onConfirm={onConfirm}
+      />
+    );
+    const { rerender } = render(dialog(17));
+    await user.click(screen.getByRole("checkbox", { name: "17 ta buyurtma SOTILISHINI tushunaman" }));
+    expect(screen.getByRole("button", { name: "Tasdiqlash" })).toBeEnabled();
+
+    // Ayni matn bilan qayta chizish belgini o'chirmaydi.
+    rerender(dialog(17));
+    expect(screen.getByRole("checkbox", { name: "17 ta buyurtma SOTILISHINI tushunaman" })).toBeChecked();
+
+    rerender(dialog(22));
+    expect(screen.getByRole("checkbox", { name: "22 ta buyurtma SOTILISHINI tushunaman" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Tasdiqlash" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
 });
 
 describe("ConfirmDialog — xato kodi bo'yicha ko'rinish (T6 N2: `errorView`, `compactOnError`)", () => {
