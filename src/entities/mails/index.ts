@@ -171,6 +171,17 @@ export interface MailDetailPost {
   branch_id?: string | null;
   /** Jo'natuvchi filial (BE-2, HJ5sLHiz) — pochta chekidagi «Qayerdan»; hali kelmaydi, kelmasa qator chiqmaydi. */
   branch?: { id: string; name: string } | null;
+  /**
+   * sZxxo98G — filial o'tkazmasining (kuryersiz `sent` / `received`) QABUL QILUVCHI filiali: chekda «Filial: Nomi ·
+   * telefon» (filial raqami, bo'sh bo'lsa faol menejer raqami). Kuryer pochtasi, ruxsatsiz rol (kuryer, logist, boshqa
+   * filial) yoki eski backend — `null` / yo'q: qator chiqmaydi.
+   */
+  recipient_branch?: {
+    id: string;
+    name?: string | null;
+    phone_number?: string | null;
+    manager?: { id?: string; name?: string | null; phone_number?: string | null } | null;
+  } | null;
   /** Pochtaning o'z viloyati — sarlavha va manzil filiallari uchun birlamchi manba (router state — zaxira). */
   region_id?: string | null;
   region?: { id: string; name: string } | null;

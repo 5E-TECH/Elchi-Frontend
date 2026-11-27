@@ -314,3 +314,97 @@ describe("A5 — mockup 02 «Yangi — A5 varaq»", () => {
     });
   });
 });
+
+/**
+ * sZxxo98G (Dilshod 2026-11-27): «Pochta cheklarida kimga joʻnatilgani nomi bor lekin telefon nomeri yuq». Kuryersiz
+ * pochta (HQ → filial o'tkazmasi) chekida qabul qiluvchi qatori yo'q edi — endi «Filial: Nomi · telefon», kuryer qatori
+ * bilan bir joyda va bir xil uslubda; chek o'lchami, QR va imzo qatori o'zgarmaydi.
+ */
+describe("sZxxo98G — kuryersiz pochta: qabul qiluvchi filial va telefoni", () => {
+  const TRANSFER: ReceiptPackageSource = {
+    ...POST,
+    id: "74",
+    token: "POST-mvuwf6iv-d0tq7s7j",
+    from: "HQ Toshkent",
+    to: "Xorazm",
+    courier: null,
+    recipientBranch: { name: "Shahriyor Xorazm", phone_number: "+998912222222" },
+  };
+
+  it("model: «Filial» — nom va mavjud cheklar formatidagi raqam; kuryer bo'lsa kuryer ustun", () => {
+    expect(toReceiptPackageModel(TRANSFER).person).toEqual({
+      role: "Filial",
+      name: "Shahriyor Xorazm",
+      phone: "+998 91 222 22 22",
+    });
+    expect(
+      toReceiptPackageModel({ ...TRANSFER, courier: { name: "Jasur", phone_number: "998905554433" } }).person,
+    ).toEqual({ role: "Kuryer", name: "Jasur", phone: "+998 90 555 44 33" });
+    // Bo'sh kuryer (faqat bo'sh joy tutuvchi) — filialga o'tadi.
+    expect(toReceiptPackageModel({ ...TRANSFER, courier: { name: " ", phone_number: "—" } }).person?.role).toBe(
+      "Filial",
+    );
+    // Filial paketida (batch) bu maydon ishlatilmaydi — haydovchi.
+    expect(toReceiptPackageModel({ ...BATCH, recipientBranch: TRANSFER.recipientBranch }).person?.role).toBe(
+      "Haydovchi",
+    );
+  });
+
+  it("raqam yo'q — faqat filial nomi, «-» yo'q; filial ham yo'q — qator yo'q", () => {
+    expect(
+      toReceiptPackageModel({ ...TRANSFER, recipientBranch: { name: "Shahriyor Xorazm", phone_number: null } }).person,
+    ).toEqual({ role: "Filial", name: "Shahriyor Xorazm", phone: "" });
+    const empty = layout({ ...TRANSFER, recipientBranch: { name: "—", phone_number: "-" } });
+    const all = texts(empty).map((op) => op.text);
+    expect(all).not.toContain("Filial:");
+    expect(all).not.toContain("-");
+    expect(toReceiptPackageModel({ ...TRANSFER, recipientBranch: null }).person).toBeNull();
+  });
+
+  it("termal 100×60: «Filial:» qatori kuryer qatori joyida (y 42,4), QR va imzo o'zgarmaydi", () => {
+    const label = layout(TRANSFER);
+    expect([label.width, label.height]).toEqual([100, 60]);
+    const role = text(label, "Filial:");
+    expect(role).toMatchObject({ pt: 8, weight: 500, x: 2 });
+    near(role.baseline, baseline(42.4, 3.6, 8));
+    const value = text(label, "Shahriyor Xorazm · +998 91 222 22 22");
+    expect(value).toMatchObject({ pt: 8, weight: 700 });
+    near(value.baseline, role.baseline, 1e-6);
+    expect(value.x + measure(value.text, 8, 700)).toBeLessThanOrEqual(67 + 1e-6);
+    // QR — avvalgi joyida (x 70,8 y 4,4, 25,4 mm), imzo qatori 54,4–58 mm.
+    const qr = label.ops.find((op): op is ReceiptQrOp => op.kind === "qr")!;
+    near(qr.x, 70.8, 0.05);
+    near(qr.y, 4.4, 0.05);
+    near(qr.module * qr.symbol.count, 25.4, 0.05);
+    near(text(label, "Qabul qildi:").baseline, baseline(54.4, 3.6, 8));
+    // Kuryerli pochta bilan bir xil soni ops (bitta odam qatori) — yangi qator qo'shilmaydi.
+    expect(texts(label).length).toBe(texts(layout(POST)).length);
+  });
+
+  it("uzun filial nomi «…» bilan qisqaradi, telefon to'liq qoladi, hammasi chek ichida", () => {
+    const label = layout({
+      ...TRANSFER,
+      recipientBranch: {
+        name: "Qoraqalpog'iston Respublikasi Nukus shahar markaziy qabul filiali",
+        phone_number: "998912222222",
+      },
+    });
+    const value = texts(label).find((op) => op.text.endsWith("+998 91 222 22 22"))!;
+    expect(value.text).toContain("…");
+    expect(value.x + measure(value.text, 8, 700)).toBeLessThanOrEqual(67 + 1e-6);
+    for (const op of texts(label)) {
+      expect(op.x).toBeGreaterThanOrEqual(2 - 1e-6);
+      expect(op.x + measure(op.text, op.pt, op.weight)).toBeLessThanOrEqual(98 + 1e-6);
+      expect(op.baseline).toBeLessThanOrEqual(58 + 1e-6);
+    }
+  });
+
+  it("A5: «Filial» guruhi — nom va telefon alohida qatorlarda", () => {
+    const label = layout(TRANSFER, "a5");
+    expect([label.width, label.height]).toEqual([148, 210]);
+    expect(texts(label).map((op) => op.text)).toEqual(
+      expect.arrayContaining(["Filial", "Shahriyor Xorazm", "+998 91 222 22 22"]),
+    );
+    expect(text(label, "+998 91 222 22 22").pt).toBe(14);
+  });
+});
