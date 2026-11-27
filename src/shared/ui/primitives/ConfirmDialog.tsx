@@ -530,6 +530,14 @@ export const ConfirmDialog = ({
   // Qayta ochilganda eski xato ko'rinmasin (holat render paytida tozalanadi — effektsiz).
   const [wasOpen, setWasOpen] = useState(open);
   const [acknowledged, setAcknowledged] = useState(false);
+  // `acknowledge` matni oyna ochiqligida o'zgarsa (masalan undagi son) — katak qayta belgilanadi: «N ta … tushunaman»
+  // eski son bilan tasdiqlangan holda qolib ketmasin. Faqat matn solishtiriladi (JSX har renderda yangi obyekt).
+  const acknowledgeText = typeof content.acknowledge === "string" ? content.acknowledge : null;
+  const [seenAcknowledge, setSeenAcknowledge] = useState(acknowledgeText);
+  if (seenAcknowledge !== acknowledgeText) {
+    setSeenAcknowledge(acknowledgeText);
+    setAcknowledged(false);
+  }
   if (wasOpen !== open) {
     setWasOpen(open);
     if (open) {

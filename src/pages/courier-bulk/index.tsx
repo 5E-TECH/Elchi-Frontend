@@ -35,7 +35,7 @@ import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/fo
 import { notify } from "../../shared/lib/notify";
 import { cx } from "../../shared/lib/cx";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
-import { Button, PageHeader, useConfirm, type ConfirmConsequence } from "../../shared/ui/primitives";
+import { Button, ConfirmDialog, PageHeader, useConfirm, type ConfirmConsequence } from "../../shared/ui/primitives";
 import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { orderByRecent, scanNotify, useRecentScans } from "../../shared/lib/scanner/scanSession";
 import type { ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
@@ -47,6 +47,7 @@ import {
   getCourierBulkActionsAfterFinalize,
   getCourierBulkCancelOnlyTasks,
   getCourierBulkCounts,
+  getCourierBulkFinalizeGroups,
   getCourierBulkFinalizeTasks,
   getCourierBulkKept,
   getCourierBulkProofKey,
@@ -56,14 +57,18 @@ import {
   mergeCourierBulkOrders,
   runCourierBulkAction,
   runLimited,
+  splitCourierBulkByGroups,
   splitCourierBulkTasksByProof,
   getCourierBulkIdempotencyKey,
   withCourierBulkRetry,
   summarizeCourierBulkResults,
   type CourierBulkAction,
+  type CourierBulkFinalizeGroup,
   type CourierBulkFinalizeTask,
+  type CourierBulkKept,
   type CourierBulkOrder,
   type CourierBulkScanMode,
+  type CourierBulkViewer,
 } from "./model/courierBulk";
 import {
   courierBulkMarksDay,
@@ -74,6 +79,7 @@ import {
 } from "./model/courierBulkMarksStorage";
 import { useIsBelowLg } from "./model/useIsBelowLg";
 import { BulkAlert } from "./ui/BulkAlert";
+import { CourierBulkFinalizeBreakdown } from "./ui/CourierBulkFinalizeBreakdown";
 import { CourierBulkOrders } from "./ui/CourierBulkOrders";
 import { CourierBulkProofDialog } from "./ui/CourierBulkProofDialog";
 import { CourierBulkResultDialog, type CourierBulkResult } from "./ui/CourierBulkResultDialog";
@@ -90,10 +96,25 @@ type ProofStep = {
   kept: KeptCounts;
 };
 
-/** Yakunlashda so'rov ketmaydigan buyurtmalar soni, sababi bo'yicha (`getCourierBulkKept`). */
-type KeptCounts = { tomorrow: number; replacement: number };
+/**
+ * Yakunlashda so'rov ketmaydigan buyurtmalar soni, sababi bo'yicha (`getCourierBulkKept`); `skipped` — tasdiq oynasida
+ * katagi olib tashlangan kuryerlarning buyurtmalari (#4).
+ */
+type KeptCounts = { tomorrow: number; replacement: number; skipped: number };
 
-const NOTHING_KEPT: KeptCounts = { tomorrow: 0, replacement: 0 };
+/**
+ * «Kunni yakunlash» tasdiq oynasi: yuboriladiganlar oyna OCHILISHIDA olinadi (keyin skan / belgi ularni
+ * o'zgartirmaydi); `excluded` — katagi olib tashlangan kuryer guruhlari (`getCourierBulkGroupKey`).
+ */
+type FinalizeConfirm = {
+  open: boolean;
+  tasks: FinalizeTask[];
+  keptOrders: CourierBulkKept<CourierBulkOrder>;
+  groups: CourierBulkFinalizeGroup[];
+  excluded: string[];
+};
+
+const NOTHING_KEPT: KeptCounts = { tomorrow: 0, replacement: 0, skipped: 0 };
 
 const COURIER_BULK_QUERY_KEY = ["orders", "courier", "bulk", "waiting"] as const;
 
@@ -193,6 +214,7 @@ const CourierBulkPage = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const isManager = role === "manager";
+  const viewer: CourierBulkViewer = isManager ? "manager" : "courier";
   // Menejer `can_sell_cancel` siz hech narsani sota ham, bekor qila ham olmaydi (backend 403) — yakunlash o'chiq.
   const managerCannotFinalize = isManager && !getUserCanSellCancel(currentUser);
   const isPhone = useIsPhone();
@@ -244,7 +266,10 @@ const CourierBulkPage = () => {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [scanError, setScanError] = useState("");
   // Tasdiq oynasi ochiq: yuboriladiganlar ro'yxati oyna ochilishida olingan — skan belgilarni o'zgartirmasin.
+  // `isConfirming` — «Faqat bekorlar» (`useConfirm`); «Kunni yakunlash» — `finalizeConfirm` (kuryerlar jadvali bilan).
   const [isConfirming, setIsConfirming] = useState(false);
+  const [finalizeConfirm, setFinalizeConfirm] = useState<FinalizeConfirm | null>(null);
+  const confirmOpen = isConfirming || Boolean(finalizeConfirm?.open);
   const [proofStep, setProofStep] = useState<ProofStep | null>(null);
   // Tanlangan isbotlar (kalit — buyurtma + amal): oyna yopilsa yoki amal xato bersa ham saqlanadi
   // (qayta urinishda qayta tanlash shart emas); bajarilganlarniki tozalanadi.
@@ -334,7 +359,7 @@ const CourierBulkPage = () => {
   const scanBlockedRef = useRef(false);
   useEffect(() => {
     handleScanMatchRef.current = handleScanMatch;
-    scanBlockedRef.current = isBusy || isConfirming || Boolean(proofStep?.open) || isResultOpen;
+    scanBlockedRef.current = isBusy || confirmOpen || Boolean(proofStep?.open) || isResultOpen;
   });
   /** Server tekshiruvidagi kodlar — bitta kod parallel ikki marta so'ralmaydi. */
   const missLookupsRef = useRef(new Set<string>());
@@ -458,7 +483,7 @@ const CourierBulkPage = () => {
     // Isbot / natija oynasi ochiq bo'lsa skan belgilarni o'zgartirmaydi; yakunlash so'rovlari ketayotganda skan
     // e'tiborsiz, lekin ochiq kamera yopilmaydi.
     enabled: !proofStep?.open && !isResultOpen,
-    paused: isBusy || isConfirming,
+    paused: isBusy || confirmOpen,
     // Ro'yxat yuklanguncha ham USB tinglanadi — kod `onMissing` da yuklanishni kutadi (skan auditi #57).
     keyboardWhenEmpty: true,
     onMatch: handleScanMatch,
@@ -501,6 +526,7 @@ const CourierBulkPage = () => {
     [
       kept.tomorrow > 0 ? t("finalizeTomorrowKept", { count: kept.tomorrow }) : "",
       kept.replacement > 0 ? t("finalizeReplacementKept", { count: kept.replacement }) : "",
+      kept.skipped > 0 ? t("finalizeSkippedKept", { count: kept.skipped }) : "",
     ].filter(Boolean);
 
   const handleProofChange = useCallback((proofKey: string, file: File | undefined) => {
@@ -638,7 +664,16 @@ const CourierBulkPage = () => {
     await runFinalize(tasks, kept);
   };
 
-  const handleFinalize = async () => {
+  /** Hech narsa yuborilmaydi — sababi bilan (hammasi «ertaga» / almashtirish). */
+  const notifyNothingToFinalize = (kept: KeptCounts) =>
+    notify.info(t("finalizeSuccessTitle"), {
+      description: [
+        t(kept.tomorrow > 0 ? "finalizeNothing" : "finalizeNothingPlain"),
+        ...keptNotes({ ...kept, tomorrow: 0 }),
+      ].join(" "),
+    });
+
+  const handleFinalize = () => {
     if (orders.length === 0 || isBusy || managerCannotFinalize) return;
 
     // BeePost modeli: belgilanmagani — «sotildi»; «ertaga» — so'rovsiz kutilmoqda qoladi (FE-CB-09).
@@ -646,22 +681,72 @@ const CourierBulkPage = () => {
     // So'rov ketmaydiganlar sababi bilan: «ertaga»; almashtirish (lQjt6sKP — «Eski mahsulotni oldim» tasdig'i
     // «Buyurtmalar» sotish oynasida).
     const keptOrders = getCourierBulkKept(orders, actions);
-    const kept: KeptCounts = {
-      tomorrow: keptOrders.tomorrow.length,
-      replacement: keptOrders.replacement.length,
-    };
 
     if (tasks.length === 0) {
-      notify.info(t("finalizeSuccessTitle"), {
-        description: [
-          t(kept.tomorrow > 0 ? "finalizeNothing" : "finalizeNothingPlain"),
-          ...keptNotes({ ...kept, tomorrow: 0 }),
-        ].join(" "),
+      notifyNothingToFinalize({
+        tomorrow: keptOrders.tomorrow.length,
+        replacement: keptOrders.replacement.length,
+        skipped: 0,
       });
       return;
     }
 
-    // «Kunni yakunlash» — tasdiqlash oynasi orqali (maket `courier-courier-bulk-confirm-dialog`).
+    // «Kunni yakunlash» — tasdiqlash oynasi orqali (maket `courier-courier-bulk-confirm-dialog`) va kuryerlar jadvali
+    // bilan (#4): kimning nomidan nechta sotiladi / bekor / qoladi, kimning kassasiga qancha.
+    setFinalizeConfirm({
+      open: true,
+      tasks,
+      keptOrders,
+      groups: getCourierBulkFinalizeGroups(tasks, [...keptOrders.tomorrow, ...keptOrders.replacement], viewer),
+      excluded: [],
+    });
+  };
+
+  /** Tasdiq oynasidagi tanlov: katagi olib tashlangan kuryerlarning buyurtmalari chiqariladi. */
+  const finalizeSelection = useMemo(() => {
+    if (!finalizeConfirm) return null;
+    const excluded = new Set(finalizeConfirm.excluded);
+    const split = splitCourierBulkByGroups(finalizeConfirm.tasks, finalizeConfirm.keptOrders, excluded, viewer);
+    const kept: KeptCounts = {
+      tomorrow: split.kept.tomorrow.length,
+      replacement: split.kept.replacement.length,
+      skipped: split.skipped,
+    };
+    return { excluded, tasks: split.tasks, kept, orderCount: split.tasks.length + kept.tomorrow + kept.replacement };
+  }, [finalizeConfirm, viewer]);
+
+  const toggleFinalizeGroup = useCallback((key: string, included: boolean) => {
+    setFinalizeConfirm((previous) =>
+      previous
+        ? {
+            ...previous,
+            excluded: included
+              ? previous.excluded.filter((item) => item !== key)
+              : [...previous.excluded.filter((item) => item !== key), key],
+          }
+        : previous,
+    );
+  }, []);
+
+  const closeFinalizeConfirm = () =>
+    setFinalizeConfirm((previous) => (previous ? { ...previous, open: false } : previous));
+
+  const confirmFinalize = () => {
+    if (!finalizeSelection) return;
+    const { tasks, kept } = finalizeSelection;
+    closeFinalizeConfirm();
+    // Tanlangan kuryerlarda faqat «ertaga» / almashtirish qolgan bo'lsa — so'rov yo'q.
+    if (tasks.length === 0) {
+      notifyNothingToFinalize(kept);
+      return;
+    }
+    void startRun(tasks, kept);
+  };
+
+  /** Tasdiq oynasi mazmuni — tanlovga qarab (katak bosilsa sonlar, izoh va xavfsizlik katagi yangilanadi). */
+  const finalizeDialog = (() => {
+    const tasks = finalizeSelection?.tasks ?? [];
+    const kept = finalizeSelection?.kept ?? NOTHING_KEPT;
     const cancelTasks = tasks.filter((task) => task.action === "cancel");
     const soldTasks = tasks.filter((task) => task.action === "sold");
     // Sukut bo'yicha sotiladiganlar (qo'lda / skan bilan belgilanmagan) — belgilash katagi bilan tasdiqlanadi.
@@ -704,30 +789,16 @@ const CourierBulkPage = () => {
         icon: Repeat,
       });
     }
-    setIsConfirming(true);
-    const confirmed = await confirm({
-      title: t("confirmTitle"),
-      description: t("confirmDescription", { count: orders.length }),
-      icon: Zap,
-      size: "md",
-      closable: true,
+    return {
+      tasks,
       consequences,
+      description: t("confirmDescription", { count: finalizeSelection?.orderCount ?? 0 }),
       note: onBehalfSold > 0 ? t("confirm.managerOnBehalf", { count: onBehalfSold }) : undefined,
-      children: (
-        <BulkAlert tone="warning" role="note" title={t("confirm.irreversibleTitle")}>
-          {t("confirm.irreversibleText", { count: tasks.length })}
-        </BulkAlert>
-      ),
-      // BeePost'dagi xavfsizlik katagi: skanerlanmay qolgan posilka ham sotiladi — ongli tasdiq.
+      // BeePost'dagi xavfsizlik katagi: skanerlanmay qolgan posilka ham sotiladi — ongli tasdiq. Son o'zgarsa (kuryer
+      // katagi) — katak qayta belgilanadi (`ConfirmDialog`).
       acknowledge: unmarkedSold > 0 ? t("confirmAcknowledge", { count: unmarkedSold }) : undefined,
-      confirmLabel: t("confirmAction"),
-      confirmIcon: Check,
-      cancelLabel: t("confirmBack"),
-    }).finally(() => setIsConfirming(false));
-    if (!confirmed) return;
-
-    await startRun(tasks, kept);
-  };
+    };
+  })();
 
   /** «Faqat bekorlar» (BeePost «Faqat bekor»): «Bekor» belgilanganlar bekor qilinadi, sotuv so'rovi ketmaydi. */
   const handleCancelOnly = async () => {
@@ -780,7 +851,7 @@ const CourierBulkPage = () => {
       disabled={orders.length === 0 || managerCannotFinalize}
       loading={isBusy}
       loadingText={progress ? t("finalizeProgress", { done: progress.done, total: progress.total }) : undefined}
-      onClick={() => void handleFinalize()}
+      onClick={handleFinalize}
     >
       {t("page.finalize")}
     </Button>
@@ -867,6 +938,36 @@ const CourierBulkPage = () => {
           </div>
         </>
       ) : null}
+
+      <ConfirmDialog
+        open={Boolean(finalizeConfirm?.open)}
+        title={t("confirmTitle")}
+        description={finalizeDialog.description}
+        icon={Zap}
+        size="md"
+        closable
+        consequences={finalizeDialog.consequences}
+        note={finalizeDialog.note}
+        acknowledge={finalizeDialog.acknowledge}
+        confirmLabel={t("confirmAction")}
+        confirmIcon={Check}
+        cancelLabel={t("confirmBack")}
+        onCancel={closeFinalizeConfirm}
+        onConfirm={confirmFinalize}
+        onExited={() => setFinalizeConfirm((previous) => (previous?.open ? previous : null))}
+      >
+        {finalizeConfirm ? (
+          <CourierBulkFinalizeBreakdown
+            groups={finalizeConfirm.groups}
+            excluded={finalizeSelection?.excluded ?? new Set()}
+            selectable={isManager && finalizeConfirm.groups.length > 1}
+            onToggle={toggleFinalizeGroup}
+          />
+        ) : null}
+        <BulkAlert tone="warning" role="note" title={t("confirm.irreversibleTitle")}>
+          {t("confirm.irreversibleText", { count: finalizeDialog.tasks.length })}
+        </BulkAlert>
+      </ConfirmDialog>
 
       <CourierBulkProofDialog
         open={Boolean(proofStep?.open)}
