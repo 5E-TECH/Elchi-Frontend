@@ -54,6 +54,7 @@ import { extractFinancialLedgerItems, readCurrentBalance } from "../lib/financia
 import { toSourceTypeLabel } from "../lib/historyRow";
 import DailyLedgerCard from "./DailyLedgerCard";
 import LedgerFlow from "./LedgerFlow";
+import PnlMonthlyCard from "./PnlMonthlyCard";
 
 /** Top tranzaksiyalar sahifasi (server sahifalashi; backend `limit` ni 100 ga qisadi). */
 const PAGE_SIZE = 10;
@@ -199,6 +200,8 @@ interface AnalysisTabProps {
  *
  * Davr: sana oralig'i + «Bugun / Bu hafta / Bu oy / Barchasi» (ega qarori Q7: «Yil» o'rniga «Barchasi» =
  * sana paramsiz). Sukut — bugun. Sana `YYYY-MM-DD` (C2: backend Toshkent kuni deb oladi).
+ * Tepada — «Oylik daromad va sof foyda» (`PnlMonthlyCard`, `GET /finance/pnl`): o'z oynasi bor, davr tanlovi unga ta'sir
+ * qilmaydi (ega 2026-11-28).
  * «Kunlik kirim va chiqim» va sharshara boshi — `GET /finance/financial-balance/daily` (qzjTMWPb): «Barchasi»da grafik
  * oxirgi 14 kun (endpoint ≤ 366 kun), 403 da karta yashirinadi va sharshara avvalgi hisobga qaytadi.
  */
@@ -367,6 +370,8 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange, preset: presetProp, onPr
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
+      {/* Tizim P&L (ega 2026-11-28) — o'z oynasi (6 · 12 · 24 oy), quyidagi davr tanlovidan mustaqil. */}
+      <PnlMonthlyCard />
       <div role="group" aria-label={t("v2Balance.analysis.period")} className="flex max-w-[620px] flex-wrap items-center gap-3">
         <Field
           label={t("v2Balance.history.date")}

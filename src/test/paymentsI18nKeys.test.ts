@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
  * fayldagi `t("…")` chaqiruvlari — matnli kalit, `ns:` siz va `ns:kalit` prefiksisiz. Faylda boshqa standart
  * nomlar fazosi ham bo'lsa (bir faylda bir nechta komponent) — `t` qaysi biriga tegishliligi aniq emas, o'tkaziladi.
  */
-type Tree = { [key: string]: string | Tree };
+type Tree = { [key: string]: string | string[] | Tree };
 
 const locales = import.meta.glob<Tree>("../locales/*/payments.json", { eager: true, import: "default" });
 const sources = import.meta.glob<string>(["../**/*.{ts,tsx}", "!../**/*.test.{ts,tsx}", "!../test/**"], {
@@ -19,9 +19,10 @@ const sources = import.meta.glob<string>(["../**/*.{ts,tsx}", "!../**/*.test.{ts
   import: "default",
 });
 
+// Massiv (oy nomlari — `t(key, { returnObjects: true })`) ham to'liq kalit.
 const flatten = (tree: Tree, prefix = ""): string[] =>
   Object.entries(tree).flatMap(([key, value]) =>
-    typeof value === "string" ? [`${prefix}${key}`] : flatten(value, `${prefix}${key}.`),
+    typeof value === "string" || Array.isArray(value) ? [`${prefix}${key}`] : flatten(value, `${prefix}${key}.`),
   );
 
 const PLURAL_FORMS = ["zero", "one", "two", "few", "many", "other"];

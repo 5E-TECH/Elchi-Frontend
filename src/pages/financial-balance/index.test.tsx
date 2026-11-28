@@ -19,6 +19,12 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
+// Tizim P&L kartasi (Tahlil tepasi) bu testda emas — 403: karta chizilmaydi.
+vi.mock("../../entities/payments/financePnl", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useFinancePnl: () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() }),
+}));
+
 // qzjTMWPb: kunlik agregatlar bu testda emas — 403 holati: bloklar chizilmaydi, sahifa o'zgarmaydi.
 vi.mock("../../entities/payments/financeDaily", async (importOriginal) => {
   const forbidden = () => ({ isError: true, error: { response: { status: 403 } }, isLoading: false, refetch: vi.fn() });
