@@ -212,13 +212,17 @@ const InvestorKpis = ({
     : (summary?.totalPaidProfit ?? 0) > 0
       ? undefined
       : t("kpi.paidNone");
-  // «Kutilayotgan» = hisoblangan − to'langan; izohda jami hisoblangan ulush.
+  // «Kutilayotgan» = hisoblangan − to'langan; izohda jami hisoblangan ulush. Zarar ham bo'lishiladi (ega 2026-11-28):
+  // jami ulush manfiy bo'lsa — zarar ulushi, keyingi foydadan qoplanadi (ortiqcha to'lov emas).
+  const accrued = summary?.accruedProfit ?? 0;
   const unpaidHint =
-    (summary?.totalUnpaidProfit ?? 0) < 0
-      ? t("kpi.unpaidOverpaid")
-      : (summary?.accruedProfit ?? 0) !== 0
-        ? t("kpi.unpaidHint", { amount: formatMoneyLocalized(summary?.accruedProfit ?? 0, { language }) })
-        : t("kpi.unpaidNone");
+    accrued < 0
+      ? t("kpi.unpaidLoss", { amount: formatMoneyLocalized(Math.abs(accrued), { language }) })
+      : (summary?.totalUnpaidProfit ?? 0) < 0
+        ? t("kpi.unpaidOverpaid")
+        : accrued !== 0
+          ? t("kpi.unpaidHint", { amount: formatMoneyLocalized(accrued, { language }) })
+          : t("kpi.unpaidNone");
 
   return (
     <KpiRow count={4} label={t("kpi.label")}>
