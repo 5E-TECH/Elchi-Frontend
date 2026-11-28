@@ -29,7 +29,8 @@
     "unpaidHint": "Jami hisoblangan: {{amount}}",
     "unpaidNone": "Hisoblangan ulush yo'q",
     "shareTerms": "{{basis}} · {{date}} dan",
-    "unpaidOverpaid": "Hisoblangandan ko'p to'langan"
+    "unpaidOverpaid": "Hisoblangandan ko'p to'langan",
+    "unpaidLoss": "Zarar ulushi: {{amount}} — keyingi foydadan qoplanadi"
   },
   "monthly": {
     "title": "Oylik foyda",

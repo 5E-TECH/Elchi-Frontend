@@ -16,8 +16,48 @@ const reply = (route: Route, body: unknown) =>
 
 export type BalanceSession = { language?: "uz" | "ru" | "en"; theme?: "light" | "dark" };
 
+/**
+ * `GET /finance/pnl?from_day&granularity=month` soxta javobi (tizim P&L kartasi): `from_day` oyidan joriy oygacha HAR
+ * oy, backend kabi (bo'sh oy — 0). Qiymatlar qat'iy: bitta zarar oyi, bitta qo'lda kirim, birinchi oylar bo'sh.
+ */
+export const pnlDemo = (fromDay: string | null, now: Date = new Date()) => {
+  const fallback = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const start =
+    fromDay && /^\d{4}-\d{2}-\d{2}$/.test(fromDay)
+      ? fromDay
+      : `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, "0")}-01`;
+  const [year, month] = start.split("-").map(Number);
+  const last = now.getFullYear() * 12 + now.getMonth();
+  const items: Array<{ period: string; gross: number; opex: number; net: number; other_income: number }> = [];
+  for (let index = year * 12 + month - 1; index <= last; index += 1) {
+    const age = last - index; // 0 — joriy oy
+    const gross = age > 13 ? 0 : age === 0 ? 31_400_000 : 36_000_000 + ((age * 7) % 5) * 2_350_000;
+    const opex = age > 13 ? 0 : age === 0 ? 22_900_000 : age === 3 ? 47_800_000 : 21_000_000 + ((age * 3) % 4) * 1_900_000;
+    items.push({
+      period: `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`,
+      gross,
+      opex,
+      net: gross - opex,
+      other_income: age === 5 ? 10_000_000 : 0,
+    });
+  }
+  const total = (key: "gross" | "opex" | "net" | "other_income") => items.reduce((sum, item) => sum + item[key], 0);
+  return {
+    statusCode: 200,
+    message: "P&L series",
+    data: {
+      from_day: start,
+      to_day: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`,
+      granularity: "month",
+      items,
+      totals: { gross: total("gross"), opex: total("opex"), net: total("net"), other_income: total("other_income") },
+    },
+  };
+};
+
 export const openBalanceAnalysis = async (page: Page, { language = "uz", theme = "light" }: BalanceSession = {}) => {
   const leaked: string[] = [];
+  const pnlRequests: URLSearchParams[] = [];
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -39,6 +79,10 @@ export const openBalanceAnalysis = async (page: Page, { language = "uz", theme =
         },
       });
     }
+    if (path === "finance/pnl") {
+      pnlRequests.push(url.searchParams);
+      return reply(route, pnlDemo(url.searchParams.get("from_day")));
+    }
     return reply(route, { statusCode: 200, data: [] });
   });
   await page.addInitScript(
@@ -58,12 +102,18 @@ export const openBalanceAnalysis = async (page: Page, { language = "uz", theme =
   await page.goto("/financial-balance?tab=analysis");
   const period = page.getByRole("group", { name: language === "ru" ? "Период анализа" : "Tahlil davri" });
   await expect(period).toBeVisible({ timeout: 90_000 });
-  return { period, leaked };
+  return { period, leaked, pnlRequests };
 };
 
-/** Davr tugmalari matni (segment radiolari) tartib bilan. */
+/**
+ * Davr tugmalari matni (segment radiolari) tartib bilan. Nom aniq (`exact`): tepadagi P&L kartasining «Grafik davri»
+ * («Период графика») segmenti ham «Davr» ni o'z ichiga oladi.
+ */
 export const periodLabels = async (page: Page, language: "uz" | "ru" = "uz") =>
-  page.getByRole("radiogroup", { name: language === "ru" ? "Период" : "Davr" }).getByRole("radio").allInnerTexts();
+  page
+    .getByRole("radiogroup", { name: language === "ru" ? "Период" : "Davr", exact: true })
+    .getByRole("radio")
+    .allInnerTexts();
 
 export const UZ_PERIODS = ["Bugun", "Bu hafta", "Bu oy", "Barchasi"];
 export const RU_PERIODS = ["Сегодня", "Эта неделя", "Этот месяц", "Все"];

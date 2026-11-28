@@ -373,6 +373,43 @@ describe("InvestorDashboardPage — ulush investorlik sanasidan (ega 2026-11-28)
     expect(screen.queryByRole("region", { name: "Ulush shartlari" })).not.toBeInTheDocument();
   });
 
+  it("⭐ zarar foydadan ko'p (jami ulush manfiy) — «zarar ulushi» izohi, «ortiqcha to'langan» emas", async () => {
+    mockApi((url, params) => {
+      if (url !== "investors/me/dashboard") return happy(url, params);
+      const body = accrualBody(Number(params?.months ?? 12));
+      return {
+        ...body,
+        data: {
+          ...body.data,
+          summary: { ...body.data.summary, accrued_profit: -300_000, total_profit: -300_000, total_unpaid_profit: -300_000 },
+        },
+      };
+    });
+    renderPage();
+
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    expect(await within(kpis).findByText("Zarar ulushi: 300 000 so'm — keyingi foydadan qoplanadi")).toBeInTheDocument();
+    expect(within(kpis).queryByText("Hisoblangandan ko'p to'langan")).not.toBeInTheDocument();
+  });
+
+  it("ortiqcha to'lov (hisoblangan musbat, to'langan ko'p) — «Hisoblangandan ko'p to'langan»", async () => {
+    mockApi((url, params) => {
+      if (url !== "investors/me/dashboard") return happy(url, params);
+      const body = accrualBody(Number(params?.months ?? 12));
+      return {
+        ...body,
+        data: {
+          ...body.data,
+          summary: { ...body.data.summary, total_paid_profit: 2_500_000, total_unpaid_profit: -400_000 },
+        },
+      };
+    });
+    renderPage();
+
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    expect(await within(kpis).findByText("Hisoblangandan ko'p to'langan")).toBeInTheDocument();
+  });
+
   it("jadval: asos ustuni «Daromad», ulush foizi; zarar oyi qizil, grafikda manfiy ustun yo'q", async () => {
     const user = userEvent.setup();
     mockApi(handler);

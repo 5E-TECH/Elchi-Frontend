@@ -373,6 +373,8 @@ export const API_ENDPOINTS = {
     FINANCIAL_BALANCE_TOP_IMPACTS: "finance/financial-balance/top-impacts",
     // qzjTMWPb — kunlik snapshot (KPI delta, 14 kunlik chiziq) va P&L daftari (superadmin/admin).
     FINANCIAL_BALANCE_DAILY: "finance/financial-balance/daily",
+    // Tizim P&L (ega 2026-11-28): oylik daromad / xarajat / sof foyda, bo'sh oy — 0 (superadmin/admin).
+    FINANCE_PNL: "finance/pnl",
     // Salary
     SALARY: "finance/salary", // POST create / PATCH update
     SALARY_BY_USER: (userId: string | number) => `finance/salary/${userId}`,
