@@ -29,7 +29,8 @@
     "unpaidHint": "Всего начислено: {{amount}}",
     "unpaidNone": "Начисленной доли нет",
     "shareTerms": "{{basis}} · с {{date}}",
-    "unpaidOverpaid": "Выплачено больше начисленного"
+    "unpaidOverpaid": "Выплачено больше начисленного",
+    "unpaidLoss": "Доля убытка: {{amount}} — покрывается из будущей прибыли"
   },
   "monthly": {
     "title": "Прибыль по месяцам",

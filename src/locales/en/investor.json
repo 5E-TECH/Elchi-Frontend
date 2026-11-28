@@ -29,7 +29,8 @@
     "unpaidHint": "Total accrued: {{amount}}",
     "unpaidNone": "No accrued share",
     "shareTerms": "{{basis}} · since {{date}}",
-    "unpaidOverpaid": "Paid more than accrued"
+    "unpaidOverpaid": "Paid more than accrued",
+    "unpaidLoss": "Loss share: {{amount}} — offset by future profit"
   },
   "monthly": {
     "title": "Monthly profit",
