@@ -17,7 +17,7 @@ import {
 } from "../../entities/investors";
 import { formatDateLocalized } from "../../shared/lib/formatDateTime";
 import { getErrorStatus } from "../../shared/lib/errorKind";
-import { formatNumberLocalized } from "../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
 import type { ChartView } from "../../shared/ui/charts";
 import { Badge, Card, ErrorState, PageHeader, StatCard } from "../../shared/ui/primitives";
 import { KpiRow } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
@@ -25,6 +25,7 @@ import { loadErrorText } from "./lib/format";
 import { InvestorAccessState } from "./ui/InvestorAccessState";
 import { InvestorListCards } from "./ui/InvestorListCards";
 import { MonthlyProfitCard } from "./ui/MonthlyProfitCard";
+import { ShareTermsCard } from "./ui/ShareTermsCard";
 
 /** Bosh sahifadagi qisqa ro'yxatlar (route-map: investments `limit=3`, profits `limit=5`). */
 const RECENT_INVESTMENTS = { limit: 3 } as const;
@@ -125,6 +126,9 @@ const InvestorDashboardPage = ({ now, investorId }: { now?: Date; investorId?: s
             loading={loading}
             language={language}
           />
+          {control && data ? (
+            <ShareTermsCard investorId={investorId ?? ""} terms={data.shareTerms} summary={data.summary} />
+          ) : null}
           <MonthlyProfitCard
             months={months}
             onMonthsChange={setMonths}
@@ -136,12 +140,15 @@ const InvestorDashboardPage = ({ now, investorId }: { now?: Date; investorId?: s
                 ? { error: dashboard.error, onRetry: retryDashboard, retrying: dashboard.isFetching }
                 : undefined
             }
+            // Ulush sharti hali yo'q (hisob boshlanmagan) va eski to'lov yozuvlari ham yo'q.
             empty={
               !windowFailed &&
               data != null &&
+              data.summary.shareStartedAt === null &&
               data.summary.profitSharesCount === 0 &&
               data.monthly.items.every((item) => item.total === 0)
             }
+            basis={data?.summary.profitBasis ?? "net"}
             refreshing={dashboard.isPlaceholderData}
             now={now}
           />
@@ -158,8 +165,9 @@ const InvestorDashboardPage = ({ now, investorId }: { now?: Date; investorId?: s
 };
 
 /**
- * To'rt KPI (maket `.el-kpi-row`): pul ixcham («450» + «mln so'm»), foiz — «12,5» + «%». «Ulush» — investor
- * yaratilganda kelishilgan «Ulush (%)» (BeePost formasi), kiritilmagan bo'lsa oxirgi foyda davri stavkasi.
+ * To'rt KPI (maket `.el-kpi-row`): pul ixcham («450» + «mln so'm»), foiz — «12,5» + «%». «Ulush» — joriy ulush
+ * sharti (izohda asos va investorlik sanasi), kiritilmagan bo'lsa oxirgi foyda davri stavkasi. «Kutilayotgan foyda» —
+ * hisoblangan ulush − to'langan (izohda jami hisoblangan).
  */
 const InvestorKpis = ({
   summary,
@@ -181,8 +189,17 @@ const InvestorKpis = ({
   const unpaid = money(summary?.totalUnpaidProfit ?? 0);
   const count = summary?.investmentsCount ?? 0;
   const share = agreedShare ?? summary?.currentPercentage ?? null;
-  const shareHint =
-    agreedShare != null ? t("kpi.shareAgreed") : share == null ? t("kpi.shareNone") : t("kpi.shareHint");
+  // Ega 2026-11-28: ulush investorlik sanasidan, sof foyda yoki daromaddan — izohda asos va sana.
+  const shareHint = summary?.shareStartedAt
+    ? t("kpi.shareTerms", {
+        basis: summary.profitBasis === "gross" ? t("terms.basisFromGross") : t("terms.basisFromNet"),
+        date: date(summary.shareStartedAt),
+      })
+    : share == null
+      ? t("kpi.shareNone")
+      : agreedShare != null
+        ? t("kpi.shareAgreed")
+        : t("kpi.shareHint");
 
   const investedHint =
     count === 0
@@ -195,7 +212,13 @@ const InvestorKpis = ({
     : (summary?.totalPaidProfit ?? 0) > 0
       ? undefined
       : t("kpi.paidNone");
-  const unpaidHint = (summary?.totalUnpaidProfit ?? 0) > 0 ? t("kpi.unpaidHint") : t("kpi.unpaidNone");
+  // «Kutilayotgan» = hisoblangan − to'langan; izohda jami hisoblangan ulush.
+  const unpaidHint =
+    (summary?.totalUnpaidProfit ?? 0) < 0
+      ? t("kpi.unpaidOverpaid")
+      : (summary?.accruedProfit ?? 0) !== 0
+        ? t("kpi.unpaidHint", { amount: formatMoneyLocalized(summary?.accruedProfit ?? 0, { language }) })
+        : t("kpi.unpaidNone");
 
   return (
     <KpiRow count={4} label={t("kpi.label")}>

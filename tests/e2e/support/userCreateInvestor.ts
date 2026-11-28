@@ -125,6 +125,9 @@ export const runCreateInvestorScenarios = (label: string, { mobile = false }: { 
       name: "Ali Investor",
       phone_number: "+998901234567",
       password_mode: "generate_sms",
+      // Ega 2026-11-28: ulush sukut bo'yicha sof foydadan, investorlik sanasi bo'sh — bugun.
+      profit_basis: "net",
+      share_started_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
     await expect.poll(() => calls.investments.length).toBe(1);
     expect(calls.investments[0]).toMatchObject({ investor_id: "5", amount: 100000000 });

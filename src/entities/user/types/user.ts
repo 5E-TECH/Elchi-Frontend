@@ -315,6 +315,10 @@ export interface CreateInvestorUserRequest extends CreateUserPasswordFields {
   phone_number: string;
   /** «Ulush (%)» — 0..100, ko'pi bilan 2 kasr; investor yozuviga saqlanadi. */
   share_percent?: number;
+  /** Foyda asosi: `net` — sof foydadan (sukut), `gross` — daromaddan. */
+  profit_basis?: "net" | "gross";
+  /** «Investorlik sanasi» `YYYY-MM-DD` — ulush shu kundan hisoblanadi. */
+  share_started_at?: string;
 }
 
 // ==================== USER DETAIL ====================

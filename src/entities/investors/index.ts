@@ -200,8 +200,15 @@ export {
   useInvestorInvestments,
   useInvestorMe,
   useInvestorProfits,
+  useSetInvestorShareTerms,
+  useSetInvestorStartDate,
 } from "./api/me";
-export type { InvestorListParams, InvestorMonthsWindow, InvestorProfitParams } from "./api/me";
+export type {
+  InvestorListParams,
+  InvestorMonthsWindow,
+  InvestorProfitParams,
+  InvestorShareTermsInput,
+} from "./api/me";
 export {
   investorAccessProblem,
   toInvestorDashboard,
@@ -218,7 +225,9 @@ export type {
   InvestorMonthlyPoint,
   InvestorPageMeta,
   InvestorProfit,
+  InvestorProfitBasis,
   InvestorProfitsPage,
   InvestorSelfProfile,
+  InvestorShareTerm,
   InvestorSummary,
 } from "./model/me";

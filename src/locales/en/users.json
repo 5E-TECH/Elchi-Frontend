@@ -337,7 +337,7 @@
         "sampleSender": "Sender"
       },
       "investor": {
-        "sectionNote": "Optional: the capital you enter is recorded as an investment",
+        "sectionNote": "The share accrues daily from company profit starting on the investor date",
         "capital": "Initial capital",
         "capitalPlaceholder": "For example: 100 000 000",
         "capitalHint": "Leave empty to skip the investment",
@@ -345,12 +345,17 @@
         "sharePercentPlaceholder": "e.g. 10",
         "sharePercentHint": "0 to 100; shown in the investor cabinet",
         "sharePercentInvalid": "Share must be a number from 0 to 100 with at most 2 decimals",
-        "investedAt": "Start date",
-        "investedAtHint": "Empty means today",
+        "investedAt": "Investor since",
+        "investedAtHint": "The share accrues from this day; capital is recorded with the same date. Empty means today",
         "investedAtFuture": "A future date can't be chosen",
         "created": "Investor created",
         "capitalFailedTitle": "Capital not recorded",
-        "capitalFailedText": "The investor and their login were created, but the initial capital was not saved"
+        "capitalFailedText": "The investor and their login were created, but the initial capital was not saved",
+        "profitBasis": "Share is taken from",
+        "profitBasisNet": "Net profit",
+        "profitBasisGross": "Revenue",
+        "profitBasisNetHint": "Share × (revenue − expenses)",
+        "profitBasisGrossHint": "Share × revenue (sales profit), expenses not deducted"
       }
     },
     "detail": {

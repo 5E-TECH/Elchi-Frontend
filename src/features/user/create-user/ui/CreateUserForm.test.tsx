@@ -769,6 +769,9 @@ describe("CreateUserForm — «Investor» (BeePost naqshi; maket yo'q — eng ya
       password: "Investor2026",
       password_mode: "manual",
       must_change_password: true,
+      // Ega 2026-11-28: sukut — sof foydadan, investorlik sanasi bo'sh bo'lsa bugun.
+      profit_basis: "net",
+      share_started_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
     expect(mocks.createInvestment).toHaveBeenCalledWith({
       investor_id: "5",
@@ -779,20 +782,40 @@ describe("CreateUserForm — «Investor» (BeePost naqshi; maket yo'q — eng ya
     expect(mocks.navigate).toHaveBeenCalledWith(-1);
   });
 
-  it("⭐ «Ulush (%)» (BeePost formasi) — `share_percent` login so'rovida; sana maydoni «Boshlanish sanasi»", async () => {
+  it("⭐ «Ulush (%)» (BeePost formasi) — `share_percent` login so'rovida; sana maydoni «Investorlik sanasi»", async () => {
     mocks.createInvestorUser.mockResolvedValue(created);
     const user = userEvent.setup();
     const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
 
     await pickRole(user, "Investor");
     expect(screen.getByText("Ulush (%)")).toBeInTheDocument();
-    expect(screen.getByLabelText("Boshlanish sanasi")).toBeInTheDocument();
+    expect(screen.getByLabelText("Investorlik sanasi")).toBeInTheDocument();
     await fillInvestor(user, container);
     await fill(user, container, "sharePercent", "12,5");
     await save(user);
 
     await waitFor(() => expect(mocks.createInvestorUser).toHaveBeenCalledTimes(1));
     expect(mocks.createInvestorUser.mock.calls[0][0]).toMatchObject({ name: "Ali Investor", share_percent: 12.5 });
+  });
+
+  it("⭐ «Ulush nimadan olinadi»: «Daromad» tanlansa — `profit_basis: gross`, izoh o'zgaradi (ega 2026-11-28)", async () => {
+    mocks.createInvestorUser.mockResolvedValue(created);
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
+
+    await pickRole(user, "Investor");
+    const basis = screen.getByRole("radiogroup", { name: "Ulush nimadan olinadi" });
+    expect(within(basis).getByRole("radio", { name: "Sof foyda" })).toBeChecked();
+    expect(screen.getByText("Ulush × (daromad − xarajatlar)")).toBeInTheDocument();
+    await user.click(within(basis).getByRole("radio", { name: "Daromad" }));
+    expect(screen.getByText("Ulush × daromad (sotuv foydasi), xarajat ayrilmaydi")).toBeInTheDocument();
+
+    await fillInvestor(user, container);
+    await fill(user, container, "sharePercent", "10");
+    await save(user);
+
+    await waitFor(() => expect(mocks.createInvestorUser).toHaveBeenCalledTimes(1));
+    expect(mocks.createInvestorUser.mock.calls[0][0]).toMatchObject({ share_percent: 10, profit_basis: "gross" });
   });
 
   it.each(["101", "12.345", "abc"])("«Ulush (%)» %s — xato, so'rov ketmaydi", async (share) => {

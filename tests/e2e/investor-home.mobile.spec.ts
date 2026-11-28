@@ -26,7 +26,7 @@ test("bosh sahifa: pastki menyu, «Menyu» varaqasi, boshqaruvlar ≥ 44px, jadv
   await page.getByRole("radio", { name: "Jadval" }).click();
   const cards = page.getByRole("list", { name: "Oylik foyda jadvali" });
   await expect(cards.getByRole("listitem")).toHaveCount(12);
-  await expect(cards.getByRole("listitem").nth(0)).toContainText("Davr hali hisoblanmagan");
+  await expect(cards.getByRole("listitem").nth(0)).toContainText("Hali ulush yo'q");
   await expect(cards.getByRole("listitem").nth(1)).toContainText("Kutilmoqda: 6 200 000 so'm");
   await expect(cards.getByRole("listitem").nth(1)).toContainText("To'langan: —");
   await shot(page, "investor-home-table--phone-light");

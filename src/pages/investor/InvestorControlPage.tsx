@@ -3,7 +3,8 @@ import { useParams } from "react-router-dom";
 import InvestorDashboardPage from "./InvestorDashboardPage";
 
 /**
- * SUPERADMIN NAZORATI (vpKijXce) — `/investor/:investorId`: investor kabineti faqat o'qish uchun (`GET
+ * SUPERADMIN NAZORATI (vpKijXce) — `/investor/:investorId`: investor kabineti (ko'rsatkichlar faqat o'qish uchun; ega
+ * 2026-11-28 dan «Ulush shartlari» kartasida ulush, foyda asosi va investorlik sanasini o'zgartirish mumkin) (`GET
  * investors/:id/dashboard`). Kirish ilgari Ops → «Investorlar» ro'yxatidagi «Kabinetni ko'rish» edi — tab LIuf0DcD da
  * olib tashlandi (ega 2026-11-18), hozir faqat URL orqali; «← Investorlar» — «Foydalanuvchilar → Investorlar». `key`:
  * boshqa investor ochilganda oyna va eski javob oldingisidan qolmaydi.

@@ -261,6 +261,8 @@ describe("CreateUserForm — parol SMS (aidsxJ2H, maket `superadmin-users-create
       name: "Ali Investor",
       phone_number: "+998901234567",
       password_mode: "generate_sms",
+      profit_basis: "net",
+      share_started_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
     await user.click(within(dialog).getByRole("button", { name: "Foydalanuvchiga o'tish" }));
     expect(mocks.navigate).toHaveBeenCalledWith("/all-users/81");

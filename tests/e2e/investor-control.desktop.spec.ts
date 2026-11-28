@@ -9,7 +9,7 @@ import { RAW_BACKEND_MESSAGE, expectNoHorizontalOverflow, mockInvestorHome } fro
 test.describe.configure({ timeout: 120_000 });
 test.use({ viewport: { width: 1440, height: 900 } });
 
-test("⭐ kabinet nazorati: KPI, oylik foyda, «faqat o'qish»; davr almashadi; «← Investorlar» — Foydalanuvchilar", async ({ page }) => {
+test("⭐ kabinet nazorati: KPI, oylik foyda, «Nazorat»; davr almashadi; «← Investorlar» — Foydalanuvchilar", async ({ page }) => {
   const mock = await mockInvestorHome(page, { role: "superadmin" });
   await page.goto("/investor");
   await expect(page).toHaveURL(/\/all-users\?role=investor$/, { timeout: 90_000 });
@@ -17,9 +17,14 @@ test("⭐ kabinet nazorati: KPI, oylik foyda, «faqat o'qish»; davr almashadi; 
 
   await page.goto("/investor/7");
   await expect(page.getByRole("heading", { level: 1, name: "Investor kabineti · Habibulla Nazirov" })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText("Nazorat · faqat o'qish")).toBeVisible();
+  await expect(page.getByText("Nazorat", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Asosiy ko'rsatkichlar" })).toContainText("Mening investitsiyam");
   await expect(page.getByText("Investitsiyalar va foyda tarixi ro'yxati faqat investorning o'z kabinetida ko'rinadi.")).toBeVisible();
+  // Ega 2026-11-28: «Ulush shartlari» — joriy ulush, asos, investorlik sanasi va tarix.
+  const terms = page.getByRole("region", { name: "Ulush shartlari" });
+  await expect(terms.getByText("Investorlik sanasi")).toBeVisible();
+  await expect(terms.getByRole("table", { name: "Shartlar tarixi" }).getByRole("row")).toHaveCount(3);
+  await expect(terms.getByRole("button", { name: "Shartni o'zgartirish" })).toBeVisible();
 
   await page.getByRole("radio", { name: "24 oy" }).click();
   await expect.poll(() => mock.control.at(-1)).toBe("7:24");
