@@ -25,7 +25,7 @@ test("ma'lumot bilan: KPI, oylik foyda (6 · 12 · 24, Grafik | Jadval), investi
   const chart = page.getByRole("img", { name: /^Oylik foyda, .*jami 40,5 mln so'm, to'langan 34,3 mln so'm, kutilmoqda 6,2 mln so'm$/ });
   await expect(chart).toBeVisible();
   await expect(chart.locator("[data-stack]")).toHaveCount(9);
-  await expect(page.getByText(/davri hali yopilmagan — foyda davr tugagach hisoblanadi$/)).toBeVisible();
+  await expect(page.getByText(/davom etmoqda — ulush har kuni yangilanadi$/)).toBeVisible();
   await expect(page.getByText("Jami: 450 000 000 so'm")).toBeVisible();
 
   // Tooltip — sichqoncha ustunga kelganda.
@@ -45,11 +45,11 @@ test("ma'lumot bilan: KPI, oylik foyda (6 · 12 · 24, Grafik | Jadval), investi
   await page.getByRole("radio", { name: "Jadval" }).click();
   const table = page.getByRole("table", { name: "Oylik foyda jadvali" });
   await expect(table.getByRole("row").nth(1)).toContainText("Joriy oy");
-  await expect(table.getByRole("row").last()).toContainText("Jami · 12 oy34 300 000 so'm6 200 000 so'm40 500 000 so'm");
+  await expect(table.getByRole("row").last()).toContainText("Jami · 12 oy——34 300 000 so'm6 200 000 so'm40 500 000 so'm");
   await shot(page, "investor-home-table--desktop-light");
 
   await page.getByRole("radio", { name: "24 oy" }).click();
-  await expect(page.getByText("Jami foyda · 24 oy")).toBeVisible();
+  await expect(page.getByText("Jami ulush · 24 oy")).toBeVisible();
   expect(mock.months).toEqual(expect.arrayContaining(["12", "24"]));
 
   await expectNoHorizontalOverflow(page);
@@ -60,7 +60,7 @@ test("ma'lumot bilan: KPI, oylik foyda (6 · 12 · 24, Grafik | Jadval), investi
 
 test("bo'sh: KPI 0 va izohlar, grafik o'rnida bo'sh holat (boshqaruvlarsiz), ro'yxatlar bo'sh", async ({ page }) => {
   await openInvestorHome(page, { empty: true, theme: "dark" });
-  await expect(page.getByText("Hali foyda hisoblanmagan")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Ulush hali kiritilmagan")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Hali investitsiya kiritilmagan")).toBeVisible();
   await expect(page.getByRole("radiogroup", { name: "Grafik davri" })).toHaveCount(0);
   await expect(page.getByText("Hali investitsiya yo'q")).toBeVisible();

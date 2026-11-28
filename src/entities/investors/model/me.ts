@@ -9,32 +9,65 @@
  * Normalizator har qanday shaklga chidamli: maydon yo'q yoki noto'g'ri bo'lsa — 0 / `null`, sahifa yiqilmaydi.
  */
 
+/** Foyda asosi (ega 2026-11-28, BeePost kabi): `net` — sof foydadan, `gross` — daromaddan. */
+export type InvestorProfitBasis = "net" | "gross";
+
 export type InvestorSelfProfile = {
   id: string;
   name: string;
   status: string;
-  /** «Ulush (%)» — investor yaratilganda kelishilgan; kiritilmagan bo'lsa `null`. */
+  /** «Ulush (%)» — joriy (ochiq) shart; kiritilmagan bo'lsa `null`. */
   sharePercent: number | null;
+  profitBasis: InvestorProfitBasis;
+};
+
+/** Ulush sharti versiyasi: `[effectiveFrom, effectiveTo)` kunlarida amal qiladi; `effectiveTo` `null` — hozirgi. */
+export type InvestorShareTerm = {
+  sharePercent: number;
+  profitBasis: InvestorProfitBasis;
+  /** `YYYY-MM-DD`. */
+  effectiveFrom: string;
+  /** `YYYY-MM-DD` (eksklyuziv) yoki `null`. */
+  effectiveTo: string | null;
 };
 
 export type InvestorSummary = {
   totalInvested: number;
   investmentsCount: number;
   lastInvestedAt: string | null;
+  /** Haqiqatan to'langan. */
   totalPaidProfit: number;
+  /** «Kutilayotgan» = hisoblangan − to'langan (manfiy — ortiqcha to'langan). */
   totalUnpaidProfit: number;
+  /** Investorlik sanasidan bugungacha hisoblangan ulush (kunlik, kompaniya foydasidan). */
+  accruedProfit: number;
+  /** Shu davrdagi asos yig'indisi (sof foyda yoki daromad — butuni). */
+  accruedBasis: number;
+  /** Hisob qaysi kungacha (`YYYY-MM-DD`); shart yo'q — `null`. */
+  accruedThrough: string | null;
+  /** Investorlik sanasi (birinchi shart boshi, `YYYY-MM-DD`); shart yo'q — `null`. */
+  shareStartedAt: string | null;
+  profitBasis: InvestorProfitBasis;
   profitSharesCount: number;
   /** Oxirgi foyda davrining stavkasi (%), davr bo'lmasa `null` — KPI «Ulush» (ega IN-S4). */
   currentPercentage: number | null;
   lastPaidAt: string | null;
 };
 
-/** Oylik foyda nuqtasi: oy — foyda DAVRINING tugagan oyi (Toshkent), `YYYY-MM`. */
+/**
+ * Oylik foyda nuqtasi (`YYYY-MM`, Toshkent): `total` — shu oyda hisoblangan ulush; `paid` / `unpaid` — uning to'langan
+ * va kutilayotgan qismi (to'lovlar eski oydan boshlab taqsimlanadi). Zarar oyida `total` manfiy bo'lishi mumkin.
+ */
 export type InvestorMonthlyPoint = {
   month: string;
   paid: number;
   unpaid: number;
   total: number;
+  /** Investor shart amal qilgan kunlardagi asos (sof foyda yoki daromad). */
+  basis: number;
+  /** Oyda amal qilgan ulush foizi; hisob bo'lmagan oy — `null`. */
+  sharePercent: number | null;
+  profitBasis: InvestorProfitBasis | null;
 };
 
 export type InvestorDashboard = {
@@ -42,6 +75,8 @@ export type InvestorDashboard = {
   summary: InvestorSummary;
   /** Backendda obyekt: `{ months, items }` (eski massiv shakli ham qabul qilinadi). */
   monthly: { months: number; items: InvestorMonthlyPoint[] };
+  /** Ulush shartlari tarixi (eski → yangi). */
+  shareTerms: InvestorShareTerm[];
 };
 
 /** `GET investors/me` — profil va yig'indi (grafiksiz). */
@@ -131,6 +166,15 @@ const toMeta = (value: unknown, count: number): InvestorPageMeta => {
   };
 };
 
+const toProfitBasis = (value: unknown): InvestorProfitBasis | null =>
+  value === "net" || value === "gross" ? value : null;
+
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+const toDayOrNull = (value: unknown): string | null => {
+  const text = toText(value);
+  return DAY_KEY.test(text) ? text : null;
+};
+
 const toProfile = (value: unknown): InvestorSelfProfile | null => {
   const record = asRecord(value);
   const id = toText(record.id);
@@ -140,6 +184,7 @@ const toProfile = (value: unknown): InvestorSelfProfile | null => {
     name: toText(record.name).trim(),
     status: toText(record.status),
     sharePercent: toNumberOrNull(record.share_percent),
+    profitBasis: toProfitBasis(record.profit_basis) ?? "net",
   };
 };
 
@@ -151,6 +196,11 @@ const toSummary = (value: unknown): InvestorSummary => {
     lastInvestedAt: toDateText(record.last_invested_at),
     totalPaidProfit: toNumber(record.total_paid_profit),
     totalUnpaidProfit: toNumber(record.total_unpaid_profit),
+    accruedProfit: toNumber(record.accrued_profit ?? record.total_profit),
+    accruedBasis: toNumber(record.accrued_basis),
+    accruedThrough: toDayOrNull(record.accrued_through),
+    shareStartedAt: toDayOrNull(record.share_started_at),
+    profitBasis: toProfitBasis(record.profit_basis) ?? "net",
     profitSharesCount: toNumber(record.profit_shares_count),
     currentPercentage: toNumberOrNull(record.current_percentage),
     lastPaidAt: toDateText(record.last_paid_at),
@@ -164,7 +214,28 @@ const toMonthlyPoint = (value: unknown): InvestorMonthlyPoint | null => {
   const paid = toNumber(record.paid_amount);
   const unpaid = toNumber(record.unpaid_amount);
   const total = record.total_amount === undefined ? paid + unpaid : toNumber(record.total_amount);
-  return { month, paid, unpaid, total };
+  return {
+    month,
+    paid,
+    unpaid,
+    total,
+    basis: toNumber(record.basis_amount),
+    sharePercent: toNumberOrNull(record.share_percent),
+    profitBasis: toProfitBasis(record.profit_basis),
+  };
+};
+
+const toShareTerm = (value: unknown): InvestorShareTerm | null => {
+  const record = asRecord(value);
+  const effectiveFrom = toDayOrNull(record.effective_from);
+  const sharePercent = toNumberOrNull(record.share_percent);
+  if (!effectiveFrom || sharePercent === null) return null;
+  return {
+    sharePercent,
+    profitBasis: toProfitBasis(record.profit_basis) ?? "net",
+    effectiveFrom,
+    effectiveTo: toDayOrNull(record.effective_to),
+  };
 };
 
 export const toInvestorDashboard = (payload: unknown): InvestorDashboard => {
@@ -180,6 +251,10 @@ export const toInvestorDashboard = (payload: unknown): InvestorDashboard => {
     investor: toProfile(body.investor),
     summary: toSummary(body.summary),
     monthly: { months: toNumber(monthlyRecord.months) || items.length, items },
+    shareTerms: (Array.isArray(body.share_terms) ? body.share_terms : [])
+      .map(toShareTerm)
+      .filter((term): term is InvestorShareTerm => term !== null)
+      .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom)),
   };
 };
 

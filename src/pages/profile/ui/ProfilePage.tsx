@@ -118,6 +118,7 @@ const ProfilePage = () => {
                       linked={profile.telegram_linked === true}
                       username={profile.telegram_username}
                       linkedAt={profile.telegram_linked_at}
+                      orderHint
                     />
                   </div>
                 </div>
@@ -141,6 +142,7 @@ const ProfilePage = () => {
                         linked={profile.telegram_linked === true}
                         username={profile.telegram_username}
                         linkedAt={profile.telegram_linked_at}
+                        orderHint={profile.role === "market_operator"}
                       />
                     </div>
                   </div>

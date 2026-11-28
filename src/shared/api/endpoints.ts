@@ -522,6 +522,8 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `investors/${id}`, // GET / PATCH / DELETE
     // vpKijXce: superadmin nazorati — javob `ME_DASHBOARD` bilan AYNAN bir xil (backend spec TC7), ?months=1..36.
     DASHBOARD: (investorId: string | number) => `investors/${investorId}/dashboard`,
+    // Ega 2026-11-28: ulush sharti — PUT { share_percent, profit_basis: net|gross, effective_from: YYYY-MM-DD }.
+    SHARE_TERMS: (investorId: string | number) => `investors/${investorId}/share-terms`,
     INVESTMENTS: (investorId: string | number) => `investors/${investorId}/investments`,
     PROFITS: (investorId: string | number) => `investors/${investorId}/profits`,
   },

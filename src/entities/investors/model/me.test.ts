@@ -56,13 +56,25 @@ describe("toInvestorDashboard", () => {
 
   it("konvertni ochadi; KPI maydonlari raqam, foiz satrdan son", () => {
     const dashboard = toInvestorDashboard(payload);
-    expect(dashboard.investor).toEqual({ id: "7", name: "Habibulla Nazirov", status: "active", sharePercent: null });
+    expect(dashboard.investor).toEqual({
+      id: "7",
+      name: "Habibulla Nazirov",
+      status: "active",
+      sharePercent: null,
+      profitBasis: "net",
+    });
     expect(dashboard.summary).toEqual({
       totalInvested: 450_000_000,
       investmentsCount: 5,
       lastInvestedAt: "2026-08-01T00:00:00+05:00",
       totalPaidProfit: 34_300_000,
       totalUnpaidProfit: 6_200_000,
+      // Eski javob (`accrued_profit` yo'q) — `total_profit` zaxira.
+      accruedProfit: 40_500_000,
+      accruedBasis: 0,
+      accruedThrough: null,
+      shareStartedAt: null,
+      profitBasis: "net",
       profitSharesCount: 9,
       currentPercentage: 12.5,
       lastPaidAt: "2026-09-05T10:00:00.000Z",
@@ -73,12 +85,23 @@ describe("toInvestorDashboard", () => {
     const { monthly } = toInvestorDashboard(payload);
     expect(monthly.months).toBe(3);
     expect(monthly.items.map((item) => item.month)).toEqual(["2026-08", "2026-09", "2026-10"]);
-    expect(monthly.items[1]).toEqual({ month: "2026-09", paid: 0, unpaid: 6_200_000, total: 6_200_000 });
+    expect(monthly.items[1]).toEqual({
+      month: "2026-09",
+      paid: 0,
+      unpaid: 6_200_000,
+      total: 6_200_000,
+      basis: 0,
+      sharePercent: null,
+      profitBasis: null,
+    });
   });
 
   it("eski massiv shakli, noto'g'ri oy va bo'sh javob — yiqilmaydi", () => {
     const fromArray = toInvestorDashboard({ data: { monthly: [{ month: "2026-01", paid_amount: "100", unpaid_amount: 50 }, { month: "x" }] } });
-    expect(fromArray.monthly.items).toEqual([{ month: "2026-01", paid: 100, unpaid: 50, total: 150 }]);
+    expect(fromArray.monthly.items).toEqual([
+      { month: "2026-01", paid: 100, unpaid: 50, total: 150, basis: 0, sharePercent: null, profitBasis: null },
+    ]);
+    expect(fromArray.shareTerms).toEqual([]);
     expect(fromArray.investor).toBeNull();
 
     const empty = toInvestorDashboard(undefined);
@@ -86,6 +109,77 @@ describe("toInvestorDashboard", () => {
     expect(empty.summary.currentPercentage).toBeNull();
     expect(empty.summary.lastPaidAt).toBeNull();
     expect(empty.monthly).toEqual({ months: 0, items: [] });
+  });
+});
+
+describe("toInvestorDashboard — ulush investorlik sanasidan (ega 2026-11-28)", () => {
+  const payload = {
+    data: {
+      investor: { id: 7, name: "A", status: "active", share_percent: "15", profit_basis: "gross" },
+      summary: {
+        total_paid_profit: 100,
+        total_unpaid_profit: 110,
+        total_profit: 210,
+        accrued_profit: "210",
+        accrued_basis: "2100",
+        accrued_through: "2026-11-28",
+        share_started_at: "2026-11-01",
+        profit_basis: "gross",
+      },
+      monthly: {
+        months: 1,
+        items: [
+          {
+            month: "2026-11",
+            accrued_amount: 210,
+            basis_amount: "2100.5",
+            paid_amount: 100,
+            unpaid_amount: 110,
+            total_amount: 210,
+            share_percent: "10",
+            profit_basis: "net",
+          },
+        ],
+      },
+      share_terms: [
+        { share_percent: "15", profit_basis: "gross", effective_from: "2026-11-25", effective_to: null },
+        { share_percent: 10, profit_basis: "net", effective_from: "2026-11-01", effective_to: "2026-11-25" },
+        { share_percent: 5, profit_basis: "net", effective_from: "01.11.2026" },
+        { profit_basis: "net", effective_from: "2026-10-01" },
+      ],
+    },
+  };
+
+  it("hisoblangan ulush, asos, investorlik sanasi; noto'g'ri qiymatlar — null", () => {
+    const dashboard = toInvestorDashboard(payload);
+    expect(dashboard.investor?.profitBasis).toBe("gross");
+    expect(dashboard.summary).toMatchObject({
+      accruedProfit: 210,
+      accruedBasis: 2100,
+      accruedThrough: "2026-11-28",
+      shareStartedAt: "2026-11-01",
+      profitBasis: "gross",
+      totalUnpaidProfit: 110,
+    });
+    expect(dashboard.monthly.items[0]).toEqual({
+      month: "2026-11",
+      paid: 100,
+      unpaid: 110,
+      total: 210,
+      basis: 2100.5,
+      sharePercent: 10,
+      profitBasis: "net",
+    });
+    expect(toInvestorDashboard({ data: { investor: { id: 1, profit_basis: "revenue" } } }).investor?.profitBasis).toBe(
+      "net",
+    );
+  });
+
+  it("ulush shartlari: eski → yangi, noto'g'ri sana yoki foizsiz qator tashlanadi", () => {
+    expect(toInvestorDashboard(payload).shareTerms).toEqual([
+      { sharePercent: 10, profitBasis: "net", effectiveFrom: "2026-11-01", effectiveTo: "2026-11-25" },
+      { sharePercent: 15, profitBasis: "gross", effectiveFrom: "2026-11-25", effectiveTo: null },
+    ]);
   });
 });
 
@@ -99,7 +193,13 @@ describe("toInvestorMe", () => {
         summary: { total_invested: "450000000", investments_count: 5, current_percentage: "12.5", last_paid_at: null },
       },
     });
-    expect(me.investor).toEqual({ id: "7", name: "Habibulla Nazirov", status: "active", sharePercent: null });
+    expect(me.investor).toEqual({
+      id: "7",
+      name: "Habibulla Nazirov",
+      status: "active",
+      sharePercent: null,
+      profitBasis: "net",
+    });
     expect(me.summary.totalInvested).toBe(450_000_000);
     expect(me.summary.investmentsCount).toBe(5);
     expect(me.summary.currentPercentage).toBe(12.5);

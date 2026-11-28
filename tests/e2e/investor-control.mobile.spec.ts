@@ -13,7 +13,12 @@ for (const theme of ["light", "dark"] as const) {
     await page.goto("/investor/7");
 
     await expect(page.getByRole("heading", { level: 1, name: "Investor kabineti · Habibulla Nazirov" })).toBeVisible({ timeout: 90_000 });
-    await expect(page.getByText("Nazorat · faqat o'qish")).toBeVisible();
+    await expect(page.getByText("Nazorat", { exact: true })).toBeVisible();
+    // «Ulush shartlari»: tarix telefonda kartalar, tugma ≥ 44px.
+    const terms = page.getByRole("region", { name: "Ulush shartlari" });
+    await expect(terms.getByRole("list", { name: "Shartlar tarixi" }).getByRole("listitem")).toHaveCount(2);
+    const button = await terms.getByRole("button", { name: "Shartni o'zgartirish" }).boundingBox();
+    expect(button?.height ?? 0).toBeGreaterThanOrEqual(44);
     await expectNoHorizontalOverflow(page);
     expect(mock.control).toContain("7:12");
     expect(mock.leaked).toEqual([]);

@@ -52,7 +52,18 @@ const dashboard = (months: number, empty: boolean) => ({
         profit_shares_count: 9,
         current_percentage: 12.5,
         last_paid_at: "2026-09-05T10:00:00+05:00",
+        // Ega 2026-11-28: ulush investorlik sanasidan, kunlik hisob.
+        accrued_profit: 40_500_000,
+        accrued_through: "2026-10-21",
+        share_started_at: "2025-11-01",
+        profit_basis: "net",
       },
+  share_terms: empty
+    ? []
+    : [
+        { share_percent: 10, profit_basis: "net", effective_from: "2025-11-01", effective_to: "2026-06-01" },
+        { share_percent: 12.5, profit_basis: "net", effective_from: "2026-06-01", effective_to: null },
+      ],
   monthly: {
     months,
     items: Array.from({ length: months }, (_, index) => {

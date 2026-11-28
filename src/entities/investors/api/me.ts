@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { api } from "../../../shared/api/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
@@ -8,6 +8,7 @@ import {
   toInvestorMe,
   toInvestorProfitsPage,
   type InvestorDashboard,
+  type InvestorProfitBasis,
   type InvestorInvestmentsPage,
   type InvestorMe,
   type InvestorProfitsPage,
@@ -102,3 +103,34 @@ export const useInvestorProfits = (params: InvestorProfitParams, options?: Optio
     enabled: options?.enabled ?? true,
     ...silentErrorMeta(options),
   });
+
+/** `PUT investors/:id/share-terms` tanasi: «shu sanadan boshlab ulush X%, asos Y». */
+export type InvestorShareTermsInput = {
+  share_percent: number;
+  profit_basis: InvestorProfitBasis;
+  /** `YYYY-MM-DD`; joriy shart boshidan keyin — yangi versiya, teng yoki oldin — joriy shart tuzatiladi. */
+  effective_from: string;
+};
+
+/**
+ * Superadmin/admin: investor ulush sharti (ega 2026-11-28). Muvaffaqiyatda investorning nazorat dashboardi va
+ * ro'yxatlar yangilanadi (ulush o'tgan kunlar uchun qayta hisoblanmaydi — faqat sanadan keyingi kunlar).
+ */
+export const useSetInvestorShareTerms = (investorId: string) => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: InvestorShareTermsInput) =>
+      api.put(API_ENDPOINTS.INVESTORS.SHARE_TERMS(investorId), input).then((response) => response.data),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["investors"] }),
+  });
+};
+
+/** «Investorlik sanasi»ni tuzatish — birinchi ulush shartining boshi (`PATCH investors/:id {share_started_at}`). */
+export const useSetInvestorStartDate = (investorId: string) => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (day: string) =>
+      api.patch(API_ENDPOINTS.INVESTORS.BY_ID(investorId), { share_started_at: day }).then((response) => response.data),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["investors"] }),
+  });
+};

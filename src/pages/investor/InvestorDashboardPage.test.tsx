@@ -194,7 +194,8 @@ describe("InvestorDashboardPage — ma'lumot bilan (investor-dashboard-home)", (
     expect(await within(kpis).findByText("5 ta investitsiya · oxirgisi 01.08.2026")).toBeInTheDocument();
     expect(within(kpis).getByText("Oxirgi davr stavkasi")).toBeInTheDocument();
     expect(within(kpis).getByText("Oxirgi to'lov: 05.09.2026")).toBeInTheDocument();
-    expect(within(kpis).getByText("Hisoblangan, hali to'lanmagan")).toBeInTheDocument();
+    // «Kutilayotgan» izohi — jami hisoblangan ulush (eski javobda `total_profit`).
+    expect(within(kpis).getByText("Jami hisoblangan: 40 500 000 so'm")).toBeInTheDocument();
     const values = Array.from(kpis.querySelectorAll("[data-stat-value]")).map((el) => el.textContent);
     expect(values).toEqual(["450 mln so'm", "12,5 %", "34,3 mln so'm", "6,2 mln so'm"]);
 
@@ -203,8 +204,8 @@ describe("InvestorDashboardPage — ma'lumot bilan (investor-dashboard-home)", (
       "Oylik foyda, noyabr 2025 – oktabr 2026: jami 40,5 mln so'm, to'langan 34,3 mln so'm, kutilmoqda 6,2 mln so'm",
     );
     expect(chart.querySelectorAll("[data-stack]")).toHaveLength(9);
-    expect(screen.getByText("Jami foyda · 12 oy")).toBeInTheDocument();
-    expect(screen.getByText("Oktabr davri hali yopilmagan — foyda davr tugagach hisoblanadi")).toBeInTheDocument();
+    expect(screen.getByText("Jami ulush · 12 oy")).toBeInTheDocument();
+    expect(screen.getByText("Oktabr davom etmoqda — ulush har kuni yangilanadi")).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "12 oy" })).toHaveAttribute("aria-checked", "true");
 
     const calls = get.mock.calls.map(([url, config]) => [url, (config as { params?: unknown } | undefined)?.params]);
@@ -254,22 +255,24 @@ describe("InvestorDashboardPage — ma'lumot bilan (investor-dashboard-home)", (
     const user = userEvent.setup();
     const get = mockApi(happy);
     renderPage();
-    await screen.findByText("Jami foyda · 12 oy");
+    await screen.findByText("Jami ulush · 12 oy");
 
     await user.click(screen.getByRole("radio", { name: "Jadval" }));
     const table = screen.getByRole("table", { name: "Oylik foyda jadvali" });
     const rows = within(table).getAllByRole("row");
     expect(rows[1]).toHaveTextContent("Oktabr 2026");
     expect(within(rows[1]).getByText("Joriy oy")).toBeInTheDocument();
-    expect(rows[2]).toHaveTextContent("Sentabr 2026—6 200 000 so'm6 200 000 so'm");
-    expect(rows.at(-1)).toHaveTextContent("Jami · 12 oy34 300 000 so'm6 200 000 so'm40 500 000 so'm");
+    // Ustunlar: oy · asos (sof foyda) · ulush · to'langan · kutilmoqda · jami.
+    expect(rows[0]).toHaveTextContent("OySof foydaUlushTo'langanKutilmoqdaJami");
+    expect(rows[2]).toHaveTextContent("Sentabr 2026———6 200 000 so'm6 200 000 so'm");
+    expect(rows.at(-1)).toHaveTextContent("Jami · 12 oy——34 300 000 so'm6 200 000 so'm40 500 000 so'm");
     expect(screen.queryByRole("img", { name: /Oylik foyda/ })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("radio", { name: "6 oy" }));
     await waitFor(() =>
       expect(get).toHaveBeenCalledWith("investors/me/dashboard", expect.objectContaining({ params: { months: 6 } })),
     );
-    expect(await screen.findByText("Jami foyda · 6 oy")).toBeInTheDocument();
+    expect(await screen.findByText("Jami ulush · 6 oy")).toBeInTheDocument();
   });
 
   it("telefon: jadval egizagi kartalarda — ikkala qism alohida qatorda (ega IN-S3), «Jami» qatori yo'q", async () => {
@@ -277,16 +280,16 @@ describe("InvestorDashboardPage — ma'lumot bilan (investor-dashboard-home)", (
     const user = userEvent.setup();
     mockApi(happy);
     renderPage();
-    await screen.findByText("Jami foyda · 12 oy");
+    await screen.findByText("Jami ulush · 12 oy");
     await user.click(screen.getByRole("radio", { name: "Jadval" }));
 
     const cards = screen.getByRole("list", { name: "Oylik foyda jadvali" });
     const items = within(cards).getAllByRole("listitem");
     expect(items).toHaveLength(12);
-    expect(items[0]).toHaveTextContent("Oktabr 2026Davr hali hisoblanmagan");
+    expect(items[0]).toHaveTextContent("Oktabr 2026Hali ulush yo'q");
     expect(within(items[1]).getByText("To'langan: —")).toBeInTheDocument();
     expect(within(items[1]).getByText("Kutilmoqda: 6 200 000 so'm")).toHaveClass("text-warning-fg");
-    expect(items[11]).toHaveTextContent("Noyabr 2025Foyda yo'q");
+    expect(items[11]).toHaveTextContent("Noyabr 2025Ulush yo'q");
 
     const profits = screen.getByRole("list", { name: "Foyda tarixi" });
     expect(within(profits).getAllByRole("listitem")[0]).toHaveTextContent("Hali to'lanmagan");
@@ -308,6 +311,80 @@ describe("InvestorDashboardPage — «Ulush (%)» (BeePost investor formasi)", (
     expect(within(kpis).queryByText("Oxirgi davr stavkasi")).not.toBeInTheDocument();
     const values = Array.from(kpis.querySelectorAll("[data-stat-value]")).map((el) => el.textContent);
     expect(values[1]).toBe("30 %");
+  });
+});
+
+describe("InvestorDashboardPage — ulush investorlik sanasidan (ega 2026-11-28)", () => {
+  const accrualBody = (months = 12) => {
+    const body = dashboardBody(months);
+    return {
+      ...body,
+      data: {
+        ...body.data,
+        investor: { ...body.data.investor, share_percent: 10, profit_basis: "gross" },
+        summary: {
+          ...body.data.summary,
+          total_paid_profit: 0,
+          total_unpaid_profit: 2_100_000,
+          total_profit: 2_100_000,
+          accrued_profit: 2_100_000,
+          accrued_basis: 21_000_000,
+          accrued_through: "2026-10-21",
+          share_started_at: "2026-09-01",
+          profit_basis: "gross",
+          profit_shares_count: 0,
+          last_paid_at: null,
+        },
+        monthly: {
+          months,
+          items: MONTHS_12.slice(12 - Math.min(months, 12)).map(([month]) => {
+            const accrued = month === "2026-09" ? 2_400_000 : month === "2026-10" ? -300_000 : 0;
+            return {
+              month,
+              accrued_amount: accrued,
+              basis_amount: accrued * 10,
+              paid_amount: 0,
+              unpaid_amount: accrued,
+              total_amount: accrued,
+              share_percent: accrued ? 10 : null,
+              profit_basis: accrued ? "gross" : null,
+            };
+          }),
+        },
+        share_terms: [{ share_percent: 10, profit_basis: "gross", effective_from: "2026-09-01", effective_to: null }],
+      },
+    };
+  };
+  const handler: Handler = (url, params) =>
+    url === "investors/me/dashboard" ? accrualBody(Number(params?.months ?? 12)) : happy(url, params);
+
+  it("⭐ KPI: asos va investorlik sanasi, jami hisoblangan; grafik bo'sh holatda emas", async () => {
+    mockApi(handler);
+    renderPage();
+
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    expect(await within(kpis).findByText("Daromaddan · 01.09.2026 dan")).toBeInTheDocument();
+    expect(within(kpis).getByText("Jami hisoblangan: 2 100 000 so'm")).toBeInTheDocument();
+    const values = Array.from(kpis.querySelectorAll("[data-stat-value]")).map((el) => el.textContent);
+    expect(values).toEqual(["450 mln so'm", "10 %", "0 so'm", "2,1 mln so'm"]);
+    expect(screen.queryByText("Ulush hali kiritilmagan")).not.toBeInTheDocument();
+    expect(screen.getByText("Jami ulush · 12 oy")).toBeInTheDocument();
+    // Investorning o'zida shart kartasi yo'q (faqat nazoratda).
+    expect(screen.queryByRole("region", { name: "Ulush shartlari" })).not.toBeInTheDocument();
+  });
+
+  it("jadval: asos ustuni «Daromad», ulush foizi; zarar oyi qizil, grafikda manfiy ustun yo'q", async () => {
+    const user = userEvent.setup();
+    mockApi(handler);
+    renderPage();
+    await screen.findByText("Jami ulush · 12 oy");
+
+    await user.click(screen.getByRole("radio", { name: "Jadval" }));
+    const rows = within(screen.getByRole("table", { name: "Oylik foyda jadvali" })).getAllByRole("row");
+    expect(rows[0]).toHaveTextContent("OyDaromadUlush");
+    expect(rows[1]).toHaveTextContent("Oktabr 2026Joriy oy−3 000 000 so'm10 %—−300 000 so'm−300 000 so'm");
+    for (const loss of within(rows[1]).getAllByText("−300 000 so'm")) expect(loss).toHaveClass("text-danger-fg");
+    expect(rows[2]).toHaveTextContent("Sentabr 202624 000 000 so'm10 %—2 400 000 so'm2 400 000 so'm");
   });
 });
 
@@ -333,11 +410,11 @@ describe("InvestorDashboardPage — holatlar", () => {
     mockApi((url) => (url === "investors/me/dashboard" ? emptyBodies.dashboard : emptyBodies.list));
     renderPage();
 
-    expect(await screen.findByText("Hali foyda hisoblanmagan")).toBeInTheDocument();
+    expect(await screen.findByText("Ulush hali kiritilmagan")).toBeInTheDocument();
     expect(screen.getByText("Hali investitsiya kiritilmagan")).toBeInTheDocument();
-    expect(screen.getByText("Foyda davri hali yo'q")).toBeInTheDocument();
+    expect(screen.getByText("Ulush kiritilmagan")).toBeInTheDocument();
     expect(screen.getByText("Hali to'lov bo'lmagan")).toBeInTheDocument();
-    expect(screen.getByText("Hisoblangan foyda yo'q")).toBeInTheDocument();
+    expect(screen.getByText("Hisoblangan ulush yo'q")).toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Grafik davri" })).not.toBeInTheDocument();
     expect(await screen.findByText("Hali investitsiya yo'q")).toBeInTheDocument();
     expect(screen.getByText("Hali foyda yozuvi yo'q")).toBeInTheDocument();
@@ -375,7 +452,7 @@ describe("InvestorDashboardPage — holatlar", () => {
       url === "investors/me/dashboard" && params?.months === 24 ? httpError(500, "QueryFailedError: timeout") : happy(url, params),
     );
     renderPage();
-    await screen.findByText("Jami foyda · 12 oy");
+    await screen.findByText("Jami ulush · 12 oy");
 
     await user.click(screen.getByRole("radio", { name: "24 oy" }));
     expect(await screen.findByText("Bu davr uchun oylik foydani yuklab bo'lmadi")).toBeInTheDocument();
