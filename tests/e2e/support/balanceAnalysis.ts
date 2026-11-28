@@ -105,9 +105,15 @@ export const openBalanceAnalysis = async (page: Page, { language = "uz", theme =
   return { period, leaked, pnlRequests };
 };
 
-/** Davr tugmalari matni (segment radiolari) tartib bilan. */
+/**
+ * Davr tugmalari matni (segment radiolari) tartib bilan. Nom aniq (`exact`): tepadagi P&L kartasining «Grafik davri»
+ * («Период графика») segmenti ham «Davr» ni o'z ichiga oladi.
+ */
 export const periodLabels = async (page: Page, language: "uz" | "ru" = "uz") =>
-  page.getByRole("radiogroup", { name: language === "ru" ? "Период" : "Davr" }).getByRole("radio").allInnerTexts();
+  page
+    .getByRole("radiogroup", { name: language === "ru" ? "Период" : "Davr", exact: true })
+    .getByRole("radio")
+    .allInnerTexts();
 
 export const UZ_PERIODS = ["Bugun", "Bu hafta", "Bu oy", "Barchasi"];
 export const RU_PERIODS = ["Сегодня", "Эта неделя", "Этот месяц", "Все"];
